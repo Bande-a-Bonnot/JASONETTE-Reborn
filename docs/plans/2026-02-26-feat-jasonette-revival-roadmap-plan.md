@@ -672,7 +672,7 @@ Before starting native development, verify:
 
 ---
 
-### Phase 4: Jasonpedia Refresh (Weeks 13-17)
+### Phase 4: Jasonpedia Refresh (Weeks 13-17) — COMPLETED
 
 **Goal:** Update the example/test suite and turn it into a living specification.
 
