@@ -23,7 +23,7 @@
             "menu": {
               "text": "View JSON",
               "href": {
-                "url": "https://github.com/Bande-a-Bonnot/JASONETTE-Reborn/tree/main/Jasonpedia/view/background/index.json",
+                "url": "https://github.com/Bande-a-Bonnot/JASONETTE-Reborn/blob/main/Jasonpedia/view/background/index.json",
                 "view": "web"
               },
               "style": {
