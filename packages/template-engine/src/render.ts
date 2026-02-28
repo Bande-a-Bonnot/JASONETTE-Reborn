@@ -2,6 +2,39 @@ import { transform } from './transformer.js';
 import type { RenderContext, RenderOptions } from './types.js';
 
 const MAX_MIXIN_DEPTH = 5;
+const MAX_MIXIN_SIZE = 1_048_576; // 1MB
+
+// In-memory cache for fetched mixins
+const mixinCache = new Map<string, { value: unknown; timestamp: number }>();
+const MIXIN_CACHE_TTL = 60_000; // 60 seconds
+
+/**
+ * Validate a mixin URL per AD-10 policy.
+ * Only HTTPS is allowed for remote mixins.
+ */
+function isValidMixinUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Parse `key@url` selector notation (Form C — Tier 2 stub).
+ * Returns { key, url } or null if not a selector.
+ */
+function parseSelectorMixin(value: string): { key: string; url: string } | null {
+  const atIndex = value.indexOf('@');
+  if (atIndex <= 0) return null;
+
+  const key = value.slice(0, atIndex);
+  const url = value.slice(atIndex + 1);
+
+  if (!url.startsWith('https://')) return null;
+  return { key, url };
+}
 
 /**
  * Resolve `@` (self) references within a document.
@@ -54,6 +87,33 @@ function resolveSelfReferences(
 }
 
 /**
+ * Fetch a mixin with caching and size limits.
+ */
+async function fetchMixin(
+  url: string,
+  fetchFn: (url: string) => Promise<unknown>,
+): Promise<unknown> {
+  // Check cache
+  const cached = mixinCache.get(url);
+  if (cached && Date.now() - cached.timestamp < MIXIN_CACHE_TTL) {
+    return cached.value;
+  }
+
+  const result = await fetchFn(url);
+
+  // Size check — estimate via JSON stringification
+  const serialized = JSON.stringify(result);
+  if (serialized && serialized.length > MAX_MIXIN_SIZE) {
+    return undefined;
+  }
+
+  // Cache the result
+  mixinCache.set(url, { value: result, timestamp: Date.now() });
+
+  return result;
+}
+
+/**
  * Resolve mixins — objects with `@` key pointing to a URL or local ref.
  */
 async function resolveMixins(
@@ -77,18 +137,40 @@ async function resolveMixins(
 
     // Check for remote mixin: { "@": "https://..." }
     if ('@' in obj && typeof obj['@'] === 'string') {
-      const url = obj['@'] as string;
+      const mixinRef = obj['@'] as string;
 
-      // Only resolve HTTP(S) URLs as remote mixins
-      if (url.startsWith('http://') || url.startsWith('https://')) {
+      // Form C: key@url selector (Tier 2 stub)
+      const selector = parseSelectorMixin(mixinRef);
+      if (selector) {
+        if (!options?.fetch || !isValidMixinUrl(selector.url)) return obj;
+
+        try {
+          const fetched = await fetchMixin(selector.url, options.fetch);
+          if (fetched && typeof fetched === 'object' && !Array.isArray(fetched)) {
+            const selected = (fetched as Record<string, unknown>)[selector.key];
+            if (selected && typeof selected === 'object' && !Array.isArray(selected)) {
+              const { '@': _, ...rest } = obj;
+              const merged = { ...(selected as Record<string, unknown>), ...rest };
+              return resolveMixins(merged, options, depth + 1);
+            }
+            return selected;
+          }
+          return undefined;
+        } catch {
+          return undefined;
+        }
+      }
+
+      // Form B: direct URL
+      if (mixinRef.startsWith('http://') || mixinRef.startsWith('https://')) {
+        if (!isValidMixinUrl(mixinRef)) return obj; // Reject non-HTTPS
         if (!options?.fetch) return obj;
 
         try {
-          const fetched = await options.fetch(url);
+          const fetched = await fetchMixin(mixinRef, options.fetch);
           if (fetched && typeof fetched === 'object' && !Array.isArray(fetched)) {
             const { '@': _, ...rest } = obj;
             const merged = { ...(fetched as Record<string, unknown>), ...rest };
-            // Recursively resolve nested mixins
             return resolveMixins(merged, options, depth + 1);
           }
           return fetched;
@@ -107,6 +189,13 @@ async function resolveMixins(
   }
 
   return value;
+}
+
+/**
+ * Clear the mixin fetch cache.
+ */
+export function clearMixinCache(): void {
+  mixinCache.clear();
 }
 
 /**
