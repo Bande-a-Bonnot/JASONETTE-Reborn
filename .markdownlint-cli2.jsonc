@@ -7,7 +7,23 @@
     // Allow sibling duplicate headings (different sections can reuse heading names)
     "MD024": { "siblings_only": true },
     // Allow trailing punctuation in headings (e.g., "What is $jason?")
-    "MD026": { "punctuation": ".,;:!" }
+    "MD026": { "punctuation": ".,;:!" },
+    // Allow non-heading first line (YAML front matter in templates, PR template)
+    "MD041": false,
+    // Allow multiple top-level headings (plans have YAML front matter + # heading)
+    "MD025": false,
+    // Relax blanks-around-lists (plan files use compact formatting)
+    "MD032": false,
+    // Relax blanks-around-fences
+    "MD031": false,
+    // Allow bare URLs
+    "MD034": false,
+    // Allow fenced code blocks without language
+    "MD040": false,
+    // Disable link fragment validation (numbered headings generate ambiguous anchors)
+    "MD051": false,
+    // Allow explicit ordered list numbering (plans use continued numbering across sections)
+    "MD029": false
   },
   "ignores": [
     "node_modules/**",
@@ -15,6 +31,7 @@
     "JASONETTE-Android/**",
     "Jasonette-Blog/**",
     "Jasonette-documentation/**",
-    "Jasonpedia/**"
+    "Jasonpedia/**",
+    "Jasonette-Web/**"
   ]
 }
