@@ -1,0 +1,16 @@
+{
+  "$jason": {
+    "head": {
+      "title": "Oversized Document Test — this file is a placeholder",
+      "description": "In actual testing, generate a document exceeding json_size_limit_mb (default 5MB). This placeholder documents the test case."
+    },
+    "body": {
+      "sections": [{
+        "items": [{
+          "type": "label",
+          "text": "Document should be rejected if it exceeds the configured size limit"
+        }]
+      }]
+    }
+  }
+}

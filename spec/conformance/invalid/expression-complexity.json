@@ -1,0 +1,18 @@
+{
+  "$jason": {
+    "head": {
+      "title": "Expression Complexity Test",
+      "templates": {
+        "body": {
+          "sections": [{
+            "items": [{
+              "type": "label",
+              "text": "{{((((((((((((((((((((((((((((((((((((((((((((((((($jason.a + $jason.b) + $jason.c) + $jason.d) + $jason.e) + $jason.f) + $jason.g) + $jason.h) + $jason.i) + $jason.j) + $jason.k) + $jason.l) + $jason.m) + $jason.n) + $jason.o) + $jason.p) + $jason.q) + $jason.r) + $jason.s) + $jason.t) + $jason.u) + $jason.v) + $jason.w) + $jason.x) + $jason.y) + $jason.z) + $jason.aa) + $jason.ab) + $jason.ac) + $jason.ad) + $jason.ae) + $jason.af) + $jason.ag) + $jason.ah) + $jason.ai) + $jason.aj) + $jason.ak) + $jason.al) + $jason.am) + $jason.an) + $jason.ao) + $jason.ap) + $jason.aq) + $jason.ar) + $jason.as) + $jason.at) + $jason.au) + $jason.av) + $jason.aw) + $jason.ax) + $jason.ay}}"
+            }]
+          }]
+        }
+      },
+      "data": {}
+    }
+  }
+}
