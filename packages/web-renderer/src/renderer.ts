@@ -260,8 +260,8 @@ export class JasonetteRenderer {
       if (menu.href) {
         menuEl.addEventListener('click', () => {
           const href = menu.href as Record<string, unknown>;
-          if ((href.view as string) === 'web') {
-            window.open(href.url as string, '_blank');
+          if ((href.view as string) === 'web' && (href.url as string)?.startsWith('http')) {
+            window.open(href.url as string, '_blank', 'noopener,noreferrer');
           } else if (href.url) {
             this.navigate(href.url as string, href);
           }

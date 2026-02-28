@@ -105,6 +105,14 @@ if (command === 'serve') {
 
     if (req.url?.startsWith('/__jasonette__/')) {
       const asset = req.url.replace('/__jasonette__/', '');
+
+      // Prevent path traversal
+      if (asset.includes('..')) {
+        res.writeHead(400, { 'Content-Type': 'text/plain' });
+        res.end('Bad Request');
+        return;
+      }
+
       const assetPath = resolve(import.meta.dirname, asset);
       if (existsSync(assetPath)) {
         const ext = extname(assetPath);
