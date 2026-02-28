@@ -76,6 +76,9 @@ jobs:
         with:
           node-version: 20
       - run: npm install
+      - name: Build template-engine dependency
+        run: npm run build
+        working-directory: packages/template-engine
       - name: Typecheck
         run: npm run typecheck
         working-directory: packages/web-renderer
