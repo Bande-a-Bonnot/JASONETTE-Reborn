@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      spec: ${{ steps.filter.outputs.spec }}
+      web: ${{ steps.filter.outputs.web }}
+      conformance: ${{ steps.filter.outputs.conformance }}
+      docs: ${{ steps.filter.outputs.docs }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            spec:
+              - 'spec/**'
+              - 'packages/spec/**'
+              - 'Jasonpedia/**'
+            web:
+              - 'Jasonette-Web/**'
+            conformance:
+              - 'spec/conformance/**'
+            docs:
+              - '**/*.md'
+
+  validate:
+    needs: changes
+    if: needs.changes.outputs.spec == 'true' || github.event_name == 'pull_request'
+    uses: ./.github/workflows/validate.yml
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DavidAnson/markdownlint-cli2-action@v19
+        with:
+          config: .markdownlint-cli2.jsonc
+          globs: |
+            **/*.md
+            !node_modules/**
+            !JASONETTE-iOS/**
+            !JASONETTE-Android/**
+            !Jasonette-Blog/**
+            !Jasonette-documentation/**
+            !Jasonpedia/**
+            !Jasonette-Web/**

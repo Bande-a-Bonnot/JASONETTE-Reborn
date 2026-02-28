@@ -1,0 +1,6 @@
+# Default: project lead reviews all changes
+* @thomaslaurent
+
+# Spec changes require explicit approval
+spec/ @thomaslaurent
+packages/spec/ @thomaslaurent

@@ -1,0 +1,23 @@
+{
+  "name": "jasonette-reborn",
+  "private": true,
+  "workspaces": [
+    "Jasonette-Web",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "npm run test --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "lint:md": "markdownlint-cli2 '**/*.md' '#node_modules'",
+    "spec:validate": "node scripts/validate-schema.mjs"
+  },
+  "devDependencies": {
+    "ajv": "^8.17.1",
+    "ajv-cli": "^5.0.0",
+    "ajv-formats": "^3.0.1",
+    "markdownlint-cli2": "^0.17.0"
+  }
+}

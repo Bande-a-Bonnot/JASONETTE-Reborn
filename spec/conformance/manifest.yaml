@@ -1,0 +1,34 @@
+- id: template-each-iteration
+  description: "{{#each}} iterates over array and renders item template"
+  input: each/input.json
+  tier: 1
+  spec_section: template.each
+  tags: [template, iteration, tier-1]
+
+- id: template-if-conditional
+  description: "{{#if}} conditionally includes content based on expression"
+  input: if/input.json
+  tier: 1
+  spec_section: template.if
+  tags: [template, conditional, tier-1]
+
+- id: template-inline-binding
+  description: Inline template expressions bind data to component properties
+  input: inline/input.json
+  tier: 1
+  spec_section: template.expressions
+  tags: [template, binding, tier-1]
+
+- id: template-index-overview
+  description: Combined template features (each, if, expressions) in one document
+  input: template-index/input.json
+  tier: 1
+  spec_section: template
+  tags: [template, integration, tier-1]
+
+- id: agent-webcontainer
+  description: Web container agent configuration with head.agents
+  input: agent/input.json
+  tier: 2
+  spec_section: head.agents
+  tags: [agent, webcontainer, tier-2]

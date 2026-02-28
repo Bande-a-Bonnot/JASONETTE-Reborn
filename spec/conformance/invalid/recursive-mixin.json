@@ -1,0 +1,18 @@
+{
+  "$jason": {
+    "head": {
+      "title": "Recursive Mixin Test",
+      "data": {
+        "@": "https://jasonette.github.io/Jasonpedia/test/recursive-a.json"
+      }
+    },
+    "body": {
+      "sections": [{
+        "items": [{
+          "type": "label",
+          "text": "This document references A which references B which references A"
+        }]
+      }]
+    }
+  }
+}
