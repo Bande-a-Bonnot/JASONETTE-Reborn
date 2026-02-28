@@ -6,7 +6,7 @@
         "$load": {
           "type": "$network.request",
           "options": {
-            "url": "https://jasonette.github.io/Jasonpedia/view/layer/pokemon/db.json"
+            "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/view/layer/pokemon/db.json"
           },
           "success": {
             "type": "$render"
@@ -39,7 +39,7 @@
                   },
                   "text": "This app was built with Jasonette, an app that lets you create an app. Learn more here.",
                   "href": {
-                    "url": "http://www.jasonette.com",
+                    "url": "https://github.com/Bande-a-Bonnot/JASONETTE-Reborn",
                     "view": "Web"
                   }
                 }
@@ -75,7 +75,7 @@
                     }
                   ],
                   "href": {
-                    "url": "https://jasonette.github.io/Jasonpedia/view/layer/pokemon/more.json"
+                    "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/view/layer/pokemon/more.json"
                   }
                 }
               ]

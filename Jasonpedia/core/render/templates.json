@@ -13,19 +13,19 @@
       "data": {
         "members": [{
           "name": "Bart",
-          "image": "https://jasonette.github.io/Jasonpedia/assets/bart.png"
+          "image": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/assets/bart.png"
         }, {
           "name": "Homer",
-          "image": "https://jasonette.github.io/Jasonpedia/assets/homer.jpg"
+          "image": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/assets/homer.jpg"
         }, {
           "name": "Marge",
-          "image": "https://jasonette.github.io/Jasonpedia/assets/marge.png"
+          "image": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/assets/marge.png"
         }, {
           "name": "Lisa",
-          "image": "https://jasonette.github.io/Jasonpedia/assets/lisa.jpg"
+          "image": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/assets/lisa.jpg"
         }, {
           "name": "Maggie",
-          "image": "https://jasonette.github.io/Jasonpedia/assets/maggie.png"
+          "image": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/assets/maggie.png"
         }]
       },
       "styles": {
@@ -89,7 +89,7 @@
             "type": "horizontal",
             "header": {
               "type": "image",
-              "url": "https://jasonette.github.io/Jasonpedia/assets/simpsons.jpg",
+              "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/assets/simpsons.jpg",
               "style": {
                 "width": "100%",
                 "padding": "0",
@@ -159,7 +159,7 @@
           "sections": [{
             "header": {
               "type": "image",
-              "url": "https://jasonette.github.io/Jasonpedia/assets/simpsons.jpg",
+              "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/assets/simpsons.jpg",
               "style": {
                 "width": "100%",
                 "padding": "0",

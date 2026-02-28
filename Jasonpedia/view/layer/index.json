@@ -24,7 +24,7 @@
         "menu": {
           "text": "View JSON",
           "href": {
-            "url": "https://github.com/Jasonette/Jasonpedia/blob/gh-pages/view/layer/index.json",
+            "url": "https://github.com/Bande-a-Bonnot/JASONETTE-Reborn/blob/main/Jasonpedia/view/layer/index.json",
             "view": "web"
           }
         }
@@ -43,21 +43,21 @@
             "class": "bold",
             "text": "Basic Labels",
             "href": {
-              "url": "https://jasonette.github.io/Jasonpedia/view/layer/label.json"
+              "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/view/layer/label.json"
             }
           }, {
             "type": "label",
             "class": "bold",
             "text": "Static layers",
             "href": {
-              "url": "https://jasonette.github.io/Jasonpedia/view/layer/static.json"
+              "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/view/layer/static.json"
             }
           }, {
             "type": "label",
             "class": "bold",
             "text": "Dynamic layers",
             "href": {
-              "url": "https://jasonette.github.io/Jasonpedia/view/layer/dynamic.json"
+              "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/view/layer/dynamic.json"
             }
           }]
         },
@@ -75,7 +75,7 @@
               "class": "bold",
               "text": "CatchAll!",
               "href": {
-                "url": "https://jasonette.github.io/Jasonpedia/view/layer/pokemon/index.json"
+                "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/view/layer/pokemon/index.json"
               }
             },
             {
@@ -83,7 +83,7 @@
               "class": "bold",
               "text": "Weather",
               "href": {
-                "url": "https://jasonette.github.io/Jasonpedia/view/layer/weather/index.json",
+                "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/view/layer/weather/index.json",
                 "transition": "modal"
               }
             }

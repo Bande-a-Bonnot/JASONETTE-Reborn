@@ -65,7 +65,7 @@
               },
               "text": "Check out Live DEMO",
               "href": {
-                "url": "https://jasonette.github.io/Jasonpedia/demo.json",
+                "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/demo.json",
                 "fresh": "true"
               }
             },
@@ -95,7 +95,7 @@
               },
               "text": "View documentation",
               "href": {
-                "url": "https://jasonette.github.io/documentation",
+                "url": "https://github.com/Bande-a-Bonnot/JASONETTE-Reborn",
                 "view": "Web"
               }
             }

@@ -33,7 +33,7 @@
         "menu": {
           "text": "View JSON",
           "href": {
-            "url": "https://github.com/Jasonette/Jasonpedia/blob/gh-pages/demo.json",
+            "url": "https://github.com/Bande-a-Bonnot/JASONETTE-Reborn/blob/main/Jasonpedia/demo.json",
             "view": "web"
           }
         }
@@ -48,7 +48,7 @@
                 "padding": "20"
               },
               "href": {
-                "url": "mailto:?subject=Documentation&body=https://jasonette.github.io/documentation",
+                "url": "mailto:?subject=Documentation&body=https://github.com/Bande-a-Bonnot/JASONETTE-Reborn",
                 "view": "app"
               },
               "components": [
@@ -86,7 +86,7 @@
               "text": "Core",
               "class": "bold padded",
               "href": {
-                "url": "https://jasonette.github.io/Jasonpedia/core/index.json"
+                "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/core/index.json"
               }
             },
             {
@@ -94,7 +94,7 @@
               "text": "View",
               "class": "bold padded",
               "href": {
-                "url": "https://jasonette.github.io/Jasonpedia/view/index.json"
+                "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/view/index.json"
               }
             },
             {
@@ -102,7 +102,7 @@
               "text": "Action",
               "class": "bold padded",
               "href": {
-                "url": "https://jasonette.github.io/Jasonpedia/action/index.json"
+                "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/action/index.json"
               }
             },
             {
@@ -110,7 +110,7 @@
               "text": "Template",
               "class": "bold padded",
               "href": {
-                "url": "https://jasonette.github.io/Jasonpedia/template/index.json"
+                "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/template/index.json"
               }
             },
             {
@@ -118,7 +118,7 @@
               "text": "Web Container",
               "class": "bold padded",
               "href": {
-                "url": "https://jasonette.github.io/Jasonpedia/webcontainer/index.json"
+                "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/webcontainer/index.json"
               }
             }
           ]
@@ -136,7 +136,7 @@
             }, {
               "type": "label",
               "class": "normal",
-              "text": "Wrote a cool/useful JSON markup? Send a pull request to https://github.com/Jasonette/Jasonpedia"
+              "text": "Wrote a cool/useful JSON markup? Send a pull request to https://github.com/Bande-a-Bonnot/JASONETTE-Reborn/tree/main/Jasonpedia"
             }]
           },
           "items": [{

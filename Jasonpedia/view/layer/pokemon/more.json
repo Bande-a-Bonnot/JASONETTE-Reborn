@@ -12,7 +12,7 @@
         "refresh": {
           "type": "$network.request",
           "options": {
-            "url": "http://stickermatic.herokuapp.com/items.json"
+            "url": "https://jsonplaceholder.typicode.com/photos"
           },
           "success": {
             "type": "$render"
@@ -39,7 +39,7 @@
                 "action": {
                   "type": "$network.request",
                   "options": {
-                    "url": "https://stickermatic.herokuapp.com/search.json?query={{$get.query}}"
+                    "url": "https://jsonplaceholder.typicode.com/photos?albumId=1"
                   },
                   "success": {
                     "type": "$render"
@@ -92,7 +92,7 @@
                   ],
                   "href": {
                     "view": "App",
-                    "url": "http://stickermatic.herokuapp.com/items/new"
+                    "url": "https://jsonplaceholder.typicode.com/photos"
                   }
                 }
               ]

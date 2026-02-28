@@ -103,7 +103,7 @@
             "menu": {
               "text": "View JSON",
               "href": {
-                "url": "https://github.com/Jasonette/Jasonpedia/blob/gh-pages/view/layer/weather/index.json",
+                "url": "https://github.com/Bande-a-Bonnot/JASONETTE-Reborn/blob/main/Jasonpedia/view/layer/weather/index.json",
                 "view": "web"
               }
             },

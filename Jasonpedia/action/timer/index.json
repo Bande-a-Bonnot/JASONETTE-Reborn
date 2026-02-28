@@ -24,7 +24,7 @@
         "menu": {
           "text": "View JSON",
           "href": {
-            "url": "https://github.com/Jasonette/Jasonpedia/blob/gh-pages/action/timer/index.json",
+            "url": "https://github.com/Bande-a-Bonnot/JASONETTE-Reborn/blob/main/Jasonpedia/action/timer/index.json",
             "view": "web"
           }
         }
@@ -37,7 +37,7 @@
               "text": "Stopwatch",
               "class": "bold",
               "href": {
-                "url": "https://jasonette.github.io/Jasonpedia/action/timer/stopwatch.json"
+                "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/action/timer/stopwatch.json"
               }
             },
             {
@@ -45,7 +45,7 @@
               "text": "Mario",
               "class": "bold",
               "href": {
-                "url": "https://jasonette.github.io/Jasonpedia/action/timer/mario.json"
+                "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/action/timer/mario.json"
               }
             }
           ]
