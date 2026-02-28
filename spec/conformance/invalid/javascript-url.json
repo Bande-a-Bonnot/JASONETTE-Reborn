@@ -1,0 +1,19 @@
+{
+  "$jason": {
+    "head": {
+      "title": "JavaScript URL Test"
+    },
+    "body": {
+      "sections": [{
+        "items": [{
+          "type": "label",
+          "text": "Malicious link",
+          "href": {
+            "url": "javascript:alert(1)",
+            "view": "web"
+          }
+        }]
+      }]
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "$jason": {
+    "head": {
+      "title": "Prototype Pollution Test",
+      "templates": {
+        "body": {
+          "sections": [{
+            "items": [{
+              "type": "label",
+              "text": "{{__proto__.polluted}}"
+            }]
+          }]
+        }
+      },
+      "data": {
+        "name": "test"
+      }
+    }
+  }
+}
