@@ -547,9 +547,9 @@ Before starting native development, verify:
 
 ---
 
-### Phase 3: Android Platform (Weeks 8-15, parallel with iOS) — IN PROGRESS
+### Phase 3: Android Platform (Weeks 8-15, parallel with iOS) — COMPLETED
 
-**Status:** PR #5 open, under review
+**Status:** PR #5 merged (2026-02-28)
 **Goal:** Native Android app shell that renders `$jason` JSON using modern Kotlin.
 
 #### 3.1 — New Android Studio Project
