@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   changes:
-    runs-on: ubuntu-latest
+    runs-on: getmac-tahoe
     outputs:
       spec: ${{ steps.filter.outputs.spec }}
       web: ${{ steps.filter.outputs.web }}
@@ -52,7 +52,7 @@ jobs:
   template-engine:
     needs: changes
     if: needs.changes.outputs.template-engine == 'true' || github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
+    runs-on: getmac-tahoe
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -72,7 +72,7 @@ jobs:
   web-renderer:
     needs: changes
     if: needs.changes.outputs.web-renderer == 'true' || github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
+    runs-on: getmac-tahoe
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -95,7 +95,7 @@ jobs:
   ios:
     needs: changes
     if: needs.changes.outputs.ios == 'true' || github.event_name == 'pull_request'
-    runs-on: macos-15
+    runs-on: getmac-tahoe
     steps:
       - uses: actions/checkout@v4
       - name: Build
@@ -106,7 +106,7 @@ jobs:
         working-directory: JASONETTE-iOS/JasonetteApp
 
   lint:
-    runs-on: ubuntu-latest
+    runs-on: getmac-tahoe
     steps:
       - uses: actions/checkout@v4
       - uses: DavidAnson/markdownlint-cli2-action@v19
