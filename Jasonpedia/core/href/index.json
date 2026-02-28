@@ -21,7 +21,7 @@
         "menu": {
           "text": "View JSON",
           "href": {
-            "url": "https://github.com/Jasonette/Jasonpedia/blob/gh-pages/core/href/index.json",
+            "url": "https://github.com/Bande-a-Bonnot/JASONETTE-Reborn/blob/main/Jasonpedia/core/href/index.json",
             "view": "web"
           }
         }
@@ -34,7 +34,7 @@
               "text": "Push transition to another Jason View",
               "class": "bold",
               "href": {
-                "url": "https://jasonette.github.io/Jasonpedia/core/href/index.json"
+                "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/core/href/index.json"
               }
             },
             {
@@ -42,7 +42,7 @@
               "text": "Push transition to another Jason View with tabs",
               "class": "bold",
               "href": {
-                "url": "https://jasonette.github.io/Jasonpedia/core/href/tabs.json"
+                "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/core/href/tabs.json"
               }
             },
             {
@@ -50,7 +50,7 @@
               "text": "Modal transition to another Jason View",
               "class": "bold",
               "href": {
-                "url": "https://jasonette.github.io/Jasonpedia/core/href/index.json",
+                "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/core/href/index.json",
                 "transition": "modal"
               }
             },
@@ -59,7 +59,7 @@
               "text": "Modal transition to another Jason View with tabs",
               "class": "bold",
               "href": {
-                "url": "https://jasonette.github.io/Jasonpedia/core/href/tabs.json",
+                "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/core/href/tabs.json",
                 "transition": "modal"
               }
             },
@@ -68,7 +68,7 @@
               "text": "Open external app (mail)",
               "class": "bold",
               "href": {
-                "url": "mailto:ethan.gliechtenstein@gmail.com?subject=It%20works!",
+                "url": "mailto:hello@example.com?subject=It%20works!",
                 "view": "app"
               }
             },
@@ -77,7 +77,7 @@
               "text": "Open a browser",
               "class": "bold",
               "href": {
-                "url": "https://twitter.com/intent/user?screen_name=gliechtenstein",
+                "url": "https://github.com/Bande-a-Bonnot",
                 "view": "web"
               }
             }

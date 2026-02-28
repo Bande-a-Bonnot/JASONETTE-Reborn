@@ -30,40 +30,40 @@
         "json_items": [{
           "title": "Inline Data",
           "description": "Render inline data ($jason.head.data) using template",
-          "url": "https://jasonette.github.io/Jasonpedia/template/inline.json"
+          "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/template/inline.json"
         }, {
           "title": "Dynamic Data",
           "description": "Make a $network.request action to an API and render the template",
-          "url": "https://jasonette.github.io/Jasonpedia/template/network.json"
+          "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/template/network.json"
         }, {
           "title": "#each",
           "description": "Loop through array using #each keyword",
-          "url": "https://jasonette.github.io/Jasonpedia/template/each.json"
+          "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/template/each.json"
         }, {
           "title": "#if | #elseif | #else",
           "description": "Use the conditionals to selectively render templates",
-          "url": "https://jasonette.github.io/Jasonpedia/template/if.json"
+          "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/template/if.json"
         }, {
           "title": "Use Javascript expressions",
           "description": "Jasonette template engine is built on top of native Javascript engine, so you can use any Javascript expression inside {{ }}",
-          "url": "https://jasonette.github.io/Jasonpedia/template/js.json"
+          "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/template/js.json"
         }, {
           "title": "Javascript function example",
           "description": "Sometimes, just a single Javascript statement is not enough. You can embed a full Javascript function inside {{ }}. Just remember to have a return value, and escape them correctly",
-          "url": "https://jasonette.github.io/Jasonpedia/template/jsfunction.json"
+          "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/template/jsfunction.json"
         }],
         "nonjson_items": [{
           "title": "HTML",
           "description": "Transform any HTML content into JSON, which then can be rendered",
-          "url": "https://jasonette.github.io/Jasonpedia/template/html.json"
+          "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/template/html.json"
         }, {
           "title": "RSS",
           "description": "Transform any RSS content into JSON, which then can be rendered",
-          "url": "https://jasonette.github.io/Jasonpedia/template/rss.json"
+          "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/template/rss.json"
         }, {
           "title": "CSV",
           "description": "Transform any CSV content into JSON, which then can be rendered",
-          "url": "https://jasonette.github.io/Jasonpedia/template/csv.json"
+          "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/template/csv.json"
         }]
       },
       "templates": {
@@ -72,7 +72,7 @@
             "menu": {
               "text": "View JSON",
               "href": {
-                "url": "https://github.com/Jasonette/Jasonpedia/blob/gh-pages/template/index.json",
+                "url": "https://github.com/Bande-a-Bonnot/JASONETTE-Reborn/blob/main/Jasonpedia/template/index.json",
                 "view": "web"
               }
             }

@@ -5,7 +5,7 @@
       "data": {
         "users": [{
           "profile": "https://pbs.twimg.com/profile_images/557061751150112768/eMwi4Xz2_400x400.jpeg",
-          "username": "gliechtenstein"
+          "username": "jasonette"
         }, {
           "username": "guest" 
         }, {
@@ -24,7 +24,7 @@
             "menu": {
               "text": "View JSON",
               "href": {
-                "url": "https://github.com/Jasonette/Jasonpedia/blob/gh-pages/template/if.json",
+                "url": "https://github.com/Bande-a-Bonnot/JASONETTE-Reborn/blob/main/Jasonpedia/template/if.json",
                 "view": "web"
               }
             }
@@ -51,7 +51,7 @@
                   "url": [{
                     "{{#if 'profile' in this}}": "{{profile}}"
                   }, {
-                    "{{#else}}": "https://jasonette.github.io/Jasonpedia/assets/egg.png"
+                    "{{#else}}": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/assets/egg.png"
                   }]
                 }, {
                   "type": "vertical",

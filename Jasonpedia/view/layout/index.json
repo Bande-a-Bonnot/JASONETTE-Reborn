@@ -24,7 +24,7 @@
         "menu": {
           "text": "View JSON",
           "href": {
-            "url": "https://github.com/Jasonette/Jasonpedia/blob/gh-pages/view/layout/index.json",
+            "url": "https://github.com/Bande-a-Bonnot/JASONETTE-Reborn/blob/main/Jasonpedia/view/layout/index.json",
             "view": "web"
           }
         }
@@ -37,7 +37,7 @@
               "class": "bold",
               "text": "Vertical Layout",
               "href": {
-                "url": "https://jasonette.github.io/Jasonpedia/view/layout/vertical.json"
+                "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/view/layout/vertical.json"
               }
             },
             {
@@ -45,7 +45,7 @@
               "class": "bold",
               "text": "Horizontal Layout",
               "href": {
-                "url": "https://jasonette.github.io/Jasonpedia/view/layout/horizontal.json"
+                "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/view/layout/horizontal.json"
               }
             },
             {
@@ -53,7 +53,7 @@
               "class": "bold",
               "text": "Complex Nested Layout",
               "href": {
-                "url": "https://jasonette.github.io/Jasonpedia/view/layout/nested.json"
+                "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/view/layout/nested.json"
               }
             }
           ]

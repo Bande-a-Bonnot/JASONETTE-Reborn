@@ -19,15 +19,15 @@
       },
       "data": {
         "items": [{
-          "url": "https://jasonette.github.io/Jasonpedia/action/script/hejs/index.json",
+          "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/action/script/hejs/index.json",
           "title": "he.js",
           "description": "html text encoding/decoding library"
         }, {
-          "url": "https://jasonette.github.io/Jasonpedia/action/script/underscorejs/index.json",
+          "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/action/script/underscorejs/index.json",
           "title": "underscore.js",
           "description": "popular util library for manipulating data"
         }, {
-          "url": "https://jasonette.github.io/Jasonpedia/action/script/inline/index.json",
+          "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/action/script/inline/index.json",
           "title": "Inline JavaScript Usage",
           "description": "You can also include a JavaScript code inline using $script.include"
         }]
@@ -38,7 +38,7 @@
             "menu": {
               "text": "View JSON",
               "href": {
-                "url": "https://github.com/Jasonette/Jasonpedia/blob/gh-pages/action/script/index.json",
+                "url": "https://github.com/Bande-a-Bonnot/JASONETTE-Reborn/blob/main/Jasonpedia/action/script/index.json",
                 "view": "web"
               }
             }

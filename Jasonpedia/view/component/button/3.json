@@ -71,14 +71,14 @@
                 },
                 {
                   "type": "button",
-                  "url": "https://jasonette.github.io/Jasonpedia/assets/0.png",
+                  "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/assets/0.png",
                   "style": {
                     "width": "50"
                   },
                   "action": {
                     "type": "$audio.play",
                     "options": {
-                      "url": "https://raw.githubusercontent.com/gliechtenstein/Sounds/master/oh_no.mp3"
+                      "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/assets/1up.mp3"
                     }
                   }
                 }
@@ -126,7 +126,7 @@
                     "padding": "10",
                     "corner_radius": "3"
                   },
-                  "text": "{\"type\": \"button\", \"url\": \"https://jasonette.github.io/Jasonpedia/assets/0.png\"}"
+                  "text": "{\"type\": \"button\", \"url\": \"https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/assets/0.png\"}"
                 }
               ]
             }

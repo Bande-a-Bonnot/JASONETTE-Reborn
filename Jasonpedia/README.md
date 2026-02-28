@@ -1,49 +1,57 @@
-# What is this?
-This repository is 99.9% JSON.
+# Jasonpedia
 
-**Each JSON file is an iOS app. And an Android app. Simultaneously.**
+This directory is 99.9% JSON.
 
-And when you play these JSON snippets on [Jasonette](https://www.jasonette.com), they instantly turn into native apps.
+**Each JSON file is an iOS app. And an Android app. And a web app. Simultaneously.**
 
-Here's how it works: Jasonette interprets the JSON markup into native iOS and Android components. Just like how you use HTML to write a web page, you use JSON to write a native app, which you can publish to the app store.
+Jasonette interprets the JSON markup into native iOS, Android, and web
+components. Just like HTML for web pages, you use JSON to write a native app.
 
-Check out [the website](https://www.jasonette.com) to learn more.
+Check out the [project repository](https://github.com/Bande-a-Bonnot/JASONETTE-Reborn)
+to learn more.
 
-Here are some highlights of what these JSON files can turn into (hint: anything you can imagine):
+Here are some highlights of what these JSON files can turn into:
 
-                  _                         |     _                                        
--------------------------------------------|--------------------------------------------
-<br>[view/layer/dynamic.json](view/layer/dynamic.json)<br><br>[![assets/screen1.png](assets/screen1.png)](view/layer/dynamic.json)|<br> [view/layer/weather/index.json](view/layer/weather/index.json)<br><br>[![assets/screen2.png](assets/screen2.png)](view/layer/weather/index.json)
-<br>[view/section/index.json](view/section/index.json)<br><br>[![assets/screen3.png](assets/screen3.png)](view/section/index.json)|<br> [view/component/map/index.json](view/component/map/index.json)<br><br>[![assets/screen4.png](assets/screen4.png)](view/component/map/index.json)
-<br>[view/component/image.json](view/component/image/index.json)<br><br>[![assets/screen5.png](assets/screen5.png)](view/component/image/index.json)|<br> [view/layout/nested.json](view/layout/nested.json)<br><br>[![assets/screen6.png](assets/screen6.png)](view/layout/nested.json)
-<br>[action/timer/mario.json](action/timer/mario.json)<br><br>[![assets/screen7.gif](assets/screen7.gif)](action/timer/mario.json)      |                                            
+|                                       |                                        |
+|---------------------------------------|----------------------------------------|
+| [view/layer/dynamic.json](view/layer/dynamic.json) | [view/layer/weather/index.json](view/layer/weather/index.json) |
+| [view/section/index.json](view/section/index.json) | [view/component/map/index.json](view/component/map/index.json) |
+| [view/component/image.json](view/component/image/index.json) | [view/layout/nested.json](view/layout/nested.json) |
+| [action/timer/mario.json](action/timer/mario.json) | |
 
-# How to use this?
+## How to use
 
-First of all, I recommend you check out the [website](https://www.jasonette.com) to quickly learn how this works.
+### Recommended way
 
-### 1. Recommended way
-Jasonette ships with this repository's URL embedded by default, so if you just head over to [the website](https://www.jasonette.com) and follow the "Get Started" guide, you'll be able to try everything on this repository. (Note: The default root URL Jasonette ships with is [hello.json](https://github.com/Jasonette/Jasonpedia/blob/gh-pages/hello.json)).
+Jasonette ships with this directory's URL embedded by default. The default
+root URL is
+[hello.json](https://github.com/Bande-a-Bonnot/JASONETTE-Reborn/blob/main/Jasonpedia/hello.json).
 
-### 2. Manual way
-You can also manually add JSON to Jasonette. If you want to try adding each individual JSON file in this repository, you just need to add their published URLs to Jasonette and run. You can learn how to do that at [Getting started guide](https://jasonette.github.io/documentation).
+### Manual way
 
-Just remember, this repo uses [Github pages](https://pages.github.com) to publish the JSON, so all the files will be avaialbe under the `https://jasonette.github.io/Jasonpedia` base url.
+You can manually add any JSON file URL to Jasonette and run it. This
+directory uses [GitHub Pages](https://pages.github.com) to publish the
+JSON, so all files are available under the
+`https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia` base URL.
 
-For example the [hello.json](https://github.com/Jasonette/Jasonpedia/blob/gh-pages/hello.json) file in the root directory is directly available at [https://jasonette.github.io/Jasonpedia/hello.json](https://jasonette.github.io/Jasonpedia/hello.json), the [demo.json](https://github.com/Jasonette/Jasonpedia/blob/gh-pages/demo.json) is available at [https://jasonette.github.io/Jasonpedia/demo.json](https://jasonette.github.io/Jasonpedia/demo.json), and so forth.
+For example,
+[hello.json](https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/hello.json)
+and
+[demo.json](https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/demo.json)
+are directly available at those URLs.
 
-# The purpose of this repo
-This repo serves multiple purposes:
+## Purpose
 
-###1. Demo
-This is the default JSON that ships with all Jasonette code, which means everyone who downloads Jasonette will get to play with what's on this repo as a starter project.
+### Demo
 
-###2. Test
-Whenever you write an [extension](https://jasonette.github.io/documentation/advanced/#extension) that may be useful to be merged into the main project,  write a test JSON to make sure:
-  - it works as intended
-  - it plays nice with the rest of Jasonette
-  - other people understand how to use it
-  - the syntax is consistent with the convention
+Default JSON that ships with all Jasonette platforms. Everyone who
+downloads Jasonette gets to play with these examples as a starter project.
 
-###3. Contribution
-Contribution is encouraged for this repo. Feel free to share your JSON apps by sending pull requests.
+### Test
+
+Test JSON examples verify that components, actions, and templates work
+as intended across all platforms.
+
+### Contribution
+
+Contributions are encouraged. Share your JSON apps by sending pull requests.

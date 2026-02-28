@@ -6,47 +6,47 @@
         "items": [
           {
             "name": "Agent",
-            "url": "https://jasonette.github.io/Jasonpedia/webcontainer/agent/index.json"
+            "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/webcontainer/agent/index.json"
           },
           {
             "name": "anime.js",
-            "url": "https://jasonette.github.io/Jasonpedia/webcontainer/animejs.json"
+            "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/webcontainer/animejs.json"
           },
           {
             "name": "lots of web containers",
-            "url": "https://jasonette.github.io/Jasonpedia/webcontainer/lots.json"
+            "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/webcontainer/lots.json"
           },
           {
             "name": "pdf.js",
-            "url": "https://jasonette.github.io/Jasonpedia/webcontainer/pdf.json"
+            "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/webcontainer/pdf.json"
           },
           {
             "name": "svg",
-            "url": "https://jasonette.github.io/Jasonpedia/webcontainer/svg.json"
+            "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/webcontainer/svg.json"
           },
           {
             "name": "three.js",
-            "url": "https://jasonette.github.io/Jasonpedia/webcontainer/threejsblocks.json"
+            "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/webcontainer/threejsblocks.json"
           },
           {
             "name": "three.js rainbow",
-            "url": "https://jasonette.github.io/Jasonpedia/webcontainer/threejsrainbow.json"
+            "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/webcontainer/threejsrainbow.json"
           },
           {
             "name": "phaser",
-            "url": "https://jasonette.github.io/Jasonpedia/webcontainer/phasergame.json"
+            "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/webcontainer/phasergame.json"
           },
           {
             "name": "Gauge D3",
-            "url": "https://jasonette.github.io/Jasonpedia/webcontainer/d3gauge.json"
+            "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/webcontainer/d3gauge.json"
           },
           {
             "name": "D3 graph",
-            "url": "https://jasonette.github.io/Jasonpedia/webcontainer/d3graph.json"
+            "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/webcontainer/d3graph.json"
           },
           {
             "name": "Feed",
-            "url": "https://jasonette.github.io/Jasonpedia/webcontainer/feed/index.json"
+            "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/webcontainer/feed/index.json"
           }
         ]
       },

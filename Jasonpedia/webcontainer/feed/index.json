@@ -4,7 +4,7 @@
       "title": "Feed",
       "data": {
         "items": {
-          "+": "items@https://jasonette.github.io/Jasonpedia/webcontainer/feed/db.json"
+          "+": "items@https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/webcontainer/feed/db.json"
         }
       },
       "templates": {
@@ -19,15 +19,15 @@
             {
               "items": {
                 "{{#each items}}": {
-                  "+": "https://jasonette.github.io/Jasonpedia/webcontainer/feed/item.json"
+                  "+": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/webcontainer/feed/item.json"
                 }
               }
             },
             {
               "items": [{
-                "+": "item@https://jasonette.github.io/Jasonpedia/webcontainer/feed/special_item.json"
+                "+": "item@https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/webcontainer/feed/special_item.json"
               }, {
-                "+": "item@https://jasonette.github.io/Jasonpedia/webcontainer/feed/animated_item.json"
+                "+": "item@https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/webcontainer/feed/animated_item.json"
               }]
             }
           ]

@@ -19,15 +19,15 @@
       },
       "data": {
         "items": [{
-          "url": "https://imagejason.herokuapp.com",
+          "url": "https://jsonplaceholder.typicode.com",
           "title": "imagejason",
-          "description": "takes photo using $media.camera, and uploads it to imagejason.herokuapp.com via $network.upload"
+          "description": "takes photo using $media.camera, and uploads it to the server via $network.upload"
         }, {
-          "url": "https://fureliza.herokuapp.com",
+          "url": "https://jsonplaceholder.typicode.com",
           "title": "eliza",
           "description": "make a $network.request to node.js express based chatbot server. Returns auto-generated output based on the input"
         }, {
-          "url": "https://sessionjason.herokuapp.com/posts.json",
+          "url": "https://jsonplaceholder.typicode.com/posts",
           "title": "Microblog with user account",
           "description": "Signs into the blog using token authentication ($network.request and $session.set) and make posts using $network.request"
         }]
@@ -38,7 +38,7 @@
             "menu": {
               "text": "View JSON",
               "href": {
-                "url": "https://github.com/Jasonette/Jasonpedia/blob/gh-pages/action/network/index.json",
+                "url": "https://github.com/Bande-a-Bonnot/JASONETTE-Reborn/blob/main/Jasonpedia/action/network/index.json",
                 "view": "web"
               }
             }

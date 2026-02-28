@@ -26,7 +26,7 @@
     "body": {
       "background": {
         "type": "html",
-        "url": "https://www.jasonbase.com",
+        "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/hello.json",
         "action": {
           "trigger": "visit"
         }
