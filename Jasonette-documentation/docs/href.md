@@ -61,7 +61,7 @@ Web browser view. Will load HTML in an internal browser.
       "type": "label",
       "text": "Open a browser",
       "href": {
-        "url": "https://www.twitter.com/gliechtenstein",
+        "url": "https://github.com/Bande-a-Bonnot",
         "view": "web"
       }
     }
@@ -79,7 +79,7 @@ Open external apps using url scheme (ex: `sms:`, `mailto:`, `twitter://`)
       "type": "label",
       "text": "Email me",
       "href": {
-        "url": "mailto:ethan.gliechtenstein@gmail.com?subject=It20works!",
+        "url": "mailto:hello@example.com?subject=It20works!",
         "view": "app"
       }
     }
