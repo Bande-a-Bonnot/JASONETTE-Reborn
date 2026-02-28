@@ -94,14 +94,12 @@ registerComponent('html', (c) => {
     // Use srcdoc iframe for sandboxing
     const iframe = document.createElement('iframe');
     iframe.srcdoc = c.text;
-    iframe.sandbox.add('allow-same-origin');
     iframe.style.width = '100%';
     iframe.style.border = 'none';
     el.appendChild(iframe);
   } else if (c.url) {
     const iframe = document.createElement('iframe');
     iframe.src = c.url;
-    iframe.sandbox.add('allow-same-origin');
     iframe.style.width = '100%';
     iframe.style.border = 'none';
     el.appendChild(iframe);

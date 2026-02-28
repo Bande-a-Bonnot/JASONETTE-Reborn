@@ -73,8 +73,8 @@ export function renderItem(
     el.addEventListener('click', (e) => {
       e.stopPropagation();
       const href = component.href!;
-      if (href.view === 'web') {
-        window.open(href.url, '_blank');
+      if (href.view === 'web' && href.url?.startsWith('http')) {
+        window.open(href.url, '_blank', 'noopener,noreferrer');
       } else if (href.url) {
         // Dispatch navigation event for the renderer to handle
         el.dispatchEvent(new CustomEvent('jasonette:navigate', {

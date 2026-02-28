@@ -73,8 +73,8 @@ registerAction('$reload', async (action, state) => {
 
 registerAction('$network.request', async (action, state) => {
   const opts = action.options ?? {};
-  const url = opts.url as string;
-  if (!url) throw new Error('$network.request: missing url');
+  const url = opts.url;
+  if (typeof url !== 'string' || !url) throw new Error('$network.request: missing or invalid url');
 
   const fetchOpts: RequestInit = {
     method: (opts.method as string)?.toUpperCase() ?? 'GET',
@@ -169,7 +169,10 @@ registerAction('$util.banner', async (action) => {
 
   const banner = document.createElement('div');
   banner.className = 'jasonette-banner';
-  banner.innerHTML = `<strong>${title}</strong> ${description}`;
+  const strong = document.createElement('strong');
+  strong.textContent = title;
+  banner.appendChild(strong);
+  banner.append(` ${description}`);
   document.body.prepend(banner);
 
   setTimeout(() => banner.remove(), 5000);
