@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema.jasonette.dev/v2/jasonette-config.schema.json",
+  "title": "Jasonette App Configuration",
+  "description": "Schema for jasonette.config.json",
+  "type": "object",
+  "required": ["url"],
+  "properties": {
+    "url": {
+      "type": "string",
+      "format": "uri",
+      "description": "Root document URL"
+    },
+    "debug": {
+      "type": "boolean",
+      "default": false,
+      "description": "Enable debug mode"
+    },
+    "enforce_https": {
+      "type": "boolean",
+      "default": true,
+      "description": "Require HTTPS for all URLs"
+    },
+    "allow_http": {
+      "type": "boolean",
+      "default": false,
+      "description": "Allow HTTP (requires debug: true)"
+    },
+    "json_size_limit_mb": {
+      "type": "number",
+      "default": 5,
+      "description": "Maximum JSON document size in MB"
+    },
+    "allowed_mixin_origins": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": [],
+      "description": "Allowed cross-origin mixin domains (empty = same-origin only)"
+    },
+    "certificate_pins": {
+      "type": "object",
+      "description": "Domain-to-pin-hash mapping for certificate pinning",
+      "patternProperties": {
+        ".*": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}
