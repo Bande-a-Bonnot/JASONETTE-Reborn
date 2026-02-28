@@ -21,6 +21,7 @@ jobs:
       template-engine: ${{ steps.filter.outputs.template-engine }}
       web-renderer: ${{ steps.filter.outputs.web-renderer }}
       ios: ${{ steps.filter.outputs.ios }}
+      android: ${{ steps.filter.outputs.android }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -43,6 +44,8 @@ jobs:
               - 'packages/web-renderer/**'
             ios:
               - 'JASONETTE-iOS/**'
+            android:
+              - 'JASONETTE-Android/**'
 
   validate:
     needs: changes
@@ -104,6 +107,25 @@ jobs:
       - name: Test
         run: swift test
         working-directory: JASONETTE-iOS/JasonetteApp
+
+  android:
+    needs: changes
+    if: needs.changes.outputs.android == 'true' || github.event_name == 'pull_request'
+    runs-on: getmac-tahoe
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+      - name: Build
+        run: ./gradlew assembleDebug
+        working-directory: JASONETTE-Android/JasonetteApp
+      - name: Test
+        run: ./gradlew test
+        working-directory: JASONETTE-Android/JasonetteApp
 
   lint:
     runs-on: getmac-tahoe
