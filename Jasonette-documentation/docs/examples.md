@@ -6,7 +6,7 @@ Simply take one of the JSON urls below, add to Jasonette and play. You can learn
 
 # ★ Jasonpedia
   - A tutorial demo of every Jasonette UI component and action. Try this first if you haven't yet.
-  - JSON: [https://github.com/Jasonette/Jasonpedia](https://github.com/Jasonette/Jasonpedia)
+  - JSON: [https://github.com/Bande-a-Bonnot/JASONETTE-Reborn/tree/main/Jasonpedia](https://github.com/Bande-a-Bonnot/JASONETTE-Reborn/tree/main/Jasonpedia)
 
 <br>
 
@@ -16,7 +16,7 @@ Simply take one of the JSON urls below, add to Jasonette and play. You can learn
 
 # ★ Instagram UI
   - An Instagram UI, completely written in JSON.
-  - JSON: [https://github.com/Jasonette/Instagram-UI-example](https://github.com/Jasonette/Instagram-UI-example)
+  - JSON: [https://github.com/Bande-a-Bonnot/Instagram-UI-example](https://github.com/Bande-a-Bonnot/Instagram-UI-example)
 
 <br>
 
@@ -26,7 +26,7 @@ Simply take one of the JSON urls below, add to Jasonette and play. You can learn
 
 # ★ Twitter UI
   - A Twitter UI, completely written in JSON.
-  - JSON: [https://github.com/Jasonette/Twitter-UI-example](https://github.com/Jasonette/Twitter-UI-example)
+  - JSON: [https://github.com/Bande-a-Bonnot/Twitter-UI-example](https://github.com/Bande-a-Bonnot/Twitter-UI-example)
 
 <br>
 
@@ -36,7 +36,7 @@ Simply take one of the JSON urls below, add to Jasonette and play. You can learn
 
 # ★ Kitty
   - A minimal [Product Hunt](http://www.producthunt.com) client. Makes use of the [HTML to JSON parsing](templates.md#html) feature. [[website](http://www.jasonette.com/kitty)]
-  - JSON: [https://github.com/gliechtenstein/kitty.json](https://github.com/gliechtenstein/kitty.json)
+  - JSON: [https://github.com/Bande-a-Bonnot/JASONETTE-Reborn](https://github.com/Bande-a-Bonnot/JASONETTE-Reborn)
 
 <br>
 
@@ -55,7 +55,7 @@ Simply take one of the JSON urls below, add to Jasonette and play. You can learn
 ---
 
 # ★ Eliza
-  - Eliza chatbot app. Uses a simple node.js server as backend. If you want to install the backend on your own server, here's the [full source](https://github.com/Jasonette/eliza-example).
+  - Eliza chatbot app. Uses a simple node.js server as backend. If you want to install the backend on your own server, here's the [full source](https://github.com/Bande-a-Bonnot/eliza-example).
   - JSON: [http://fureliza.herokuapp.com](http://fureliza.herokuapp.com)
 
 <br>
@@ -65,7 +65,7 @@ Simply take one of the JSON urls below, add to Jasonette and play. You can learn
 ---
 
 # ★ Photo upload example
-  - Simple app to upload photos to S3. Uses a simple node.js server as backend. If you want to install the backend on your own server, here's the [full source](https://github.com/Jasonette/s3-upload-example).
+  - Simple app to upload photos to S3. Uses a simple node.js server as backend. If you want to install the backend on your own server, here's the [full source](https://github.com/Bande-a-Bonnot/s3-upload-example).
   - JSON: [http://imagejason.herokuapp.com](http://imagejason.herokuapp.com)
 
 <br>
@@ -75,7 +75,7 @@ Simply take one of the JSON urls below, add to Jasonette and play. You can learn
 ---
 
 # ★ Microblog with user accounts
-  - Simple microblog app to post messages, complete with user login. If you want to install the backend on your own server, here's the [full source and an instruction on how to build one from scratch](https://github.com/Jasonette/token-authentication-example).
+  - Simple microblog app to post messages, complete with user login. If you want to install the backend on your own server, here's the [full source and an instruction on how to build one from scratch](https://github.com/Bande-a-Bonnot/token-authentication-example).
   - JSON: [http://sessionjason.herokuapp.com](http://sessionjason.herokuapp.com)
 
 <br>

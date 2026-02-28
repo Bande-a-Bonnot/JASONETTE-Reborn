@@ -51,7 +51,7 @@ Just like any developer, I believed web would never work in a native app. We **d
 
 Most importantly, it didn't have Android support (I never implemented an Android counterpart because I really didn't see much utility from the iOS version so didn't want to invest time).
 
-Then one day I see a new [pull request](https://github.com/Jasonette/JASONETTE-Android/pull/43) on the Android repository:
+Then one day I see a new [pull request](https://github.com/Bande-a-Bonnot/JASONETTE-Android/pull/43) on the Android repository:
 
 <img src='/assets/htmlpr.png' class='bordered'>
 
