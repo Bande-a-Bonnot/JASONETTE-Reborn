@@ -19,6 +19,7 @@ jobs:
       conformance: ${{ steps.filter.outputs.conformance }}
       docs: ${{ steps.filter.outputs.docs }}
       template-engine: ${{ steps.filter.outputs.template-engine }}
+      web-renderer: ${{ steps.filter.outputs.web-renderer }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -37,6 +38,8 @@ jobs:
               - '**/*.md'
             template-engine:
               - 'packages/template-engine/**'
+            web-renderer:
+              - 'packages/web-renderer/**'
 
   validate:
     needs: changes
@@ -62,6 +65,26 @@ jobs:
       - name: Build
         run: npm run build
         working-directory: packages/template-engine
+
+  web-renderer:
+    needs: changes
+    if: needs.changes.outputs.web-renderer == 'true' || github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install
+      - name: Typecheck
+        run: npm run typecheck
+        working-directory: packages/web-renderer
+      - name: Test
+        run: npm test
+        working-directory: packages/web-renderer
+      - name: Build
+        run: npm run build
+        working-directory: packages/web-renderer
 
   lint:
     runs-on: ubuntu-latest
