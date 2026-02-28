@@ -1,7 +1,7 @@
 package com.jasonette.rendering
 
 import com.jasonette.core.*
-import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.JsonPrimitive
 import java.net.HttpURLConnection
 import java.net.URL
 
@@ -26,7 +26,7 @@ class ActionDispatcher(private val stateManager: StateManager) {
         when (type) {
             "\$set" -> {
                 val values = options?.entries?.associate { (k, v) ->
-                    k to v.jsonPrimitive.content
+                    k to jsonElementToString(v)
                 } ?: emptyMap()
                 stateManager.set(values)
             }
@@ -35,7 +35,7 @@ class ActionDispatcher(private val stateManager: StateManager) {
 
             "\$cache.set" -> {
                 val values = options?.entries?.associate { (k, v) ->
-                    k to v.jsonPrimitive.content
+                    k to jsonElementToString(v)
                 } ?: emptyMap()
                 stateManager.cacheSet(values)
             }
@@ -47,7 +47,7 @@ class ActionDispatcher(private val stateManager: StateManager) {
             "\$reload" -> {} // handled by ViewModel
 
             "\$network.request" -> {
-                val urlStr = options?.get("url")?.jsonPrimitive?.content
+                val urlStr = (options?.get("url") as? JsonPrimitive)?.content
                     ?: throw ActionException("Missing URL")
                 networkRequest(urlStr, options)
             }
@@ -56,11 +56,15 @@ class ActionDispatcher(private val stateManager: StateManager) {
         }
     }
 
-    private suspend fun networkRequest(urlStr: String, options: kotlinx.serialization.json.JsonObject?) {
+    private suspend fun networkRequest(
+        urlStr: String,
+        options: kotlinx.serialization.json.JsonObject?
+    ) {
         val url = URL(urlStr)
         val conn = url.openConnection() as HttpURLConnection
         try {
-            conn.requestMethod = options?.get("method")?.jsonPrimitive?.content?.uppercase() ?: "GET"
+            conn.requestMethod =
+                (options?.get("method") as? JsonPrimitive)?.content?.uppercase() ?: "GET"
             conn.connectTimeout = 10_000
             conn.readTimeout = 10_000
 
@@ -73,7 +77,7 @@ class ActionDispatcher(private val stateManager: StateManager) {
                 val json = kotlinx.serialization.json.Json.parseToJsonElement(body)
                 if (json is kotlinx.serialization.json.JsonObject) {
                     json.entries.forEach { (key, value) ->
-                        stateManager.set(mapOf(key to value.jsonPrimitive.content))
+                        stateManager.set(mapOf(key to jsonElementToString(value)))
                     }
                 }
             } catch (_: Exception) {
@@ -81,6 +85,13 @@ class ActionDispatcher(private val stateManager: StateManager) {
             }
         } finally {
             conn.disconnect()
+        }
+    }
+
+    private fun jsonElementToString(element: kotlinx.serialization.json.JsonElement): String {
+        return when (element) {
+            is JsonPrimitive -> element.content
+            else -> element.toString()
         }
     }
 

@@ -1,6 +1,7 @@
 package com.jasonette.rendering
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.jasonette.core.*
 import com.jasonette.template.TemplateEngine
@@ -9,7 +10,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.jsonPrimitive
 
 sealed class UiState {
     data object Loading : UiState()
@@ -18,15 +18,16 @@ sealed class UiState {
 }
 
 class JasonetteViewModel(
+    application: Application,
     private val url: String? = null,
     private var document: JasonDocument? = null
-) : ViewModel() {
+) : AndroidViewModel(application) {
 
     private val _uiState = MutableStateFlow<UiState>(UiState.Loading)
     val uiState: StateFlow<UiState> = _uiState
 
     private val loader = DocumentLoader()
-    val stateManager = StateManager()
+    val stateManager = StateManager(application)
     val actionDispatcher = ActionDispatcher(stateManager)
 
     private val json = Json {

@@ -8,7 +8,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import com.jasonette.core.JasonComponent
 import com.jasonette.core.JasonStyle
 import com.jasonette.core.dp
 
@@ -50,13 +49,18 @@ fun ButtonComponent(text: String?, url: String?) {
     }
 }
 
-// TextField
+// TextField (stateless — state hoisted via onValueChange)
 @Composable
-fun TextFieldComponent(name: String, placeholder: String, keyboard: String?) {
-    var text by remember { mutableStateOf("") }
+fun TextFieldComponent(
+    name: String,
+    placeholder: String,
+    keyboard: String?,
+    value: String,
+    onValueChange: (String) -> Unit
+) {
     OutlinedTextField(
-        value = text,
-        onValueChange = { text = it },
+        value = value,
+        onValueChange = onValueChange,
         placeholder = { Text(placeholder) },
         keyboardOptions = KeyboardOptions(
             keyboardType = when (keyboard) {
@@ -72,26 +76,33 @@ fun TextFieldComponent(name: String, placeholder: String, keyboard: String?) {
     )
 }
 
-// TextArea
+// TextArea (stateless — state hoisted via onValueChange)
 @Composable
-fun TextAreaComponent(name: String, placeholder: String) {
-    var text by remember { mutableStateOf("") }
+fun TextAreaComponent(
+    name: String,
+    placeholder: String,
+    value: String,
+    onValueChange: (String) -> Unit
+) {
     OutlinedTextField(
-        value = text,
-        onValueChange = { text = it },
+        value = value,
+        onValueChange = onValueChange,
         placeholder = { Text(placeholder) },
         minLines = 3,
         modifier = Modifier.fillMaxWidth()
     )
 }
 
-// Slider
+// Slider (stateless — state hoisted via onValueChange)
 @Composable
-fun SliderComponent(name: String, value: Float) {
-    var current by remember { mutableFloatStateOf(value) }
+fun SliderComponent(
+    name: String,
+    value: Float,
+    onValueChange: (Float) -> Unit
+) {
     Slider(
-        value = current,
-        onValueChange = { current = it },
+        value = value,
+        onValueChange = onValueChange,
         valueRange = 0f..100f
     )
 }
@@ -102,11 +113,14 @@ fun SpaceComponent(height: Float?) {
     Spacer(modifier = Modifier.height((height ?: 10f).dp))
 }
 
-// Switch
+// Switch (stateless — state hoisted via onCheckedChange)
 @Composable
-fun SwitchComponent(name: String, isOn: Boolean) {
-    var checked by remember { mutableStateOf(isOn) }
-    Switch(checked = checked, onCheckedChange = { checked = it })
+fun SwitchComponent(
+    name: String,
+    isOn: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Switch(checked = isOn, onCheckedChange = onCheckedChange)
 }
 
 // Map stub
