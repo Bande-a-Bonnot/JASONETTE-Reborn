@@ -242,23 +242,23 @@ Server-Driven UI (SDUI) — the pattern Jasonette pioneered — is now mainstrea
 
 ---
 
-### Phase 0.5: Template Engine Prototype (Week 3)
+### Phase 0.5: Template Engine Prototype (Week 3) ✅ COMPLETED
 
 **Goal:** The template engine is the highest-risk shared component. Prototype it before building any UI.
 
-- [ ] Implement in TypeScript (will become the Web version; patterns ported to Swift/Kotlin later)
-- [ ] Must handle: `{{var}}`, `{{#each}}`, `{{#if}}`/`{{#elseif}}`/`{{#else}}`, full JS expressions, regex conditions
-- [ ] Implement sandboxed expression evaluation:
+- [x] Implement in TypeScript (will become the Web version; patterns ported to Swift/Kotlin later)
+- [x] Must handle: `{{var}}`, `{{#each}}`, `{{#if}}`/`{{#elseif}}`/`{{#else}}`, full JS expressions, regex conditions
+- [x] Implement sandboxed expression evaluation:
   - Use a restricted JavaScript context (no access to `window`, `document`, `fetch`, or platform APIs)
   - Only `$jason` data context, `Math`, `JSON`, `String`, `Array`, `Object` builtins available
   - No side effects allowed in expressions
-- [ ] Implement the `@` mixin operator (remote JSON inclusion with recursive resolution)
+- [x] Implement the `@` mixin operator (remote JSON inclusion with recursive resolution)
   - Maximum recursion depth (default: 5) to prevent circular mixin references
   - Cache fetched mixins in memory
   - Timeout and error handling for failed remote fetches
-- [ ] Implement `$document` local mixin references
-- [ ] Validate against **every** Jasonpedia template example (`template/*.json`)
-- [ ] Validate expression evaluation against action examples (`action/lambda/*.json`, `action/script/*.json`)
+- [x] Implement `$document` local mixin references
+- [x] Validate against **every** Jasonpedia template example (`template/*.json`)
+- [x] Validate expression evaluation against action examples (`action/lambda/*.json`, `action/script/*.json`)
 
 **Deliverable:** `@jasonette/template-engine` package passing all Jasonpedia template and expression tests.
 
