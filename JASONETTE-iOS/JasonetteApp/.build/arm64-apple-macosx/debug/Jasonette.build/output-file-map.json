@@ -1,0 +1,166 @@
+{
+  "": {
+    "swift-dependencies": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/master.swiftdeps"
+  },
+  "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/Sources/Jasonette/Components/ButtonComponent.swift": {
+    "dependencies": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/ButtonComponent.d",
+    "object": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/ButtonComponent.swift.o",
+    "swiftmodule": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/ButtonComponent~partial.swiftmodule",
+    "swift-dependencies": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/ButtonComponent.swiftdeps",
+    "diagnostics": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/ButtonComponent.dia"
+  },
+  "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/Sources/Jasonette/Components/ComponentRegistry.swift": {
+    "dependencies": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/ComponentRegistry.d",
+    "object": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/ComponentRegistry.swift.o",
+    "swiftmodule": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/ComponentRegistry~partial.swiftmodule",
+    "swift-dependencies": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/ComponentRegistry.swiftdeps",
+    "diagnostics": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/ComponentRegistry.dia"
+  },
+  "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/Sources/Jasonette/Components/ImageComponent.swift": {
+    "dependencies": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/ImageComponent.d",
+    "object": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/ImageComponent.swift.o",
+    "swiftmodule": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/ImageComponent~partial.swiftmodule",
+    "swift-dependencies": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/ImageComponent.swiftdeps",
+    "diagnostics": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/ImageComponent.dia"
+  },
+  "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/Sources/Jasonette/Components/JasonStyleModifier.swift": {
+    "dependencies": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/JasonStyleModifier.d",
+    "object": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/JasonStyleModifier.swift.o",
+    "swiftmodule": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/JasonStyleModifier~partial.swiftmodule",
+    "swift-dependencies": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/JasonStyleModifier.swiftdeps",
+    "diagnostics": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/JasonStyleModifier.dia"
+  },
+  "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/Sources/Jasonette/Components/LabelComponent.swift": {
+    "dependencies": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/LabelComponent.d",
+    "object": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/LabelComponent.swift.o",
+    "swiftmodule": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/LabelComponent~partial.swiftmodule",
+    "swift-dependencies": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/LabelComponent.swiftdeps",
+    "diagnostics": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/LabelComponent.dia"
+  },
+  "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/Sources/Jasonette/Components/LayoutView.swift": {
+    "dependencies": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/LayoutView.d",
+    "object": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/LayoutView.swift.o",
+    "swiftmodule": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/LayoutView~partial.swiftmodule",
+    "swift-dependencies": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/LayoutView.swiftdeps",
+    "diagnostics": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/LayoutView.dia"
+  },
+  "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/Sources/Jasonette/Components/MapStubComponent.swift": {
+    "dependencies": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/MapStubComponent.d",
+    "object": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/MapStubComponent.swift.o",
+    "swiftmodule": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/MapStubComponent~partial.swiftmodule",
+    "swift-dependencies": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/MapStubComponent.swiftdeps",
+    "diagnostics": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/MapStubComponent.dia"
+  },
+  "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/Sources/Jasonette/Components/SliderComponent.swift": {
+    "dependencies": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/SliderComponent.d",
+    "object": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/SliderComponent.swift.o",
+    "swiftmodule": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/SliderComponent~partial.swiftmodule",
+    "swift-dependencies": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/SliderComponent.swiftdeps",
+    "diagnostics": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/SliderComponent.dia"
+  },
+  "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/Sources/Jasonette/Components/SpaceComponent.swift": {
+    "dependencies": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/SpaceComponent.d",
+    "object": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/SpaceComponent.swift.o",
+    "swiftmodule": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/SpaceComponent~partial.swiftmodule",
+    "swift-dependencies": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/SpaceComponent.swiftdeps",
+    "diagnostics": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/SpaceComponent.dia"
+  },
+  "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/Sources/Jasonette/Components/SwitchComponent.swift": {
+    "dependencies": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/SwitchComponent.d",
+    "object": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/SwitchComponent.swift.o",
+    "swiftmodule": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/SwitchComponent~partial.swiftmodule",
+    "swift-dependencies": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/SwitchComponent.swiftdeps",
+    "diagnostics": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/SwitchComponent.dia"
+  },
+  "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/Sources/Jasonette/Components/TextAreaComponent.swift": {
+    "dependencies": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/TextAreaComponent.d",
+    "object": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/TextAreaComponent.swift.o",
+    "swiftmodule": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/TextAreaComponent~partial.swiftmodule",
+    "swift-dependencies": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/TextAreaComponent.swiftdeps",
+    "diagnostics": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/TextAreaComponent.dia"
+  },
+  "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/Sources/Jasonette/Components/TextFieldComponent.swift": {
+    "dependencies": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/TextFieldComponent.d",
+    "object": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/TextFieldComponent.swift.o",
+    "swiftmodule": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/TextFieldComponent~partial.swiftmodule",
+    "swift-dependencies": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/TextFieldComponent.swiftdeps",
+    "diagnostics": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/TextFieldComponent.dia"
+  },
+  "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/Sources/Jasonette/Core/ActionDispatcher.swift": {
+    "dependencies": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/ActionDispatcher.d",
+    "object": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/ActionDispatcher.swift.o",
+    "swiftmodule": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/ActionDispatcher~partial.swiftmodule",
+    "swift-dependencies": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/ActionDispatcher.swiftdeps",
+    "diagnostics": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/ActionDispatcher.dia"
+  },
+  "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/Sources/Jasonette/Core/AnyCodable.swift": {
+    "dependencies": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/AnyCodable.d",
+    "object": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/AnyCodable.swift.o",
+    "swiftmodule": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/AnyCodable~partial.swiftmodule",
+    "swift-dependencies": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/AnyCodable.swiftdeps",
+    "diagnostics": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/AnyCodable.dia"
+  },
+  "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/Sources/Jasonette/Core/DocumentLoader.swift": {
+    "dependencies": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/DocumentLoader.d",
+    "object": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/DocumentLoader.swift.o",
+    "swiftmodule": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/DocumentLoader~partial.swiftmodule",
+    "swift-dependencies": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/DocumentLoader.swiftdeps",
+    "diagnostics": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/DocumentLoader.dia"
+  },
+  "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/Sources/Jasonette/Core/JasonDocument.swift": {
+    "dependencies": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/JasonDocument.d",
+    "object": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/JasonDocument.swift.o",
+    "swiftmodule": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/JasonDocument~partial.swiftmodule",
+    "swift-dependencies": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/JasonDocument.swiftdeps",
+    "diagnostics": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/JasonDocument.dia"
+  },
+  "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/Sources/Jasonette/Core/StateManager.swift": {
+    "dependencies": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/StateManager.d",
+    "object": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/StateManager.swift.o",
+    "swiftmodule": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/StateManager~partial.swiftmodule",
+    "swift-dependencies": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/StateManager.swiftdeps",
+    "diagnostics": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/StateManager.dia"
+  },
+  "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/Sources/Jasonette/Rendering/JasonetteNavigationView.swift": {
+    "dependencies": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/JasonetteNavigationView.d",
+    "object": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/JasonetteNavigationView.swift.o",
+    "swiftmodule": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/JasonetteNavigationView~partial.swiftmodule",
+    "swift-dependencies": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/JasonetteNavigationView.swiftdeps",
+    "diagnostics": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/JasonetteNavigationView.dia"
+  },
+  "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/Sources/Jasonette/Rendering/JasonetteView.swift": {
+    "dependencies": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/JasonetteView.d",
+    "object": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/JasonetteView.swift.o",
+    "swiftmodule": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/JasonetteView~partial.swiftmodule",
+    "swift-dependencies": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/JasonetteView.swiftdeps",
+    "diagnostics": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/JasonetteView.dia"
+  },
+  "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/Sources/Jasonette/Rendering/JasonetteViewModel.swift": {
+    "dependencies": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/JasonetteViewModel.d",
+    "object": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/JasonetteViewModel.swift.o",
+    "swiftmodule": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/JasonetteViewModel~partial.swiftmodule",
+    "swift-dependencies": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/JasonetteViewModel.swiftdeps",
+    "diagnostics": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/JasonetteViewModel.dia"
+  },
+  "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/Sources/Jasonette/Template/ExpressionEvaluator.swift": {
+    "dependencies": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/ExpressionEvaluator.d",
+    "object": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/ExpressionEvaluator.swift.o",
+    "swiftmodule": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/ExpressionEvaluator~partial.swiftmodule",
+    "swift-dependencies": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/ExpressionEvaluator.swiftdeps",
+    "diagnostics": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/ExpressionEvaluator.dia"
+  },
+  "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/Sources/Jasonette/Template/ExpressionParser.swift": {
+    "dependencies": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/ExpressionParser.d",
+    "object": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/ExpressionParser.swift.o",
+    "swiftmodule": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/ExpressionParser~partial.swiftmodule",
+    "swift-dependencies": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/ExpressionParser.swiftdeps",
+    "diagnostics": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/ExpressionParser.dia"
+  },
+  "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/Sources/Jasonette/Template/TemplateEngine.swift": {
+    "dependencies": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/TemplateEngine.d",
+    "object": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/TemplateEngine.swift.o",
+    "swiftmodule": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/TemplateEngine~partial.swiftmodule",
+    "swift-dependencies": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/TemplateEngine.swiftdeps",
+    "diagnostics": "/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/.build/arm64-apple-macosx/debug/Jasonette.build/TemplateEngine.dia"
+  }
+}

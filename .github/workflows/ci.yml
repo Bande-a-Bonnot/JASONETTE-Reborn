@@ -20,6 +20,7 @@ jobs:
       docs: ${{ steps.filter.outputs.docs }}
       template-engine: ${{ steps.filter.outputs.template-engine }}
       web-renderer: ${{ steps.filter.outputs.web-renderer }}
+      ios: ${{ steps.filter.outputs.ios }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -40,6 +41,8 @@ jobs:
               - 'packages/template-engine/**'
             web-renderer:
               - 'packages/web-renderer/**'
+            ios:
+              - 'JASONETTE-iOS/**'
 
   validate:
     needs: changes
@@ -88,6 +91,19 @@ jobs:
       - name: Build
         run: npm run build
         working-directory: packages/web-renderer
+
+  ios:
+    needs: changes
+    if: needs.changes.outputs.ios == 'true' || github.event_name == 'pull_request'
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: swift build
+        working-directory: JASONETTE-iOS/JasonetteApp
+      - name: Test
+        run: swift test
+        working-directory: JASONETTE-iOS/JasonetteApp
 
   lint:
     runs-on: ubuntu-latest
