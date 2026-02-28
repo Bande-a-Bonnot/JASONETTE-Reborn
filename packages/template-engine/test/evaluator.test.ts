@@ -67,6 +67,14 @@ describe('evaluate', () => {
     it('resolves $keys', () => {
       expect(evaluate('$keys.api_key', { $keys: { api_key: 'secret' } })).toBe('secret');
     });
+
+    it('resolves this as alias for $jason', () => {
+      expect(evaluate('this', ctx({ name: 'test' }))).toEqual({ name: 'test' });
+    });
+
+    it('resolves this.property', () => {
+      expect(evaluate('this.name', ctx({ name: 'Alice' }))).toBe('Alice');
+    });
   });
 
   describe('member expressions', () => {
@@ -164,12 +172,20 @@ describe('evaluate', () => {
       expect(evaluate('false || true', ctx(null))).toBe(true);
     });
 
-    it('in operator', () => {
+    it('in operator with $jason', () => {
       expect(evaluate('"name" in $jason', ctx({ name: 'test' }))).toBe(true);
     });
 
     it('in operator false case', () => {
       expect(evaluate('"missing" in $jason', ctx({ name: 'test' }))).toBe(false);
+    });
+
+    it('in operator with this', () => {
+      expect(evaluate("'profile' in this", ctx({ profile: 'url', name: 'test' }))).toBe(true);
+    });
+
+    it('in operator with this (missing key)', () => {
+      expect(evaluate("'profile' in this", ctx({ name: 'test' }))).toBe(false);
     });
   });
 

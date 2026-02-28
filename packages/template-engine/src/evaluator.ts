@@ -94,6 +94,9 @@ function walkAst(node: jsep.Expression, context: Record<string, unknown>): unkno
       return undefined;
     }
 
+    case 'ThisExpression':
+      return context['this'];
+
     case 'MemberExpression': {
       const memberNode = node as jsep.MemberExpression;
       const obj = walkAst(memberNode.object, context);
@@ -265,6 +268,8 @@ export function evaluate(
     $index: context.$index,
     $cache: context.$cache,
     $keys: context.$keys,
+    // `this` is an alias for $jason (Jasonette v1 compat)
+    this: context.$jason,
     // Allow Math and JSON as namespace identifiers
     Math: 'Math',
     JSON: 'JSON',

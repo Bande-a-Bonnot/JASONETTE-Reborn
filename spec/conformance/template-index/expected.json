@@ -1,0 +1,242 @@
+{
+  "$jason": {
+    "head": {
+      "title": "Template",
+      "styles": {
+        "bold": {
+          "font": "HelveticaNeue-CondensedBold",
+          "size": "15"
+        },
+        "normal": {
+          "font": "HelveticaNeue",
+          "size": "12"
+        },
+        "gray": {
+          "background": "#f5f5f5"
+        }
+      },
+      "actions": {
+        "$foreground": {
+          "type": "$reload"
+        },
+        "$pull": {
+          "type": "$flush",
+          "success": {
+            "type": "$reload"
+          }
+        }
+      }
+    },
+    "body": {
+      "header": {
+        "menu": {
+          "text": "View JSON",
+          "href": {
+            "url": "https://github.com/Jasonette/Jasonpedia/blob/gh-pages/template/index.json",
+            "view": "web"
+          }
+        }
+      },
+      "sections": [
+        {
+          "header": {
+            "type": "horizontal",
+            "style": {
+              "background": "rgba(14,122,254,0.1)",
+              "padding": "20"
+            },
+            "components": [
+              {
+                "style": {
+                  "size": "12"
+                },
+                "type": "label",
+                "text": "Note: These demos demonstrate how you can use templates to build a view. The apps themselves will look the same as those not using templates, you will need to look at the JSON to see the difference"
+              }
+            ]
+          }
+        },
+        {
+          "header": {
+            "type": "label",
+            "class": "normal gray",
+            "text": "JSON Templating"
+          },
+          "items": [
+            {
+              "type": "vertical",
+              "href": {
+                "url": "https://jasonette.github.io/Jasonpedia/template/inline.json"
+              },
+              "components": [
+                {
+                  "type": "label",
+                  "text": "Inline Data",
+                  "class": "bold"
+                },
+                {
+                  "type": "label",
+                  "text": "Render inline data ($jason.head.data) using template",
+                  "class": "normal"
+                }
+              ]
+            },
+            {
+              "type": "vertical",
+              "href": {
+                "url": "https://jasonette.github.io/Jasonpedia/template/network.json"
+              },
+              "components": [
+                {
+                  "type": "label",
+                  "text": "Dynamic Data",
+                  "class": "bold"
+                },
+                {
+                  "type": "label",
+                  "text": "Make a $network.request action to an API and render the template",
+                  "class": "normal"
+                }
+              ]
+            },
+            {
+              "type": "vertical",
+              "href": {
+                "url": "https://jasonette.github.io/Jasonpedia/template/each.json"
+              },
+              "components": [
+                {
+                  "type": "label",
+                  "text": "#each",
+                  "class": "bold"
+                },
+                {
+                  "type": "label",
+                  "text": "Loop through array using #each keyword",
+                  "class": "normal"
+                }
+              ]
+            },
+            {
+              "type": "vertical",
+              "href": {
+                "url": "https://jasonette.github.io/Jasonpedia/template/if.json"
+              },
+              "components": [
+                {
+                  "type": "label",
+                  "text": "#if | #elseif | #else",
+                  "class": "bold"
+                },
+                {
+                  "type": "label",
+                  "text": "Use the conditionals to selectively render templates",
+                  "class": "normal"
+                }
+              ]
+            },
+            {
+              "type": "vertical",
+              "href": {
+                "url": "https://jasonette.github.io/Jasonpedia/template/js.json"
+              },
+              "components": [
+                {
+                  "type": "label",
+                  "text": "Use Javascript expressions",
+                  "class": "bold"
+                },
+                {
+                  "type": "label",
+                  "text": "Jasonette template engine is built on top of native Javascript engine, so you can use any Javascript expression inside {{ }}",
+                  "class": "normal"
+                }
+              ]
+            },
+            {
+              "type": "vertical",
+              "href": {
+                "url": "https://jasonette.github.io/Jasonpedia/template/jsfunction.json"
+              },
+              "components": [
+                {
+                  "type": "label",
+                  "text": "Javascript function example",
+                  "class": "bold"
+                },
+                {
+                  "type": "label",
+                  "text": "Sometimes, just a single Javascript statement is not enough. You can embed a full Javascript function inside {{ }}. Just remember to have a return value, and escape them correctly",
+                  "class": "normal"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "header": {
+            "type": "label",
+            "class": "normal gray",
+            "text": "Non-JSON Templating"
+          },
+          "items": [
+            {
+              "type": "vertical",
+              "href": {
+                "url": "https://jasonette.github.io/Jasonpedia/template/html.json"
+              },
+              "components": [
+                {
+                  "type": "label",
+                  "text": "HTML",
+                  "class": "bold"
+                },
+                {
+                  "type": "label",
+                  "text": "Transform any HTML content into JSON, which then can be rendered",
+                  "class": "normal"
+                }
+              ]
+            },
+            {
+              "type": "vertical",
+              "href": {
+                "url": "https://jasonette.github.io/Jasonpedia/template/rss.json"
+              },
+              "components": [
+                {
+                  "type": "label",
+                  "text": "RSS",
+                  "class": "bold"
+                },
+                {
+                  "type": "label",
+                  "text": "Transform any RSS content into JSON, which then can be rendered",
+                  "class": "normal"
+                }
+              ]
+            },
+            {
+              "type": "vertical",
+              "href": {
+                "url": "https://jasonette.github.io/Jasonpedia/template/csv.json"
+              },
+              "components": [
+                {
+                  "type": "label",
+                  "text": "CSV",
+                  "class": "bold"
+                },
+                {
+                  "type": "label",
+                  "text": "Transform any CSV content into JSON, which then can be rendered",
+                  "class": "normal"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
