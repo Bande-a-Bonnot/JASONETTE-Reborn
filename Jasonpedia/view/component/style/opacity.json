@@ -6,7 +6,7 @@
     },
     "body": {
       "style": {
-        "background": "https://raw.githubusercontent.com/gliechtenstein/images/master/highrise.jpg",
+        "background": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/assets/screen3.png",
         "border": "none"
       },
       "header": {
@@ -17,7 +17,7 @@
         "menu": {
           "text": "View JSON",
           "href": {
-            "url": "https://github.com/Jasonette/Jasonpedia/blob/gh-pages/view/component/style/opacity.json",
+            "url": "https://github.com/Bande-a-Bonnot/JASONETTE-Reborn/blob/main/Jasonpedia/view/component/style/opacity.json",
             "view": "web"
           }
         }
@@ -54,11 +54,11 @@
               "components": [
                 {
                   "type": "image",
-                  "url": "https://raw.githubusercontent.com/gliechtenstein/images/master/perrier.jpg"
+                  "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/assets/screen5.png"
                 },
                 {
                   "type": "image",
-                  "url": "https://raw.githubusercontent.com/gliechtenstein/images/master/perrier.jpg",
+                  "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/assets/screen5.png",
                   "style": {
                     "opacity": "0.2"
                   }

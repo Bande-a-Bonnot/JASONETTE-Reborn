@@ -69,7 +69,7 @@
         "menu": {
           "text": "View JSON",
           "href": {
-            "url": "https://github.com/Jasonette/Jasonpedia/blob/gh-pages/action/index.json",
+            "url": "https://github.com/Bande-a-Bonnot/JASONETTE-Reborn/blob/main/Jasonpedia/action/index.json",
             "view": "web"
           }
         },
@@ -199,7 +199,7 @@
             {
               "class": "padded",
               "href": {
-                "url": "https://jasonette.github.io/Jasonpedia/action/addressbook.json"
+                "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/action/addressbook.json"
               },
               "type": "label",
               "text": "$util.addressbook"
@@ -331,7 +331,7 @@
                 "align": "left"
               },
               "href": {
-                "url": "https://jasonette.github.io/Jasonpedia/action/vision/index.json"
+                "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/action/vision/index.json"
               }
             }
           ]
@@ -353,7 +353,7 @@
                 "align": "left"
               },
               "href": {
-                "url": "https://jasonette.github.io/Jasonpedia/action/network/index.json"
+                "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/action/network/index.json"
               }
             }
           ]
@@ -375,7 +375,7 @@
                 "align": "left"
               },
               "href": {
-                "url": "https://jasonette.github.io/Jasonpedia/action/variable/index.json"
+                "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/action/variable/index.json"
               }
             }
           ]
@@ -397,7 +397,7 @@
                 "align": "left"
               },
               "href": {
-                "url": "https://jasonette.github.io/Jasonpedia/action/lambda/index.json"
+                "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/action/lambda/index.json"
               }
             }
           ]
@@ -419,7 +419,7 @@
                 "align": "left"
               },
               "href": {
-                "url": "https://jasonette.github.io/Jasonpedia/action/geo/index.json"
+                "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/action/geo/index.json"
               }
             }
           ]
@@ -441,7 +441,7 @@
                 "align": "left"
               },
               "href": {
-                "url": "https://jasonette.github.io/Jasonpedia/action/script/index.json"
+                "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/action/script/index.json"
               }
             }
           ]
@@ -463,7 +463,7 @@
                 "align": "left"
               },
               "href": {
-                "url": "https://jasonette.github.io/Jasonpedia/action/timer/index.json"
+                "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/action/timer/index.json"
               }
             }
           ]

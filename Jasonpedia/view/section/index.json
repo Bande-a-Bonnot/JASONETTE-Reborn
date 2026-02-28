@@ -47,7 +47,7 @@
         "menu": {
           "text": "View JSON",
           "href": {
-            "url": "https://github.com/Jasonette/Jasonpedia/blob/gh-pages/view/section/index.json",
+            "url": "https://github.com/Bande-a-Bonnot/JASONETTE-Reborn/blob/main/Jasonpedia/view/section/index.json",
             "view": "web"
           }
         }
@@ -92,7 +92,7 @@
                 {
                   "type": "image",
                   "class": "carousel_img",
-                  "url": "https://jasonette.github.io/Jasonpedia/assets/homer.jpg"
+                  "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/assets/homer.jpg"
                 },
                 {
                   "type": "label",
@@ -131,7 +131,7 @@
                 {
                   "type": "image",
                   "class": "carousel_img",
-                  "url": "https://jasonette.github.io/Jasonpedia/assets/marge.png"
+                  "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/assets/marge.png"
                 },
                 {
                   "type": "label",
@@ -170,7 +170,7 @@
                 {
                   "type": "image",
                   "class": "carousel_img",
-                  "url": "https://jasonette.github.io/Jasonpedia/assets/bart.png"
+                  "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/assets/bart.png"
                 },
                 {
                   "type": "label",
@@ -209,7 +209,7 @@
                 {
                   "type": "image",
                   "class": "carousel_img",
-                  "url": "https://jasonette.github.io/Jasonpedia/assets/lisa.jpg"
+                  "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/assets/lisa.jpg"
                 },
                 {
                   "type": "label",
@@ -248,7 +248,7 @@
                 {
                   "type": "image",
                   "class": "carousel_img",
-                  "url": "https://jasonette.github.io/Jasonpedia/assets/maggie.png"
+                  "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/assets/maggie.png"
                 },
                 {
                   "type": "label",
@@ -310,7 +310,7 @@
                 {
                   "type": "image",
                   "class": "avatar_img",
-                  "url": "https://jasonette.github.io/Jasonpedia/assets/homer.jpg"
+                  "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/assets/homer.jpg"
                 },
                 {
                   "type": "vertical",
@@ -339,7 +339,7 @@
                 {
                   "type": "image",
                   "class": "avatar_img",
-                  "url": "https://jasonette.github.io/Jasonpedia/assets/marge.png"
+                  "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/assets/marge.png"
                 },
                 {
                   "type": "vertical",
@@ -368,7 +368,7 @@
                 {
                   "type": "image",
                   "class": "avatar_img",
-                  "url": "https://jasonette.github.io/Jasonpedia/assets/bart.png"
+                  "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/assets/bart.png"
                 },
                 {
                   "type": "vertical",
@@ -397,7 +397,7 @@
                 {
                   "type": "image",
                   "class": "avatar_img",
-                  "url": "https://jasonette.github.io/Jasonpedia/assets/lisa.jpg"
+                  "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/assets/lisa.jpg"
                 },
                 {
                   "type": "vertical",
@@ -426,7 +426,7 @@
                 {
                   "type": "image",
                   "class": "avatar_img",
-                  "url": "https://jasonette.github.io/Jasonpedia/assets/maggie.png"
+                  "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/assets/maggie.png"
                 },
                 {
                   "type": "vertical",

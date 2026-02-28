@@ -24,7 +24,7 @@
         "menu": {
           "text": "View JSON",
           "href": {
-            "url": "https://github.com/Jasonette/Jasonpedia/blob/gh-pages/core/render/index.json",
+            "url": "https://github.com/Bande-a-Bonnot/JASONETTE-Reborn/blob/main/Jasonpedia/core/render/index.json",
             "view": "web"
           }
         }
@@ -35,7 +35,7 @@
             {
               "type": "vertical",
               "href": {
-                "url": "https://jasonette.github.io/Jasonpedia/core/render/templates.json"
+                "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/core/render/templates.json"
               },
               "components": [{
                 "type": "label",

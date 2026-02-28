@@ -30,7 +30,7 @@
         "menu": {
           "text": "View JSON",
           "href": {
-            "url": "https://github.com/Jasonette/Jasonpedia/blob/gh-pages/view/component/index.json",
+            "url": "https://github.com/Bande-a-Bonnot/JASONETTE-Reborn/blob/main/Jasonpedia/view/component/index.json",
             "view": "web"
           }
         }
@@ -43,7 +43,7 @@
               "text": "label",
               "class": "bold",
               "href": {
-                "url": "https://jasonette.github.io/Jasonpedia/view/component/label/index.json"
+                "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/view/component/label/index.json"
               }
             },
             {
@@ -51,7 +51,7 @@
               "text": "image",
               "class": "bold",
               "href": {
-                "url": "https://jasonette.github.io/Jasonpedia/view/component/image/index.json"
+                "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/view/component/image/index.json"
               }
             },
             {
@@ -59,7 +59,7 @@
               "text": "button",
               "class": "bold",
               "href": {
-                "url": "https://jasonette.github.io/Jasonpedia/view/component/button/index.json"
+                "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/view/component/button/index.json"
               }
             },
             {
@@ -67,7 +67,7 @@
               "text": "html",
               "class": "bold",
               "href": {
-                "url": "https://jasonette.github.io/Jasonpedia/view/component/html/index.json"
+                "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/view/component/html/index.json"
               }
             },
             {
@@ -75,7 +75,7 @@
               "text": "map",
               "class": "bold",
               "href": {
-                "url": "https://jasonette.github.io/Jasonpedia/view/component/map/index.json"
+                "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/view/component/map/index.json"
               }
             },
             {
@@ -83,7 +83,7 @@
               "text": "slider",
               "class": "bold",
               "href": {
-                "url": "https://jasonette.github.io/Jasonpedia/view/component/slider/index.json"
+                "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/view/component/slider/index.json"
               }
             },
             {
@@ -91,7 +91,7 @@
               "text": "textarea",
               "class": "bold",
               "href": {
-                "url": "https://jasonette.github.io/Jasonpedia/view/component/textarea/index.json"
+                "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/view/component/textarea/index.json"
               }
             },
             {
@@ -99,7 +99,7 @@
               "text": "textfield",
               "class": "bold",
               "href": {
-                "url": "https://jasonette.github.io/Jasonpedia/view/component/textfield/index.json"
+                "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/view/component/textfield/index.json"
               }
             },
             {
@@ -107,7 +107,7 @@
               "text": "space",
               "class": "bold",
               "href": {
-                "url": "https://jasonette.github.io/Jasonpedia/view/component/space/index.json"
+                "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/view/component/space/index.json"
               }
             },
             {
@@ -115,7 +115,7 @@
               "text": "common styling",
               "class": "bold",
               "href": {
-                "url": "https://jasonette.github.io/Jasonpedia/view/component/style/index.json"
+                "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/view/component/style/index.json"
               }
             }
           ]

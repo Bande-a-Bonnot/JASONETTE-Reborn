@@ -17,7 +17,7 @@
             "{{#else}}": {
               "type": "$href",
               "options": {
-                "url": "https://jasonette.github.io/Jasonpedia/webcontainer/agent/hijack.json",
+                "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/webcontainer/agent/hijack.json",
                 "preload": {
                   "background": "#ffffff"
                 },

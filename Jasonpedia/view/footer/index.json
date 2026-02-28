@@ -24,7 +24,7 @@
         "menu": {
           "text": "View JSON",
           "href": {
-            "url": "https://github.com/Jasonette/Jasonpedia/blob/gh-pages/view/footer/index.json",
+            "url": "https://github.com/Bande-a-Bonnot/JASONETTE-Reborn/blob/main/Jasonpedia/view/footer/index.json",
             "view": "web"
           }
         }
@@ -37,7 +37,7 @@
               "class": "bold",
               "text": "Chat Input",
               "href": {
-                "url": "https://jasonette.github.io/Jasonpedia/view/footer/input.json"
+                "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/view/footer/input.json"
               }
             },
             {
@@ -45,7 +45,7 @@
               "class": "bold",
               "text": "Tabs",
               "href": {
-                "url": "https://jasonette.github.io/Jasonpedia/view/footer/tabs.json",
+                "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/view/footer/tabs.json",
                 "transition": "modal"
               }
             }
