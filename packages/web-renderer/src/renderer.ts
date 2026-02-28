@@ -1,0 +1,384 @@
+import { renderSync } from '@jasonette/template-engine';
+import type { RenderContext } from '@jasonette/template-engine';
+import type {
+  JasonDocument, JasonBody, JasonSection,
+  JasonComponent, JasonStyle, AppState,
+} from './types.js';
+import { renderItem } from './layouts/index.js';
+import { applyStyle, generateStyleSheet } from './style.js';
+import { executeAction } from './actions/index.js';
+
+/**
+ * Jasonette Web Renderer.
+ * Fetches a $jason document, applies templates, and renders to DOM.
+ */
+export class JasonetteRenderer {
+  private root: HTMLElement;
+  private state: AppState;
+
+  constructor(root: HTMLElement) {
+    this.root = root;
+    this.root.classList.add('jasonette');
+    this.state = {
+      url: null,
+      document: null,
+      styles: {},
+      actions: {},
+      local: {},
+      cache: this.loadCache(),
+      history: [],
+    };
+
+    this.setupEventListeners();
+  }
+
+  private loadCache(): Record<string, unknown> {
+    try {
+      const cached = localStorage.getItem('jasonette:cache');
+      return cached ? JSON.parse(cached) : {};
+    } catch {
+      return {};
+    }
+  }
+
+  private setupEventListeners(): void {
+    // Navigation events from components
+    this.root.addEventListener('jasonette:navigate', ((e: CustomEvent) => {
+      const href = e.detail;
+      if (href.url) this.navigate(href.url, href);
+    }) as EventListener);
+
+    // Render events from actions
+    document.addEventListener('jasonette:render', ((e: CustomEvent) => {
+      if (this.state.document) {
+        const data = e.detail?.data;
+        this.renderBody(this.state.document, data);
+      }
+    }) as EventListener);
+
+    // Reload events
+    document.addEventListener('jasonette:reload', () => {
+      if (this.state.url) this.load(this.state.url);
+    });
+
+    // Action events (from timers, etc.)
+    document.addEventListener('jasonette:action', ((e: CustomEvent) => {
+      executeAction(e.detail, this.state);
+    }) as EventListener);
+
+    // Browser back button
+    window.addEventListener('popstate', (e) => {
+      if (e.state?.jasonetteUrl) {
+        this.load(e.state.jasonetteUrl, { pushHistory: false });
+      }
+    });
+  }
+
+  /**
+   * Load and render a $jason document from a URL.
+   */
+  async load(url: string, options?: { pushHistory?: boolean }): Promise<void> {
+    this.state.url = url;
+
+    try {
+      const response = await fetch(url);
+      const doc = await response.json() as JasonDocument;
+      this.state.document = doc;
+
+      if (options?.pushHistory !== false) {
+        history.pushState({ jasonetteUrl: url }, '', `#${url}`);
+      }
+
+      this.renderDocument(doc);
+
+      // Trigger $load action
+      const loadAction = doc.$jason?.head?.actions?.['$load'];
+      if (loadAction) {
+        await executeAction(loadAction, this.state);
+      }
+    } catch (err) {
+      console.error('[jasonette] Failed to load:', url, err);
+      this.root.textContent = `Failed to load: ${url}`;
+    }
+  }
+
+  /**
+   * Render a $jason document directly (no fetch).
+   */
+  renderDocument(doc: JasonDocument): void {
+    this.state.document = doc;
+    const head = doc.$jason?.head;
+
+    // Store head-level styles and actions
+    this.state.styles = head?.styles ?? {};
+    this.state.actions = head?.actions ?? {};
+
+    // Reset local state for new document
+    this.state.local = {};
+
+    // Clear root
+    this.root.innerHTML = '';
+
+    // Generate stylesheet from head.styles
+    if (Object.keys(this.state.styles).length > 0) {
+      this.root.appendChild(generateStyleSheet(this.state.styles));
+    }
+
+    // Apply template if present
+    let body: JasonBody | undefined;
+    if (head?.templates?.body && head?.data) {
+      const context: RenderContext = { $jason: head.data };
+      body = renderSync(head.templates.body, context) as JasonBody;
+    } else {
+      body = doc.$jason?.body;
+    }
+
+    if (body) {
+      this.renderBodyToDOM(body);
+    }
+  }
+
+  /**
+   * Re-render body with new data (for $render action).
+   */
+  private renderBody(doc: JasonDocument, data?: unknown): void {
+    const head = doc.$jason?.head;
+
+    // Remove everything except the stylesheet
+    const styleEl = this.root.querySelector('style[data-jasonette]');
+    this.root.innerHTML = '';
+    if (styleEl) this.root.appendChild(styleEl);
+
+    let body: JasonBody | undefined;
+    if (head?.templates?.body) {
+      const templateData = data ?? head.data ?? {};
+      const context: RenderContext = { $jason: templateData };
+      body = renderSync(head.templates.body, context) as JasonBody;
+    } else {
+      body = doc.$jason?.body;
+    }
+
+    if (body) {
+      this.renderBodyToDOM(body);
+    }
+  }
+
+  private renderBodyToDOM(body: JasonBody): void {
+    // Background
+    if (body.background) {
+      const bg = typeof body.background === 'string' ? body.background : '';
+      if (/^https?:\/\//.test(bg)) {
+        this.root.style.backgroundImage = `url(${bg})`;
+        this.root.style.backgroundSize = 'cover';
+      } else if (bg) {
+        this.root.style.backgroundColor = bg;
+      }
+    }
+
+    // Header
+    if (body.header) {
+      const header = this.renderHeader(body.header as unknown as Record<string, unknown>);
+      this.root.appendChild(header);
+    }
+
+    // Sections
+    if (body.sections && Array.isArray(body.sections)) {
+      const sectionsEl = document.createElement('div');
+      sectionsEl.className = 'jasonette-sections';
+      sectionsEl.style.flex = '1';
+      sectionsEl.style.overflowY = 'auto';
+
+      for (const section of body.sections) {
+        sectionsEl.appendChild(this.renderSection(section));
+      }
+      this.root.appendChild(sectionsEl);
+    }
+
+    // Layers
+    if (body.layers && Array.isArray(body.layers)) {
+      const layersEl = document.createElement('div');
+      layersEl.className = 'jasonette-layers';
+      layersEl.style.position = 'relative';
+
+      for (const layer of body.layers) {
+        const el = renderItem(layer, this.state.styles);
+        el.style.position = 'absolute';
+        layersEl.appendChild(el);
+      }
+      this.root.appendChild(layersEl);
+    }
+
+    // Footer
+    if (body.footer) {
+      const footer = this.renderFooter(body.footer as unknown as Record<string, unknown>);
+      this.root.appendChild(footer);
+    }
+  }
+
+  private renderHeader(header: Record<string, unknown>): HTMLElement {
+    const el = document.createElement('header');
+    el.className = 'jasonette-header';
+
+    if (header.title) {
+      const title = document.createElement('h1');
+      title.className = 'jasonette-header-title';
+      title.textContent = String(header.title);
+      el.appendChild(title);
+    }
+
+    if (header.menu && typeof header.menu === 'object') {
+      const menu = header.menu as Record<string, unknown>;
+      const menuEl = document.createElement('button');
+      menuEl.className = 'jasonette-header-menu';
+      menuEl.textContent = (menu.text as string) ?? '...';
+
+      if (menu.href) {
+        menuEl.addEventListener('click', () => {
+          const href = menu.href as Record<string, unknown>;
+          if ((href.view as string) === 'web') {
+            window.open(href.url as string, '_blank');
+          } else if (href.url) {
+            this.navigate(href.url as string, href);
+          }
+        });
+      }
+
+      el.appendChild(menuEl);
+    }
+
+    applyStyle(el, header.style as JasonStyle);
+    return el;
+  }
+
+  private renderSection(section: JasonSection): HTMLElement {
+    const el = document.createElement('section');
+    el.className = 'jasonette-section';
+
+    // Section header
+    if (section.header) {
+      const headerEl = document.createElement('div');
+      headerEl.className = 'jasonette-section-header';
+      const rendered = renderItem(section.header, this.state.styles);
+      headerEl.appendChild(rendered);
+      el.appendChild(headerEl);
+    }
+
+    // Section items
+    if (section.items) {
+      const items = Array.isArray(section.items) ? section.items : [];
+      const itemsEl = document.createElement('div');
+      itemsEl.className = 'jasonette-section-items';
+
+      for (const item of items) {
+        const itemEl = renderItem(item as JasonComponent, this.state.styles);
+        itemsEl.appendChild(itemEl);
+      }
+      el.appendChild(itemsEl);
+    }
+
+    applyStyle(el, section.style);
+    return el;
+  }
+
+  private renderFooter(footer: Record<string, unknown>): HTMLElement {
+    const el = document.createElement('footer');
+    el.className = 'jasonette-footer';
+
+    if (footer.tabs && typeof footer.tabs === 'object') {
+      const tabs = footer.tabs as { items?: JasonComponent[]; style?: JasonStyle };
+      if (tabs.items) {
+        const tabsEl = document.createElement('nav');
+        tabsEl.className = 'jasonette-tabs';
+        for (const tab of tabs.items) {
+          const tabEl = renderItem(tab, this.state.styles);
+          tabEl.classList.add('jasonette-tab');
+          tabsEl.appendChild(tabEl);
+        }
+        applyStyle(tabsEl, tabs.style);
+        el.appendChild(tabsEl);
+      }
+    }
+
+    if (footer.input && typeof footer.input === 'object') {
+      const input = footer.input as Record<string, JasonComponent>;
+      const inputEl = document.createElement('div');
+      inputEl.className = 'jasonette-footer-input';
+      inputEl.style.display = 'flex';
+
+      if (input.left) inputEl.appendChild(renderItem(input.left, this.state.styles));
+      if (input.textfield) inputEl.appendChild(renderItem(input.textfield, this.state.styles));
+      if (input.right) inputEl.appendChild(renderItem(input.right, this.state.styles));
+
+      el.appendChild(inputEl);
+    }
+
+    return el;
+  }
+
+  /**
+   * Navigate to a new $jason document.
+   */
+  async navigate(
+    url: string,
+    options?: Record<string, unknown>,
+  ): Promise<void> {
+    const transition = (options?.transition as string) ?? 'push';
+
+    if (transition === 'replace') {
+      await this.load(url);
+    } else if (transition === 'modal') {
+      // Open as modal overlay
+      const modal = document.createElement('dialog');
+      modal.className = 'jasonette-modal';
+      modal.style.width = '100%';
+      modal.style.height = '100%';
+      modal.style.maxWidth = '100%';
+      modal.style.maxHeight = '100%';
+      modal.style.padding = '0';
+      modal.style.border = 'none';
+
+      const innerRoot = document.createElement('div');
+      innerRoot.className = 'jasonette';
+      innerRoot.style.width = '100%';
+      innerRoot.style.height = '100%';
+      modal.appendChild(innerRoot);
+
+      document.body.appendChild(modal);
+      modal.showModal();
+
+      const childRenderer = new JasonetteRenderer(innerRoot);
+      await childRenderer.load(url);
+
+      modal.addEventListener('close', () => modal.remove());
+    } else {
+      // Push navigation
+      if (this.state.document && this.state.url) {
+        this.state.history.push({
+          url: this.state.url,
+          document: this.state.document,
+        });
+      }
+      await this.load(url);
+    }
+  }
+
+  /**
+   * Go back in navigation history.
+   */
+  back(): void {
+    const prev = this.state.history.pop();
+    if (prev) {
+      this.state.url = prev.url;
+      this.renderDocument(prev.document);
+    } else {
+      history.back();
+    }
+  }
+
+  /**
+   * Get current state (for testing/debugging).
+   */
+  getState(): AppState {
+    return this.state;
+  }
+}
