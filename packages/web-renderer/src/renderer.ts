@@ -72,6 +72,23 @@ export class JasonetteRenderer {
         this.load(e.state.jasonetteUrl, { pushHistory: false });
       }
     });
+
+    // $show — fires each time the document becomes visible
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        this.triggerLifecycle('$show');
+        this.triggerLifecycle('$foreground');
+      }
+    });
+  }
+
+  private triggerLifecycle(name: string): void {
+    const action = this.state.actions[name];
+    if (action) {
+      executeAction(action, this.state).catch((err) =>
+        console.error(`[jasonette] ${name} error:`, err),
+      );
+    }
   }
 
   /**
@@ -96,6 +113,9 @@ export class JasonetteRenderer {
       if (loadAction) {
         await executeAction(loadAction, this.state);
       }
+
+      // Trigger $show on first render
+      this.triggerLifecycle('$show');
     } catch (err) {
       console.error('[jasonette] Failed to load:', url, err);
       this.root.textContent = `Failed to load: ${url}`;
@@ -192,6 +212,11 @@ export class JasonetteRenderer {
         sectionsEl.appendChild(this.renderSection(section));
       }
       this.root.appendChild(sectionsEl);
+
+      // Pull-to-refresh ($pull)
+      if (this.state.actions['$pull']) {
+        this.setupPullToRefresh(sectionsEl);
+      }
     }
 
     // Layers
@@ -313,6 +338,28 @@ export class JasonetteRenderer {
     }
 
     return el;
+  }
+
+  private setupPullToRefresh(scrollTarget: HTMLElement): void {
+    let startY = 0;
+    let pulling = false;
+
+    scrollTarget.addEventListener('touchstart', (e: TouchEvent) => {
+      if (scrollTarget.scrollTop === 0) {
+        startY = e.touches[0].clientY;
+        pulling = true;
+      }
+    }, { passive: true });
+
+    scrollTarget.addEventListener('touchend', (e: TouchEvent) => {
+      if (pulling) {
+        const dist = e.changedTouches[0].clientY - startY;
+        pulling = false;
+        if (dist > 80) {
+          this.triggerLifecycle('$pull');
+        }
+      }
+    }, { passive: true });
   }
 
   /**
