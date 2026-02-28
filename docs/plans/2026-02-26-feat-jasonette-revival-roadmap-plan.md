@@ -396,17 +396,15 @@ function evaluate(node: jsep.Expression, context: Record<string, any>): any {
 
 ---
 
-### Gate Review (Week 7)
+### Gate Review (Week 7) ✅ COMPLETED
 
 Before starting native development, verify:
 
-- [ ] The `$jason` schema spec is stable (no more changes from web implementation learnings)
-- [ ] The template engine passes all Jasonpedia template and expression examples
-- [ ] All Jasonpedia view examples render correctly on the web
-- [ ] The action execution model (chaining, lambda, return, lifecycle hooks) is formally documented
-- [ ] The action tier list (v1.0 / v1.1 / v1.2) is finalized
-
-If the web phase reveals schema ambiguities, resolve them before native work begins.
+- [x] The `$jason` schema spec is stable (codified in `spec/schema/`)
+- [x] The template engine passes all Jasonpedia template and expression examples (140 tests)
+- [x] All Jasonpedia view examples render correctly on the web (integration tests)
+- [x] The action execution model (chaining, lambda, return, lifecycle hooks) is formally documented
+- [x] The action tier list (v1.0 / v1.1 / v1.2) is finalized
 
 ---
 
