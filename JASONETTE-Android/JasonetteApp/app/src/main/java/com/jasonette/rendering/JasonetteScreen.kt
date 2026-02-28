@@ -1,5 +1,6 @@
 package com.jasonette.rendering
 
+import android.app.Application
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -7,6 +8,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.jasonette.components.ComponentView
 import com.jasonette.core.*
@@ -65,6 +67,7 @@ fun JasonetteScreen(
                                 ComponentView(
                                     header,
                                     headStyles = headStyles,
+                                    stateManager = viewModel.stateManager,
                                     onHref = onNavigate,
                                     onAction = { viewModel.handleAction(it) }
                                 )
@@ -74,6 +77,7 @@ fun JasonetteScreen(
                             ComponentView(
                                 component,
                                 headStyles = headStyles,
+                                stateManager = viewModel.stateManager,
                                 onHref = onNavigate,
                                 onAction = { viewModel.handleAction(it) }
                             )
@@ -86,6 +90,7 @@ fun JasonetteScreen(
                             ComponentView(
                                 component,
                                 headStyles = headStyles,
+                                stateManager = viewModel.stateManager,
                                 onHref = onNavigate,
                                 onAction = { viewModel.handleAction(it) }
                             )
@@ -105,6 +110,7 @@ fun JasonetteScreen(
     url: String,
     onNavigate: ((JasonHref) -> Unit)? = null
 ) {
-    val viewModel = remember { JasonetteViewModel(url = url) }
+    val application = LocalContext.current.applicationContext as Application
+    val viewModel = remember { JasonetteViewModel(application, url = url) }
     JasonetteScreen(viewModel = viewModel, onNavigate = onNavigate)
 }

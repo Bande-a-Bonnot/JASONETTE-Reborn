@@ -20,7 +20,7 @@ fun buildStyleModifier(
 ): Modifier {
     val style = resolveStyle(inlineStyle, headStyles, className) ?: return Modifier
 
-    var modifier = Modifier as Modifier
+    var modifier: Modifier = Modifier
 
     // Padding
     style.padding?.dp?.let { modifier = modifier.padding(it.dp) }

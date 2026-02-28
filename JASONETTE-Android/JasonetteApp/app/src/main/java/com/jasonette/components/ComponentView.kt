@@ -7,6 +7,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.jasonette.core.*
+import kotlinx.serialization.json.JsonPrimitive
 
 /**
  * Registry that dispatches Jasonette component types to Compose views.
@@ -15,6 +16,7 @@ import com.jasonette.core.*
 fun ComponentView(
     component: JasonComponent,
     headStyles: Map<String, JasonStyle> = emptyMap(),
+    stateManager: StateManager? = null,
     onHref: ((JasonHref) -> Unit)? = null,
     onAction: ((JasonAction) -> Unit)? = null
 ) {
@@ -34,32 +36,49 @@ fun ComponentView(
             "label" -> LabelComponent(text = component.text ?: "")
             "image" -> ImageComponent(url = component.url, style = component.style)
             "button" -> ButtonComponent(text = component.text, url = component.url)
-            "textfield" -> TextFieldComponent(
-                name = component.name ?: "",
-                placeholder = component.placeholder ?: "",
-                keyboard = component.keyboard
-            )
-            "textarea" -> TextAreaComponent(
-                name = component.name ?: "",
-                placeholder = component.placeholder ?: ""
-            )
-            "slider" -> SliderComponent(
-                name = component.name ?: "",
-                value = component.value?.floatOrNull ?: 50f
-            )
+            "textfield" -> {
+                val name = component.name ?: ""
+                TextFieldComponent(
+                    name = name,
+                    placeholder = component.placeholder ?: "",
+                    keyboard = component.keyboard,
+                    value = stateManager?.local?.get(name) as? String ?: "",
+                    onValueChange = { stateManager?.set(mapOf(name to it)) }
+                )
+            }
+            "textarea" -> {
+                val name = component.name ?: ""
+                TextAreaComponent(
+                    name = name,
+                    placeholder = component.placeholder ?: "",
+                    value = stateManager?.local?.get(name) as? String ?: "",
+                    onValueChange = { stateManager?.set(mapOf(name to it)) }
+                )
+            }
+            "slider" -> {
+                val name = component.name ?: ""
+                SliderComponent(
+                    name = name,
+                    value = (component.value as? JsonPrimitive)?.floatOrNull ?: 50f,
+                    onValueChange = { stateManager?.set(mapOf(name to it)) }
+                )
+            }
             "space" -> SpaceComponent(height = component.style?.height?.dp)
-            "switch" -> SwitchComponent(
-                name = component.name ?: "",
-                isOn = component.value?.let {
-                    it.content == "true"
-                } ?: false
-            )
+            "switch" -> {
+                val name = component.name ?: ""
+                SwitchComponent(
+                    name = name,
+                    isOn = (component.value as? JsonPrimitive)?.content == "true",
+                    onCheckedChange = { stateManager?.set(mapOf(name to it)) }
+                )
+            }
             "map" -> MapStubComponent()
             "vertical" -> LayoutView(
                 direction = LayoutDirection.VERTICAL,
                 components = component.components ?: emptyList(),
                 headStyles = headStyles,
                 style = component.style,
+                stateManager = stateManager,
                 onHref = onHref,
                 onAction = onAction
             )
@@ -68,6 +87,7 @@ fun ComponentView(
                 components = component.components ?: emptyList(),
                 headStyles = headStyles,
                 style = component.style,
+                stateManager = stateManager,
                 onHref = onHref,
                 onAction = onAction
             )
@@ -87,10 +107,11 @@ fun LayoutView(
     components: List<JasonComponent>,
     headStyles: Map<String, JasonStyle>,
     style: JasonStyle?,
+    stateManager: StateManager?,
     onHref: ((JasonHref) -> Unit)?,
     onAction: ((JasonAction) -> Unit)?
 ) {
-    val spacing = style?.spacing?.dp?.dp ?: 8.dp
+    val spacing = (style?.spacing?.dp ?: 8f).dp
 
     when (direction) {
         LayoutDirection.VERTICAL -> {
@@ -103,7 +124,7 @@ fun LayoutView(
                 }
             ) {
                 components.forEach { comp ->
-                    ComponentView(comp, headStyles, onHref, onAction)
+                    ComponentView(comp, headStyles, stateManager, onHref, onAction)
                 }
             }
         }
@@ -117,7 +138,7 @@ fun LayoutView(
                 }
             ) {
                 components.forEach { comp ->
-                    ComponentView(comp, headStyles, onHref, onAction)
+                    ComponentView(comp, headStyles, stateManager, onHref, onAction)
                 }
             }
         }
