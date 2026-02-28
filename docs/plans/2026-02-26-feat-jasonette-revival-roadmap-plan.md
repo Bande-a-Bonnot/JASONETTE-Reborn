@@ -410,6 +410,7 @@ Before starting native development, verify:
 
 ### Phase 2: iOS Platform (Weeks 8-15) — COMPLETED
 
+**Status:** Merged as PR #4 on 2026-02-28
 **Goal:** Native iOS app shell that renders `$jason` JSON using modern Swift.
 
 **Status:** Completed 2026-02-28 — PR #4
@@ -546,8 +547,9 @@ Before starting native development, verify:
 
 ---
 
-### Phase 3: Android Platform (Weeks 8-15, parallel with iOS)
+### Phase 3: Android Platform (Weeks 8-15, parallel with iOS) — IN PROGRESS
 
+**Status:** PR #5 open, under review
 **Goal:** Native Android app shell that renders `$jason` JSON using modern Kotlin.
 
 #### 3.1 — New Android Studio Project
