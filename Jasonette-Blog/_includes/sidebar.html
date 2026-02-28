@@ -1,0 +1,61 @@
+<div class="sidebar">
+  <div class="container sidebar-sticky">
+    <div class="sidebar-about">
+      <h1>
+        <a href="{{ site.base }}">
+          <img class='logo' src='/assets/jasonette.png'>
+          <br>
+          {{ site.title }}
+        </a>
+      </h1>
+      <p class="lead">{{ site.description }}</p>
+    </div>
+
+    <nav class="sidebar-nav">
+      <!--
+      {% comment %}
+        The code below dynamically generates a sidebar nav of pages with
+        `layout: page` in the front-matter. See readme for usage.
+      {% endcomment %}
+
+      {% assign pages_list = site.pages %}
+      {% for node in pages_list %}
+        {% if node.title != null %}
+          {% if node.layout == "page" %}
+            <a class="sidebar-nav-item{% if page.url == node.url %} active{% endif %}" href="{{ node.url }}">{{ node.title }}</a>
+          {% endif %}
+        {% endif %}
+      {% endfor %}
+      -->
+      <a class="sidebar-nav-item inline nopadding" href="https://jasonette.com">About</a>
+      <a class="sidebar-nav-item inline nopadding" href="https://blog.jasonette.com">Blog</a>
+      <a class="sidebar-nav-item inline nopadding" href="https://docs.jasonette.com">Docs</a>
+      <div class='sidebar-nav-item bold'>Subscribe to Newsletter</div>
+			<div class='sidebar-nav-item nopadding'>
+				<form action="//textethan.us8.list-manage.com/subscribe/post?u=54e23b3fe61843c19c384fc05&amp;id=76d5746d7b" method="post" id="mc-embedded-subscribe-form" name="mc-embedded-subscribe-form" class="validate" target="_blank" novalidate="novalidate">
+					<p>Important updates, milestones, new projects, and useful tips from the community.</p>
+					<input type="email" value="" name="EMAIL" class="required email" id="mce-EMAIL" placeholder="enter email" aria-required="true">
+					<button type="submit" value="Subscribe" name="subscribe" id="mc-embedded-subscribe" class="button">Subscribe</button>
+					<div id="mce-responses" class="clear">
+							<div class="response" id="mce-error-response" style="display:none"></div>
+							<div class="response" id="mce-success-response" style="display:none"></div>
+					</div>
+					<div style="position: absolute; left: -5000px;" aria-hidden="true">
+							<input type="text" name="b_54e23b3fe61843c19c384fc05_76d5746d7b" tabindex="-1" value="">
+					</div>
+				</form>
+			</div>
+      <div class='sidebar-nav-item bold'>Community</div>
+      <a class="sidebar-nav-item inline" href="https://jasonette.now.sh/">Slack</a>
+			<a class="sidebar-nav-item inline" href="https://forum.jasonette.com/">Forum</a>
+			<a class="sidebar-nav-item inline" href="https://www.twitter.com/jasonclient">Twitter</a>
+      <div class='sidebar-nav-item bold'>Github</div>
+			<a class="sidebar-nav-item icon" href="https://github.com/Jasonette/JASONETTE-Android">Android <img src='/assets/android.png'></a>
+			<a class="sidebar-nav-item icon" href="https://github.com/Jasonette/JASONETTE-iOS">iOS <img src='/assets/apple.png'></a>
+      <!--
+      <div class='sidebar-nav-item bold'>RSS</div>
+			<a class="sidebar-nav-item icon" href='/atom.xml'><img src='/assets/feed.png'></a>
+      -->
+    </nav>
+  </div>
+</div>

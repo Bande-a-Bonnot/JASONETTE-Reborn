@@ -1,0 +1,15 @@
+language: python
+install: pip install mkdocs
+cache: pip
+
+before_script:
+  - git config user.name "Ethan Gliechtenstein"
+  - git config user.email "ethan.gliechtenstein@gmail.com"
+  - git remote add production "https://${GH_TOKEN}@github.com/Jasonette/documentation.git";
+  - git fetch production && git fetch production gh-pages:gh-pages;
+
+script: mkdocs gh-deploy --clean --remote-name production
+
+env:
+  global:
+    secure: ovGKxCrsn7p+6EVOHzggDu4Q8pRy6nLtCIgulwQpqtp0rPLbtozDIwlzAw3cAF0pIiNoecPzHZYXjESkzx2BrwaIZTlErGZt3uRPjnHbtCWHnKAYqdKvKY014EdHPsUfTRVJZkMaQVQVlfAUcw450QF0oI8YtBuQADd+KyM2tWzVtyIxIaFsIIuKlIgvA8Bl64w8Y+ortHg7VVAkcg+zjA4OALBB3zwzEqE0m2n+RFCyeBmHmEkt8+c9E2sOpN1t2g955STIhj8JRGitqRlvbdCcg+qgManSPWRnhlvynwJ+NydJUVCjpnl6hFzjHkIZvPSYzI03iTUchL2FEPreyVlM1HsxnxeOYnISx0fXodl8xLOqztg5cLL01k/xniOVdgzUxfG0ZaQP2a/6zXM5A/b5c2ZB5iTyi/9Fb1iaOpMeMtd0WVHLLmKWcNvqTan2p6F4o5IsTpPsukcMUJqXaRDJ4VyfOrePL5fF1vwupWGCnMzW4epP3etfw/+HhPg4CC62ppi9Z5RpLkcqlPXc4xt6wIM9wBcPVdWvZzgJqs1uVupkTZgM9U+lRKjMjftuYPXEJE0F03tDIMRAAowfx40batAGtJMvcq8KWsokm3nlrZg9KTzzcPEzmoArBXDYXVfSZtBWhfospERmaUYM7SwrTu0zkuc1v8/3cxlWaOM=
