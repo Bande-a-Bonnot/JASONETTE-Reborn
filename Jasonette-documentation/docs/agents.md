@@ -62,7 +62,7 @@ Above code basically lets you import the site as a Jasonette agent and communica
 
 In the demo you can only see the native app UI on the phone, but in the background the same web app is running to communicate with Jasonette.
 
-You can check out some more examples here: [Turn your existing Angular.js, Vue.js, Cell.js app into an Agent](https://github.com/Jasonette/agent.jsframeworks)
+You can check out some more examples here: [Turn your existing Angular.js, Vue.js, Cell.js app into an Agent](https://github.com/Bande-a-Bonnot/agent.jsframeworks)
 
 ## 3. Native User Experience meets Multithreading
 
@@ -720,8 +720,8 @@ Here's what's going on:
 
 Here are some demos you can try out right now:
 
-- [Basic API Demo](https://github.com/Jasonette/AgentJason)
-- [WebSockets](https://github.com/Jasonette/agent.websockets)
-- [Web Audio](https://github.com/Jasonette/agent.audio)
-- [Firebase](https://github.com/Jasonette/agent.firebase)
-- [Turn your existing Angular.js, Vue.js, Cell.js app into an Agent](https://github.com/Jasonette/agent.jsframeworks)
+- [Basic API Demo](https://github.com/Bande-a-Bonnot/AgentJason)
+- [WebSockets](https://github.com/Bande-a-Bonnot/agent.websockets)
+- [Web Audio](https://github.com/Bande-a-Bonnot/agent.audio)
+- [Firebase](https://github.com/Bande-a-Bonnot/agent.firebase)
+- [Turn your existing Angular.js, Vue.js, Cell.js app into an Agent](https://github.com/Bande-a-Bonnot/agent.jsframeworks)

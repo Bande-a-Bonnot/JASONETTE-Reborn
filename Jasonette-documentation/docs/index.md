@@ -18,7 +18,7 @@ Before we jump in, <b>here's where you can stay in touch with the project commun
 	</tr>
 	<tr>
 		<td class='span4'><a href='https://www.twitter.com/jasonclient'><h1><i class='icon fa-twitter fa-1x'></i></h1>@jasonclient</a></td>
-		<td class='span4'><a href='https://medium.com/@gliechtenstein'><h1><i class='icon fa-rss fa-1x'></i></h1>Follow on Medium</a></td>
+		<td class='span4'><a href='https://github.com/Bande-a-Bonnot'><h1><i class='icon fa-rss fa-1x'></i></h1>Follow on Medium</a></td>
 	</tr>
 </table>
 <table class='equalwidth follow'>
@@ -33,9 +33,9 @@ Before we jump in, <b>here's where you can stay in touch with the project commun
     <td class='span4'>A Web implementation,<br>written in JavaScript</td>
   </tr>
 	<tr>
-		<td class='span4'><a href='https://www.github.com/Jasonette/JASONETTE-iOS'><h1><i class='icon fa-github fa-1x'></i></h1>JASONETTE-iOS</a></td>
-		<td class='span4'><a href='https://www.github.com/Jasonette/JASONETTE-Android'><h1><i class='icon fa-github fa-1x'></i></h1>JASONETTE-Android</a></td>
-		<td class='span4'><a href='https://www.github.com/Jasonette/JASONETTE-Web'><h1><i class='icon fa-github fa-1x'></i></h1>JASONETTE-Web</a></td>
+		<td class='span4'><a href='https://www.github.com/Bande-a-Bonnot/JASONETTE-Reborn/tree/main/JASONETTE-iOS'><h1><i class='icon fa-github fa-1x'></i></h1>JASONETTE-iOS</a></td>
+		<td class='span4'><a href='https://www.github.com/Bande-a-Bonnot/JASONETTE-Reborn/tree/main/JASONETTE-Android'><h1><i class='icon fa-github fa-1x'></i></h1>JASONETTE-Android</a></td>
+		<td class='span4'><a href='https://www.github.com/Bande-a-Bonnot/JASONETTE-Web'><h1><i class='icon fa-github fa-1x'></i></h1>JASONETTE-Web</a></td>
 	</tr>
 </table>
 
@@ -161,18 +161,18 @@ You'll be serving your entire app from a server, so you will need somewhere to h
 
 <div class='well'>
 <h3><a href='http://web.jasonette.com'>1. Jasonette Web (web.jasonette.com)</a></h3>
-<b>[Recommended]</b> A hosted & social implementation of <a href='https://github.com/Jasonette/Jasonette-Web'>Jasonette-Web</a>.<br><br>Has all the useful features such as folders, markdown-based readme, bookmarking, version control, realtime editing, etc. Write and share as much JSON as you want. <b>It's FREE.</b>
+<b>[Recommended]</b> A hosted & social implementation of <a href='https://github.com/Bande-a-Bonnot/Jasonette-Web'>Jasonette-Web</a>.<br><br>Has all the useful features such as folders, markdown-based readme, bookmarking, version control, realtime editing, etc. Write and share as much JSON as you want. <b>It's FREE.</b>
 <br><br>
 (Note: You DON'T need to use Jasonette Web to use Jasonette. This service is provided for free to help you get started quickly without having to set up your own JSON server. After all, all you need is JSON and the whole point of the framework is the portability of JSON)
 
 <br><br>
 <h3>2. Code hosting or pastebin sites</h3>
-You can also use <a href='https://www.github.com'>Github</a> or <a href='http://pastebin.com'>Pastebin</a>. Not really recommended for development because these sites are <b>NOT built for this type of usage</b>. They actually discourage you from using them as API endpoint. Furthermore, their content is cached so you'll often keep getting old responses whenever you update your JSON content, which is a pain. <b>However, you can use them AFTER you've finished editing, or use it for open sourcing though. <a href='https://github.com/Jasonette/Instagram-UI-example'>Here's an example.</a></b>
+You can also use <a href='https://www.github.com'>Github</a> or <a href='http://pastebin.com'>Pastebin</a>. Not really recommended for development because these sites are <b>NOT built for this type of usage</b>. They actually discourage you from using them as API endpoint. Furthermore, their content is cached so you'll often keep getting old responses whenever you update your JSON content, which is a pain. <b>However, you can use them AFTER you've finished editing, or use it for open sourcing though. <a href='https://github.com/Bande-a-Bonnot/Instagram-UI-example'>Here's an example.</a></b>
 
 <br><br>
 
 <h3>3. Quick Local Prototyping</h3>
-You can also use <a href='https://github.com/Jasonette/Jasonette-Web'>Jasonette-Web</a> along with simple instant open source HTTP servers like the <a href='https://github.com/indexzero/http-server'>http-server project</a> to roll your own Jasonette Web.
+You can also use <a href='https://github.com/Bande-a-Bonnot/Jasonette-Web'>Jasonette-Web</a> along with simple instant open source HTTP servers like the <a href='https://github.com/indexzero/http-server'>http-server project</a> to roll your own Jasonette Web.
 <br><br>
 
 <h3>4. Plug into your existing server</h3>
@@ -249,7 +249,7 @@ You can use templates to dynamically render data, such as remote network content
 Here are some in-depth articles
 
 - [(Intro) How to build cross-platform mobile apps using nothing more than a JSON markup](https://medium.freecodecamp.org/how-to-build-cross-platform-mobile-apps-using-nothing-more-than-a-json-markup-f493abec1873)
-- [Jasonette Offline: Using offline features with Jasonette](https://medium.com/@gliechtenstein/jasonette-offline-7d6ed8d58edb)
+- [Jasonette Offline: Using offline features with Jasonette](https://github.com/Bande-a-Bonnot/jasonette-offline-7d6ed8d58edb)
 - [Building a SlackBot remote control app with Jasonette](http://blog.jasonette.com/2017/01/17/build-a-slackbot-with-jasonette/)
 - [TabBar: How the bottom tab bar works](http://blog.jasonette.com/2017/02/07/supercharged-tabbar/)
 - [Functional Programming in JSON: How Jasonette implements function call stacks purely in JSON, and how to use it](http://blog.jasonette.com/2017/02/15/functional-programming-in-json/)

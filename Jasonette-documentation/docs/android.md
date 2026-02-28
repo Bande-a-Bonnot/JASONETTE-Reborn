@@ -11,7 +11,7 @@
 <div class='well'>
 Jasonette itself is a pre-built app.<br>All you need to do is download Jasonette and build with <a href='https://developer.android.com/studio/index.html'>Android Studio</a>.
 <br><br>
-<a href='https://github.com/Jasonette/JASONETTE-Android/archive/master.zip' class='btn'><i class='fa fa-download'></i> Download Jasonette-Android</a>
+<a href='https://github.com/Bande-a-Bonnot/JASONETTE-Reborn/tree/main/JASONETTE-Android/archive/master.zip' class='btn'><i class='fa fa-download'></i> Download Jasonette-Android</a>
 </div>
 
 <img src='../images/android_1.png' class='large'>

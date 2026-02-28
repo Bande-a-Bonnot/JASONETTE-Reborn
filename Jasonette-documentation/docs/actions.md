@@ -1819,7 +1819,7 @@ Here's what's going on above:
 
 >    **{ "$jason": "https://s3.amazonaws.com/...../...?AWSAccessKeyId=.....&Expires=.....&Signature=....."}**
 >
->**[See the full server side code](https://github.com/Jasonette/s3-upload-example)** to learn how to generate signed urls.
+>**[See the full server side code](https://github.com/Bande-a-Bonnot/s3-upload-example)** to learn how to generate signed urls.
 ####4. The client then uploads the content passed in as `data` to the just generated signed url, using a randomly generated filename.
 ####5. Once the upload finishes, the `$network.upload` returns the filename generated from step 3.
 ####6. Then it stores the filename to our server by making a POST `$network.request` to `https://imagejason.herokuapp.com/post`
@@ -1827,7 +1827,7 @@ Here's what's going on above:
 <br><br>
 Check out the full code on Github:
 
-**[s3-upload-example](https://github.com/Jasonette/s3-upload-example)**
+**[s3-upload-example](https://github.com/Bande-a-Bonnot/s3-upload-example)**
 
 ---
 
@@ -1837,7 +1837,7 @@ Check out the full code on Github:
 
 Check out a functional demo app with backend server, with user accounts
 
-**[session-example](https://github.com/Jasonette/token-authentication-example)**
+**[session-example](https://github.com/Bande-a-Bonnot/token-authentication-example)**
 
 ---
 
@@ -1983,7 +1983,7 @@ Just set the `options.type` as `html`.
 
 Check out a functional demo app with backend server, with user accounts
 
-**[session-example](https://github.com/Jasonette/token-authentication-example)**
+**[session-example](https://github.com/Bande-a-Bonnot/token-authentication-example)**
 
 ---
 
