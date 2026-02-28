@@ -10,5 +10,6 @@ struct SliderComponent: View {
         Slider(value: $current, in: 0...100)
             .accessibilityIdentifier(name)
             .onAppear { current = value }
+            .onChange(of: value) { current = $0 }
     }
 }

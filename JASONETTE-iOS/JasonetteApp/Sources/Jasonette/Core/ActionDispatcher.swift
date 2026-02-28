@@ -104,10 +104,25 @@ public final class ActionDispatcher: ObservableObject {
 
     // MARK: - Network
 
+    /// Allowed URL schemes for network requests.
+    private static let allowedSchemes: Set<String> = ["https", "http"]
+
+    /// Headers that must not be set by Jasonette documents.
+    private static let blockedHeaders: Set<String> = [
+        "host", "cookie", "authorization", "proxy-authorization",
+        "set-cookie", "transfer-encoding", "content-length"
+    ]
+
     private func networkRequest(_ options: [String: AnyCodable]) async throws {
         guard let urlStr = options["url"]?.string,
               let url = URL(string: urlStr) else {
             throw ActionError.invalidURL
+        }
+
+        // Validate URL scheme to prevent file:// and other unsafe protocols
+        guard let scheme = url.scheme?.lowercased(),
+              Self.allowedSchemes.contains(scheme) else {
+            throw ActionError.blockedURL
         }
 
         var request = URLRequest(url: url)
@@ -115,7 +130,9 @@ public final class ActionDispatcher: ObservableObject {
 
         if let headers = options["headers"]?.dictionary {
             for (key, value) in headers {
-                if let str = (value as? AnyCodable)?.string ?? (value as? String) {
+                // Block sensitive headers to prevent injection attacks
+                guard !Self.blockedHeaders.contains(key.lowercased()) else { continue }
+                if let str = value.string {
                     request.setValue(str, forHTTPHeaderField: key)
                 }
             }
@@ -145,6 +162,7 @@ public final class ActionDispatcher: ObservableObject {
 
     enum ActionError: Error {
         case invalidURL
+        case blockedURL
         case httpError(Int)
     }
 }

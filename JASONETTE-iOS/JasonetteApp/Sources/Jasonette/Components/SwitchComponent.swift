@@ -11,5 +11,6 @@ struct SwitchComponent: View {
             .labelsHidden()
             .accessibilityIdentifier(name)
             .onAppear { current = isOn }
+            .onChange(of: isOn) { current = $0 }
     }
 }

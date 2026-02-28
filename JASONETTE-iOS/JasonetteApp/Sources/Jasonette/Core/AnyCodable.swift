@@ -32,6 +32,8 @@ public struct AnyCodable: Codable, Sendable, Equatable, Hashable {
         case (let l as Int, let r as Int): return l == r
         case (let l as Double, let r as Double): return l == r
         case (let l as Bool, let r as Bool): return l == r
+        case (let l as [AnyCodable], let r as [AnyCodable]): return l == r
+        case (let l as [String: AnyCodable], let r as [String: AnyCodable]): return l == r
         case (is NSNull, is NSNull): return true
         default: return false
         }
@@ -45,6 +47,12 @@ public struct AnyCodable: Codable, Sendable, Equatable, Hashable {
         case let v as Int: hasher.combine(v)
         case let v as Double: hasher.combine(v)
         case let v as Bool: hasher.combine(v)
+        case let v as [AnyCodable]: hasher.combine(v)
+        case let v as [String: AnyCodable]:
+            for (key, val) in v.sorted(by: { $0.key < $1.key }) {
+                hasher.combine(key)
+                hasher.combine(val)
+            }
         default: hasher.combine(0)
         }
     }

@@ -117,8 +117,7 @@ extension Color {
 
         guard h.count == 6 || h.count == 8 else { return nil }
 
-        var value: UInt64 = 0
-        guard Scanner(string: h).scanHexInt64(&value) else { return nil }
+        guard let value = UInt64(h, radix: 16) else { return nil }
 
         if h.count == 6 {
             let r = Double((value >> 16) & 0xFF) / 255
