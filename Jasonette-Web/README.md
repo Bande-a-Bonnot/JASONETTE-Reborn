@@ -8,8 +8,8 @@ You can build native iOS and Android apps using the JASON markup, and Jasonette-
 
 You can learn more about the iOS and Android versions at:
 
-- Jasonette-iOS: [https://github.com/Jasonette/Jasonette-iOS](https://github.com/Jasonette/Jasonette-iOS)
-- Jasonette-Android: [https://github.com/Jasonette/Jasonette-Android](https://github.com/Jasonette/Jasonette-Android)
+- Jasonette-iOS: [https://github.com/Bande-a-Bonnot/Jasonette-iOS](https://github.com/Bande-a-Bonnot/Jasonette-iOS)
+- Jasonette-Android: [https://github.com/Bande-a-Bonnot/Jasonette-Android](https://github.com/Bande-a-Bonnot/Jasonette-Android)
 
 # Demo
 

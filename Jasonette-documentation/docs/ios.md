@@ -14,7 +14,7 @@ Jasonette itself is a pre-built app.<br>All you need to do is download and build
 <br><br>
 Go ahead and download Jasonette, and then unzip.
 <br><br>
-<a href='https://github.com/Jasonette/JASONETTE-iOS/archive/master.zip' class='btn'><i class='fa fa-download'></i> Download Jasonette-iOS</a>
+<a href='https://github.com/Bande-a-Bonnot/JASONETTE-Reborn/tree/main/JASONETTE-iOS/archive/master.zip' class='btn'><i class='fa fa-download'></i> Download Jasonette-iOS</a>
 </div>
 
 ![download jasonette](images/download.png)
@@ -64,7 +64,7 @@ It is recommended that you use [the Setup command](#step-2-setup) since it takes
 
 ###Step 1. Download
 
-[Download Jasonette](https://github.com/Jasonette/JASONETTE-iOS/archive/master.zip) and unzip.
+[Download Jasonette](https://github.com/Bande-a-Bonnot/JASONETTE-Reborn/tree/main/JASONETTE-iOS/archive/master.zip) and unzip.
 ![download jasonette](images/download.png)
 
 <br>

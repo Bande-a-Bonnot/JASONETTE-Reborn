@@ -50,7 +50,7 @@ These things weren't possible since the only supported attribute was `url`.
 However, this changes today. You can attach not only `url` but also [href](https://docs.jasonette.com/href/) as well as [action](https://docs.jasonette.com/actions/).
 
 
-Go download the `develop` branch ([iOS](https://github.com/Jasonette/JASONETTE-iOS) and [Android](https://github.com/Jasonette/JASONETTE-Android)) and try it out. Here's what has changed:
+Go download the `develop` branch ([iOS](https://github.com/Bande-a-Bonnot/JASONETTE-iOS) and [Android](https://github.com/Bande-a-Bonnot/JASONETTE-Android)) and try it out. Here's what has changed:
 
 ## href
 You can now set `href` as well as `url`. [href](https://docs.jasonette.com/href/) is obviously more powerful since you can specify not just the url but also the `view` or the type of `transition`.
@@ -143,4 +143,4 @@ Sometimes people are confused about how the tabs work. Here's a rule of thumb:
 Let's say you have tab1, tab2, and tab3. All of those views MUST contain the **same** `tabs` object. If you only have the `tabs` object on `tab1`'s markup, the tab bar will go away when you navigate away to tab2 or tab3.
 
 ## Try it out!
-As of today this works on both [Android](https://github.com/Jasonette/JASONETTE-Android) and [iOS](https://github.com/Jasonette/JASONETTE-iOS)
+As of today this works on both [Android](https://github.com/Bande-a-Bonnot/JASONETTE-Android) and [iOS](https://github.com/Bande-a-Bonnot/JASONETTE-iOS)
