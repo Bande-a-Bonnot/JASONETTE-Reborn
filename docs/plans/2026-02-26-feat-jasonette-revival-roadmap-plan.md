@@ -396,23 +396,23 @@ function evaluate(node: jsep.Expression, context: Record<string, any>): any {
 
 ---
 
-### Gate Review (Week 7)
+### Gate Review (Week 7) ✅ COMPLETED
 
 Before starting native development, verify:
 
-- [ ] The `$jason` schema spec is stable (no more changes from web implementation learnings)
-- [ ] The template engine passes all Jasonpedia template and expression examples
-- [ ] All Jasonpedia view examples render correctly on the web
-- [ ] The action execution model (chaining, lambda, return, lifecycle hooks) is formally documented
-- [ ] The action tier list (v1.0 / v1.1 / v1.2) is finalized
-
-If the web phase reveals schema ambiguities, resolve them before native work begins.
+- [x] The `$jason` schema spec is stable (codified in `spec/schema/`)
+- [x] The template engine passes all Jasonpedia template and expression examples (140 tests)
+- [x] All Jasonpedia view examples render correctly on the web (integration tests)
+- [x] The action execution model (chaining, lambda, return, lifecycle hooks) is formally documented
+- [x] The action tier list (v1.0 / v1.1 / v1.2) is finalized
 
 ---
 
-### Phase 2: iOS Platform (Weeks 8-15)
+### Phase 2: iOS Platform (Weeks 8-15) — COMPLETED
 
 **Goal:** Native iOS app shell that renders `$jason` JSON using modern Swift.
+
+**Status:** Completed 2026-02-28 — PR #4
 
 #### 2.1 — New Xcode Project
 
