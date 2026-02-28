@@ -1,0 +1,33 @@
+# Dependencies
+markdown:         redcarpet
+highlighter:      rouge
+
+# Permalinks
+permalink:        pretty
+#relative_permalinks: true
+
+# Setup
+title:            jasonette
+description:          '⚡️ Native App over HTTP'
+url:              https://blog.jasonette.com
+#baseurl:         "/"
+base:             "/"
+
+#author:
+#  name:           JASON
+#  url:            https://twitter.com/jasonclient
+
+# Custom vars
+version:          0.0.1
+
+
+github:
+  repo:           https://github.com/Jasonette
+
+twitter:
+  username:       jasonclient
+
+future: true
+
+gems: [jekyll-paginate, jekyll-twitter-plugin, jekyll-youtube, jekyll-seo-tag, jekyll-redirect-from]
+paginate:         5
