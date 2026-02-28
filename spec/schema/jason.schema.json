@@ -1,0 +1,512 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema.jasonette.dev/v2/jason.schema.json",
+  "title": "Jasonette $jason Document",
+  "description": "Schema for Jasonette v2.0 $jason protocol documents",
+  "type": "object",
+  "required": ["$jason"],
+  "additionalProperties": false,
+  "properties": {
+    "$jason": {
+      "type": "object",
+      "required": ["head"],
+      "properties": {
+        "head": { "$ref": "#/$defs/Head" },
+        "body": { "$ref": "#/$defs/Body" }
+      }
+    }
+  },
+  "$defs": {
+    "Head": {
+      "type": "object",
+      "required": ["title"],
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "icon": { "type": "string", "format": "uri" },
+        "offline": { "type": ["boolean", "string"] },
+        "styles": { "$ref": "#/$defs/StyleMap" },
+        "actions": { "$ref": "#/$defs/ActionMap" },
+        "templates": { "$ref": "#/$defs/TemplateMap" },
+        "data": {},
+        "agents": { "type": "object" }
+      }
+    },
+    "Body": {
+      "type": "object",
+      "properties": {
+        "header": { "$ref": "#/$defs/Header" },
+        "footer": { "$ref": "#/$defs/Footer" },
+        "sections": { "$ref": "#/$defs/Sections" },
+        "layers": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Component" }
+        },
+        "background": { "$ref": "#/$defs/Background" },
+        "style": { "$ref": "#/$defs/Style" }
+      }
+    },
+    "Header": {
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "style": { "$ref": "#/$defs/Style" },
+        "menu": {
+          "type": "object",
+          "properties": {
+            "left": { "type": "array", "items": { "$ref": "#/$defs/MenuItem" } },
+            "right": { "type": "array", "items": { "$ref": "#/$defs/MenuItem" } }
+          }
+        },
+        "search": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "placeholder": { "type": "string" },
+            "action": { "$ref": "#/$defs/Action" },
+            "style": { "$ref": "#/$defs/Style" }
+          }
+        }
+      }
+    },
+    "MenuItem": {
+      "type": "object",
+      "properties": {
+        "text": { "type": "string" },
+        "image": { "type": "string" },
+        "style": { "$ref": "#/$defs/Style" },
+        "action": { "$ref": "#/$defs/Action" },
+        "href": { "$ref": "#/$defs/Href" },
+        "badge": { "type": "string" }
+      }
+    },
+    "Footer": {
+      "type": "object",
+      "properties": {
+        "tabs": { "$ref": "#/$defs/Tabs" },
+        "input": { "$ref": "#/$defs/FooterInput" },
+        "style": { "$ref": "#/$defs/Style" }
+      }
+    },
+    "Tabs": {
+      "type": "object",
+      "properties": {
+        "style": { "$ref": "#/$defs/Style" },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "text": { "type": "string" },
+              "image": { "type": "string" },
+              "url": { "type": "string", "format": "uri" },
+              "badge": { "type": "string" },
+              "style": { "$ref": "#/$defs/Style" },
+              "action": { "$ref": "#/$defs/Action" }
+            }
+          }
+        }
+      }
+    },
+    "FooterInput": {
+      "type": "object",
+      "properties": {
+        "left": { "type": "object" },
+        "right": { "type": "object" },
+        "textfield": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "placeholder": { "type": "string" }
+          }
+        }
+      }
+    },
+    "Sections": {
+      "oneOf": [
+        {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Section" }
+        },
+        {
+          "type": "object",
+          "patternProperties": {
+            "^\\{\\{#each\\s": {
+              "$ref": "#/$defs/Section"
+            }
+          }
+        }
+      ]
+    },
+    "Section": {
+      "type": "object",
+      "properties": {
+        "header": { "$ref": "#/$defs/Component" },
+        "items": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": { "$ref": "#/$defs/Component" }
+            },
+            {
+              "type": "object",
+              "patternProperties": {
+                "^\\{\\{#each\\s": {
+                  "$ref": "#/$defs/Component"
+                }
+              }
+            }
+          ]
+        },
+        "type": { "type": "string", "enum": ["vertical", "horizontal"] },
+        "style": { "$ref": "#/$defs/Style" }
+      }
+    },
+    "Background": {
+      "type": "object",
+      "properties": {
+        "type": { "type": "string" },
+        "options": { "type": "object" },
+        "url": { "type": "string" },
+        "style": { "$ref": "#/$defs/Style" }
+      }
+    },
+    "Component": {
+      "anyOf": [
+        { "$ref": "#/$defs/LabelComponent" },
+        { "$ref": "#/$defs/ImageComponent" },
+        { "$ref": "#/$defs/ButtonComponent" },
+        { "$ref": "#/$defs/TextfieldComponent" },
+        { "$ref": "#/$defs/TextareaComponent" },
+        { "$ref": "#/$defs/HtmlComponent" },
+        { "$ref": "#/$defs/MapComponent" },
+        { "$ref": "#/$defs/SliderComponent" },
+        { "$ref": "#/$defs/SwitchComponent" },
+        { "$ref": "#/$defs/SpaceComponent" },
+        { "$ref": "#/$defs/VerticalLayout" },
+        { "$ref": "#/$defs/HorizontalLayout" },
+        { "$ref": "#/$defs/TemplateComponent" }
+      ]
+    },
+    "ComponentBase": {
+      "type": "object",
+      "properties": {
+        "style": { "$ref": "#/$defs/Style" },
+        "class": { "type": "string" },
+        "action": { "$ref": "#/$defs/Action" },
+        "href": { "$ref": "#/$defs/Href" },
+        "name": { "type": "string" }
+      }
+    },
+    "LabelComponent": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": { "const": "label" },
+        "text": { "type": "string" },
+        "style": { "$ref": "#/$defs/Style" },
+        "class": { "type": "string" },
+        "action": { "$ref": "#/$defs/Action" },
+        "href": { "$ref": "#/$defs/Href" },
+        "name": { "type": "string" }
+      }
+    },
+    "ImageComponent": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": { "const": "image" },
+        "url": { "type": "string" },
+        "style": { "$ref": "#/$defs/Style" },
+        "class": { "type": "string" },
+        "action": { "$ref": "#/$defs/Action" },
+        "href": { "$ref": "#/$defs/Href" },
+        "name": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "ButtonComponent": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": { "const": "button" },
+        "text": { "type": "string" },
+        "url": { "type": "string" },
+        "image": { "type": "string" },
+        "style": { "$ref": "#/$defs/Style" },
+        "class": { "type": "string" },
+        "action": { "$ref": "#/$defs/Action" },
+        "href": { "$ref": "#/$defs/Href" },
+        "name": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "TextfieldComponent": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": { "const": "textfield" },
+        "name": { "type": "string" },
+        "placeholder": { "type": "string" },
+        "value": { "type": "string" },
+        "keyboard": { "type": "string", "enum": ["default", "number", "phone", "email", "url"] },
+        "secure": { "type": ["boolean", "string"] },
+        "style": { "$ref": "#/$defs/Style" },
+        "class": { "type": "string" },
+        "action": { "$ref": "#/$defs/Action" },
+        "href": { "$ref": "#/$defs/Href" }
+      },
+      "additionalProperties": false
+    },
+    "TextareaComponent": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": { "const": "textarea" },
+        "name": { "type": "string" },
+        "placeholder": { "type": "string" },
+        "value": { "type": "string" },
+        "style": { "$ref": "#/$defs/Style" },
+        "class": { "type": "string" },
+        "action": { "$ref": "#/$defs/Action" },
+        "href": { "$ref": "#/$defs/Href" }
+      },
+      "additionalProperties": false
+    },
+    "HtmlComponent": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": { "const": "html" },
+        "text": { "type": "string" },
+        "css": { "type": "string" },
+        "url": { "type": "string" },
+        "style": { "$ref": "#/$defs/Style" },
+        "class": { "type": "string" },
+        "action": { "$ref": "#/$defs/Action" },
+        "href": { "$ref": "#/$defs/Href" },
+        "name": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "MapComponent": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": { "const": "map" },
+        "region": {
+          "type": "object",
+          "properties": {
+            "coord": { "type": "string" },
+            "width": { "type": "string" },
+            "height": { "type": "string" }
+          }
+        },
+        "pins": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "coord": { "type": "string" },
+              "title": { "type": "string" },
+              "description": { "type": "string" },
+              "style": { "$ref": "#/$defs/Style" }
+            }
+          }
+        },
+        "style": { "$ref": "#/$defs/Style" },
+        "class": { "type": "string" },
+        "action": { "$ref": "#/$defs/Action" },
+        "href": { "$ref": "#/$defs/Href" },
+        "name": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "SliderComponent": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": { "const": "slider" },
+        "name": { "type": "string" },
+        "value": { "type": ["number", "string"] },
+        "style": { "$ref": "#/$defs/Style" },
+        "class": { "type": "string" },
+        "action": { "$ref": "#/$defs/Action" }
+      },
+      "additionalProperties": false
+    },
+    "SwitchComponent": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": { "const": "switch" },
+        "name": { "type": "string" },
+        "value": { "type": ["boolean", "string"] },
+        "style": { "$ref": "#/$defs/Style" },
+        "class": { "type": "string" },
+        "action": { "$ref": "#/$defs/Action" }
+      },
+      "additionalProperties": false
+    },
+    "SpaceComponent": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": { "const": "space" },
+        "style": { "$ref": "#/$defs/Style" }
+      },
+      "additionalProperties": false
+    },
+    "VerticalLayout": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": { "const": "vertical" },
+        "components": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Component" }
+        },
+        "style": { "$ref": "#/$defs/Style" },
+        "class": { "type": "string" },
+        "action": { "$ref": "#/$defs/Action" },
+        "href": { "$ref": "#/$defs/Href" },
+        "name": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "HorizontalLayout": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": { "const": "horizontal" },
+        "components": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Component" }
+        },
+        "style": { "$ref": "#/$defs/Style" },
+        "class": { "type": "string" },
+        "action": { "$ref": "#/$defs/Action" },
+        "href": { "$ref": "#/$defs/Href" },
+        "name": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "TemplateComponent": {
+      "type": "object",
+      "patternProperties": {
+        "^\\{\\{": {}
+      },
+      "additionalProperties": {}
+    },
+    "Action": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "type": { "type": "string" },
+            "trigger": { "type": "string" },
+            "options": {},
+            "success": {
+              "oneOf": [
+                { "$ref": "#/$defs/Action" },
+                { "type": "array", "items": { "type": "object" } }
+              ]
+            },
+            "error": {
+              "oneOf": [
+                { "$ref": "#/$defs/Action" },
+                { "type": "array", "items": { "type": "object" } }
+              ]
+            }
+          }
+        },
+        {
+          "type": "array",
+          "items": { "type": "object" }
+        }
+      ]
+    },
+    "ActionMap": {
+      "type": "object",
+      "patternProperties": {
+        ".*": { "$ref": "#/$defs/Action" }
+      }
+    },
+    "Href": {
+      "type": "object",
+      "properties": {
+        "url": { "type": "string", "format": "uri" },
+        "view": {
+          "type": "string",
+          "enum": ["jason", "web", "app"],
+          "default": "jason"
+        },
+        "transition": {
+          "type": "string",
+          "enum": ["push", "modal", "replace", "fullscreen"],
+          "default": "push"
+        },
+        "options": { "type": "object" },
+        "fresh": { "type": ["boolean", "string"] },
+        "preload": { "type": "object" }
+      }
+    },
+    "Style": {
+      "type": "object",
+      "properties": {
+        "color": { "type": "string" },
+        "background": { "type": "string" },
+        "font": { "type": "string" },
+        "size": { "type": "string" },
+        "padding": { "type": "string" },
+        "padding_top": { "type": "string" },
+        "padding_bottom": { "type": "string" },
+        "padding_left": { "type": "string" },
+        "padding_right": { "type": "string" },
+        "corner_radius": { "type": "string" },
+        "width": { "type": "string" },
+        "height": { "type": "string" },
+        "opacity": { "type": "string" },
+        "align": { "type": "string" },
+        "spacing": { "type": "string" },
+        "z_index": { "type": "string" },
+        "border": { "type": "string" },
+        "border_color": { "type": "string" },
+        "border_width": { "type": "string" },
+        "top": { "type": "string" },
+        "bottom": { "type": "string" },
+        "left": { "type": "string" },
+        "right": { "type": "string" },
+        "shy": { "type": ["boolean", "string"] },
+        "theme": { "type": "string" },
+        "placeholder_color": { "type": "string" },
+        "autocorrect": { "type": "string" },
+        "autocapitalize": { "type": "string" },
+        "color:active": { "type": "string" },
+        "color:placeholder": { "type": "string" },
+        "color:disabled": { "type": "string" },
+        "move": { "type": "string" },
+        "resize": { "type": "string" },
+        "rotate": { "type": "string" },
+        "distribution": { "type": "string" },
+        "dark": { "type": ["object", "string", "boolean"] },
+        "secure": { "type": ["boolean", "string"] }
+      }
+    },
+    "StyleMap": {
+      "type": "object",
+      "patternProperties": {
+        ".*": { "$ref": "#/$defs/Style" }
+      }
+    },
+    "TemplateMap": {
+      "type": "object",
+      "properties": {
+        "body": { "type": "object" }
+      },
+      "patternProperties": {
+        ".*": { "type": "object" }
+      }
+    }
+  }
+}

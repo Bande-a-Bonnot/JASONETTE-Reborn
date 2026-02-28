@@ -1,0 +1,32 @@
+[
+  {
+    "file": "Jasonpedia/template/jsfunction.json",
+    "reason": "Multi-statement JS expressions with function/return (v1.x only)",
+    "migration": "Use $script.include for multi-statement logic"
+  },
+  {
+    "file": "Jasonpedia/template/js.json",
+    "reason": "JavaScript expressions using var, for loops (v1.x only)",
+    "migration": "Simplify to JSEP-compatible expressions or use $script.include"
+  },
+  {
+    "file": "Jasonpedia/view/layer/dynamic.json",
+    "reason": "Multi-statement JS in $set options",
+    "migration": "Extract to $script.include"
+  },
+  {
+    "file": "Jasonpedia/action/script/underscorejs/index.json",
+    "reason": "Uses $root._.map() in template expressions (library access from JSEP context)",
+    "migration": "Move library calls to $script.include context"
+  },
+  {
+    "file": "Jasonpedia/action/script/he/index.json",
+    "reason": "Uses he.decode() in template expressions (library access from JSEP context)",
+    "migration": "Move library calls to $script.include context"
+  },
+  {
+    "file": "Jasonpedia/action/script/inline/index.json",
+    "reason": "Uses inline JS via $script with function definitions",
+    "migration": "Use $script.include context isolation (AD-9)"
+  }
+]
