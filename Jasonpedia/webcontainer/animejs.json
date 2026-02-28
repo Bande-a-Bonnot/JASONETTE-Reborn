@@ -45,7 +45,7 @@
           "footer": {
             "input": {
               "left": {
-                "image": "https://raw.githubusercontent.com/gliechtenstein/images/master/camera.png",
+                "image": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/assets/screen1.png",
                 "style": {
                   "color": "{{$get.color}}"
                 }
@@ -107,7 +107,7 @@
                         "align": "center",
                         "height": "100"
                       },
-                      "url": "https://raw.githubusercontent.com/gliechtenstein/images/master/swipe.png"
+                      "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/assets/screen2.png"
                     }
                   ]
                 },

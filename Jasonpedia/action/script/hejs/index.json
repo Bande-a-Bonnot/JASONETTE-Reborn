@@ -30,7 +30,7 @@
             "menu": {
               "text": "View JSON",
               "href": {
-                "url": "https://jasonette.github.io/Jasonpedia/action/script/hejs/index.json",
+                "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/action/script/hejs/index.json",
                 "view": "web"
               }
             }

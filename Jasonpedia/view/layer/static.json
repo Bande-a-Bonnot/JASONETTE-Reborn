@@ -16,7 +16,7 @@
             "menu": {
               "text": "View JSON",
               "href": {
-                "url": "https://github.com/Jasonette/Jasonpedia/blob/gh-pages/view/layer/static.json",
+                "url": "https://github.com/Bande-a-Bonnot/JASONETTE-Reborn/blob/main/Jasonpedia/view/layer/static.json",
                 "view": "web"
               }
             },
@@ -83,7 +83,7 @@
             "action": {
               "type": "$audio.play",
               "options": {
-                "url": "https://jasonette.github.io/Jasonpedia/assets/1up.mp3"
+                "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/assets/1up.mp3"
               }
             },
             "style": {
@@ -97,7 +97,7 @@
             }
           }, {
             "type": "image",
-            "url": "https://jasonette.github.io/Jasonpedia/assets/0.png",
+            "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/assets/0.png",
             "style": {
               "width": "86",
               "height": "175",

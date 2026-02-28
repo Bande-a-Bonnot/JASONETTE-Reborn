@@ -69,7 +69,7 @@
       "templates": {
         "body": {
           "style": {
-            "background": "https://jasonette.github.io/Jasonpedia/assets/mariobackground.jpg"
+            "background": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/assets/mariobackground.jpg"
           },
           "header": {
             "style": {
@@ -78,7 +78,7 @@
             "menu": {
               "text": "View JSON",
               "href": {
-                "url": "https://github.com/Jasonette/Jasonpedia/blob/gh-pages/view/layer/dynamic.json",
+                "url": "https://github.com/Bande-a-Bonnot/JASONETTE-Reborn/blob/main/Jasonpedia/view/layer/dynamic.json",
                 "view": "web"
               }
             }
@@ -144,7 +144,7 @@
             }
           }, {
             "type": "image",
-            "url": "https://jasonette.github.io/Jasonpedia/assets/0.png",
+            "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/assets/0.png",
             "style": "{{$get.style}}"
           }]
         }

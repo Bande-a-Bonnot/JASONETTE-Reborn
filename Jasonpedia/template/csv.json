@@ -6,7 +6,7 @@
         "$load": {
           "type": "$network.request",
           "options": {
-            "url": "https://jasonette.github.io/Jasonpedia/template/csv",
+            "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/template/csv",
             "dataType": "raw"
           },
           "success": {
@@ -27,7 +27,7 @@
             "menu": {
               "text": "View JSON",
               "href": {
-                "url": "https://github.com/Jasonette/Jasonpedia/blob/gh-pages/template/csv.json",
+                "url": "https://github.com/Bande-a-Bonnot/JASONETTE-Reborn/blob/main/Jasonpedia/template/csv.json",
                 "view": "web"
               }
             }
@@ -45,7 +45,7 @@
                     "size": "12"
                   },
                   "type": "label",
-                  "text": "This demo parses a CSV at https://github.com/Jasonette/Jasonpedia/blob/gh-pages/template/csv and renders it as JSON"
+                  "text": "This demo parses a CSV at https://github.com/Bande-a-Bonnot/JASONETTE-Reborn/blob/main/Jasonpedia/template/csv and renders it as JSON"
                 }]
               },
               "items": {

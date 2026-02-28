@@ -32,7 +32,7 @@
         }
       },
       "data": {
-        "@": "https://jasonette.github.io/Jasonpedia/action/script/underscorejs/db.json"
+        "@": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/action/script/underscorejs/db.json"
       },
       "templates": {
         "body": {
@@ -41,7 +41,7 @@
             "menu": {
               "text": "View JSON",
               "href": {
-                "url": "https://jasonette.github.io/Jasonpedia/action/script/underscorejs/index.json",
+                "url": "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/action/script/underscorejs/index.json",
                 "view": "web"
               }
             }
