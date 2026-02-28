@@ -1,0 +1,18 @@
+{
+  "$jason": {
+    "head": {
+      "title": "File URL Mixin Test",
+      "data": {
+        "@": "file:///etc/passwd"
+      }
+    },
+    "body": {
+      "sections": [{
+        "items": [{
+          "type": "label",
+          "text": "This mixin should be blocked by URL validation"
+        }]
+      }]
+    }
+  }
+}

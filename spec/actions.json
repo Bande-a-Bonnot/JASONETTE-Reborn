@@ -1,0 +1,433 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema.jasonette.dev/v2/actions.json",
+  "description": "Jasonette v2.0 Action Catalogue",
+  "version": "2.0.0",
+  "actions": {
+    "$render": {
+      "tier": 1,
+      "description": "Re-render body with current or specified data and template",
+      "options": {
+        "template": { "type": "string", "description": "Named template from head.templates", "required": false },
+        "data": { "type": "object", "description": "Override render data", "required": false },
+        "type": { "type": "string", "description": "Render type: html, json", "required": false }
+      },
+      "success_shape": null,
+      "error_shape": null,
+      "platform_notes": "All platforms"
+    },
+    "$reload": {
+      "tier": 1,
+      "description": "Re-fetch the JSON document from its URL and re-render",
+      "options": {},
+      "success_shape": null,
+      "error_shape": null,
+      "platform_notes": "All platforms"
+    },
+    "$href": {
+      "tier": 1,
+      "description": "Programmatic navigation to another screen",
+      "options": {
+        "url": { "type": "string", "description": "Target URL", "required": true },
+        "view": { "type": "string", "description": "View type: jason (default), web, app", "required": false },
+        "transition": { "type": "string", "description": "Transition: push (default), modal, replace, fullscreen", "required": false },
+        "options": { "type": "object", "description": "Parameters passed as $params", "required": false },
+        "fresh": { "type": "boolean", "description": "Force fresh load", "required": false },
+        "preload": { "type": "object", "description": "Pre-rendered content", "required": false }
+      },
+      "success_shape": { "description": "Return value from destination screen ($ok)" },
+      "error_shape": null,
+      "platform_notes": "All platforms"
+    },
+    "$back": {
+      "tier": 1,
+      "description": "Pop the navigation stack (go back one screen)",
+      "options": {},
+      "success_shape": null,
+      "error_shape": null,
+      "platform_notes": "All platforms"
+    },
+    "$close": {
+      "tier": 1,
+      "description": "Dismiss a modal screen",
+      "options": {},
+      "success_shape": null,
+      "error_shape": null,
+      "platform_notes": "All platforms"
+    },
+    "trigger": {
+      "tier": 1,
+      "description": "Invoke a named action defined in head.actions (recommended form)",
+      "options": {
+        "trigger": { "type": "string", "description": "Name of the action to invoke", "required": true }
+      },
+      "success_shape": { "description": "Return value from the named action" },
+      "error_shape": { "description": "Error from the named action" },
+      "platform_notes": "All platforms. Syntactic sugar for $lambda."
+    },
+    "$lambda": {
+      "tier": 1,
+      "description": "Invoke a named action (explicit form of trigger)",
+      "options": {
+        "name": { "type": "string", "description": "Name of the action to invoke", "required": true },
+        "options": { "type": "object", "description": "Parameters to pass", "required": false }
+      },
+      "success_shape": { "description": "Return value from the named action" },
+      "error_shape": { "description": "Error from the named action" },
+      "platform_notes": "All platforms"
+    },
+    "$return.success": {
+      "tier": 1,
+      "description": "Return a success value from a named action to its caller",
+      "options": {
+        "data": { "type": "any", "description": "Return value", "required": false }
+      },
+      "success_shape": null,
+      "error_shape": null,
+      "platform_notes": "All platforms"
+    },
+    "$return.error": {
+      "tier": 1,
+      "description": "Return an error value from a named action to its caller",
+      "options": {
+        "data": { "type": "any", "description": "Error value", "required": false }
+      },
+      "success_shape": null,
+      "error_shape": null,
+      "platform_notes": "All platforms"
+    },
+    "$network.request": {
+      "tier": 1,
+      "description": "HTTP request",
+      "options": {
+        "url": { "type": "string", "description": "Request URL (HTTPS required by default)", "required": true },
+        "method": { "type": "string", "description": "HTTP method: GET (default), POST, PUT, DELETE, PATCH", "required": false },
+        "data": { "type": "object", "description": "Request body (form-encoded by default)", "required": false },
+        "data_type": { "type": "string", "description": "Body encoding: json, html, raw", "required": false },
+        "header": { "type": "object", "description": "HTTP headers", "required": false },
+        "timeout": { "type": "number", "description": "Request timeout in seconds", "required": false }
+      },
+      "success_shape": { "description": "Response body parsed as JSON" },
+      "error_shape": { "description": "Error information" },
+      "platform_notes": "All platforms. URL validation per AD-10."
+    },
+    "$set": {
+      "tier": 1,
+      "description": "Set local screen state variables accessible via $get",
+      "options": {
+        "_dynamic": { "type": "any", "description": "Key-value pairs to set. Keys become $get.key names." }
+      },
+      "success_shape": null,
+      "error_shape": null,
+      "platform_notes": "All platforms"
+    },
+    "$cache.set": {
+      "tier": 1,
+      "description": "Store data in persistent per-URL cache",
+      "options": {
+        "_dynamic": { "type": "any", "description": "Key-value pairs to cache" }
+      },
+      "success_shape": null,
+      "error_shape": null,
+      "platform_notes": "All platforms. Persists across app restarts."
+    },
+    "$cache.get": {
+      "tier": 1,
+      "description": "Retrieve data from persistent per-URL cache",
+      "options": {},
+      "success_shape": { "description": "Cached data as $jason" },
+      "error_shape": null,
+      "platform_notes": "All platforms"
+    },
+    "$cache.reset": {
+      "tier": 1,
+      "description": "Clear persistent per-URL cache",
+      "options": {},
+      "success_shape": null,
+      "error_shape": null,
+      "platform_notes": "All platforms"
+    },
+    "$session.set": {
+      "tier": 1,
+      "description": "Store session data (headers, body) for a domain",
+      "options": {
+        "domain": { "type": "string", "description": "Domain to associate session with", "required": true },
+        "header": { "type": "object", "description": "HTTP headers to attach to requests", "required": false },
+        "body": { "type": "object", "description": "Body data to attach to requests", "required": false }
+      },
+      "success_shape": null,
+      "error_shape": null,
+      "platform_notes": "All platforms"
+    },
+    "$session.get": {
+      "tier": 1,
+      "description": "Retrieve session data",
+      "options": {},
+      "success_shape": { "description": "Session data as $jason" },
+      "error_shape": null,
+      "platform_notes": "All platforms"
+    },
+    "$session.reset": {
+      "tier": 1,
+      "description": "Clear session data",
+      "options": {},
+      "success_shape": null,
+      "error_shape": null,
+      "platform_notes": "All platforms"
+    },
+    "$flush": {
+      "tier": 1,
+      "description": "Per-URL cache reset shorthand",
+      "options": {},
+      "success_shape": null,
+      "error_shape": null,
+      "platform_notes": "All platforms"
+    },
+    "$util.alert": {
+      "tier": 1,
+      "description": "Display an alert dialog with optional form fields",
+      "options": {
+        "title": { "type": "string", "description": "Alert title", "required": false },
+        "description": { "type": "string", "description": "Alert message", "required": false },
+        "form": { "type": "array", "description": "Form fields (textfield configs)", "required": false }
+      },
+      "success_shape": { "description": "Form values as $jason (if form present)" },
+      "error_shape": null,
+      "platform_notes": "All platforms"
+    },
+    "$util.banner": {
+      "tier": 1,
+      "description": "Display a notification banner",
+      "options": {
+        "title": { "type": "string", "description": "Banner title", "required": false },
+        "description": { "type": "string", "description": "Banner message", "required": false },
+        "type": { "type": "string", "description": "Type: info, success, warning, error", "required": false }
+      },
+      "success_shape": null,
+      "error_shape": null,
+      "platform_notes": "All platforms"
+    },
+    "$util.toast": {
+      "tier": 1,
+      "description": "Display a toast message",
+      "options": {
+        "title": { "type": "string", "description": "Toast text", "required": true }
+      },
+      "success_shape": null,
+      "error_shape": null,
+      "platform_notes": "All platforms"
+    },
+    "$util.picker": {
+      "tier": 1,
+      "description": "Display a selection picker",
+      "options": {
+        "items": { "type": "array", "description": "Array of {text, value} objects", "required": true }
+      },
+      "success_shape": { "description": "Selected item as $jason" },
+      "error_shape": null,
+      "platform_notes": "All platforms"
+    },
+    "$util.datepicker": {
+      "tier": 1,
+      "description": "Display a date picker",
+      "options": {},
+      "success_shape": { "description": "Selected date as $jason" },
+      "error_shape": null,
+      "platform_notes": "All platforms"
+    },
+    "$util.share": {
+      "tier": 1,
+      "description": "Display the system share sheet",
+      "options": {
+        "items": { "type": "array", "description": "Array of {type, text, url, data} share items", "required": true }
+      },
+      "success_shape": null,
+      "error_shape": null,
+      "platform_notes": "All platforms"
+    },
+    "$timer.start": {
+      "tier": 1,
+      "description": "Start a repeating or one-shot timer",
+      "options": {
+        "interval": { "type": "number", "description": "Interval in seconds", "required": true },
+        "name": { "type": "string", "description": "Timer identifier", "required": true },
+        "action": { "type": "object", "description": "Action to execute on each tick", "required": true },
+        "repeats": { "type": "boolean", "description": "Whether to repeat (default: true)", "required": false }
+      },
+      "success_shape": null,
+      "error_shape": null,
+      "platform_notes": "All platforms"
+    },
+    "$timer.stop": {
+      "tier": 1,
+      "description": "Stop a timer by name",
+      "options": {
+        "name": { "type": "string", "description": "Timer identifier", "required": true }
+      },
+      "success_shape": null,
+      "error_shape": null,
+      "platform_notes": "All platforms"
+    },
+    "$log": {
+      "tier": 1,
+      "description": "Debug output to console",
+      "options": {
+        "text": { "type": "string", "description": "Log message", "required": false }
+      },
+      "success_shape": null,
+      "error_shape": null,
+      "platform_notes": "All platforms. Also: $log.info, $log.debug, $log.error"
+    },
+    "$media.camera": {
+      "tier": 2,
+      "description": "Capture photo or video from camera"
+    },
+    "$media.picker": {
+      "tier": 2,
+      "description": "Select photo or video from library"
+    },
+    "$media.play": {
+      "tier": 2,
+      "description": "Play video content"
+    },
+    "$network.upload": {
+      "tier": 2,
+      "description": "Upload file with multipart/form-data"
+    },
+    "$geo.get": {
+      "tier": 2,
+      "description": "Get current GPS coordinates"
+    },
+    "$geo.watch": {
+      "tier": 2,
+      "description": "Watch GPS coordinates for changes"
+    },
+    "$audio.play": {
+      "tier": 2,
+      "description": "Play audio file"
+    },
+    "$audio.record": {
+      "tier": 2,
+      "description": "Record audio"
+    },
+    "$audio.stop": {
+      "tier": 2,
+      "description": "Stop audio playback or recording"
+    },
+    "$agent.request": {
+      "tier": 2,
+      "description": "Send request to web container agent"
+    },
+    "$agent.response": {
+      "tier": 2,
+      "description": "Respond to agent request"
+    },
+    "$global.set": {
+      "tier": 2,
+      "description": "Set cross-screen global state"
+    },
+    "$global.get": {
+      "tier": 2,
+      "description": "Get cross-screen global state"
+    },
+    "$global.reset": {
+      "tier": 2,
+      "description": "Reset cross-screen global state"
+    },
+    "$convert.csv": {
+      "tier": 2,
+      "description": "Convert CSV data to JSON"
+    },
+    "$convert.rss": {
+      "tier": 2,
+      "description": "Convert RSS/XML feed to JSON"
+    },
+    "$snapshot": {
+      "tier": 2,
+      "description": "Capture screenshot of current screen"
+    },
+    "$util.addressbook": {
+      "tier": 2,
+      "description": "Access device contacts"
+    },
+    "$notification.register": {
+      "tier": 2,
+      "description": "Register for notifications"
+    },
+    "$notification.local": {
+      "tier": 2,
+      "description": "Schedule local notification"
+    },
+    "$default": {
+      "tier": 2,
+      "description": "Web container default browser behavior"
+    },
+    "$require": {
+      "tier": 2,
+      "description": "Fetch multiple remote JSON files in parallel"
+    },
+    "$ok": {
+      "tier": 2,
+      "description": "Close view and return data to calling screen"
+    },
+    "$oauth": {
+      "tier": 3,
+      "description": "OAuth authentication (PKCE only)"
+    },
+    "$websocket.open": {
+      "tier": 3,
+      "description": "Open WebSocket connection"
+    },
+    "$websocket.send": {
+      "tier": 3,
+      "description": "Send WebSocket message"
+    },
+    "$websocket.close": {
+      "tier": 3,
+      "description": "Close WebSocket connection"
+    },
+    "$push.register": {
+      "tier": 3,
+      "description": "Register for push notifications"
+    },
+    "$push.onNotification": {
+      "tier": 3,
+      "description": "Handle incoming push notification"
+    },
+    "$script.include": {
+      "tier": 3,
+      "description": "Load external/inline JavaScript into script engine context (AD-9)"
+    },
+    "$vision.scan": {
+      "tier": 3,
+      "description": "Barcode/QR code scanning"
+    },
+    "$widget.banner": {
+      "tier": 3,
+      "description": "iOS widget notification (may alias $util.banner)"
+    },
+    "$convert.base64": {
+      "tier": 3,
+      "description": "Base64 encoding/decoding"
+    },
+    "$convert.md5": {
+      "tier": 3,
+      "description": "MD5 hashing"
+    },
+    "$convert.sha1": {
+      "tier": 3,
+      "description": "SHA1 hashing"
+    }
+  },
+  "lifecycle_hooks": {
+    "$load": { "description": "Fires once when screen first renders" },
+    "$show": { "description": "Fires when screen becomes visible (see spec for $load/$show interaction)" },
+    "$foreground": { "description": "Fires when app returns from background" },
+    "$background": { "description": "Fires when app enters background" },
+    "$pull": { "description": "Fires on pull-to-refresh gesture" }
+  },
+  "hardware_event_hooks": {
+    "$vision.ready": { "description": "Scanner hardware ready" },
+    "$vision.onscan": { "description": "Scan completed, barcode/QR data available" }
+  }
+}
