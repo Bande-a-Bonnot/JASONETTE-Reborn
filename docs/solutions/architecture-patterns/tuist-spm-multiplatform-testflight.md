@@ -77,44 +77,38 @@ public struct JasonetteApp: App {
 struct JasonetteApp: App { ... }
 ```
 
-### 2. Sourceless Tuist targets
+### 2. Sourceless Tuist targets with local package
 
-Tuist targets have zero source files. All code lives in SPM:
+Tuist targets have zero source files. All code lives in SPM. Use `packages:` at project level with `.local(path: ".")` and `.package(product:)` in target dependencies:
 
 ```swift
-.target(
-    name: "Jasonette-iOS",
-    product: .app,
-    sources: [],  // no sources — @main comes from linked SPM library
-    dependencies: [.external(name: "JasonetteApp-iOS")],
+let project = Project(
+    name: "Jasonette",
+    packages: [.local(path: ".")],  // local SPM package at project root
+    targets: [
+        .target(
+            name: "Jasonette-iOS",
+            product: .app,
+            sources: [],  // no sources — @main comes from linked SPM library
+            dependencies: [.package(product: "JasonetteApp-iOS")],
+        ),
+    ]
 )
 ```
 
-### 3. Tuist package bridge
-
-`Tuist/Package.swift` references the parent directory's `Package.swift`:
-
-```swift
-#if TUIST
-import ProjectDescription
-let packageSettings = PackageSettings(productTypes: [:])
-#endif
-
-let package = Package(
-    name: "JasonetteDependencies",
-    dependencies: [.package(path: "..")]
-)
-```
+**Do NOT use `Tuist/Package.swift` with `.package(path: "..")`** — Tuist 4 auto-discovers the root `Package.swift` and the bridge creates a "Duplicate values for key" crash when both resolve to the same directory path.
 
 ## Common Gotchas
 
 | Symptom | Cause | Fix |
 |---------|-------|-----|
-| `ld: symbol not found: _main` | Missing SPM link in Tuist target | Add `.external(name: "JasonetteApp-iOS")` to dependencies |
+| `ld: symbol not found: _main` | Missing SPM link in Tuist target | Add `.package(product: "JasonetteApp-iOS")` to dependencies |
 | "Cannot find 'JasonetteApp' in scope" | App struct is internal (default) | Mark as `public struct` with `public init()` |
+| "Duplicate values for key" crash | `Tuist/Package.swift` path collides with project root | Remove `Tuist/Package.swift`, use `packages: [.local(path: ".")]` instead |
+| "`X` is not a valid configured external dependency" | Using `.external(name:)` for local package products | Use `.package(product:)` instead of `.external(name:)` |
+| `packages:` must precede `settings:` | Swift argument order in `Project()` init | Move `packages:` parameter before `settings:` |
 | Assets missing at runtime | Resources path not in Tuist target | Add `resources: ["Resources/iOS/**"]` |
 | `swift test` fails after refactor | Tests importing removed executable | Tests should only depend on core `Jasonette` lib |
-| Tuist can't find SPM package | Wrong path in Tuist/Package.swift | Use `.package(path: "..")` (parent directory) |
 
 ## Platform Matrix
 
