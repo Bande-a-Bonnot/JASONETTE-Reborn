@@ -2,6 +2,9 @@ import ProjectDescription
 
 let project = Project(
     name: "Jasonette",
+    packages: [
+        .local(path: "."),
+    ],
     settings: .settings(base: [
         "MARKETING_VERSION": "0.1.0",
         "CURRENT_PROJECT_VERSION": "1",
@@ -21,7 +24,7 @@ let project = Project(
             ]),
             sources: [],
             resources: ["Resources/iOS/**"],
-            dependencies: [.external(name: "JasonetteApp-iOS")],
+            dependencies: [.package(product: "JasonetteApp-iOS")],
             settings: .settings(base: SettingsDictionary()
                 .automaticCodeSigning(devTeam: "TEAM_ID_HERE"))
         ),
@@ -38,7 +41,7 @@ let project = Project(
                 "ITSAppUsesNonExemptEncryption": false,
             ]),
             sources: [],
-            dependencies: [.external(name: "JasonetteApp-macOS")],
+            dependencies: [.package(product: "JasonetteApp-macOS")],
             settings: .settings(base: SettingsDictionary()
                 .automaticCodeSigning(devTeam: "TEAM_ID_HERE"))
         ),
@@ -55,7 +58,7 @@ let project = Project(
                 "ITSAppUsesNonExemptEncryption": false,
             ]),
             sources: [],
-            dependencies: [.external(name: "JasonetteApp-tvOS")],
+            dependencies: [.package(product: "JasonetteApp-tvOS")],
             settings: .settings(base: SettingsDictionary()
                 .automaticCodeSigning(devTeam: "TEAM_ID_HERE"))
         ),
@@ -72,7 +75,7 @@ let project = Project(
                 "ITSAppUsesNonExemptEncryption": false,
             ]),
             sources: [],
-            dependencies: [.external(name: "JasonetteApp-visionOS")],
+            dependencies: [.package(product: "JasonetteApp-visionOS")],
             settings: .settings(base: SettingsDictionary()
                 .automaticCodeSigning(devTeam: "TEAM_ID_HERE"))
         ),
