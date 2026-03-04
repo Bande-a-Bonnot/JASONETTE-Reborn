@@ -1,0 +1,13 @@
+steps:
+  - label: ":ios: Beta → TestFlight"
+    command: .buildkite/steps/beta.sh
+    timeout_in_minutes: 30
+    plugins:
+      - getmac-io/getmac#main:
+          project-id: "${GETMAC_PROJECT_ID}"
+          image: "macos-tahoe"
+    artifact_paths:
+      - "JASONETTE-iOS/JasonetteApp/build/*.ipa"
+      - "JASONETTE-iOS/JasonetteApp/build/*.xcarchive/dSYMs/*.dSYM/**/*"
+    concurrency: 1
+    concurrency_group: "jasonette/beta"
