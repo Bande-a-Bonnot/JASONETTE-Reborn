@@ -26,7 +26,7 @@ let project = Project(
             resources: ["Resources/iOS/**"],
             dependencies: [.package(product: "JasonetteApp-iOS")],
             settings: .settings(base: SettingsDictionary()
-                .automaticCodeSigning(devTeam: "TEAM_ID_HERE"))
+                .automaticCodeSigning(devTeam: "PKPPLFK854"))
         ),
 
         // MARK: - macOS
@@ -43,7 +43,7 @@ let project = Project(
             sources: [],
             dependencies: [.package(product: "JasonetteApp-macOS")],
             settings: .settings(base: SettingsDictionary()
-                .automaticCodeSigning(devTeam: "TEAM_ID_HERE"))
+                .automaticCodeSigning(devTeam: "PKPPLFK854"))
         ),
 
         // MARK: - tvOS
@@ -60,7 +60,7 @@ let project = Project(
             sources: [],
             dependencies: [.package(product: "JasonetteApp-tvOS")],
             settings: .settings(base: SettingsDictionary()
-                .automaticCodeSigning(devTeam: "TEAM_ID_HERE"))
+                .automaticCodeSigning(devTeam: "PKPPLFK854"))
         ),
 
         // MARK: - visionOS
@@ -77,7 +77,7 @@ let project = Project(
             sources: [],
             dependencies: [.package(product: "JasonetteApp-visionOS")],
             settings: .settings(base: SettingsDictionary()
-                .automaticCodeSigning(devTeam: "TEAM_ID_HERE"))
+                .automaticCodeSigning(devTeam: "PKPPLFK854"))
         ),
     ]
 )
