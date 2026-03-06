@@ -11,6 +11,14 @@
 | Process JSON | `jq` |
 | Process YAML/XML | `yq` |
 
+## Git
+
+Set `SSH_AUTH_SOCK` before any git operation requiring authentication (push, pull, fetch, clone):
+
+```bash
+export SSH_AUTH_SOCK=~/.ssh/agent.sock
+```
+
 ## Conventions
 
 - Favour ast-grep over grep when researching
