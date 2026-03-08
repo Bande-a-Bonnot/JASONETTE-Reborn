@@ -43,7 +43,11 @@ public final class StateManager: ObservableObject {
 
     public func binding(forKey key: String, default defaultValue: Double = 0) -> Binding<Double> {
         Binding<Double>(
-            get: { self.local[key] as? Double ?? Double(self.local[key] as? Int ?? Int(defaultValue)) },
+            get: {
+                if let d = self.local[key] as? Double { return d }
+                if let i = self.local[key] as? Int { return Double(i) }
+                return defaultValue
+            },
             set: { self.local[key] = $0 }
         )
     }

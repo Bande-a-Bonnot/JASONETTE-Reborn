@@ -9,6 +9,9 @@ public final class ActionDispatcher: ObservableObject {
     private var alertHandler: ((String, String?) -> Void)?
     private var timers: [String: Timer] = [:]
 
+    private static let maxTimers = 50
+    private static let minTimerInterval: TimeInterval = 0.1
+
     public init(stateManager: StateManager) {
         self.stateManager = stateManager
     }
@@ -23,6 +26,12 @@ public final class ActionDispatcher: ObservableObject {
 
     public func setAlertHandler(_ handler: @escaping (String, String?) -> Void) {
         self.alertHandler = handler
+    }
+
+    /// Invalidate all active timers. Call from view's onDisappear.
+    public func invalidateAllTimers() {
+        for timer in timers.values { timer.invalidate() }
+        timers.removeAll()
     }
 
     public func execute(_ action: JasonAction) async {
@@ -49,7 +58,7 @@ public final class ActionDispatcher: ObservableObject {
             stateManager.set(values)
 
         case "$get":
-            break // state is always available via stateManager.local
+            break
 
         // Cache
         case "$cache.set":
@@ -100,9 +109,7 @@ public final class ActionDispatcher: ObservableObject {
             alertHandler?(title, description)
 
         case "$util.toast", "$util.banner":
-            // Toast/banner: reuse alert handler for now
-            let title = options["title"]?.string ?? options["text"]?.string ?? ""
-            alertHandler?(title, nil)
+            break
 
         // Timer
         case "$timer.start":
@@ -122,11 +129,15 @@ public final class ActionDispatcher: ObservableObject {
 
     private func startTimer(_ options: [String: AnyCodable], successAction: JasonAction?) {
         let name = options["name"]?.string ?? "default"
-        let interval = options["interval"]?.double ?? 1.0
+        let interval = max(options["interval"]?.double ?? 1.0, Self.minTimerInterval)
         let repeats = options["repeats"]?.bool ?? true
 
-        // Stop existing timer with same name
+        // Enforce timer limit
         timers[name]?.invalidate()
+        guard timers.count < Self.maxTimers else {
+            print("[Jasonette] Timer limit reached (\(Self.maxTimers))")
+            return
+        }
 
         let timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: repeats) { [weak self] _ in
             guard let self, let successAction else { return }
@@ -139,10 +150,8 @@ public final class ActionDispatcher: ObservableObject {
 
     // MARK: - Network
 
-    /// Allowed URL schemes for network requests.
     private static let allowedSchemes: Set<String> = ["https", "http"]
 
-    /// Headers that must not be set by Jasonette documents.
     private static let blockedHeaders: Set<String> = [
         "host", "cookie", "authorization", "proxy-authorization",
         "set-cookie", "transfer-encoding", "content-length"
@@ -154,7 +163,6 @@ public final class ActionDispatcher: ObservableObject {
             throw ActionError.invalidURL
         }
 
-        // Validate URL scheme to prevent file:// and other unsafe protocols
         guard let scheme = url.scheme?.lowercased(),
               Self.allowedSchemes.contains(scheme) else {
             throw ActionError.blockedURL
@@ -165,7 +173,6 @@ public final class ActionDispatcher: ObservableObject {
 
         if let headers = options["headers"]?.dictionary {
             for (key, value) in headers {
-                // Block sensitive headers to prevent injection attacks
                 guard !Self.blockedHeaders.contains(key.lowercased()) else { continue }
                 if let str = value.string {
                     request.setValue(str, forHTTPHeaderField: key)
@@ -189,7 +196,6 @@ public final class ActionDispatcher: ObservableObject {
             throw ActionError.httpError((response as? HTTPURLResponse)?.statusCode ?? 0)
         }
 
-        // Store response in local state
         if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
             stateManager.set(json)
         }
