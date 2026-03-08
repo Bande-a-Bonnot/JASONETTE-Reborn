@@ -1,8 +1,9 @@
 #!/bin/bash
 set -euo pipefail
 
-# Xcode Cloud runs this after cloning, before resolving dependencies.
-# We use it to install Tuist and generate the Xcode workspace.
+# Xcode Cloud runs this from ci_scripts/. cd to the JasonetteApp root
+# where Project.swift and Package.swift live.
+cd "$(dirname "$0")/.."
 
 echo "--- Installing mise + Tuist"
 brew install mise
