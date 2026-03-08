@@ -5,7 +5,7 @@
     <application
         android:label="Jasonette"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Material3.DayNight">
+        android:theme="@android:style/Theme.Material.Light.NoActionBar">
         <activity
             android:name="com.jasonette.MainActivity"
             android:exported="true">
