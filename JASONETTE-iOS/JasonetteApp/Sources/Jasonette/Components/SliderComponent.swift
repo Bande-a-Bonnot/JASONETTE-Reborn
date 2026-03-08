@@ -4,12 +4,17 @@ struct SliderComponent: View {
     let name: String
     let value: Double
 
-    @State private var current: Double = 50
+    @EnvironmentObject private var stateManager: StateManager
 
     var body: some View {
-        Slider(value: $current, in: 0...100)
+        let binding = stateManager.binding(forKey: name, default: value)
+        Slider(value: binding, in: 0...100)
             .accessibilityIdentifier(name)
-            .onAppear { current = value }
-            .onChange(of: value) { current = $0 }
+            .onAppear {
+                // Seed initial value if not already set
+                if stateManager.local[name] == nil {
+                    stateManager.local[name] = value
+                }
+            }
     }
 }

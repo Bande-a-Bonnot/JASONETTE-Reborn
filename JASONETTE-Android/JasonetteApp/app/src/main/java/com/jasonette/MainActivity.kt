@@ -11,7 +11,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             MaterialTheme {
-                JasonetteScreen(url = "https://jasonette.com/demo.json")
+                JasonetteScreen(url = "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/demo.json")
             }
         }
     }

@@ -1,0 +1,5 @@
+{
+  "template": "Hello {{name}}",
+  "context": {"name": "world"},
+  "expected": "Hello world"
+}
