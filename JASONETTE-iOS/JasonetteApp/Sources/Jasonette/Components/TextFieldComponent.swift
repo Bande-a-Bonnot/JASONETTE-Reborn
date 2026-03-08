@@ -5,7 +5,7 @@ struct TextFieldComponent: View {
     let placeholder: String
     let keyboard: String?
 
-    @State private var text: String = ""
+    @EnvironmentObject private var stateManager: StateManager
 
     var body: some View {
         textField
@@ -15,11 +15,12 @@ struct TextFieldComponent: View {
 
     @ViewBuilder
     private var textField: some View {
+        let binding = stateManager.binding(forKey: name, default: "")
         #if os(iOS)
-        TextField(placeholder, text: $text)
+        TextField(placeholder, text: binding)
             .keyboardType(keyboardType)
         #else
-        TextField(placeholder, text: $text)
+        TextField(placeholder, text: binding)
         #endif
     }
 

@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 /// Manages Jasonette state: local ($set/$get), cache (UserDefaults).
 @MainActor
@@ -29,6 +30,29 @@ public final class StateManager: ObservableObject {
 
     public func get() -> [String: Any] {
         local
+    }
+
+    // MARK: - Bindings for input components
+
+    public func binding(forKey key: String, default defaultValue: String = "") -> Binding<String> {
+        Binding<String>(
+            get: { self.local[key] as? String ?? defaultValue },
+            set: { self.local[key] = $0 }
+        )
+    }
+
+    public func binding(forKey key: String, default defaultValue: Double = 0) -> Binding<Double> {
+        Binding<Double>(
+            get: { self.local[key] as? Double ?? Double(self.local[key] as? Int ?? Int(defaultValue)) },
+            set: { self.local[key] = $0 }
+        )
+    }
+
+    public func binding(forKey key: String, default defaultValue: Bool = false) -> Binding<Bool> {
+        Binding<Bool>(
+            get: { self.local[key] as? Bool ?? defaultValue },
+            set: { self.local[key] = $0 }
+        )
     }
 
     // MARK: - Cache ($cache.set / $cache.get / $cache.reset)
