@@ -4,6 +4,7 @@ struct TextFieldComponent: View {
     let name: String
     let placeholder: String
     let keyboard: String?
+    let initialValue: String?
 
     @EnvironmentObject private var stateManager: StateManager
 
@@ -11,6 +12,11 @@ struct TextFieldComponent: View {
         textField
             .textFieldStyle(.roundedBorder)
             .accessibilityIdentifier(name)
+            .onAppear {
+                if let initialValue, stateManager.local[name] == nil {
+                    stateManager.local[name] = initialValue
+                }
+            }
     }
 
     @ViewBuilder

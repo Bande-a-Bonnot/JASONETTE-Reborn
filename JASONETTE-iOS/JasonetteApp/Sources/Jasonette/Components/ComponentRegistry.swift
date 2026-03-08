@@ -56,7 +56,8 @@ public struct ComponentView: View {
             TextFieldComponent(
                 name: component.name ?? "",
                 placeholder: component.placeholder ?? "",
-                keyboard: component.keyboard
+                keyboard: component.keyboard,
+                initialValue: component.value?.string
             )
         case "textarea":
             TextAreaComponent(

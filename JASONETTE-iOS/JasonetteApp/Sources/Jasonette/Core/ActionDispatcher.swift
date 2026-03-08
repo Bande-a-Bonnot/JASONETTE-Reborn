@@ -132,17 +132,22 @@ public final class ActionDispatcher: ObservableObject {
         let interval = max(options["interval"]?.double ?? 1.0, Self.minTimerInterval)
         let repeats = options["repeats"]?.bool ?? true
 
-        // Enforce timer limit
+        // Invalidate and remove existing timer before checking limit
         timers[name]?.invalidate()
+        timers[name] = nil
         guard timers.count < Self.maxTimers else {
             print("[Jasonette] Timer limit reached (\(Self.maxTimers))")
             return
         }
 
-        let timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: repeats) { [weak self] _ in
+        let timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: repeats) { [weak self] timer in
             guard let self, let successAction else { return }
             Task { @MainActor in
                 await self.execute(successAction)
+                // Clean up one-shot timer entry
+                if !repeats {
+                    self.timers[name] = nil
+                }
             }
         }
         timers[name] = timer

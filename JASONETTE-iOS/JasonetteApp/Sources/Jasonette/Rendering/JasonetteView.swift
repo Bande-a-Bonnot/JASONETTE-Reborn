@@ -1,5 +1,18 @@
 import SwiftUI
 
+// MARK: - Conditional modifier
+
+private extension View {
+    @ViewBuilder
+    func ifLet<T, Modified: View>(_ value: T?, transform: (Self, T) -> Modified) -> some View {
+        if let value {
+            transform(self, value)
+        } else {
+            self
+        }
+    }
+}
+
 /// Main view that renders a complete Jasonette document.
 @MainActor
 public struct JasonetteView: View {
@@ -92,15 +105,13 @@ public struct JasonetteView: View {
         .navigationTitle(head?.title ?? "")
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(
-            headerStyle?.background.flatMap { Color(css: $0) } ?? .clear,
-            for: .navigationBar
-        )
-        .toolbarBackground(
-            headerStyle?.background != nil ? .visible : .automatic,
-            for: .navigationBar
-        )
+        .ifLet(headerStyle?.background.flatMap { Color(css: $0) }) { view, color in
+            view
+                .toolbarBackground(color, for: .navigationBar)
+                .toolbarBackground(.visible, for: .navigationBar)
+        }
         #endif
+        .onDisappear { viewModel.actionDispatcher.invalidateAllTimers() }
     }
 
     @ViewBuilder
