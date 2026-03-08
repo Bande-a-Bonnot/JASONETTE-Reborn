@@ -5,7 +5,7 @@ on:
 
 jobs:
   validate:
-    runs-on: getmac-tahoe
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
