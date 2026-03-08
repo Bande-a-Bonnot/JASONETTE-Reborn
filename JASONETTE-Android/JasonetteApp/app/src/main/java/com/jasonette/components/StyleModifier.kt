@@ -55,7 +55,7 @@ private fun resolveStyle(
     }
 }
 
-/** Unified CSS color parser: hex, rgb(), rgba(). */
+/** Unified CSS color parser: hex, rgb(), rgba(). Normalizes once here. */
 fun parseCssColor(css: String): Color? {
     val s = css.trim().lowercase()
     return when {
@@ -67,20 +67,17 @@ fun parseCssColor(css: String): Color? {
 
 fun parseHexColor(hex: String): Color? {
     val h = hex.trimStart('#')
+    if (h.length != 6 && h.length != 8) return null
     return try {
-        when (h.length) {
-            6 -> Color(android.graphics.Color.parseColor("#$h"))
-            8 -> Color(android.graphics.Color.parseColor("#$h"))
-            else -> null
-        }
+        Color(android.graphics.Color.parseColor("#$h"))
     } catch (_: Exception) {
         null
     }
 }
 
-/** Parses rgb(r,g,b) and rgba(r,g,b,a) — manual string splitting, no regex. */
+/** Parses rgb(r,g,b) and rgba(r,g,b,a). Input assumed already lowercased by parseCssColor. */
 fun parseRgbColor(css: String): Color? {
-    val s = css.trim().lowercase()
+    val s = css
     val isRgba = s.startsWith("rgba(")
     val isRgb = s.startsWith("rgb(")
     if ((!isRgb && !isRgba) || !s.endsWith(")")) return null
@@ -94,7 +91,7 @@ fun parseRgbColor(css: String): Color? {
     val b = parts[2].toIntOrNull() ?: return null
     if (r !in 0..255 || g !in 0..255 || b !in 0..255) return null
     val a = if (parts.size == 4) {
-        (parts[3].toFloatOrNull() ?: 1f).coerceIn(0f, 1f)
+        parts[3].toFloatOrNull() ?: return null  // reject non-numeric alpha
     } else 1f
-    return Color(r / 255f, g / 255f, b / 255f, a)
+    return Color(r / 255f, g / 255f, b / 255f, a.coerceIn(0f, 1f))
 }

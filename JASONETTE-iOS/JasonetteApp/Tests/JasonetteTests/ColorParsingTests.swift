@@ -68,6 +68,10 @@ final class ColorParsingTests: XCTestCase {
         XCTAssertNotNil(color)
     }
 
+    func testRGBANonNumericAlphaRejected() {
+        XCTAssertNil(Color(css: "rgba(0, 0, 0, abc)"))
+    }
+
     func testRGBMissingParts() {
         XCTAssertNil(Color(css: "rgb(14, 122)"))
     }

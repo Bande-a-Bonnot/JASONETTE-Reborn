@@ -3,15 +3,27 @@ import SwiftUI
 import SafariServices
 #endif
 
+/// URL wrapper for item-driven .sheet(item:) — avoids global retroactive Identifiable on URL.
+struct IdentifiableURL: Identifiable {
+    let id: String
+    let url: URL
+    init(_ url: URL) { self.id = url.absoluteString; self.url = url }
+}
+
 /// Navigation container that handles $href push/modal/web/app navigation.
 @MainActor
 public struct JasonetteNavigationView: View {
     let rootURL: URL
 
     @State private var path: [URL] = []
-    @State private var modalURL: URL?
-    @State private var safariURL: URL?
+    @State private var modalURL: IdentifiableURL?
+    @State private var safariURL: IdentifiableURL?
     @Environment(\.openURL) private var openURL
+
+    /// Schemes allowed for in-app web views.
+    private static let webSchemes: Set<String> = ["https", "http"]
+    /// Schemes allowed for system URL opening (mailto, tel, etc.).
+    private static let appSchemes: Set<String> = ["https", "http", "mailto", "tel", "sms"]
 
     public init(url: URL) {
         self.rootURL = url
@@ -24,9 +36,9 @@ public struct JasonetteNavigationView: View {
                     JasonetteView(url: url)
                 }
         }
-        .sheet(item: $modalURL) { url in
+        .sheet(item: $modalURL) { item in
             NavigationStack {
-                JasonetteView(url: url)
+                JasonetteView(url: item.url)
                     .toolbar {
                         ToolbarItem(placement: .cancellationAction) {
                             Button("Close") { modalURL = nil }
@@ -35,8 +47,8 @@ public struct JasonetteNavigationView: View {
             }
         }
         #if os(iOS)
-        .sheet(item: $safariURL) { url in
-            SafariView(url: url)
+        .sheet(item: $safariURL) { item in
+            SafariView(url: item.url)
                 .ignoresSafeArea()
         }
         #endif
@@ -67,32 +79,27 @@ public struct JasonetteNavigationView: View {
 
         switch href.view {
         case "web":
-            // Open in Safari sheet (iOS) or external browser (other platforms)
+            guard let scheme = url.scheme?.lowercased(),
+                  Self.webSchemes.contains(scheme) else { return }
             #if os(iOS)
-            safariURL = url
+            safariURL = IdentifiableURL(url)
             #else
             openURL(url)
             #endif
 
         case "app":
-            // Open with system handler (mailto:, tel:, sms:, etc.)
+            guard let scheme = url.scheme?.lowercased(),
+                  Self.appSchemes.contains(scheme) else { return }
             openURL(url)
 
         default:
-            // Default or "jason" view
             if href.transition == "modal" {
-                modalURL = url
+                modalURL = IdentifiableURL(url)
             } else {
                 path.append(url)
             }
         }
     }
-}
-
-// MARK: - URL Identifiable conformance for sheet(item:)
-
-extension URL: @retroactive Identifiable {
-    public var id: String { absoluteString }
 }
 
 // MARK: - Safari wrapper
