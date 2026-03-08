@@ -10,9 +10,11 @@ public final class StateManager: ObservableObject {
     }
 
     private let cacheKey = "jasonette:cache"
+    private let defaults: UserDefaults
 
-    public init() {
-        if let data = UserDefaults.standard.data(forKey: cacheKey),
+    public init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+        if let data = defaults.data(forKey: cacheKey),
            let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
             cache = dict
         } else {
@@ -86,7 +88,7 @@ public final class StateManager: ObservableObject {
 
     private func persistCache() {
         if let data = try? JSONSerialization.data(withJSONObject: cache) {
-            UserDefaults.standard.set(data, forKey: cacheKey)
+            defaults.set(data, forKey: cacheKey)
         }
     }
 }

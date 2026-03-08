@@ -12,7 +12,10 @@ public final class ActionDispatcher: ObservableObject {
     private static let maxTimers = 50
     private static let minTimerInterval: TimeInterval = 0.1
 
-    public init(stateManager: StateManager) {
+    private let session: URLSession
+
+    public init(stateManager: StateManager, session: URLSession = .shared) {
+        self.session = session
         self.stateManager = stateManager
     }
 
@@ -194,7 +197,7 @@ public final class ActionDispatcher: ObservableObject {
             }
         }
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await session.data(for: request)
 
         guard let http = response as? HTTPURLResponse,
               (200..<300).contains(http.statusCode) else {
