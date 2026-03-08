@@ -286,7 +286,7 @@ if stateManager.local[name] == nil, let initial = component.value { stateManager
 - [x] Input components persist values to StateManager on iOS
 - [x] `$util.alert` shows native alert on iOS
 - [x] `$timer` demos (mario, stopwatch) function on iOS
-- [ ] Android demo URL points to working GitHub Pages URL
+- [x] Android demo URL points to working GitHub Pages URL
 - [ ] Android can navigate between screens
 
 ### Non-Functional Requirements
