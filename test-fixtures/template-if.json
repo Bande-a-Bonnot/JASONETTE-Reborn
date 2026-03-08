@@ -1,0 +1,12 @@
+{
+  "template": {
+    "{{#if show}}": {
+      "type": "label",
+      "text": "Visible"
+    }
+  },
+  "context_true": {"show": true},
+  "expected_true": {"type": "label", "text": "Visible"},
+  "context_false": {"show": false},
+  "expected_false": []
+}
