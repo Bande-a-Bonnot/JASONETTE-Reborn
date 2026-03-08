@@ -6,6 +6,8 @@ public final class ActionDispatcher: ObservableObject {
     private let stateManager: StateManager
     private var navigationHandler: ((JasonHref) -> Void)?
     private var reloadHandler: (() -> Void)?
+    private var alertHandler: ((String, String?) -> Void)?
+    private var timers: [String: Timer] = [:]
 
     public init(stateManager: StateManager) {
         self.stateManager = stateManager
@@ -17,6 +19,10 @@ public final class ActionDispatcher: ObservableObject {
 
     public func setReloadHandler(_ handler: @escaping () -> Void) {
         self.reloadHandler = handler
+    }
+
+    public func setAlertHandler(_ handler: @escaping (String, String?) -> Void) {
+        self.alertHandler = handler
     }
 
     public func execute(_ action: JasonAction) async {
@@ -58,7 +64,6 @@ public final class ActionDispatcher: ObservableObject {
 
         // Render
         case "$render":
-            // Triggers a re-render. The view hierarchy observes stateManager.
             stateManager.objectWillChange.send()
 
         case "$reload":
@@ -90,16 +95,46 @@ public final class ActionDispatcher: ObservableObject {
 
         // Util
         case "$util.alert":
-            // Alert handled at view level via Published state
-            break
+            let title = options["title"]?.string ?? ""
+            let description = options["description"]?.string
+            alertHandler?(title, description)
 
         case "$util.toast", "$util.banner":
-            // Toast/banner handled at view level
-            break
+            // Toast/banner: reuse alert handler for now
+            let title = options["title"]?.string ?? options["text"]?.string ?? ""
+            alertHandler?(title, nil)
+
+        // Timer
+        case "$timer.start":
+            startTimer(options, successAction: action.success)
+
+        case "$timer.stop":
+            let name = options["name"]?.string ?? "default"
+            timers[name]?.invalidate()
+            timers[name] = nil
 
         default:
             print("[Jasonette] Unknown action: \(type)")
         }
+    }
+
+    // MARK: - Timer
+
+    private func startTimer(_ options: [String: AnyCodable], successAction: JasonAction?) {
+        let name = options["name"]?.string ?? "default"
+        let interval = options["interval"]?.double ?? 1.0
+        let repeats = options["repeats"]?.bool ?? true
+
+        // Stop existing timer with same name
+        timers[name]?.invalidate()
+
+        let timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: repeats) { [weak self] _ in
+            guard let self, let successAction else { return }
+            Task { @MainActor in
+                await self.execute(successAction)
+            }
+        }
+        timers[name] = timer
     }
 
     // MARK: - Network

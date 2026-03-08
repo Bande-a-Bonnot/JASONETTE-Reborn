@@ -4,13 +4,18 @@ struct SwitchComponent: View {
     let name: String
     let isOn: Bool
 
-    @State private var current: Bool = false
+    @EnvironmentObject private var stateManager: StateManager
 
     var body: some View {
-        Toggle("", isOn: $current)
+        let binding = stateManager.binding(forKey: name, default: isOn)
+        Toggle("", isOn: binding)
             .labelsHidden()
             .accessibilityIdentifier(name)
-            .onAppear { current = isOn }
-            .onChange(of: isOn) { current = $0 }
+            .onAppear {
+                // Seed initial value if not already set
+                if stateManager.local[name] == nil {
+                    stateManager.local[name] = isOn
+                }
+            }
     }
 }
