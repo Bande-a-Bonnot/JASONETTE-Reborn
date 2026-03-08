@@ -77,118 +77,118 @@ Cross-platform consistency tests cover **iOS and Android only**. The Web rendere
 
 #### ActionDispatcher Tests — `ActionDispatcherTests.swift`
 
-- [ ] `$set` updates StateManager local state
-- [ ] `$get` is a no-op (does not crash)
-- [ ] `$cache.set` persists to cache
-- [ ] `$cache.get` is a no-op (does not crash)
-- [ ] `$cache.reset` clears cache
-- [ ] `$render` triggers `objectWillChange`
-- [ ] `$reload` calls reload handler
-- [ ] `$href` calls navigation handler with correct JasonHref
-- [ ] `$back` calls navigation handler with view="$back"
-- [ ] `$close` calls navigation handler with view="$close"
-- [ ] `$util.alert` calls alert handler with title and description
-- [ ] `$util.toast` is a no-op (does not crash)
-- [ ] `$util.banner` is a no-op (does not crash)
-- [ ] `$timer.start` fires success action after interval (use 0.01s interval, 0.1s expectation timeout)
-- [ ] `$timer.start` replaces existing timer with same name
-- [ ] `$timer.stop` invalidates named timer
-- [ ] `$timer.start` enforces minimum interval (0.1s) — pass 0.001s, verify clamped
-- [ ] `$timer.start` enforces max timer count (50)
-- [ ] One-shot timer cleans up dict entry after firing
-- [ ] `invalidateAllTimers()` clears all timers
-- [ ] Action success chaining — success action fires after parent
-- [ ] Action error chaining — error action fires on failure
-- [ ] Unknown action type does not crash
+- [x] `$set` updates StateManager local state
+- [x] `$get` is a no-op (does not crash)
+- [x] `$cache.set` persists to cache
+- [x] `$cache.get` is a no-op (does not crash)
+- [x] `$cache.reset` clears cache
+- [x] `$render` triggers `objectWillChange`
+- [x] `$reload` calls reload handler
+- [x] `$href` calls navigation handler with correct JasonHref
+- [x] `$back` calls navigation handler with view="$back"
+- [x] `$close` calls navigation handler with view="$close"
+- [x] `$util.alert` calls alert handler with title and description
+- [x] `$util.toast` is a no-op (does not crash)
+- [x] `$util.banner` is a no-op (does not crash)
+- [x] `$timer.start` fires success action after interval (use 0.01s interval, 0.1s expectation timeout)
+- [x] `$timer.start` replaces existing timer with same name
+- [x] `$timer.stop` invalidates named timer
+- [x] `$timer.start` enforces minimum interval (0.1s) — pass 0.001s, verify clamped
+- [x] `$timer.start` enforces max timer count (50)
+- [x] One-shot timer cleans up dict entry after firing
+- [x] `invalidateAllTimers()` clears all timers
+- [x] Action success chaining — success action fires after parent
+- [x] Action error chaining — error action fires on failure
+- [x] Unknown action type does not crash
 
 #### Security Boundary Tests — `SecurityTests.swift`
 
-- [ ] `$network.request` rejects `file://` URL
-- [ ] `$network.request` rejects `ftp://` URL
-- [ ] `$network.request` rejects `javascript:` URL
-- [ ] `$network.request` allows `https://` URL
-- [ ] `$network.request` strips `Authorization` header
-- [ ] `$network.request` strips `Cookie` header
-- [ ] `$network.request` strips `Host` header
-- [ ] `$network.request` strips `Proxy-Authorization` header
-- [ ] `$network.request` allows custom non-blocked headers (e.g. `X-Custom`)
-- [ ] Expression evaluator blocks `__proto__` access (already tested — verify Android parity)
-- [ ] Expression evaluator blocks `constructor` access (already tested — verify Android parity)
-- [ ] `$network.request` with empty URL string returns error
-- [ ] `$network.request` with malformed URL returns error
+- [x] `$network.request` rejects `file://` URL
+- [x] `$network.request` rejects `ftp://` URL
+- [x] `$network.request` rejects `javascript:` URL
+- [x] `$network.request` allows `https://` URL
+- [x] `$network.request` strips `Authorization` header
+- [x] `$network.request` strips `Cookie` header
+- [x] `$network.request` strips `Host` header
+- [x] `$network.request` strips `Proxy-Authorization` header
+- [x] `$network.request` allows custom non-blocked headers (e.g. `X-Custom`)
+- [x] Expression evaluator blocks `__proto__` access (already tested — verify Android parity)
+- [x] Expression evaluator blocks `constructor` access (already tested — verify Android parity)
+- [x] `$network.request` with empty URL string returns error
+- [x] `$network.request` with malformed URL returns error
 
 #### ViewModel Tests — `ViewModelTests.swift`
 
-- [ ] `loadIfNeeded()` transitions from .idle → .loading → .loaded
-- [ ] `loadIfNeeded()` does not reload when already .loaded
-- [ ] `render()` falls back to raw document on serialization failure
-- [ ] `handleHref()` posts jasonetteNavigate notification with correct userInfo
-- [ ] `handleHref()` with view="$back" posts back=true
-- [ ] `handleHref()` with view="$close" posts close=true
-- [ ] `handlePull()` executes $pull action then re-renders
-- [ ] `handlePull()` calls load() when no $pull action defined
-- [ ] `$load` lifecycle action fires after initial load
+- [x] `loadIfNeeded()` transitions from .idle → .loading → .loaded
+- [x] `loadIfNeeded()` does not reload when already .loaded
+- [x] `render()` falls back to raw document on serialization failure
+- [x] `handleHref()` posts jasonetteNavigate notification with correct userInfo
+- [x] `handleHref()` with view="$back" posts back=true
+- [x] `handleHref()` with view="$close" posts close=true
+- [x] `handlePull()` executes $pull action then re-renders
+- [x] `handlePull()` calls load() when no $pull action defined
+- [x] `$load` lifecycle action fires after initial load
 
 #### Component Dispatch Tests — `ComponentDispatchTests.swift`
 
-- [ ] type "label" → dispatches with text param
-- [ ] type "image" → dispatches with url param
-- [ ] type "button" → dispatches with text and url params
-- [ ] type "textfield" → dispatches with name, placeholder, keyboard, initialValue
-- [ ] type "textarea" → dispatches with name, placeholder
-- [ ] type "slider" → dispatches with name, value
-- [ ] type "switch" → dispatches with name, isOn
-- [ ] type "space" → dispatches with height from style
-- [ ] type "map" → dispatches MapStubComponent
-- [ ] unknown type → renders "[Unknown: foo]"
+- [x] type "label" → dispatches with text param
+- [x] type "image" → dispatches with url param
+- [x] type "button" → dispatches with text and url params
+- [x] type "textfield" → dispatches with name, placeholder, keyboard, initialValue
+- [x] type "textarea" → dispatches with name, placeholder
+- [x] type "slider" → dispatches with name, value
+- [x] type "switch" → dispatches with name, isOn
+- [x] type "space" → dispatches with height from style
+- [x] type "map" → dispatches MapStubComponent
+- [x] unknown type → renders "[Unknown: foo]"
 
 #### StateManager Binding Tests — `StateManagerBindingTests.swift`
 
-- [ ] String binding reads from local state
-- [ ] String binding writes to local state
-- [ ] Double binding reads Int as Double (no truncation)
-- [ ] Double binding returns default when key missing
-- [ ] Bool binding reads and writes correctly
-- [ ] UserDefaults isolation — separate suites don't leak
+- [x] String binding reads from local state
+- [x] String binding writes to local state
+- [x] Double binding reads Int as Double (no truncation)
+- [x] Double binding returns default when key missing
+- [x] Bool binding reads and writes correctly
+- [x] UserDefaults isolation — separate suites don't leak
 
 ### Phase 2: Android Tests (~20 new tests)
 
 #### StateManager Tests — `StateManagerTest.kt`
 
-- [ ] `set()` stores values in local map
-- [ ] `get()` returns current local state
-- [ ] `flush()` clears local state
-- [ ] Local state is separate from cache (with null context, cache no-ops)
+- [x] `set()` stores values in local map
+- [x] `get()` returns current local state
+- [x] `flush()` clears local state
+- [x] Local state is separate from cache (with null context, cache no-ops)
 
 #### Style Modifier Tests — `StyleModifierTest.kt`
 
-- [ ] Single class resolves from headStyles
-- [ ] Multi-class merges in order (later overrides earlier)
-- [ ] Inline style overrides class style
-- [ ] Unknown class name is ignored
-- [ ] No class, no inline returns null
+- [x] Single class resolves from headStyles
+- [x] Multi-class merges in order (later overrides earlier)
+- [x] Inline style overrides class style
+- [x] Unknown class name is ignored
+- [x] No class, no inline returns null
 
 #### Color Parsing Tests — `ColorParsingTest.kt`
 
-- [ ] Hex 6-digit parses correctly
-- [ ] Hex 8-digit with alpha
-- [ ] Invalid hex returns null
-- [ ] `rgb(r,g,b)` parses correctly
-- [ ] `rgba(r,g,b,a)` parses correctly
-- [ ] Out of range RGB values rejected
-- [ ] Non-numeric alpha rejected
-- [ ] Case insensitive (Locale.ROOT)
-- [ ] Whitespace trimmed
+- [x] Hex 6-digit parses correctly
+- [x] Hex 8-digit with alpha
+- [x] Invalid hex returns null
+- [x] `rgb(r,g,b)` parses correctly
+- [x] `rgba(r,g,b,a)` parses correctly
+- [x] Out of range RGB values rejected
+- [x] Non-numeric alpha rejected
+- [x] Case insensitive (Locale.ROOT)
+- [x] Whitespace trimmed
 
 #### ActionDispatcher Tests — `ActionDispatcherTest.kt`
 
-- [ ] `$set` updates state
-- [ ] `$cache.set` / `$cache.reset` work
-- [ ] `$render` triggers re-render callback
-- [ ] `$reload` triggers reload callback
-- [ ] `$network.request` with allowed scheme succeeds (mock)
-- [ ] `$network.request` rejects `file://` scheme
-- [ ] Unknown action does not crash
+- [x] `$set` updates state
+- [x] `$cache.set` / `$cache.reset` work
+- [x] `$render` triggers re-render callback
+- [x] `$reload` triggers reload callback
+- [x] `$network.request` with allowed scheme succeeds (mock)
+- [x] `$network.request` rejects `file://` scheme
+- [x] Unknown action does not crash
 
 ### Phase 3: Cross-Platform Consistency Tests (~10 tests)
 
@@ -196,22 +196,22 @@ Shared JSON fixtures in `test-fixtures/` at monorepo root.
 
 #### Template Engine Parity
 
-- [ ] Simple interpolation: `"Hello {{name}}"` + `{name: "world"}` → `"Hello world"`
-- [ ] `#each` directive produces same array output
-- [ ] `#if` true branch renders, false branch omits
-- [ ] Nested access: `{{user.name}}` resolves correctly
-- [ ] Arithmetic expression: `{{a + b}}` evaluates identically
-- [ ] Ternary: `{{x > 0 ? "pos" : "neg"}}` same result
+- [x] Simple interpolation: `"Hello {{name}}"` + `{name: "world"}` → `"Hello world"`
+- [x] `#each` directive produces same array output
+- [x] `#if` true branch renders, false branch omits
+- [x] Nested access: `{{user.name}}` resolves correctly
+- [x] Arithmetic expression: `{{a + b}}` evaluates identically
+- [x] Ternary: `{{x > 0 ? "pos" : "neg"}}` same result
 
 #### Expression Evaluator Parity
 
-- [ ] Integer arithmetic: `2 + 3` → `5` (same type on both platforms)
-- [ ] Double arithmetic: `2.5 + 1.5` → `4.0`
-- [ ] Mixed Int/Double: `1 + 2.5` → `3.5` (from kotlin-intordouble-operator-dispatch.md — this is where bugs live)
-- [ ] String concatenation: same result
-- [ ] Boolean logic: same truthiness rules
-- [ ] Member access: same nested object traversal
-- [ ] Expression security: `__proto__` and `constructor` blocked on both platforms
+- [x] Integer arithmetic: `2 + 3` → `5` (same type on both platforms)
+- [x] Double arithmetic: `2.5 + 1.5` → `4.0`
+- [x] Mixed Int/Double: `1 + 2.5` → `3.5` (from kotlin-intordouble-operator-dispatch.md — this is where bugs live)
+- [x] String concatenation: same result
+- [x] Boolean logic: same truthiness rules
+- [x] Member access: same nested object traversal
+- [x] Expression security: `__proto__` and `constructor` blocked on both platforms
 
 #### Document Decoding Parity
 
@@ -229,19 +229,19 @@ From `docs/solutions/kotlin-intordouble-operator-dispatch.md`: Kotlin requires e
 
 ### Non-Functional Requirements
 
-- [ ] All new tests run in under 5 seconds per platform
-- [ ] No network calls in unit tests (mocked/stubbed)
-- [ ] No shared mutable state between tests (isolated UserDefaults/prefs)
-- [ ] CI runs all tests on every push (existing CI already does this)
-- [ ] `@MainActor` annotation on all iOS test classes testing MainActor types
+- [x] All new tests run in under 5 seconds per platform
+- [x] No network calls in unit tests (mocked/stubbed)
+- [x] No shared mutable state between tests (isolated UserDefaults/prefs)
+- [x] CI runs all tests on every push (existing CI already does this)
+- [x] `@MainActor` annotation on all iOS test classes testing MainActor types
 
 ### Quality Gates
 
-- [ ] `swift test` passes with 0 failures (target: ~143 tests total, ~45 new)
-- [ ] `./gradlew test` passes with 0 failures (target: ~75 tests total, ~20 new)
-- [ ] Cross-platform fixtures produce identical output on iOS and Android
-- [ ] All tests complete in under 2 seconds per platform (no flaky timers)
-- [ ] No global mutable state shared between tests (isolated UserDefaults, ephemeral URLSession)
+- [x] `swift test` passes with 0 failures (target: ~143 tests total, ~45 new)
+- [x] `./gradlew test` passes with 0 failures (target: ~75 tests total, ~20 new)
+- [x] Cross-platform fixtures produce identical output on iOS and Android
+- [x] All tests complete in under 2 seconds per platform (no flaky timers)
+- [x] No global mutable state shared between tests (isolated UserDefaults, ephemeral URLSession)
 
 ## Implementation Notes
 
