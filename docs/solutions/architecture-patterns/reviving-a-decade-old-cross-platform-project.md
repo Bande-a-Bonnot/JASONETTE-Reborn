@@ -182,10 +182,10 @@ The API blocked output 5 times in a row over ~12 hours during mundane scaffoldin
 | Phases completed | 6 (0 through 5, including 0.5) |
 | Plans written | 9 |
 | PRs merged | 7 |
-| Solution docs created | 16 |
+| Solution docs created | 19 |
 | Platforms rewritten | 3 (iOS, Android, Web) |
 | Languages | Swift, Kotlin, TypeScript (replacing Obj-C, Java, vanilla JS) |
-| Tests | 68 (iOS) + 58 (web) + 3 (Android) |
+| Tests | 165 (iOS) + 58 (web) + 85 (Android) |
 | Review comments triaged | ~25 across 7 PRs |
 | Security findings fixed | 6 (web) + 2 (Android) |
 
@@ -197,10 +197,34 @@ All 16 solution docs created during the revival:
 
 **Debugging:** `swift-caseless-enum-no-init.md`, `swift-recursive-codable-structs.md`, `kotlin-intordouble-operator-dispatch.md`, `kotlin-json-safe-cast.md`
 
-**Build:** `build-errors/cli-binary-not-compiled.md`, `build-errors/vite-library-mode-css-not-bundled.md`
+**Build:** `build-errors/cli-binary-not-compiled.md`, `build-errors/vite-library-mode-css-not-bundled.md`, `build-errors/swift-canImport-vs-os-platform-check.md`, `build-errors/swiftui-modifier-gotchas.md`
 
 **Config:** `npm-workspace-version-protocol.md`, `typescript-dom-node-split-configs.md`, `ci-self-hosted-runner-getmac.md`
 
-**Testing:** `jsdom-test-quirks.md`, `test-failures/tests-pass-but-feature-broken.md`
+**Testing:** `jsdom-test-quirks.md`, `test-failures/tests-pass-but-feature-broken.md`, `test-failures/ios-test-isolation-patterns.md`
 
 **Integration:** `integration-issues/github-tree-vs-blob-urls.md`, `integration-issues/automated-review-triage-patterns.md`
+
+## 20. Test Isolation Requires Dependency Injection Everywhere
+
+Writing 97 new tests across iOS and Android revealed that every external dependency must be injectable for reliable testing. `UserDefaults.standard`, `URLSession.shared`, and global timer dictionaries all caused test pollution when shared.
+
+**Pattern:** Default parameter values make injection backward-compatible:
+
+```swift
+// Production callers: StateManager() — uses .standard
+// Test callers: StateManager(defaults: isolatedSuite)
+public init(defaults: UserDefaults = .standard)
+```
+
+```swift
+// Production: ActionDispatcher(stateManager: sm) — uses .shared
+// Test: ActionDispatcher(stateManager: sm, session: stubbedSession)
+public init(stateManager: StateManager, session: URLSession = .shared)
+```
+
+**Cross-platform fixture sharing:** Shared JSON test fixtures at the monorepo root (`test-fixtures/`) verified that iOS and Android template engines produce identical output for the same input. `#file`-relative paths in Swift and `ClassLoader.getResource()` in Kotlin resolved fixtures without hardcoded paths.
+
+**Learning:** Plan for test isolation from the start. Adding DI after the fact requires touching every callsite — default parameters mitigate this but the refactor is still friction.
+
+See: `docs/solutions/test-failures/ios-test-isolation-patterns.md`
