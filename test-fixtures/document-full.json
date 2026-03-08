@@ -1,0 +1,29 @@
+{
+  "$jason": {
+    "head": {
+      "title": "Test",
+      "data": {
+        "greeting": "Hello"
+      },
+      "styles": {
+        "bold": {"font": "bold"},
+        "padded": {"padding": 10}
+      }
+    },
+    "body": {
+      "sections": [
+        {
+          "items": [
+            {"type": "label", "text": "{{greeting}}"},
+            {"type": "image", "url": "https://example.com/img.png"},
+            {"type": "button", "text": "Click", "url": "https://example.com"},
+            {"type": "textfield", "name": "email", "placeholder": "Enter email", "keyboard": "email"},
+            {"type": "slider", "name": "volume", "value": 50},
+            {"type": "switch", "name": "toggle", "value": true},
+            {"type": "space", "style": {"height": 20}}
+          ]
+        }
+      ]
+    }
+  }
+}
