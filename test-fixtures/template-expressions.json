@@ -1,0 +1,10 @@
+{
+  "expressions": [
+    {"expression": "{{a + b}}", "context": {"a": 2, "b": 3}, "expected_int": 5},
+    {"expression": "{{a + b}}", "context": {"a": 2.5, "b": 1.5}, "expected_double": 4.0},
+    {"expression": "{{a + b}}", "context": {"a": 1, "b": 2.5}, "expected_double": 3.5},
+    {"expression": "{{x > 0 ? 'pos' : 'neg'}}", "context": {"x": 5}, "expected_string": "pos"},
+    {"expression": "{{x > 0 ? 'pos' : 'neg'}}", "context": {"x": -1}, "expected_string": "neg"},
+    {"expression": "{{user.name}}", "context": {"user": {"name": "Alice"}}, "expected_string": "Alice"}
+  ]
+}

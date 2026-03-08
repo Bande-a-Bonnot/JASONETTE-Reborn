@@ -6,8 +6,16 @@ public final class ActionDispatcher: ObservableObject {
     private let stateManager: StateManager
     private var navigationHandler: ((JasonHref) -> Void)?
     private var reloadHandler: (() -> Void)?
+    private var alertHandler: ((String, String?) -> Void)?
+    private var timers: [String: Timer] = [:]
 
-    public init(stateManager: StateManager) {
+    private static let maxTimers = 50
+    private static let minTimerInterval: TimeInterval = 0.1
+
+    private let session: URLSession
+
+    public init(stateManager: StateManager, session: URLSession = .shared) {
+        self.session = session
         self.stateManager = stateManager
     }
 
@@ -17,6 +25,16 @@ public final class ActionDispatcher: ObservableObject {
 
     public func setReloadHandler(_ handler: @escaping () -> Void) {
         self.reloadHandler = handler
+    }
+
+    public func setAlertHandler(_ handler: @escaping (String, String?) -> Void) {
+        self.alertHandler = handler
+    }
+
+    /// Invalidate all active timers. Call from view's onDisappear.
+    public func invalidateAllTimers() {
+        for timer in timers.values { timer.invalidate() }
+        timers.removeAll()
     }
 
     public func execute(_ action: JasonAction) async {
@@ -43,7 +61,7 @@ public final class ActionDispatcher: ObservableObject {
             stateManager.set(values)
 
         case "$get":
-            break // state is always available via stateManager.local
+            break
 
         // Cache
         case "$cache.set":
@@ -58,7 +76,6 @@ public final class ActionDispatcher: ObservableObject {
 
         // Render
         case "$render":
-            // Triggers a re-render. The view hierarchy observes stateManager.
             stateManager.objectWillChange.send()
 
         case "$reload":
@@ -90,24 +107,59 @@ public final class ActionDispatcher: ObservableObject {
 
         // Util
         case "$util.alert":
-            // Alert handled at view level via Published state
-            break
+            let title = options["title"]?.string ?? ""
+            let description = options["description"]?.string
+            alertHandler?(title, description)
 
         case "$util.toast", "$util.banner":
-            // Toast/banner handled at view level
             break
+
+        // Timer
+        case "$timer.start":
+            startTimer(options, successAction: action.success)
+
+        case "$timer.stop":
+            let name = options["name"]?.string ?? "default"
+            timers[name]?.invalidate()
+            timers[name] = nil
 
         default:
             print("[Jasonette] Unknown action: \(type)")
         }
     }
 
+    // MARK: - Timer
+
+    private func startTimer(_ options: [String: AnyCodable], successAction: JasonAction?) {
+        let name = options["name"]?.string ?? "default"
+        let interval = max(options["interval"]?.double ?? 1.0, Self.minTimerInterval)
+        let repeats = options["repeats"]?.bool ?? true
+
+        // Invalidate and remove existing timer before checking limit
+        timers[name]?.invalidate()
+        timers[name] = nil
+        guard timers.count < Self.maxTimers else {
+            print("[Jasonette] Timer limit reached (\(Self.maxTimers))")
+            return
+        }
+
+        let timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: repeats) { [weak self] timer in
+            guard let self, let successAction else { return }
+            Task { @MainActor in
+                await self.execute(successAction)
+                // Clean up one-shot timer entry
+                if !repeats {
+                    self.timers[name] = nil
+                }
+            }
+        }
+        timers[name] = timer
+    }
+
     // MARK: - Network
 
-    /// Allowed URL schemes for network requests.
     private static let allowedSchemes: Set<String> = ["https", "http"]
 
-    /// Headers that must not be set by Jasonette documents.
     private static let blockedHeaders: Set<String> = [
         "host", "cookie", "authorization", "proxy-authorization",
         "set-cookie", "transfer-encoding", "content-length"
@@ -119,7 +171,6 @@ public final class ActionDispatcher: ObservableObject {
             throw ActionError.invalidURL
         }
 
-        // Validate URL scheme to prevent file:// and other unsafe protocols
         guard let scheme = url.scheme?.lowercased(),
               Self.allowedSchemes.contains(scheme) else {
             throw ActionError.blockedURL
@@ -130,7 +181,6 @@ public final class ActionDispatcher: ObservableObject {
 
         if let headers = options["headers"]?.dictionary {
             for (key, value) in headers {
-                // Block sensitive headers to prevent injection attacks
                 guard !Self.blockedHeaders.contains(key.lowercased()) else { continue }
                 if let str = value.string {
                     request.setValue(str, forHTTPHeaderField: key)
@@ -147,14 +197,13 @@ public final class ActionDispatcher: ObservableObject {
             }
         }
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await session.data(for: request)
 
         guard let http = response as? HTTPURLResponse,
               (200..<300).contains(http.statusCode) else {
             throw ActionError.httpError((response as? HTTPURLResponse)?.statusCode ?? 0)
         }
 
-        // Store response in local state
         if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
             stateManager.set(json)
         }

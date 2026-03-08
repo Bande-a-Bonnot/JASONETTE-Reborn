@@ -49,3 +49,29 @@ private fun intOrDouble(
 
 Never try to infer operation semantics from a function reference at
 runtime. Pass the operations explicitly.
+
+## Extension Function Shadowing (Related)
+
+A separate but related Kotlin pitfall: defining `Any?.toDoubleOrNull()` as an extension function shadows the stdlib's `String.toDoubleOrNull()`. When the receiver is a `String`, Kotlin dispatches to the `Any?` extension (because it's more specific in scope), which internally calls `toString().toDoubleOrNull()` — but `toString()` returns a `String`, so it recurses infinitely.
+
+```kotlin
+// BROKEN: infinite recursion when receiver is String
+fun Any?.toDoubleOrNull(): Double? = when (this) {
+    is Number -> toDouble()
+    else -> toString().toDoubleOrNull() // calls itself, not stdlib!
+}
+```
+
+**Fix:** Use a distinct function name that doesn't shadow stdlib:
+
+```kotlin
+fun Any?.asDoubleOrNull(): Double? = when (this) {
+    is Number -> toDouble()
+    is String -> toDoubleOrNull() // now calls stdlib String.toDoubleOrNull()
+    else -> null
+}
+```
+
+**Symptom:** `StackOverflowError` at runtime, only when the input is a `String` (e.g., `"3.14".toDoubleOrNull()`). `Int` and `Double` inputs work fine because they hit the `is Number` branch.
+
+**Learning:** Never name an extension function identically to a stdlib method on a supertype — Kotlin's dispatch rules will shadow the stdlib version.

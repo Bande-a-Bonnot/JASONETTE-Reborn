@@ -13,6 +13,13 @@ public final class JasonetteViewModel: ObservableObject {
 
     @Published var loadState: LoadState = .idle
     @Published var renderedRoot: JasonRoot?
+    @Published var alertConfig: AlertConfig?
+
+    struct AlertConfig: Identifiable {
+        let id = UUID()
+        let title: String
+        let description: String?
+    }
 
     private let url: URL?
     private var document: JasonDocument?
@@ -24,12 +31,26 @@ public final class JasonetteViewModel: ObservableObject {
         self.url = url
         self.document = nil
         self.actionDispatcher = ActionDispatcher(stateManager: stateManager)
+        wireHandlers()
     }
 
     init(document: JasonDocument) {
         self.url = nil
         self.document = document
         self.actionDispatcher = ActionDispatcher(stateManager: stateManager)
+        wireHandlers()
+    }
+
+    private func wireHandlers() {
+        actionDispatcher.setNavigationHandler { [weak self] href in
+            self?.handleHref(href)
+        }
+        actionDispatcher.setReloadHandler { [weak self] in
+            self?.reload()
+        }
+        actionDispatcher.setAlertHandler { [weak self] title, description in
+            self?.alertConfig = AlertConfig(title: title, description: description)
+        }
     }
 
     func loadIfNeeded() async {
@@ -73,11 +94,14 @@ public final class JasonetteViewModel: ObservableObject {
 
         if let templates = head?.templates?.body {
             let rendered = TemplateEngine.render(templates.value, context: context)
-            if let renderedData = try? JSONSerialization.data(withJSONObject: rendered as Any),
-               var root = try? JSONDecoder().decode(JasonRoot.self, from: renderedData) {
+            // Defensive: wrap serialization in do/catch to prevent crashes
+            do {
+                let renderedData = try JSONSerialization.data(withJSONObject: rendered as Any)
+                var root = try JSONDecoder().decode(JasonRoot.self, from: renderedData)
                 root.head = head
                 renderedRoot = root
-            } else {
+            } catch {
+                // Fall back to raw document on serialization failure
                 renderedRoot = doc.jason
             }
         } else {
@@ -86,9 +110,26 @@ public final class JasonetteViewModel: ObservableObject {
     }
 
     func handleHref(_ href: JasonHref) {
-        if href.view == "$back" || href.view == "$close" {
+        // Handle $back
+        if href.view == "$back" {
+            NotificationCenter.default.post(
+                name: .jasonetteNavigate,
+                object: nil,
+                userInfo: ["back": true]
+            )
             return
         }
+
+        // Handle $close
+        if href.view == "$close" {
+            NotificationCenter.default.post(
+                name: .jasonetteNavigate,
+                object: nil,
+                userInfo: ["close": true]
+            )
+            return
+        }
+
         guard let urlStr = href.url, let url = URL(string: urlStr) else { return }
         NotificationCenter.default.post(
             name: .jasonetteNavigate,

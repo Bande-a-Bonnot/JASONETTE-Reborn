@@ -4,22 +4,29 @@ struct TextFieldComponent: View {
     let name: String
     let placeholder: String
     let keyboard: String?
+    let initialValue: String?
 
-    @State private var text: String = ""
+    @EnvironmentObject private var stateManager: StateManager
 
     var body: some View {
         textField
             .textFieldStyle(.roundedBorder)
             .accessibilityIdentifier(name)
+            .onAppear {
+                if let initialValue, stateManager.local[name] == nil {
+                    stateManager.local[name] = initialValue
+                }
+            }
     }
 
     @ViewBuilder
     private var textField: some View {
+        let binding = stateManager.binding(forKey: name, default: "")
         #if os(iOS)
-        TextField(placeholder, text: $text)
+        TextField(placeholder, text: binding)
             .keyboardType(keyboardType)
         #else
-        TextField(placeholder, text: $text)
+        TextField(placeholder, text: binding)
         #endif
     }
 

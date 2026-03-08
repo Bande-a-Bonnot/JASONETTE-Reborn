@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 /// Manages Jasonette state: local ($set/$get), cache (UserDefaults).
 @MainActor
@@ -9,9 +10,11 @@ public final class StateManager: ObservableObject {
     }
 
     private let cacheKey = "jasonette:cache"
+    private let defaults: UserDefaults
 
-    public init() {
-        if let data = UserDefaults.standard.data(forKey: cacheKey),
+    public init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+        if let data = defaults.data(forKey: cacheKey),
            let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
             cache = dict
         } else {
@@ -29,6 +32,33 @@ public final class StateManager: ObservableObject {
 
     public func get() -> [String: Any] {
         local
+    }
+
+    // MARK: - Bindings for input components
+
+    public func binding(forKey key: String, default defaultValue: String = "") -> Binding<String> {
+        Binding<String>(
+            get: { self.local[key] as? String ?? defaultValue },
+            set: { self.local[key] = $0 }
+        )
+    }
+
+    public func binding(forKey key: String, default defaultValue: Double = 0) -> Binding<Double> {
+        Binding<Double>(
+            get: {
+                if let d = self.local[key] as? Double { return d }
+                if let i = self.local[key] as? Int { return Double(i) }
+                return defaultValue
+            },
+            set: { self.local[key] = $0 }
+        )
+    }
+
+    public func binding(forKey key: String, default defaultValue: Bool = false) -> Binding<Bool> {
+        Binding<Bool>(
+            get: { self.local[key] as? Bool ?? defaultValue },
+            set: { self.local[key] = $0 }
+        )
     }
 
     // MARK: - Cache ($cache.set / $cache.get / $cache.reset)
@@ -58,7 +88,7 @@ public final class StateManager: ObservableObject {
 
     private func persistCache() {
         if let data = try? JSONSerialization.data(withJSONObject: cache) {
-            UserDefaults.standard.set(data, forKey: cacheKey)
+            defaults.set(data, forKey: cacheKey)
         }
     }
 }

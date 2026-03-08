@@ -1,0 +1,22 @@
+{
+  "template": {
+    "items": {
+      "{{#each items}}": {
+        "type": "label",
+        "text": "{{$jason.name}}"
+      }
+    }
+  },
+  "context": {
+    "items": [
+      {"name": "Alice"},
+      {"name": "Bob"}
+    ]
+  },
+  "expected": {
+    "items": [
+      {"type": "label", "text": "Alice"},
+      {"type": "label", "text": "Bob"}
+    ]
+  }
+}
