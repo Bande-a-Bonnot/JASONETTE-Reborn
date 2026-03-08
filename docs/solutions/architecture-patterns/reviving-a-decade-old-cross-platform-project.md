@@ -13,6 +13,11 @@ related:
   - docs/solutions/test-failures/tests-pass-but-feature-broken.md
   - docs/solutions/android-compose-state-hoisting.md
   - docs/solutions/integration-issues/automated-review-triage-patterns.md
+  - docs/solutions/integration-issues/ios-ci-cd-provider-tradeoffs.md
+  - docs/solutions/integration-issues/github-pages-static-json-hosting.md
+  - docs/solutions/integration-issues/getmac-github-actions-runner-queue-forever.md
+  - docs/solutions/build-errors/xcode-cloud-ci-post-clone-working-directory.md
+  - docs/solutions/build-errors/xcode-cloud-itms90035-distribution-signing.md
 ---
 
 # Reviving a Decade-Old Cross-Platform Project

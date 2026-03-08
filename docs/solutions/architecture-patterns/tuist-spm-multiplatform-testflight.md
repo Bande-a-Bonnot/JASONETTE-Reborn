@@ -10,6 +10,9 @@ resolution_time: "4 atomic commits"
 related:
   - docs/solutions/swift-caseless-enum-no-init.md
   - docs/solutions/swift-recursive-codable-structs.md
+  - docs/solutions/build-errors/xcode-cloud-ci-post-clone-working-directory.md
+  - docs/solutions/build-errors/xcode-cloud-itms90035-distribution-signing.md
+  - docs/solutions/integration-issues/ios-ci-cd-provider-tradeoffs.md
 ---
 
 # Tuist + SPM Multi-Platform Architecture for TestFlight
