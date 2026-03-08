@@ -9,6 +9,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.jasonette.core.JasonStyle
 import com.jasonette.core.dp
+import java.util.Locale
 
 /**
  * Builds a Compose Modifier from Jasonette style properties.
@@ -57,7 +58,7 @@ private fun resolveStyle(
 
 /** Unified CSS color parser: hex, rgb(), rgba(). Normalizes once here. */
 fun parseCssColor(css: String): Color? {
-    val s = css.trim().lowercase()
+    val s = css.trim().lowercase(Locale.ROOT)
     return when {
         s.startsWith("#") -> parseHexColor(s)
         s.startsWith("rgb") -> parseRgbColor(s)
