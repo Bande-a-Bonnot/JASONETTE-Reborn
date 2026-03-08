@@ -26,8 +26,8 @@ fun buildStyleModifier(
     style.padding?.dp?.let { modifier = modifier.padding(it.dp) }
 
     // Background
-    style.background?.let { hex ->
-        parseHexColor(hex)?.let { modifier = modifier.background(it) }
+    style.background?.let { css ->
+        parseCssColor(css)?.let { modifier = modifier.background(it) }
     }
 
     // Corner radius
@@ -43,11 +43,24 @@ private fun resolveStyle(
     headStyles: Map<String, JasonStyle>,
     className: String?
 ): JasonStyle? {
-    val base = className?.let { headStyles[it] }
+    // Support multi-class: "bold padded" → merge "bold" then "padded"
+    val base = className?.split(" ")
+        ?.mapNotNull { headStyles[it.trim()] }
+        ?.reduceOrNull { acc, style -> acc.mergeWith(style) }
     return when {
         base != null && inline != null -> base.mergeWith(inline)
         inline != null -> inline
         base != null -> base
+        else -> null
+    }
+}
+
+/** Unified CSS color parser: hex, rgb(), rgba(). */
+fun parseCssColor(css: String): Color? {
+    val s = css.trim().lowercase()
+    return when {
+        s.startsWith("#") -> parseHexColor(s)
+        s.startsWith("rgb") -> parseRgbColor(s)
         else -> null
     }
 }
@@ -63,4 +76,25 @@ fun parseHexColor(hex: String): Color? {
     } catch (_: Exception) {
         null
     }
+}
+
+/** Parses rgb(r,g,b) and rgba(r,g,b,a) — manual string splitting, no regex. */
+fun parseRgbColor(css: String): Color? {
+    val s = css.trim().lowercase()
+    val isRgba = s.startsWith("rgba(")
+    val isRgb = s.startsWith("rgb(")
+    if ((!isRgb && !isRgba) || !s.endsWith(")")) return null
+    val prefix = if (isRgba) 5 else 4
+    val inner = s.substring(prefix, s.length - 1)
+    val parts = inner.split(",").map { it.trim() }
+    if (isRgb && parts.size != 3) return null
+    if (isRgba && parts.size != 4) return null
+    val r = parts[0].toIntOrNull() ?: return null
+    val g = parts[1].toIntOrNull() ?: return null
+    val b = parts[2].toIntOrNull() ?: return null
+    if (r !in 0..255 || g !in 0..255 || b !in 0..255) return null
+    val a = if (parts.size == 4) {
+        (parts[3].toFloatOrNull() ?: 1f).coerceIn(0f, 1f)
+    } else 1f
+    return Color(r / 255f, g / 255f, b / 255f, a)
 }

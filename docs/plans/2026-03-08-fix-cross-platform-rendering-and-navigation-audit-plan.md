@@ -275,30 +275,30 @@ if stateManager.local[name] == nil, let initial = component.value { stateManager
 
 ### Functional Requirements
 
-- [ ] Demo.json renders fully on iOS with all colors, styles, and header visible
-- [ ] "Send yourself Documentation" opens Mail app on iOS
-- [ ] "View JSON" opens browser/Safari on iOS
-- [ ] Instagram/Twitter showcase items open as modal sheets on iOS
-- [ ] Core > Render demo works without crash on iOS
-- [ ] Views > Header > With header renders without crash on iOS
-- [ ] `$back`/`$close` navigate correctly on iOS
-- [ ] Footer tabs render on iOS
-- [ ] Input components persist values to StateManager on iOS
-- [ ] `$util.alert` shows native alert on iOS
-- [ ] `$timer` demos (mario, stopwatch) function on iOS
+- [x] Demo.json renders fully on iOS with all colors, styles, and header visible
+- [x] "Send yourself Documentation" opens Mail app on iOS
+- [x] "View JSON" opens browser/Safari on iOS
+- [x] Instagram/Twitter showcase items open as modal sheets on iOS
+- [x] Core > Render demo works without crash on iOS
+- [x] Views > Header > With header renders without crash on iOS
+- [x] `$back`/`$close` navigate correctly on iOS
+- [x] Footer tabs render on iOS
+- [x] Input components persist values to StateManager on iOS
+- [x] `$util.alert` shows native alert on iOS
+- [x] `$timer` demos (mario, stopwatch) function on iOS
 - [ ] Android demo URL points to working GitHub Pages URL
 - [ ] Android can navigate between screens
 
 ### Non-Functional Requirements
 
-- [ ] No force-unwraps in new code
+- [x] No force-unwraps in new code
 - [ ] All new action handlers have unit tests
-- [ ] Color parsing has unit tests for hex, rgb(), rgba() formats
-- [ ] Multi-class resolution has unit tests
+- [x] Color parsing has unit tests for hex, rgb(), rgba() formats
+- [x] Multi-class resolution has unit tests
 
 ### Quality Gates
 
-- [ ] `swift test` passes (all existing + new tests)
+- [x] `swift test` passes (all existing + new tests)
 - [ ] `./gradlew test` passes on Android
 - [ ] `npm test` passes on web packages
 - [ ] No regressions in existing 56 iOS tests
