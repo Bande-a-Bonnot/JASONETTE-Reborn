@@ -44,16 +44,11 @@ private extension View {
 
     @ViewBuilder
     func applyColors(_ style: JasonStyle) -> some View {
-        let fg = style.color.flatMap { Color(css: $0) }
-        let bg = style.background.flatMap { Color(css: $0) }
-        if let fg, let bg {
-            self.foregroundColor(fg).background(bg)
-        } else if let fg {
-            self.foregroundColor(fg)
-        } else if let bg {
-            self.background(bg)
+        let view = self.foregroundColor(style.color.flatMap { Color(css: $0) })
+        if let bg = style.background.flatMap({ Color(css: $0) }) {
+            view.background(bg)
         } else {
-            self
+            view
         }
     }
 

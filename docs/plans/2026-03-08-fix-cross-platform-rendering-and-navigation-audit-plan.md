@@ -11,6 +11,7 @@ deepened: 2026-03-08
 **Research agents used:** SwiftUI navigation, CSS color parsing, XCUITest patterns, input binding
 
 ### Key Improvements
+
 1. Concrete Swift code for `Color(css:)` unified parser (hex + rgb/rgba, no regex, no dependencies)
 2. Item-driven `.sheet(item:)` pattern for modals — avoids multiple boolean `.sheet` pitfalls
 3. `@Environment(\.openURL)` for mailto/tel — cross-platform, not `UIApplication.shared`
