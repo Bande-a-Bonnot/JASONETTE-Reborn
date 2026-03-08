@@ -324,8 +324,8 @@ final class ActionDispatcherTests: XCTestCase {
 
     // MARK: - One-shot timer cleanup
 
-    func testOneShotTimerCleansUpDictEntry() async {
-        let expectation = expectation(description: "one-shot fired and cleaned up")
+    func testOneShotTimerFiresSuccessAction() async {
+        let expectation = expectation(description: "one-shot timer fires success action")
         let action = decodeAction([
             "type": "$timer.start",
             "options": ["name": "oneshot", "interval": 0.1, "repeats": false],
