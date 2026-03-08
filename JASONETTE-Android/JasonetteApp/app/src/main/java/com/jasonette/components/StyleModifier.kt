@@ -44,8 +44,8 @@ private fun resolveStyle(
     className: String?
 ): JasonStyle? {
     // Support multi-class: "bold padded" → merge "bold" then "padded"
-    val base = className?.split(" ")
-        ?.mapNotNull { headStyles[it.trim()] }
+    val base = className?.trim()?.split(Regex("\\s+"))
+        ?.mapNotNull { headStyles[it] }
         ?.reduceOrNull { acc, style -> acc.mergeWith(style) }
     return when {
         base != null && inline != null -> base.mergeWith(inline)
