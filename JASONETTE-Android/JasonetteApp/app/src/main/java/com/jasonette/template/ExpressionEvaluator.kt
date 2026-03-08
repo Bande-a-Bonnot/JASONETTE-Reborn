@@ -224,6 +224,6 @@ fun Any?.toDoubleOrNull(): Double? = when (this) {
     is Int -> this.toDouble()
     is Float -> this.toDouble()
     is Long -> this.toDouble()
-    is String -> this.toDoubleOrNull()
+    is String -> try { this.toDouble() } catch (_: NumberFormatException) { null }
     else -> null
 }
