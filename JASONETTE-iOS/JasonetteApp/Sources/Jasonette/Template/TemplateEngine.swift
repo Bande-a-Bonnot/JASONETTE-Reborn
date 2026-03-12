@@ -3,16 +3,23 @@ import Foundation
 /// Jasonette template engine — transforms JSON templates with data.
 /// Handles `{{expr}}`, `{{#each items}}`, `{{#if cond}}`.
 public enum TemplateEngine {
+    static let maxDepth = 20
+
     /// Render a template (Any JSON value) with a context.
     public static func render(_ template: Any, context: [String: Any]) -> Any {
+        render(template, context: context, depth: 0)
+    }
+
+    static func render(_ template: Any, context: [String: Any], depth: Int) -> Any {
+        guard depth < maxDepth else { return template }
         if let str = template as? String {
             return interpolateString(str, context: context)
         }
         if let arr = template as? [Any] {
-            return renderArray(arr, context: context)
+            return renderArray(arr, context: context, depth: depth)
         }
         if let dict = template as? [String: Any] {
-            return renderObject(dict, context: context)
+            return renderObject(dict, context: context, depth: depth)
         }
         return template
     }
@@ -24,6 +31,7 @@ public enum TemplateEngine {
     )
 
     static func interpolateString(_ str: String, context: [String: Any]) -> Any {
+        guard str.contains("{{") else { return str }
         let range = NSRange(str.startIndex..., in: str)
         let matches = exprPattern.matches(in: str, range: range)
 
@@ -52,18 +60,18 @@ public enum TemplateEngine {
 
     // MARK: - Array rendering
 
-    static func renderArray(_ arr: [Any], context: [String: Any]) -> [Any] {
+    static func renderArray(_ arr: [Any], context: [String: Any], depth: Int) -> [Any] {
         var result: [Any] = []
         for item in arr {
             if let dict = item as? [String: Any], let directive = findDirective(dict) {
-                let rendered = applyDirective(directive, template: dict, context: context)
+                let rendered = applyDirective(directive, template: dict, context: context, depth: depth)
                 if let arr = rendered as? [Any] {
                     result.append(contentsOf: arr)
                 } else {
                     result.append(rendered)
                 }
             } else {
-                result.append(render(item, context: context))
+                result.append(render(item, context: context, depth: depth + 1))
             }
         }
         return result
@@ -71,17 +79,17 @@ public enum TemplateEngine {
 
     // MARK: - Object rendering
 
-    static func renderObject(_ dict: [String: Any], context: [String: Any]) -> Any {
+    static func renderObject(_ dict: [String: Any], context: [String: Any], depth: Int) -> Any {
         // Check for template directives
         if let directive = findDirective(dict) {
-            return applyDirective(directive, template: dict, context: context)
+            return applyDirective(directive, template: dict, context: context, depth: depth)
         }
 
         var result: [String: Any] = [:]
         for (key, value) in dict {
             let renderedKey = interpolateString(key, context: context)
             let keyStr = renderedKey as? String ?? "\(renderedKey)"
-            result[keyStr] = render(value, context: context)
+            result[keyStr] = render(value, context: context, depth: depth + 1)
         }
         return result
     }
@@ -132,7 +140,7 @@ public enum TemplateEngine {
     }
 
     static func applyDirective(
-        _ directive: Directive, template: [String: Any], context: [String: Any]
+        _ directive: Directive, template: [String: Any], context: [String: Any], depth: Int
     ) -> Any {
         switch directive {
         case .each(let expr, let itemTemplate):
@@ -147,25 +155,25 @@ public enum TemplateEngine {
                 if let root = context["$jason"] {
                     itemContext["$root"] = root
                 }
-                result.append(render(itemTemplate, context: itemContext))
+                result.append(render(itemTemplate, context: itemContext, depth: depth + 1))
             }
             return result
 
         case .ifCondition(let expr, let thenTemplate, let elseifs, let elseTemplate):
             let condResult = ExpressionEvaluator.evaluate(expr, context: context)
             if ExpressionEvaluator.isTruthy(condResult) {
-                return render(thenTemplate, context: context)
+                return render(thenTemplate, context: context, depth: depth + 1)
             }
             if let elseifs = elseifs {
                 for (elseifExpr, elseifTemplate) in elseifs {
                     let elseifResult = ExpressionEvaluator.evaluate(elseifExpr, context: context)
                     if ExpressionEvaluator.isTruthy(elseifResult) {
-                        return render(elseifTemplate, context: context)
+                        return render(elseifTemplate, context: context, depth: depth + 1)
                     }
                 }
             }
             if let elseTemplate = elseTemplate {
-                return render(elseTemplate, context: context)
+                return render(elseTemplate, context: context, depth: depth + 1)
             }
             // Return empty array so #if false in array context produces no items
             return [Any]()
