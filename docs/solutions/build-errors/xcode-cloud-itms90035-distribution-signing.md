@@ -1,6 +1,6 @@
 ---
 title: "Xcode Cloud ITMS-90035: Tuist project signs with development certificate instead of distribution"
-date: 2026-03-08
+date: 2026-03-11
 category: build-errors
 tags: [xcode-cloud, code-signing, tuist, testflight, itms-90035, distribution-certificate]
 module: JasonetteApp
@@ -23,30 +23,22 @@ certificate.
 
 ## Root Cause
 
-Tuist's `.automaticCodeSigning(devTeam:)` sets `CODE_SIGN_STYLE = Automatic` and `DEVELOPMENT_TEAM`, but does NOT set `CODE_SIGN_IDENTITY` for Release builds. Without an explicit identity, the archive may use a development certificate instead of the distribution certificate required for TestFlight/App Store.
+Tuist's `.automaticCodeSigning(devTeam:)` hardcodes `CODE_SIGN_IDENTITY = "iPhone Developer"` into the generated `.xcodeproj` base settings. Xcode Cloud reads this and uses a development certificate for archives instead of letting its cloud-managed signing pick the right certificate per build action.
 
 ## What Doesn't Work
 
 ### automaticCodeSigning alone
 
 ```swift
-// Project.swift — SIGNS WITH DEVELOPMENT CERT
+// BROKEN: hardcodes CODE_SIGN_IDENTITY = "iPhone Developer"
 settings: .settings(base: SettingsDictionary()
     .automaticCodeSigning(devTeam: "PKPPLFK854"))
 ```
 
-This sets:
-- `CODE_SIGN_STYLE` = `Automatic`
-- `DEVELOPMENT_TEAM` = `PKPPLFK854`
-
-But `CODE_SIGN_IDENTITY` defaults to development, so archives get signed with "Apple Development" instead of "Apple Distribution."
-
-## What Works
-
-Add `CODE_SIGN_IDENTITY: "Apple Distribution"` to the Release configuration:
+### Adding release CODE_SIGN_IDENTITY override
 
 ```swift
-// Project.swift — CORRECT
+// BROKEN on Xcode Cloud: cloud-managed signing ignores this override
 settings: .settings(
     base: SettingsDictionary()
         .automaticCodeSigning(devTeam: "PKPPLFK854"),
@@ -54,18 +46,33 @@ settings: .settings(
 )
 ```
 
-This keeps Debug builds using the development certificate (for simulator/device testing) while Release builds (used by Xcode Cloud Archive) use the distribution certificate.
+This works for local archives but Xcode Cloud manages its own certificates and does not honor explicit `CODE_SIGN_IDENTITY` overrides in the project.
 
-## Apple's Signing Identity Values
+### Manual CODE_SIGN_STYLE + DEVELOPMENT_TEAM without excluding defaults
 
-| Identity | Use case |
-|----------|----------|
-| `Apple Development` | Local builds, simulator, device testing |
-| `Apple Distribution` | App Store, TestFlight, archive |
-| `Developer ID Application` | Direct distribution outside App Store (macOS) |
-| `iPhone Distribution` | Legacy (pre-Xcode 11), equivalent to Apple Distribution for iOS |
+```swift
+// BROKEN: Tuist's recommended defaults still inject CODE_SIGN_IDENTITY
+settings: .settings(base: [
+    "CODE_SIGN_STYLE": "Automatic",
+    "DEVELOPMENT_TEAM": "PKPPLFK854",
+])
+```
 
-## Full Tuist Target Example
+## What Works
+
+Exclude `CODE_SIGN_IDENTITY` from Tuist's recommended defaults so it never appears in the generated project. Xcode Cloud then picks the right identity automatically per build action:
+
+```swift
+let automaticSigningSettings: Settings = .settings(
+    base: [
+        "CODE_SIGN_STYLE": "Automatic",
+        "DEVELOPMENT_TEAM": "PKPPLFK854",
+    ],
+    defaultSettings: .recommended(excluding: ["CODE_SIGN_IDENTITY"])
+)
+```
+
+Then reference it from each target:
 
 ```swift
 .target(
@@ -82,19 +89,22 @@ This keeps Debug builds using the development certificate (for simulator/device 
     sources: [],
     resources: ["Resources/iOS/**"],
     dependencies: [.package(product: "JasonetteApp-iOS")],
-    settings: .settings(
-        base: SettingsDictionary()
-            .automaticCodeSigning(devTeam: "YOUR_TEAM_ID"),
-        release: ["CODE_SIGN_IDENTITY": "Apple Distribution"]
-    )
+    settings: automaticSigningSettings
 )
 ```
 
+## Why This Works
+
+- `CODE_SIGN_STYLE: "Automatic"` tells Xcode to manage signing
+- `DEVELOPMENT_TEAM` identifies the team
+- `excluding: ["CODE_SIGN_IDENTITY"]` prevents Tuist from injecting any identity
+- Xcode Cloud's cloud-managed signing selects development cert for builds, distribution cert for archives
+
 ## Prevention
 
-- Always set Release `CODE_SIGN_IDENTITY` when configuring Tuist targets for App Store / TestFlight distribution
-- The `automaticCodeSigning(devTeam:)` helper is necessary but not sufficient for distribution
-- Test locally: `xcodebuild -showBuildSettings -configuration Release | grep CODE_SIGN_IDENTITY` should show "Apple Distribution"
+- Never use `.automaticCodeSigning(devTeam:)` for Xcode Cloud projects — it hardcodes `"iPhone Developer"`
+- Always use `defaultSettings: .recommended(excluding: ["CODE_SIGN_IDENTITY"])` with manual signing settings
+- Verify: `xcodebuild -showBuildSettings | grep CODE_SIGN_IDENTITY` should show nothing or `-` (automatic)
 
 ## Related
 
