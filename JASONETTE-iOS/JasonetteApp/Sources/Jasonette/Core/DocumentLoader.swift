@@ -10,8 +10,14 @@ public final class DocumentLoader: Sendable {
         self.decoder = JSONDecoder()
     }
 
+    private static let allowedSchemes: Set<String> = ["http", "https"]
+
     /// Load a document from a URL.
     public func load(from url: URL) async throws -> JasonDocument {
+        guard let scheme = url.scheme?.lowercased(),
+              Self.allowedSchemes.contains(scheme) else {
+            throw DocumentError.blockedURL
+        }
         let (data, response) = try await session.data(from: url)
         guard let httpResponse = response as? HTTPURLResponse,
               (200..<300).contains(httpResponse.statusCode) else {
@@ -38,11 +44,13 @@ public final class DocumentLoader: Sendable {
     public enum DocumentError: Error, LocalizedError {
         case httpError(Int)
         case invalidEncoding
+        case blockedURL
 
         public var errorDescription: String? {
             switch self {
             case .httpError(let code): return "HTTP error: \(code)"
             case .invalidEncoding: return "Invalid string encoding"
+            case .blockedURL: return "URL scheme not allowed"
             }
         }
     }

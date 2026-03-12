@@ -213,6 +213,37 @@ final class SecurityTests: XCTestCase {
         XCTAssertNil(result)
     }
 
+    // MARK: - Computed member blocklist bypass
+
+    func testComputedMemberBlocksProtoAccess() {
+        // obj["__proto__"] should be blocked the same as obj.__proto__
+        let result = ExpressionEvaluator.evaluate("obj['__proto__']", context: [
+            "obj": ["key": "value"]
+        ])
+        XCTAssertNil(result)
+    }
+
+    func testComputedMemberBlocksConstructorAccess() {
+        let result = ExpressionEvaluator.evaluate("obj['constructor']", context: [
+            "obj": ["key": "value"]
+        ])
+        XCTAssertNil(result)
+    }
+
+    func testComputedMemberBlocksPrototypeAccess() {
+        let result = ExpressionEvaluator.evaluate("obj['prototype']", context: [
+            "obj": ["key": "value"]
+        ])
+        XCTAssertNil(result)
+    }
+
+    func testComputedMemberAllowsNormalStringKey() {
+        let result = ExpressionEvaluator.evaluate("obj['name']", context: [
+            "obj": ["name": "Alice"]
+        ])
+        XCTAssertEqual(result as? String, "Alice")
+    }
+
     // MARK: - Edge cases
 
     func testEmptyURLReturnsError() async {

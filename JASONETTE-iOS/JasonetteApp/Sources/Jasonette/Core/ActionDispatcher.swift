@@ -8,6 +8,7 @@ public final class ActionDispatcher: ObservableObject {
     private var reloadHandler: (() -> Void)?
     private var alertHandler: ((String, String?) -> Void)?
     private var timers: [String: Timer] = [:]
+    private var executingTimers: Set<String> = []
 
     private static let maxTimers = 50
     private static let minTimerInterval: TimeInterval = 0.1
@@ -146,8 +147,10 @@ public final class ActionDispatcher: ObservableObject {
         let timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: repeats) { [weak self] timer in
             guard let self, let successAction else { return }
             Task { @MainActor in
+                guard !self.executingTimers.contains(name) else { return }
+                self.executingTimers.insert(name)
+                defer { self.executingTimers.remove(name) }
                 await self.execute(successAction)
-                // Clean up one-shot timer entry
                 if !repeats {
                     self.timers[name] = nil
                 }
