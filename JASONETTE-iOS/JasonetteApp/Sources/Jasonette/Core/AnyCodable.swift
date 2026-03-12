@@ -83,6 +83,23 @@ public struct AnyCodable: Codable, Sendable, Equatable, Hashable {
         }
     }
 
+    /// Recursively unwrap nested AnyCodable wrappers to native JSON-safe types.
+    /// Prevents NSJSONSerialization ObjC exceptions from non-serializable wrapper types.
+    public var unwrapped: Any {
+        switch value {
+        case let arr as [AnyCodable]:
+            return arr.map(\.unwrapped)
+        case let dict as [String: AnyCodable]:
+            return dict.mapValues(\.unwrapped)
+        case let arr as [Any]:
+            return arr.map { ($0 as? AnyCodable)?.unwrapped ?? $0 }
+        case let dict as [String: Any]:
+            return dict.mapValues { ($0 as? AnyCodable)?.unwrapped ?? $0 }
+        default:
+            return value
+        }
+    }
+
     public func encode(to encoder: Encoder) throws {
         var container = encoder.singleValueContainer()
         switch value {

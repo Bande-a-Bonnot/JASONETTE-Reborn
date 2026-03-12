@@ -189,7 +189,9 @@ public final class ActionDispatcher: ObservableObject {
         }
 
         if let body = options["body"] {
-            if let data = try? JSONSerialization.data(withJSONObject: body.value as Any) {
+            let unwrappedBody = body.unwrapped
+            if JSONSerialization.isValidJSONObject(unwrappedBody),
+               let data = try? JSONSerialization.data(withJSONObject: unwrappedBody) {
                 request.httpBody = data
                 if request.value(forHTTPHeaderField: "Content-Type") == nil {
                     request.setValue("application/json", forHTTPHeaderField: "Content-Type")

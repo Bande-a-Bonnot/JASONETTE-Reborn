@@ -89,19 +89,22 @@ public final class JasonetteViewModel: ObservableObject {
 
     private func render(_ doc: JasonDocument) {
         let head = doc.jason.head
-        let data = head?.data?.compactMapValues { $0.value } ?? [:]
+        let data = head?.data?.compactMapValues { $0.unwrapped } ?? [:]
         let context = data.merging(stateManager.local) { _, new in new }
 
         if let templates = head?.templates?.body {
-            let rendered = TemplateEngine.render(templates.value, context: context)
-            // Defensive: wrap serialization in do/catch to prevent crashes
+            let rendered = TemplateEngine.render(templates.unwrapped, context: context)
+
+            guard JSONSerialization.isValidJSONObject(rendered) else {
+                renderedRoot = doc.jason
+                return
+            }
             do {
-                let renderedData = try JSONSerialization.data(withJSONObject: rendered as Any)
+                let renderedData = try JSONSerialization.data(withJSONObject: rendered)
                 var root = try JSONDecoder().decode(JasonRoot.self, from: renderedData)
                 root.head = head
                 renderedRoot = root
             } catch {
-                // Fall back to raw document on serialization failure
                 renderedRoot = doc.jason
             }
         } else {
