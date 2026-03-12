@@ -70,11 +70,6 @@ public struct JasonetteView: View {
         VStack(spacing: 0) {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 0) {
-                    // Header
-                    if let header = body?.header {
-                        headerView(header, headStyles: headStyles)
-                    }
-
                     // Sections
                     if let sections = body?.sections {
                         ForEach(Array(sections.enumerated()), id: \.offset) { _, section in
@@ -111,20 +106,20 @@ public struct JasonetteView: View {
                 .toolbarBackground(.visible, for: .navigationBar)
         }
         #endif
-        .onDisappear { viewModel.actionDispatcher.invalidateAllTimers() }
-    }
-
-    @ViewBuilder
-    private func headerView(_ header: JasonHeader, headStyles: [String: JasonStyle]) -> some View {
-        if let menu = header.menu {
-            ComponentView(
-                menu,
-                headStyles: headStyles,
-                onHref: { viewModel.handleHref($0) },
-                onAction: { viewModel.handleAction($0) }
-            )
-            .padding(.horizontal)
+        .toolbar {
+            if let menu = body?.header?.menu {
+                ToolbarItem(placement: .primaryAction) {
+                    Button(menu.text ?? "") {
+                        if let href = menu.href {
+                            viewModel.handleHref(href)
+                        } else if let action = menu.action {
+                            viewModel.handleAction(action)
+                        }
+                    }
+                }
+            }
         }
+        .onDisappear { viewModel.actionDispatcher.invalidateAllTimers() }
     }
 
     @ViewBuilder
