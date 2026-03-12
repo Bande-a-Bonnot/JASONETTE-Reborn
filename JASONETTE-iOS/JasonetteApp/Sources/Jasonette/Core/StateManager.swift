@@ -64,7 +64,18 @@ public final class StateManager: ObservableObject {
     // MARK: - Cache ($cache.set / $cache.get / $cache.reset)
 
     public func cacheSet(_ values: [String: Any]) {
-        cache.merge(values) { _, new in new }
+        let candidate = cache.merging(values) { _, new in new }
+        guard JSONSerialization.isValidJSONObject(candidate) else {
+            _cacheSetFailureHandler("[Jasonette] cacheSet: values contain non-JSON-serializable type — update dropped")
+            return
+        }
+        cache = candidate
+    }
+
+    /// Seam for testing: overridden in tests to record violations without crashing.
+    /// In production debug builds this calls `assertionFailure`; in release it logs.
+    var _cacheSetFailureHandler: (String) -> Void = { message in
+        assertionFailure(message)
     }
 
     public func cacheGet() -> [String: Any] {

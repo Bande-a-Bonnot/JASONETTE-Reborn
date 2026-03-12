@@ -4,13 +4,14 @@ import Foundation
 /// Handles `{{expr}}`, `{{#each items}}`, `{{#if cond}}`.
 public enum TemplateEngine {
     static let maxDepth = 20
+    private static let maxItems = 1000
 
     /// Render a template (Any JSON value) with a context.
     public static func render(_ template: Any, context: [String: Any]) -> Any {
         render(template, context: context, depth: 0)
     }
 
-    static func render(_ template: Any, context: [String: Any], depth: Int) -> Any {
+    private static func render(_ template: Any, context: [String: Any], depth: Int) -> Any {
         guard depth < maxDepth else { return template }
         if let str = template as? String {
             return interpolateString(str, context: context)
@@ -30,7 +31,7 @@ public enum TemplateEngine {
         pattern: #"\{\{([^}]+(?:\}[^}]+)*)\}\}"#
     )
 
-    static func interpolateString(_ str: String, context: [String: Any]) -> Any {
+    private static func interpolateString(_ str: String, context: [String: Any]) -> Any {
         guard str.contains("{{") else { return str }
         let range = NSRange(str.startIndex..., in: str)
         let matches = exprPattern.matches(in: str, range: range)
@@ -60,11 +61,11 @@ public enum TemplateEngine {
 
     // MARK: - Array rendering
 
-    static func renderArray(_ arr: [Any], context: [String: Any], depth: Int) -> [Any] {
+    private static func renderArray(_ arr: [Any], context: [String: Any], depth: Int) -> [Any] {
         var result: [Any] = []
         for item in arr {
             if let dict = item as? [String: Any], let directive = findDirective(dict) {
-                let rendered = applyDirective(directive, template: dict, context: context, depth: depth)
+                let rendered = applyDirective(directive, template: dict, context: context, depth: depth + 1)
                 if let arr = rendered as? [Any] {
                     result.append(contentsOf: arr)
                 } else {
@@ -79,7 +80,7 @@ public enum TemplateEngine {
 
     // MARK: - Object rendering
 
-    static func renderObject(_ dict: [String: Any], context: [String: Any], depth: Int) -> Any {
+    private static func renderObject(_ dict: [String: Any], context: [String: Any], depth: Int) -> Any {
         // Check for template directives
         if let directive = findDirective(dict) {
             return applyDirective(directive, template: dict, context: context, depth: depth)
@@ -96,12 +97,12 @@ public enum TemplateEngine {
 
     // MARK: - Directives
 
-    enum Directive {
+    private enum Directive {
         case each(String, Any) // {{#each expr}}: template
         case ifCondition(String, Any, [(String, Any)]?, Any?) // {{#if}}: val, elseifs, else
     }
 
-    static func findDirective(_ dict: [String: Any]) -> Directive? {
+    private static func findDirective(_ dict: [String: Any]) -> Directive? {
         for key in dict.keys {
             if key.hasPrefix("{{#each ") && key.hasSuffix("}}") {
                 let start = key.index(key.startIndex, offsetBy: 8)
@@ -139,7 +140,7 @@ public enum TemplateEngine {
         return nil
     }
 
-    static func applyDirective(
+    private static func applyDirective(
         _ directive: Directive, template: [String: Any], context: [String: Any], depth: Int
     ) -> Any {
         switch directive {
@@ -147,8 +148,14 @@ public enum TemplateEngine {
             let value = ExpressionEvaluator.evaluate(expr, context: context)
             guard let items = value as? [Any] else { return [] }
 
+            let truncated = items.count > maxItems ? Array(items.prefix(maxItems)) : items
+            #if DEBUG
+            if items.count > maxItems {
+                print("[Jasonette] #each: truncated \(items.count) items to \(maxItems)")
+            }
+            #endif
             var result: [Any] = []
-            for (index, item) in items.enumerated() {
+            for (index, item) in truncated.enumerated() {
                 var itemContext = context
                 itemContext["$jason"] = item
                 itemContext["$index"] = index
