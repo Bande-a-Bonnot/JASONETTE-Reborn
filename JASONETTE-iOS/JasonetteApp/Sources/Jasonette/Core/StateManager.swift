@@ -64,9 +64,7 @@ public final class StateManager: ObservableObject {
     // MARK: - Cache ($cache.set / $cache.get / $cache.reset)
 
     public func cacheSet(_ values: [String: Any]) {
-        for (key, value) in values {
-            cache[key] = value
-        }
+        cache.merge(values) { _, new in new }
     }
 
     public func cacheGet() -> [String: Any] {

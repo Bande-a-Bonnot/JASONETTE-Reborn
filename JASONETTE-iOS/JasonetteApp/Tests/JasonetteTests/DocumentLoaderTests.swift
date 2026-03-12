@@ -195,6 +195,41 @@ final class DocumentLoaderTests: XCTestCase {
         XCTAssertEqual(item?.components?.first?.text, "Inner")
     }
 
+    // MARK: - URL scheme validation
+
+    func testLoadRejectsFileURL() async {
+        let url = URL(string: "file:///etc/passwd")!
+        do {
+            _ = try await loader.load(from: url)
+            XCTFail("Expected blockedURL error")
+        } catch DocumentLoader.DocumentError.blockedURL {
+            // expected
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+    }
+
+    func testLoadRejectsFTPURL() async {
+        let url = URL(string: "ftp://example.com/file.json")!
+        do {
+            _ = try await loader.load(from: url)
+            XCTFail("Expected blockedURL error")
+        } catch DocumentLoader.DocumentError.blockedURL {
+            // expected
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+    }
+
+    func testLoadAllowsHTTP() async throws {
+        stub(statusCode: 200, body: sampleJSON)
+        let url = URL(string: "http://example.com/doc.json")!
+        let doc = try await loader.load(from: url)
+        XCTAssertEqual(doc.jason.head?.title, "Sample")
+    }
+
+    // MARK: - Footer / tabs
+
     func testDecodeDocumentWithFooterTabs() throws {
         let json = """
         {

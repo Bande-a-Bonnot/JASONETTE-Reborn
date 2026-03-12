@@ -99,6 +99,7 @@ public enum ExpressionEvaluator {
         case .computedMember(let obj, let prop):
             guard let objVal = resolve(obj, context: context, depth: depth + 1) else { return nil }
             guard let key = resolve(prop, context: context, depth: depth + 1) else { return nil }
+            if let k = key as? String, blockedProperties.contains(k) { return nil }
             if let arr = objVal as? [Any], let idx = toInt(key), idx >= 0, idx < arr.count {
                 return arr[idx]
             }
