@@ -87,6 +87,7 @@ public final class StateManager: ObservableObject {
     // MARK: - Persistence
 
     private func persistCache() {
+        guard JSONSerialization.isValidJSONObject(cache) else { return }
         if let data = try? JSONSerialization.data(withJSONObject: cache) {
             defaults.set(data, forKey: cacheKey)
         }

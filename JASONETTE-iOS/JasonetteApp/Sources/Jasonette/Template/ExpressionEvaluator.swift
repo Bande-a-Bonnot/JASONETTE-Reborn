@@ -53,6 +53,7 @@ public enum ExpressionEvaluator {
         "Array.isArray": { args in args.first is [Any] },
         "JSON.stringify": { args in
             guard let val = args.first else { return nil }
+            guard JSONSerialization.isValidJSONObject(val) else { return "\(val)" }
             if let data = try? JSONSerialization.data(
                 withJSONObject: val, options: [.sortedKeys]
             ) {
