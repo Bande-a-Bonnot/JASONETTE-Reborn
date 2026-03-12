@@ -10,7 +10,7 @@ public final class DocumentLoader: Sendable {
         self.decoder = JSONDecoder()
     }
 
-    private static let allowedSchemes: Set<String> = ["http", "https"]
+    static let allowedSchemes: Set<String> = ["http", "https"]
 
     /// Load a document from a URL.
     public func load(from url: URL) async throws -> JasonDocument {

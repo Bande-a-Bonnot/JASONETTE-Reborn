@@ -47,4 +47,37 @@ final class StateManagerTests: XCTestCase {
         XCTAssertNil(sm.get()["cached"])
         XCTAssertNil(sm.cacheGet()["local"])
     }
+
+    // MARK: - cacheSet poison prevention
+
+    func testCacheSetRejectsNonSerializableValue() {
+        let sm = StateManager()
+        var violations: [String] = []
+        sm._cacheSetFailureHandler = { violations.append($0) }
+
+        sm.cacheSet(["good": "value"])
+        // NSObject is not JSON-serializable — must be rejected
+        sm.cacheSet(["bad": NSObject()])
+
+        XCTAssertEqual(violations.count, 1, "Expected exactly one violation")
+        XCTAssertEqual(sm.cacheGet()["good"] as? String, "value")
+        XCTAssertNil(sm.cacheGet()["bad"])
+    }
+
+    func testCacheSetSubsequentWriteSucceedsAfterRejection() {
+        let sm = StateManager()
+        var violations: [String] = []
+        sm._cacheSetFailureHandler = { violations.append($0) }
+
+        sm.cacheSet(["a": "first"])
+        // Poison attempt — dropped
+        sm.cacheSet(["bad": NSObject()])
+        // Valid write must still succeed (cache not poisoned)
+        sm.cacheSet(["b": "second"])
+
+        XCTAssertEqual(violations.count, 1, "Exactly one rejection expected")
+        XCTAssertEqual(sm.cacheGet()["a"] as? String, "first")
+        XCTAssertEqual(sm.cacheGet()["b"] as? String, "second")
+        XCTAssertNil(sm.cacheGet()["bad"])
+    }
 }

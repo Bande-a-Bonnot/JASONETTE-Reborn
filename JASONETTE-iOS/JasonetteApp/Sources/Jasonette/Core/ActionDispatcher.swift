@@ -161,8 +161,6 @@ public final class ActionDispatcher: ObservableObject {
 
     // MARK: - Network
 
-    private static let allowedSchemes: Set<String> = ["https", "http"]
-
     private static let blockedHeaders: Set<String> = [
         "host", "cookie", "authorization", "proxy-authorization",
         "set-cookie", "transfer-encoding", "content-length"
@@ -175,7 +173,7 @@ public final class ActionDispatcher: ObservableObject {
         }
 
         guard let scheme = url.scheme?.lowercased(),
-              Self.allowedSchemes.contains(scheme) else {
+              DocumentLoader.allowedSchemes.contains(scheme) else {
             throw ActionError.blockedURL
         }
 
@@ -210,7 +208,7 @@ public final class ActionDispatcher: ObservableObject {
         }
 
         if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
-            stateManager.set(json)
+            stateManager.set(["$response": json])
         }
     }
 

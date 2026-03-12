@@ -3,18 +3,35 @@ import Foundation
 /// Evaluates Jasonette template expressions like `{{$jason.name}}`.
 /// Uses a simple recursive-descent parser instead of a full JS engine.
 public enum ExpressionEvaluator {
+    // Cache: expression string → parsed Node tree
+    // Called only from @MainActor context via TemplateEngine, so no lock needed
+    private static var _nodeCache: [String: Node] = [:]
+    private static let maxCacheSize = 256
+    private static let maxDepth = 20
+
     /// Evaluate an expression string against a context.
     public static func evaluate(_ expression: String, context: [String: Any]) -> Any? {
         let trimmed = expression.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return nil }
 
-        let parser = ExpressionParser(trimmed)
-        do {
-            let result = try parser.parse()
-            return resolve(result, context: context)
-        } catch {
-            return nil
+        let node: Node
+        if let cached = _nodeCache[trimmed] {
+            node = cached
+        } else {
+            let parser = ExpressionParser(trimmed)
+            do {
+                let parsed = try parser.parse()
+                // Evict oldest entry if at capacity (simple size cap, not true LRU)
+                if _nodeCache.count >= maxCacheSize {
+                    _nodeCache.removeValue(forKey: _nodeCache.keys.first!)
+                }
+                _nodeCache[trimmed] = parsed
+                node = parsed
+            } catch {
+                return nil
+            }
         }
+        return resolve(node, context: context)
     }
 
     // MARK: - AST Node Types
@@ -71,7 +88,7 @@ public enum ExpressionEvaluator {
     // MARK: - Resolution
 
     static func resolve(_ node: Node, context: [String: Any], depth: Int = 0) -> Any? {
-        guard depth < 20 else { return nil }
+        guard depth < maxDepth else { return nil }
 
         switch node {
         case .literal(let v):

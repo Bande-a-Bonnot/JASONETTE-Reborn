@@ -276,4 +276,14 @@ final class ExpressionEvaluatorTests: XCTestCase {
         XCTAssertEqual(eval("name == 'Alice'", context: ["name": "Alice"]) as? Bool, true)
         XCTAssertEqual(eval("name == 'Bob'", context: ["name": "Alice"]) as? Bool, false)
     }
+
+    // MARK: - Parse cache
+
+    func testCachedExpressionResolvesWithDifferentContexts() {
+        let expr = "name"
+        let r1 = ExpressionEvaluator.evaluate(expr, context: ["name": "Alice"]) as? String
+        let r2 = ExpressionEvaluator.evaluate(expr, context: ["name": "Bob"]) as? String
+        XCTAssertEqual(r1, "Alice")
+        XCTAssertEqual(r2, "Bob")
+    }
 }

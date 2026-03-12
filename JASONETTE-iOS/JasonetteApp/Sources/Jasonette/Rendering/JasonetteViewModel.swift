@@ -24,6 +24,8 @@ public final class JasonetteViewModel: ObservableObject {
     private let url: URL?
     private var document: JasonDocument?
     private let loader = DocumentLoader()
+    private let decoder = JSONDecoder()
+    private var loadTask: Task<Void, Never>?
     let stateManager = StateManager()
     let actionDispatcher: ActionDispatcher
 
@@ -55,12 +57,15 @@ public final class JasonetteViewModel: ObservableObject {
 
     func loadIfNeeded() async {
         guard loadState == .idle else { return }
-        await load()
+        loadTask?.cancel()
+        loadTask = Task { await load() }
+        await loadTask?.value
     }
 
     func reload() {
-        loadState = .idle
-        Task { await load() }
+        loadTask?.cancel()
+        loadState = .loading
+        loadTask = Task { await load() }
     }
 
     func load() async {
@@ -96,15 +101,21 @@ public final class JasonetteViewModel: ObservableObject {
             let rendered = TemplateEngine.render(templates.unwrapped, context: context)
 
             guard JSONSerialization.isValidJSONObject(rendered) else {
+                #if DEBUG
+                print("[Jasonette] render: template produced non-serializable output, falling back to raw document")
+                #endif
                 renderedRoot = doc.jason
                 return
             }
             do {
                 let renderedData = try JSONSerialization.data(withJSONObject: rendered)
-                var root = try JSONDecoder().decode(JasonRoot.self, from: renderedData)
+                var root = try decoder.decode(JasonRoot.self, from: renderedData)
                 root.head = head
                 renderedRoot = root
             } catch {
+                #if DEBUG
+                print("[Jasonette] render: template decode failed (\(error)), falling back to raw document")
+                #endif
                 renderedRoot = doc.jason
             }
         } else {
@@ -133,12 +144,16 @@ public final class JasonetteViewModel: ObservableObject {
             return
         }
 
-        guard let urlStr = href.url, let url = URL(string: urlStr) else { return }
-        NotificationCenter.default.post(
-            name: .jasonetteNavigate,
-            object: nil,
-            userInfo: ["href": href, "url": url]
-        )
+        if let urlStr = href.url, let url = URL(string: urlStr) {
+            // Validate scheme before allowing navigation
+            guard let scheme = url.scheme?.lowercased(),
+                  ["http", "https"].contains(scheme) else { return }
+            NotificationCenter.default.post(
+                name: .jasonetteNavigate,
+                object: nil,
+                userInfo: ["href": href, "url": url]
+            )
+        }
     }
 
     func handleAction(_ action: JasonAction) {

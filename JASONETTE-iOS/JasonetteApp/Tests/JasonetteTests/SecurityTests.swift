@@ -244,6 +244,29 @@ final class SecurityTests: XCTestCase {
         XCTAssertEqual(result as? String, "Alice")
     }
 
+    // MARK: - Network response namespacing
+
+    func testNetworkResponseNamespacedUnderResponse() async {
+        StubURLProtocol.requestHandler = { request in
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: nil
+            )!
+            return (response, Data(#"{"field":"value"}"#.utf8))
+        }
+        let action = decodeAction([
+            "type": "$network.request",
+            "options": ["url": "https://example.com/api"]
+        ])
+        await dispatcher.execute(action)
+        // Response body must be nested under "$response", not merged at the top level
+        let responseDict = stateManager.get()["$response"] as? [String: Any]
+        XCTAssertEqual(responseDict?["field"] as? String, "value")
+        XCTAssertNil(stateManager.get()["field"], "Response keys must not be hoisted to the top-level state")
+    }
+
     // MARK: - Edge cases
 
     func testEmptyURLReturnsError() async {
