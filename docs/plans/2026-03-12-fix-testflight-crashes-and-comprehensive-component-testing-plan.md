@@ -12,6 +12,7 @@ date: 2026-03-12
 **Research agents used:** 10 (architecture-strategist, performance-oracle, security-sentinel, code-simplicity-reviewer, pattern-recognition-specialist, best-practices-researcher x2, learnings-researcher x2, repo-research-analyst)
 
 ### Key Improvements from Research
+
 1. **Simpler root cause identified**: The crash is caused by `AnyCodable` wrapper types not being unwrapped — NOT by the template engine producing bad values. Fix is `AnyCodable.unwrapped` (~10 lines), not a new `JSONSanitizer` file.
 2. **Four call sites affected**, not just one: `render()`, `networkRequest()`, `persistCache()`, `JSON.stringify`
 3. **Security vulnerabilities discovered**: property blocklist bypassable via bracket notation, SSRF vector in `$network.request`, no URL scheme validation in `DocumentLoader`
@@ -216,6 +217,7 @@ Review and test every component. Below is the full inventory.
 **From performance-oracle review:**
 
 #### 3a. TemplateEngine fast-path for non-template strings
+
 ```swift
 // In TemplateEngine.interpolateString — add before regex:
 guard str.contains("{{") else { return str }
@@ -223,6 +225,7 @@ guard str.contains("{{") else { return str }
 ~90% of strings contain no expressions. This skips regex allocation entirely.
 
 #### 3b. StateManager batch cache mutations
+
 `cacheSet` triggers `didSet` (UserDefaults write) per key. Batch into single swap:
 ```swift
 public func cacheSet(_ values: [String: Any]) {
@@ -233,6 +236,7 @@ public func cacheSet(_ values: [String: Any]) {
 ```
 
 #### 3c. Timer reentrancy guard
+
 Timer-fired actions create a `Task` per tick with no reentrancy guard. If an action yields (e.g., network request), the next tick enqueues overlapping execution. Add a `Set<String>` of in-flight timer names.
 
 ### Phase 4: Security Hardening (Follow-up)
@@ -248,6 +252,7 @@ Timer-fired actions create a `Task` per tick with no reentrancy guard. If an act
 ## Acceptance Criteria
 
 ### Functional Requirements
+
 - [ ] All 10 crash scenarios no longer crash (validated by unit tests)
 - [ ] `AnyCodable.unwrapped` recursively unwraps nested wrappers
 - [ ] `isValidJSONObject()` guard before serialization in `render()`
@@ -258,6 +263,7 @@ Timer-fired actions create a `Task` per tick with no reentrancy guard. If an act
 - [ ] New tests bring total to 120+
 
 ### Quality Gates
+
 - [ ] `swift build` succeeds
 - [ ] `swift test` passes all tests
 - [ ] No force-unwraps in new code
@@ -285,6 +291,7 @@ Timer-fired actions create a `Task` per tick with no reentrancy guard. If an act
 ## References
 
 ### Institutional Learnings Applied
+
 - `docs/solutions/test-failures/ios-test-isolation-patterns.md` — DI patterns for UserDefaults, URLSession, timers
 - `docs/solutions/test-failures/tests-pass-but-feature-broken.md` — tiered testing strategy
 - `docs/solutions/swift-recursive-codable-structs.md` — JasonComponent/JasonAction use `final class` for recursion

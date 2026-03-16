@@ -39,35 +39,44 @@ PR #10 received 9 review comments from Gemini Code Assist and GitHub Copilot. Al
 ## Implementation
 
 ### Fix 1: Fully recursive `unwrapped(depth:)`
+
 Replace with Gemini's suggested `_recursiveUnwrap` inner function that handles `Any` → `AnyCodable` at every level.
 
 ### Fix 2: Thread-safe `_nodeCache`
+
 Wrap `_nodeCache` access in `NSLock` — lightweight, no actor overhead.
 
 ### Fix 3: Ignore `CancellationError` in `load()`
+
 Add `catch is CancellationError { return }` before the general catch.
 
 ### Fix 4: `renderObject` depth + 1
+
 Change `applyDirective(..., depth: depth)` → `depth: depth + 1`.
 
 ### Fix 5: Release logging for `_cacheSetFailureHandler`
+
 Use `#if DEBUG assertionFailure #else print #endif`.
 
 ### Fix 6: Guard empty toolbar label
+
 Wrap in `if let text = menu.text, !text.isEmpty`.
 
 ### Fix 7: Fix fallback test
+
 Use `"sections": "not-an-array"` in template so decode fails, triggering fallback.
 
 ### Fix 8: Fix test comment or use AnyCodable
+
 Update comment to match actual test behavior.
 
 ### Fix 9: Update TODO note
+
 Remove outdated internal access note.
 
 ## Acceptance Criteria
 
-- [ ] All 9 fixes applied
-- [ ] 285+ tests passing
-- [ ] Reply to all 9 review comments with rationale
-- [ ] Push changes
+- [x] All 9 fixes applied
+- [x] 285+ tests passing
+- [x] Reply to all 9 review comments with rationale
+- [x] Push changes
