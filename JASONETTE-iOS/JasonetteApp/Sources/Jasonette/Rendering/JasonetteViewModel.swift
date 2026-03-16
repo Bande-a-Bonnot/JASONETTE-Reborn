@@ -148,9 +148,11 @@ public final class JasonetteViewModel: ObservableObject {
         }
 
         if let urlStr = href.url, let url = URL(string: urlStr) {
-            // Validate scheme before allowing navigation
+            // Validate scheme — app views allow tel/mailto/sms, others only http(s)
+            let appSchemes: Set<String> = ["http", "https", "mailto", "tel", "sms"]
+            let allowed = href.view == "app" ? appSchemes : DocumentLoader.allowedSchemes
             guard let scheme = url.scheme?.lowercased(),
-                  ["http", "https"].contains(scheme) else { return }
+                  allowed.contains(scheme) else { return }
             NotificationCenter.default.post(
                 name: .jasonetteNavigate,
                 object: nil,
