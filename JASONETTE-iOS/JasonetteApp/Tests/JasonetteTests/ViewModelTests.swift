@@ -194,14 +194,14 @@ final class ViewModelTests: XCTestCase {
             "$jason": [
                 "head": [
                     "title": "Invalid",
-                    "templates": ["body": ["sections": []]]
+                    "templates": ["body": ["sections": "not-an-array"]]
                 ],
                 "body": ["sections": []]
             ]
         ])
         let vm = JasonetteViewModel(document: doc)
         await vm.load()
-        // Should not crash and should produce a renderedRoot
+        // Template renders sections as a string, which fails decode → falls back to raw doc
         XCTAssertEqual(vm.loadState, .loaded)
         XCTAssertNotNil(vm.renderedRoot)
     }

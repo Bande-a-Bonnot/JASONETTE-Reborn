@@ -87,7 +87,10 @@ public final class JasonetteViewModel: ObservableObject {
                 // Re-render after $load modifies state
                 if let d = document { render(d) }
             }
+        } catch is CancellationError {
+            return
         } catch {
+            guard !Task.isCancelled else { return }
             loadState = .error(error.localizedDescription)
         }
     }

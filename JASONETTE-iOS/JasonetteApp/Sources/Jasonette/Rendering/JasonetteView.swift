@@ -107,9 +107,9 @@ public struct JasonetteView: View {
         }
         #endif
         .toolbar {
-            if let menu = body?.header?.menu {
+            if let menu = body?.header?.menu, let text = menu.text, !text.isEmpty {
                 ToolbarItem(placement: .primaryAction) {
-                    Button(menu.text ?? "") {
+                    Button(text) {
                         if let href = menu.href {
                             viewModel.handleHref(href)
                         } else if let action = menu.action {

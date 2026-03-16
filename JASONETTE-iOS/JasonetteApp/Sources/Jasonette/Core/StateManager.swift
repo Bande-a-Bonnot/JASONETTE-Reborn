@@ -73,9 +73,13 @@ public final class StateManager: ObservableObject {
     }
 
     /// Seam for testing: overridden in tests to record violations without crashing.
-    /// In production debug builds this calls `assertionFailure`; in release it logs.
+    /// In debug builds this traps; in release it logs to console.
     var _cacheSetFailureHandler: (String) -> Void = { message in
+        #if DEBUG
         assertionFailure(message)
+        #else
+        print(message)
+        #endif
     }
 
     public func cacheGet() -> [String: Any] {

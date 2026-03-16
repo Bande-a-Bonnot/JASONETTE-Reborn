@@ -83,7 +83,7 @@ public enum TemplateEngine {
     private static func renderObject(_ dict: [String: Any], context: [String: Any], depth: Int) -> Any {
         // Check for template directives
         if let directive = findDirective(dict) {
-            return applyDirective(directive, template: dict, context: context, depth: depth)
+            return applyDirective(directive, template: dict, context: context, depth: depth + 1)
         }
 
         var result: [String: Any] = [:]

@@ -297,8 +297,8 @@ final class TemplateEngineTests: XCTestCase {
     // MARK: - AnyCodable-wrapped data
 
     func testAnyCodableWrappedContextProducesOutput() {
-        // Simulate what happens when head.data values come through as AnyCodable
-        // AnyCodable.unwrapped should have converted them before reaching TemplateEngine
+        // Verify TemplateEngine works with plain context values (post-unwrap).
+        // AnyCodable.unwrapped converts wrappers to native types before TemplateEngine runs.
         let template: [String: Any] = ["text": "{{greeting}}"]
         let result = TemplateEngine.render(template, context: ["greeting": "Hello"])
         guard let dict = result as? [String: Any] else {
