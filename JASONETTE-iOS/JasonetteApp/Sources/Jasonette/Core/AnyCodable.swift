@@ -85,16 +85,19 @@ public struct AnyCodable: Codable, Sendable, Equatable, Hashable {
 
     /// Recursively unwrap nested AnyCodable wrappers to native JSON-safe types.
     /// Prevents NSJSONSerialization ObjC exceptions from non-serializable wrapper types.
-    /// Depth is capped at 64 to prevent stack overflow on pathologically deep structures.
+    private static let maxUnwrapDepth = 64
+
+    /// Recursively strips `AnyCodable` wrappers, returning native Swift types.
+    /// Depth is capped at `maxUnwrapDepth` to prevent stack overflow.
     public var unwrapped: Any {
         unwrapped(depth: 0)
     }
 
     private func unwrapped(depth: Int) -> Any {
         func recurse(_ value: Any, depth: Int) -> Any {
-            guard depth < 64 else { return value }
+            guard depth < Self.maxUnwrapDepth else { return value }
             if let codable = value as? AnyCodable {
-                return recurse(codable.value, depth: depth)
+                return recurse(codable.value, depth: depth + 1)
             }
             if let array = value as? [Any] {
                 return array.map { recurse($0, depth: depth + 1) }
