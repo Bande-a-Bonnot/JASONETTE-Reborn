@@ -3,8 +3,8 @@ import Foundation
 /// Evaluates Jasonette template expressions like `{{$jason.name}}`.
 /// Uses a simple recursive-descent parser instead of a full JS engine.
 public enum ExpressionEvaluator {
+    // Only accessed from @MainActor context (TemplateEngine → JasonetteViewModel.render)
     private static var _nodeCache: [String: Node] = [:]
-    private static let _cacheLock = NSLock()
     private static let maxCacheSize = 256
     private static let maxDepth = 20
 
@@ -13,29 +13,21 @@ public enum ExpressionEvaluator {
         let trimmed = expression.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return nil }
 
-        let node: Node
-        _cacheLock.lock()
-        let cached = _nodeCache[trimmed]
-        _cacheLock.unlock()
-
-        if let cached {
-            node = cached
-        } else {
-            let parser = ExpressionParser(trimmed)
-            do {
-                let parsed = try parser.parse()
-                _cacheLock.lock()
-                if _nodeCache.count >= maxCacheSize {
-                    _nodeCache.removeValue(forKey: _nodeCache.keys.first!)
-                }
-                _nodeCache[trimmed] = parsed
-                _cacheLock.unlock()
-                node = parsed
-            } catch {
-                return nil
-            }
+        if let cached = _nodeCache[trimmed] {
+            return resolve(cached, context: context)
         }
-        return resolve(node, context: context)
+
+        let parser = ExpressionParser(trimmed)
+        do {
+            let node = try parser.parse()
+            if _nodeCache.count >= maxCacheSize {
+                _nodeCache.removeAll(keepingCapacity: true)
+            }
+            _nodeCache[trimmed] = node
+            return resolve(node, context: context)
+        } catch {
+            return nil
+        }
     }
 
     // MARK: - AST Node Types
