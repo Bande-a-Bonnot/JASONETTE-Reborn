@@ -64,9 +64,22 @@ public final class StateManager: ObservableObject {
     // MARK: - Cache ($cache.set / $cache.get / $cache.reset)
 
     public func cacheSet(_ values: [String: Any]) {
-        for (key, value) in values {
-            cache[key] = value
+        let candidate = cache.merging(values) { _, new in new }
+        guard JSONSerialization.isValidJSONObject(candidate) else {
+            _cacheSetFailureHandler("[Jasonette] cacheSet: values contain non-JSON-serializable type — update dropped")
+            return
         }
+        cache = candidate
+    }
+
+    /// Seam for testing: overridden in tests to record violations without crashing.
+    /// In debug builds this traps; in release it logs to console.
+    var _cacheSetFailureHandler: (String) -> Void = { message in
+        #if DEBUG
+        assertionFailure(message)
+        #else
+        print(message)
+        #endif
     }
 
     public func cacheGet() -> [String: Any] {
@@ -87,6 +100,7 @@ public final class StateManager: ObservableObject {
     // MARK: - Persistence
 
     private func persistCache() {
+        guard JSONSerialization.isValidJSONObject(cache) else { return }
         if let data = try? JSONSerialization.data(withJSONObject: cache) {
             defaults.set(data, forKey: cacheKey)
         }

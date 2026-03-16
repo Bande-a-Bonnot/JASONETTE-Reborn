@@ -3,15 +3,28 @@ import Foundation
 /// Evaluates Jasonette template expressions like `{{$jason.name}}`.
 /// Uses a simple recursive-descent parser instead of a full JS engine.
 public enum ExpressionEvaluator {
+    // Only accessed from @MainActor context (TemplateEngine → JasonetteViewModel.render)
+    private static var _nodeCache: [String: Node] = [:]
+    private static let maxCacheSize = 256
+    private static let maxDepth = 20
+
     /// Evaluate an expression string against a context.
     public static func evaluate(_ expression: String, context: [String: Any]) -> Any? {
         let trimmed = expression.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return nil }
 
+        if let cached = _nodeCache[trimmed] {
+            return resolve(cached, context: context)
+        }
+
         let parser = ExpressionParser(trimmed)
         do {
-            let result = try parser.parse()
-            return resolve(result, context: context)
+            let node = try parser.parse()
+            if _nodeCache.count >= maxCacheSize {
+                _nodeCache.removeAll(keepingCapacity: true)
+            }
+            _nodeCache[trimmed] = node
+            return resolve(node, context: context)
         } catch {
             return nil
         }
@@ -53,6 +66,7 @@ public enum ExpressionEvaluator {
         "Array.isArray": { args in args.first is [Any] },
         "JSON.stringify": { args in
             guard let val = args.first else { return nil }
+            guard JSONSerialization.isValidJSONObject(val) else { return "\(val)" }
             if let data = try? JSONSerialization.data(
                 withJSONObject: val, options: [.sortedKeys]
             ) {
@@ -70,7 +84,7 @@ public enum ExpressionEvaluator {
     // MARK: - Resolution
 
     static func resolve(_ node: Node, context: [String: Any], depth: Int = 0) -> Any? {
-        guard depth < 20 else { return nil }
+        guard depth < maxDepth else { return nil }
 
         switch node {
         case .literal(let v):
@@ -98,6 +112,7 @@ public enum ExpressionEvaluator {
         case .computedMember(let obj, let prop):
             guard let objVal = resolve(obj, context: context, depth: depth + 1) else { return nil }
             guard let key = resolve(prop, context: context, depth: depth + 1) else { return nil }
+            if let k = key as? String, blockedProperties.contains(k) { return nil }
             if let arr = objVal as? [Any], let idx = toInt(key), idx >= 0, idx < arr.count {
                 return arr[idx]
             }

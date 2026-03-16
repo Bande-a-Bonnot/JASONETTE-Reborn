@@ -213,6 +213,60 @@ final class SecurityTests: XCTestCase {
         XCTAssertNil(result)
     }
 
+    // MARK: - Computed member blocklist bypass
+
+    func testComputedMemberBlocksProtoAccess() {
+        // obj["__proto__"] should be blocked the same as obj.__proto__
+        let result = ExpressionEvaluator.evaluate("obj['__proto__']", context: [
+            "obj": ["key": "value"]
+        ])
+        XCTAssertNil(result)
+    }
+
+    func testComputedMemberBlocksConstructorAccess() {
+        let result = ExpressionEvaluator.evaluate("obj['constructor']", context: [
+            "obj": ["key": "value"]
+        ])
+        XCTAssertNil(result)
+    }
+
+    func testComputedMemberBlocksPrototypeAccess() {
+        let result = ExpressionEvaluator.evaluate("obj['prototype']", context: [
+            "obj": ["key": "value"]
+        ])
+        XCTAssertNil(result)
+    }
+
+    func testComputedMemberAllowsNormalStringKey() {
+        let result = ExpressionEvaluator.evaluate("obj['name']", context: [
+            "obj": ["name": "Alice"]
+        ])
+        XCTAssertEqual(result as? String, "Alice")
+    }
+
+    // MARK: - Network response namespacing
+
+    func testNetworkResponseNamespacedUnderResponse() async {
+        StubURLProtocol.requestHandler = { request in
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: nil
+            )!
+            return (response, Data(#"{"field":"value"}"#.utf8))
+        }
+        let action = decodeAction([
+            "type": "$network.request",
+            "options": ["url": "https://example.com/api"]
+        ])
+        await dispatcher.execute(action)
+        // Response body must be nested under "$response", not merged at the top level
+        let responseDict = stateManager.get()["$response"] as? [String: Any]
+        XCTAssertEqual(responseDict?["field"] as? String, "value")
+        XCTAssertNil(stateManager.get()["field"], "Response keys must not be hoisted to the top-level state")
+    }
+
     // MARK: - Edge cases
 
     func testEmptyURLReturnsError() async {

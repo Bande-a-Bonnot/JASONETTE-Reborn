@@ -8,6 +8,7 @@ public final class ActionDispatcher: ObservableObject {
     private var reloadHandler: (() -> Void)?
     private var alertHandler: ((String, String?) -> Void)?
     private var timers: [String: Timer] = [:]
+    private var executingTimers: Set<String> = []
 
     private static let maxTimers = 50
     private static let minTimerInterval: TimeInterval = 0.1
@@ -146,8 +147,10 @@ public final class ActionDispatcher: ObservableObject {
         let timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: repeats) { [weak self] timer in
             guard let self, let successAction else { return }
             Task { @MainActor in
+                guard !self.executingTimers.contains(name) else { return }
+                self.executingTimers.insert(name)
+                defer { self.executingTimers.remove(name) }
                 await self.execute(successAction)
-                // Clean up one-shot timer entry
                 if !repeats {
                     self.timers[name] = nil
                 }
@@ -157,8 +160,6 @@ public final class ActionDispatcher: ObservableObject {
     }
 
     // MARK: - Network
-
-    private static let allowedSchemes: Set<String> = ["https", "http"]
 
     private static let blockedHeaders: Set<String> = [
         "host", "cookie", "authorization", "proxy-authorization",
@@ -172,7 +173,7 @@ public final class ActionDispatcher: ObservableObject {
         }
 
         guard let scheme = url.scheme?.lowercased(),
-              Self.allowedSchemes.contains(scheme) else {
+              DocumentLoader.allowedSchemes.contains(scheme) else {
             throw ActionError.blockedURL
         }
 
@@ -189,7 +190,9 @@ public final class ActionDispatcher: ObservableObject {
         }
 
         if let body = options["body"] {
-            if let data = try? JSONSerialization.data(withJSONObject: body.value as Any) {
+            let unwrappedBody = body.unwrapped
+            if JSONSerialization.isValidJSONObject(unwrappedBody),
+               let data = try? JSONSerialization.data(withJSONObject: unwrappedBody) {
                 request.httpBody = data
                 if request.value(forHTTPHeaderField: "Content-Type") == nil {
                     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -205,7 +208,7 @@ public final class ActionDispatcher: ObservableObject {
         }
 
         if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
-            stateManager.set(json)
+            stateManager.set(["$response": json])
         }
     }
 

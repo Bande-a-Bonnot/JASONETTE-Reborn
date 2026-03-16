@@ -181,4 +181,148 @@ final class TemplateEngineTests: XCTestCase {
         let result = TemplateEngine.render(template, context: ["first": "John", "last": "Doe"])
         XCTAssertEqual(result as? String, "John Doe")
     }
+
+    // MARK: - Multiple expressions
+
+    func testMultipleExpressionsInOneString() {
+        let template: Any = "{{first}} {{last}}"
+        let result = TemplateEngine.render(template, context: ["first": "John", "last": "Doe"])
+        XCTAssertEqual(result as? String, "John Doe")
+    }
+
+    func testMultipleExpressionsWithStaticText() {
+        let template: Any = "Hello {{name}}, you have {{count}} messages"
+        let result = TemplateEngine.render(template, context: ["name": "Alice", "count": 5])
+        XCTAssertEqual(result as? String, "Hello Alice, you have 5 messages")
+    }
+
+    // MARK: - Fast-path (no {{ in string)
+
+    func testFastPathPlainString() {
+        let result = TemplateEngine.render("plain text", context: ["x": "ignored"])
+        XCTAssertEqual(result as? String, "plain text")
+    }
+
+    func testFastPathEmptyString() {
+        let result = TemplateEngine.render("", context: ["x": "ignored"])
+        XCTAssertEqual(result as? String, "")
+    }
+
+    // MARK: - #if with #else
+
+    func testIfElseTakesElseBranch() {
+        let template: [[String: Any]] = [
+            [
+                "{{#if show}}": ["type": "label", "text": "Visible"],
+                "{{#else}}": ["type": "label", "text": "Hidden"]
+            ]
+        ]
+        let result = TemplateEngine.render(template, context: ["show": false])
+        guard let arr = result as? [[String: Any]] else {
+            XCTFail("Expected array"); return
+        }
+        XCTAssertEqual(arr.count, 1)
+        XCTAssertEqual(arr[0]["text"] as? String, "Hidden")
+    }
+
+    func testIfElseTakesThenBranch() {
+        let template: [[String: Any]] = [
+            [
+                "{{#if show}}": ["type": "label", "text": "Visible"],
+                "{{#else}}": ["type": "label", "text": "Hidden"]
+            ]
+        ]
+        let result = TemplateEngine.render(template, context: ["show": true])
+        guard let arr = result as? [[String: Any]] else {
+            XCTFail("Expected array"); return
+        }
+        XCTAssertEqual(arr.count, 1)
+        XCTAssertEqual(arr[0]["text"] as? String, "Visible")
+    }
+
+    // MARK: - #each edge cases
+
+    func testEachWithEmptyArrayProducesNoItems() {
+        let template: [[String: Any]] = [
+            ["{{#each items}}": ["type": "label", "text": "{{$jason}}"]]
+        ]
+        let result = TemplateEngine.render(template, context: ["items": [Any]()])
+        guard let arr = result as? [Any] else {
+            XCTFail("Expected array"); return
+        }
+        XCTAssertEqual(arr.count, 0)
+    }
+
+    func testEachWithNonArrayProducesEmpty() {
+        let template: [[String: Any]] = [
+            ["{{#each notAnArray}}": ["type": "label"]]
+        ]
+        let result = TemplateEngine.render(template, context: ["notAnArray": "string"])
+        guard let arr = result as? [Any] else {
+            XCTFail("Expected array"); return
+        }
+        XCTAssertEqual(arr.count, 0)
+    }
+
+    func testEachRootVariablePreservesOuterJason() {
+        let template: [[String: Any]] = [
+            [
+                "{{#each items}}": ["text": "{{$root}}"]
+            ]
+        ]
+        let context: [String: Any] = [
+            "$jason": "outer",
+            "items": ["a", "b"]
+        ]
+        let result = TemplateEngine.render(template, context: context)
+        guard let arr = result as? [[String: Any]] else {
+            XCTFail("Expected array"); return
+        }
+        XCTAssertEqual(arr.count, 2)
+        XCTAssertEqual(arr[0]["text"] as? String, "outer")
+    }
+
+    // MARK: - Depth guard
+
+    func testDepthGuardDoesNotCrashOnDeeplyNested() {
+        // 25 levels deep — exceeds maxDepth=20, should return template as-is without crashing
+        var template: Any = "{{name}}"
+        for i in 0..<25 {
+            template = ["level\(i)": template]
+        }
+        let result = TemplateEngine.render(template, context: ["name": "Alice"])
+        XCTAssertNotNil(result)
+    }
+
+    // MARK: - AnyCodable-wrapped data
+
+    func testAnyCodableWrappedContextProducesOutput() {
+        // Verify TemplateEngine works with plain context values (post-unwrap).
+        // AnyCodable.unwrapped converts wrappers to native types before TemplateEngine runs.
+        let template: [String: Any] = ["text": "{{greeting}}"]
+        let result = TemplateEngine.render(template, context: ["greeting": "Hello"])
+        guard let dict = result as? [String: Any] else {
+            XCTFail("Expected dictionary"); return
+        }
+        XCTAssertEqual(dict["text"] as? String, "Hello")
+    }
+
+    // MARK: - Object directive rendering
+
+    func testIfDirectiveInObject() {
+        // #if inside an object (not array) — returns rendered template or empty array
+        let template: [String: Any] = [
+            "{{#if show}}": ["type": "label", "text": "Shown"]
+        ]
+        let result = TemplateEngine.render(template, context: ["show": true])
+        // When used in object context, directive result is the rendered template
+        XCTAssertNotNil(result)
+    }
+
+    func testMissingVariableRendersEmpty() {
+        let template: Any = "{{missing}}"
+        let result = TemplateEngine.render(template, context: [:])
+        // Missing variable evaluates to nil → empty string
+        XCTAssertEqual(result as? String, "")
+    }
 }

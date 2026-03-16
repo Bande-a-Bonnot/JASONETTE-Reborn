@@ -132,6 +132,80 @@ final class ViewModelTests: XCTestCase {
         XCTAssertEqual(vm.stateManager.get()["pulled"] as? Bool, true)
     }
 
+    // MARK: - Template rendering (crash fix coverage)
+
+    func testRenderWithTemplatedDocumentDoesNotCrash() async {
+        // This document uses head.templates — triggers the render() path that previously crashed.
+        // AnyCodable-wrapped values must be unwrapped before JSONSerialization.
+        let doc = makeDocument([
+            "$jason": [
+                "head": [
+                    "title": "Template Test",
+                    "data": ["greeting": "Hello", "count": 3],
+                    "templates": [
+                        "body": [
+                            "sections": [
+                                [
+                                    "items": [
+                                        ["type": "label", "text": "{{greeting}}"]
+                                    ]
+                                ]
+                            ]
+                        ]
+                    ]
+                ],
+                "body": ["sections": []]
+            ]
+        ])
+        let vm = JasonetteViewModel(document: doc)
+        await vm.load()
+        XCTAssertEqual(vm.loadState, .loaded)
+        XCTAssertNotNil(vm.renderedRoot)
+    }
+
+    func testRenderWithAnyCodableDataProducesValidOutput() async {
+        let doc = makeDocument([
+            "$jason": [
+                "head": [
+                    "title": "Data Test",
+                    "data": ["name": "World", "items": ["a", "b", "c"]],
+                    "templates": [
+                        "body": [
+                            "sections": [[
+                                "items": [[
+                                    "{{#each items}}": ["type": "label", "text": "{{$jason}}"]
+                                ]]
+                            ]]
+                        ]
+                    ]
+                ],
+                "body": ["sections": []]
+            ]
+        ])
+        let vm = JasonetteViewModel(document: doc)
+        await vm.load()
+        XCTAssertEqual(vm.loadState, .loaded)
+        XCTAssertNotNil(vm.renderedRoot)
+    }
+
+    func testRenderFallsBackToRawDocumentWhenTemplateInvalid() async {
+        // A document with templates that render to invalid JSON falls back gracefully
+        let doc = makeDocument([
+            "$jason": [
+                "head": [
+                    "title": "Invalid",
+                    "templates": ["body": ["sections": "not-an-array"]]
+                ],
+                "body": ["sections": []]
+            ]
+        ])
+        let vm = JasonetteViewModel(document: doc)
+        await vm.load()
+        // Template renders sections as a string, which fails decode → falls back to raw doc
+        XCTAssertEqual(vm.loadState, .loaded)
+        XCTAssertNotNil(vm.renderedRoot)
+    }
+
     // MARK: - $load lifecycle
 
     func testLoadLifecycleActionFires() async {
