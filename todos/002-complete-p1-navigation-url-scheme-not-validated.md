@@ -25,6 +25,7 @@ In `JasonetteNavigationView.handleNavigation`, the `default:` branch calls `path
 ## Proposed Solutions
 
 ### Option A: Validate in `handleHref` before posting notification (recommended)
+
 ```swift
 guard let urlStr = href.url,
       let url = URL(string: urlStr),
@@ -35,18 +36,22 @@ guard let urlStr = href.url,
 - Cons: None
 
 ### Option B: Validate in `JasonetteNavigationView.handleNavigation` `default` branch
+
 Add the same scheme check before `path.append(url)`.
 - Pros: Closer to the navigation stack
 - Cons: Two validation points to maintain (here and in `DocumentLoader`)
 
 ## Recommended Action
+
 Option A — validate in `handleHref` in `JasonetteViewModel`.
 
 ## Technical Details
+
 - **Affected files:** `Rendering/JasonetteViewModel.swift` (handleHref method)
 - **Effort:** Small
 
 ## Acceptance Criteria
+
 - [ ] `href` with `file://` URL is silently ignored (no navigation, no crash)
 - [ ] `href` with `javascript:` URL is silently ignored
 - [ ] `href` with `https://` URL navigates correctly
@@ -54,4 +59,5 @@ Option A — validate in `handleHref` in `JasonetteViewModel`.
 - [ ] Test: `testHandleHrefWithJavascriptURLIsIgnored`
 
 ## Work Log
+
 - 2026-03-12: Identified by security-sentinel agent during code review of PR fix/testflight-crashes-and-component-tests

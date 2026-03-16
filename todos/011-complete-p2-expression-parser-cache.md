@@ -30,6 +30,7 @@ Parsing (tokenization + AST construction) is static relative to the template str
 ## Proposed Solutions
 
 ### Option A: Thread-safe expression cache
+
 ```swift
 private static let nodeCacheLock = NSLock()
 private static var nodeCache: [String: Node] = [:]
@@ -56,21 +57,26 @@ public static func evaluate(_ expression: String, context: [String: Any]) -> Any
 ```
 
 ### Option B: Use NSCache for automatic memory pressure eviction
+
 Replace `[String: Node]` with `NSCache<NSString, AnyObject>`.
 - Pros: OS manages memory automatically
 - Cons: More complex wrapping for value types
 
 ## Recommended Action
+
 Option A with a bounded dictionary (cap at 256 entries with simple LRU). `ExpressionEvaluator` is already `@MainActor`-isolated via its callers so the lock may not be needed — confirm actor isolation before adding it.
 
 ## Technical Details
+
 - **Affected files:** `Template/ExpressionEvaluator.swift`
 - **Effort:** Small
 
 ## Acceptance Criteria
+
 - [ ] Identical expression strings reuse the parsed AST
 - [ ] Cache is bounded (does not grow unbounded on documents with many unique expressions)
 - [ ] All existing expression evaluator tests pass
 
 ## Work Log
+
 - 2026-03-12: Identified by performance-oracle agent during code review

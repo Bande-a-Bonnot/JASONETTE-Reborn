@@ -34,6 +34,7 @@ static func renderArray(_ arr: [Any], context: [String: Any], depth: Int) -> [An
 ## Proposed Solutions
 
 ### Option A: Pass `depth + 1` to `applyDirective`
+
 ```swift
 let rendered = applyDirective(directive, template: dict, context: context, depth: depth + 1)
 ```
@@ -41,16 +42,20 @@ let rendered = applyDirective(directive, template: dict, context: context, depth
 - Cons: Slightly reduces the effective max depth for directive-heavy templates (from ~21 to 20 levels, which is still within spec)
 
 ## Recommended Action
+
 Option A — one character change.
 
 ## Technical Details
+
 - **Affected files:** `Template/TemplateEngine.swift` (renderArray method)
 - **Effort:** Trivial
 
 ## Acceptance Criteria
+
 - [ ] `renderArray` passes `depth + 1` to `applyDirective`
 - [ ] All existing `#each` and `#if` tests still pass
 - [ ] Depth guard test confirms deeply-nested directive trees are handled correctly
 
 ## Work Log
+
 - 2026-03-12: Identified by architecture-strategist agent during code review

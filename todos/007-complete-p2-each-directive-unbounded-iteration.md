@@ -30,6 +30,7 @@ With a complex item template and 10,000 elements, the engine allocates 10,000 re
 ## Proposed Solutions
 
 ### Option A: Add `maxItems` constant alongside `maxDepth`
+
 ```swift
 static let maxItems = 1000
 
@@ -42,20 +43,25 @@ for (index, item) in items.prefix(maxItems).enumerated() {
 - Cons: Silently truncates long lists
 
 ### Option B: Log and truncate
+
 Same as A but emit a `print("[Jasonette] #each: truncated \(items.count) items to \(maxItems)")` warning in debug builds.
 
 ## Recommended Action
+
 Option B — truncation with debug warning.
 
 ## Technical Details
+
 - **Affected files:** `Template/TemplateEngine.swift` (applyDirective .each case)
 - **Effort:** Small
 
 ## Acceptance Criteria
+
 - [ ] `#each` with 10,000 items only renders `maxItems` items
 - [ ] Warning logged in debug builds when truncation occurs
 - [ ] Test: `testEachTruncatesAtMaxItems`
 - [ ] Existing `#each` tests with small arrays still pass
 
 ## Work Log
+
 - 2026-03-12: Identified by security-sentinel agent during code review

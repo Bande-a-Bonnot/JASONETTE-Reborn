@@ -32,6 +32,7 @@ Scenario: `cacheSet(["token": "abc"])` → persisted correctly. Then `cacheSet([
 ## Proposed Solutions
 
 ### Option A: Validate before merge (recommended)
+
 ```swift
 public func cacheSet(_ values: [String: Any]) {
     let candidate = cache.merging(values) { _, new in new }
@@ -46,26 +47,32 @@ public func cacheSet(_ values: [String: Any]) {
 - Cons: Entire batch rejected if one value is bad
 
 ### Option B: Filter invalid keys, set the rest
+
 Iterate and only merge keys where `JSONSerialization.isValidJSONObject([k: v])` passes.
 - Pros: Partial writes succeed
 - Cons: Surprising behavior, partial updates hard to reason about
 
 ### Option C: Assert at the `AnyCodable` layer
+
 Since `cacheSet` callers in `ActionDispatcher` go through `AnyCodable.value`, the values should already be serializable. Add a runtime assertion in `AnyCodable.value` accessor.
 - Pros: Catches the bug at origin
 - Cons: Doesn't protect against direct `StateManager.cacheSet` callers
 
 ## Recommended Action
+
 Option A — validate the full candidate dict before merging.
 
 ## Technical Details
+
 - **Affected files:** `Core/StateManager.swift` (cacheSet method)
 - **Effort:** Small
 
 ## Acceptance Criteria
+
 - [ ] `cacheSet` with a non-JSON-serializable value does not corrupt subsequent writes
 - [ ] Debug build shows an assertion failure or log when invalid value is passed
 - [ ] Test: verify that `cacheSet(["good": "val"])` after `cacheSet(["bad": Date()])` still persists "good"
 
 ## Work Log
+
 - 2026-03-12: Identified by data-integrity-guardian agent during code review

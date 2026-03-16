@@ -21,6 +21,7 @@ dependencies: []
 ## Proposed Solutions
 
 ### Option A: Add named constant to ExpressionEvaluator
+
 ```swift
 // ExpressionEvaluator.swift
 private static let maxDepth = 20
@@ -28,6 +29,7 @@ private static let maxDepth = 20
 Minimal change, no new files.
 
 ### Option B: Shared configuration namespace
+
 Create `Sources/Jasonette/Core/JasonetteConfig.swift`:
 ```swift
 public enum JasonetteConfig {
@@ -41,15 +43,19 @@ Both `TemplateEngine` and `ExpressionEvaluator` reference `JasonetteConfig.maxTe
 - Cons: Minor overhead of a new file
 
 ## Recommended Action
+
 Option A immediately (one-liner). Option B in a follow-up when todo #007 adds `maxItems`.
 
 ## Technical Details
+
 - **Affected files:** `Template/ExpressionEvaluator.swift` line 74
 - **Effort:** Trivial
 
 ## Acceptance Criteria
+
 - [ ] No magic number `20` in `ExpressionEvaluator.resolve()`
 - [ ] `TemplateEngine.maxDepth` and `ExpressionEvaluator`'s equivalent have the same value by definition
 
 ## Work Log
+
 - 2026-03-12: Identified by architecture-strategist and pattern-recognition-specialist agents during code review

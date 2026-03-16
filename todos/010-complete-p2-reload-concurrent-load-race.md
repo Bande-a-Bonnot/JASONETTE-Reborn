@@ -28,6 +28,7 @@ If `reload()` is called while a `load()` task is awaiting a network response, bo
 ## Proposed Solutions
 
 ### Option A: Cancel the previous load task before scheduling a new one
+
 ```swift
 private var loadTask: Task<Void, Never>?
 
@@ -41,19 +42,24 @@ func reload() {
 - Cons: Requires URLSession to respect cancellation (it does)
 
 ### Option B: Guard with a `isLoading` flag distinct from `loadState`
+
 Simpler but less rigorous than Option A.
 
 ## Recommended Action
+
 Option A — explicit task cancellation is the correct Swift Concurrency pattern.
 
 ## Technical Details
+
 - **Affected files:** `Rendering/JasonetteViewModel.swift` (reload and load methods)
 - **Effort:** Small
 
 ## Acceptance Criteria
+
 - [ ] Calling `reload()` twice rapidly only results in one completed render
 - [ ] The stale task from a previous `reload()` does not write to `renderedRoot`
 - [ ] Test: `testReloadCancelsPreviousLoad`
 
 ## Work Log
+
 - 2026-03-12: Identified by data-integrity-guardian agent during code review

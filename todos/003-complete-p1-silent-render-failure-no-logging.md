@@ -33,6 +33,7 @@ Compare with `load()` which correctly sets `loadState = .error(error.localizedDe
 ## Proposed Solutions
 
 ### Option A: Add `#if DEBUG` logging at both fallback sites (quick fix)
+
 ```swift
 guard JSONSerialization.isValidJSONObject(rendered) else {
     #if DEBUG
@@ -45,26 +46,32 @@ guard JSONSerialization.isValidJSONObject(rendered) else {
 - Cons: Only visible in debug console; not observable in production
 
 ### Option B: Add `.renderError` case to `LoadState` and surface it (recommended)
+
 Add a distinct state case and set it when the template fails. Views can show a banner or fallback UI.
 - Pros: Observable in production, testable, follows existing error-surfacing pattern
 - Cons: API change to `LoadState`
 
 ### Option C: Use `os_log` / `Logger` framework (best for production)
+
 Log using `os_log` at `fault` level — visible in Console.app and crash reporters (Crashlytics breadcrumbs).
 - Pros: Survives into production, structured, filterable
 - Cons: Slightly more boilerplate
 
 ## Recommended Action
+
 Option A immediately (one PR), Option C as follow-up.
 
 ## Technical Details
+
 - **Affected files:** `Rendering/JasonetteViewModel.swift` (render method, ~lines 89-109)
 - **Effort:** Small
 
 ## Acceptance Criteria
+
 - [ ] Template render failure produces a visible log entry in debug builds
 - [ ] Test: `testRenderFallsBackToRawDocumentWhenTemplateInvalid` asserts on some observable signal (not just "doesn't crash")
 - [ ] No silent `loadState = .loaded` when template is discarded
 
 ## Work Log
+
 - 2026-03-12: Identified by architecture-strategist and data-integrity-guardian agents during code review
