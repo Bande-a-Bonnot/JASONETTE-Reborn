@@ -28,12 +28,15 @@ struct AlertConfig: Identifiable {
 Replace with the project's UUIDv7 generator (however it's implemented — check existing usages for the pattern).
 
 ## Technical Details
+
 - **Affected files:** `Rendering/JasonetteViewModel.swift`
 - **Effort:** Trivial
 
 ## Acceptance Criteria
+
 - [ ] `AlertConfig.id` uses UUIDv7
 - [ ] Consistent with all other ID fields in the codebase
 
 ## Work Log
+
 - 2026-03-12: Identified by pattern-recognition-specialist agent during code review

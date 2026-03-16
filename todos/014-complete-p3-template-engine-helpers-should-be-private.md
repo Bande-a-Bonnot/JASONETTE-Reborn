@@ -27,13 +27,16 @@ All helpers are now `private`. No tests call internal methods directly — all t
 3. If tests need to verify internal behavior, test through the public API
 
 ## Technical Details
+
 - **Affected files:** `Template/TemplateEngine.swift`
 - **Effort:** Small
 
 ## Acceptance Criteria
+
 - [ ] Only `render(_:context:)` is non-private on `TemplateEngine`
 - [ ] No tests call implementation-detail methods directly
 - [ ] Build passes with stricter access control
 
 ## Work Log
+
 - 2026-03-12: Identified by pattern-recognition-specialist agent during code review

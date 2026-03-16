@@ -33,6 +33,7 @@ A crafted JSON payload `[[[...(512 levels)...]]]` decodes successfully (JSONDeco
 ## Proposed Solutions
 
 ### Option A: Add depth parameter (cleanest)
+
 ```swift
 public var unwrapped: Any { unwrapped(depth: 0) }
 
@@ -51,21 +52,26 @@ private func unwrapped(depth: Int) -> Any {
 - Cons: Slightly more boilerplate
 
 ### Option B: Iterative implementation with explicit stack
+
 Convert to iterative traversal using an explicit work stack. Zero stack overflow risk.
 - Pros: Most robust
 - Cons: More complex implementation
 
 ## Recommended Action
+
 Option A — consistent with existing depth-guard pattern.
 
 ## Technical Details
+
 - **Affected files:** `Core/AnyCodable.swift`
 - **Effort:** Small
 
 ## Acceptance Criteria
+
 - [ ] `unwrapped` on a 512-level deeply-nested AnyCodable does not crash
 - [ ] Test: `testUnwrappedHandlesMaxDepthWithoutCrash`
 - [ ] Depth limit chosen ≥ practical real-world document depth (≥32)
 
 ## Work Log
+
 - 2026-03-12: Identified by security-sentinel agent during code review
