@@ -5,6 +5,8 @@ import Foundation
 final class ExpressionParser {
     private let chars: [Character]
     private var pos: Int = 0
+    private var depth: Int = 0
+    private static let maxParseDepth = 50
 
     init(_ input: String) {
         self.chars = Array(input)
@@ -16,9 +18,22 @@ final class ExpressionParser {
         return node
     }
 
+    private func enterDepth() throws {
+        depth += 1
+        guard depth <= Self.maxParseDepth else {
+            throw ParseError.unexpectedEnd  // reuse existing error
+        }
+    }
+
+    private func leaveDepth() {
+        depth -= 1
+    }
+
     // MARK: - Precedence climbing
 
     private func parseTernary() throws -> ExpressionEvaluator.Node {
+        try enterDepth()
+        defer { leaveDepth() }
         let node = try parseOr()
         skipWhitespace()
         if peek() == "?" {
