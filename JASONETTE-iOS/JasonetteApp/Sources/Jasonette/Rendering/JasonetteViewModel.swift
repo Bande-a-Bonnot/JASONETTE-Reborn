@@ -24,6 +24,8 @@ public final class JasonetteViewModel: ObservableObject {
     private let url: URL?
     private var document: JasonDocument?
     private let loader = DocumentLoader()
+    private let decoder = JSONDecoder()
+    private var loadTask: Task<Void, Never>?
     let stateManager = StateManager()
     let actionDispatcher: ActionDispatcher
 
@@ -55,12 +57,15 @@ public final class JasonetteViewModel: ObservableObject {
 
     func loadIfNeeded() async {
         guard loadState == .idle else { return }
-        await load()
+        loadTask?.cancel()
+        loadTask = Task { await load() }
+        await loadTask?.value
     }
 
     func reload() {
-        loadState = .idle
-        Task { await load() }
+        loadTask?.cancel()
+        loadState = .loading
+        loadTask = Task { await load() }
     }
 
     func load() async {
@@ -82,26 +87,38 @@ public final class JasonetteViewModel: ObservableObject {
                 // Re-render after $load modifies state
                 if let d = document { render(d) }
             }
+        } catch is CancellationError {
+            return
         } catch {
+            guard !Task.isCancelled else { return }
             loadState = .error(error.localizedDescription)
         }
     }
 
     private func render(_ doc: JasonDocument) {
         let head = doc.jason.head
-        let data = head?.data?.compactMapValues { $0.value } ?? [:]
+        let data = head?.data?.compactMapValues { $0.unwrapped } ?? [:]
         let context = data.merging(stateManager.local) { _, new in new }
 
         if let templates = head?.templates?.body {
-            let rendered = TemplateEngine.render(templates.value, context: context)
-            // Defensive: wrap serialization in do/catch to prevent crashes
+            let rendered = TemplateEngine.render(templates.unwrapped, context: context)
+
+            guard JSONSerialization.isValidJSONObject(rendered) else {
+                #if DEBUG
+                print("[Jasonette] render: template produced non-serializable output, falling back to raw document")
+                #endif
+                renderedRoot = doc.jason
+                return
+            }
             do {
-                let renderedData = try JSONSerialization.data(withJSONObject: rendered as Any)
-                var root = try JSONDecoder().decode(JasonRoot.self, from: renderedData)
+                let renderedData = try JSONSerialization.data(withJSONObject: rendered)
+                var root = try decoder.decode(JasonRoot.self, from: renderedData)
                 root.head = head
                 renderedRoot = root
             } catch {
-                // Fall back to raw document on serialization failure
+                #if DEBUG
+                print("[Jasonette] render: template decode failed (\(error)), falling back to raw document")
+                #endif
                 renderedRoot = doc.jason
             }
         } else {
@@ -130,12 +147,18 @@ public final class JasonetteViewModel: ObservableObject {
             return
         }
 
-        guard let urlStr = href.url, let url = URL(string: urlStr) else { return }
-        NotificationCenter.default.post(
-            name: .jasonetteNavigate,
-            object: nil,
-            userInfo: ["href": href, "url": url]
-        )
+        if let urlStr = href.url, let url = URL(string: urlStr) {
+            // Validate scheme — app views allow tel/mailto/sms, others only http(s)
+            let appSchemes: Set<String> = ["http", "https", "mailto", "tel", "sms"]
+            let allowed = href.view == "app" ? appSchemes : DocumentLoader.allowedSchemes
+            guard let scheme = url.scheme?.lowercased(),
+                  allowed.contains(scheme) else { return }
+            NotificationCenter.default.post(
+                name: .jasonetteNavigate,
+                object: nil,
+                userInfo: ["href": href, "url": url]
+            )
+        }
     }
 
     func handleAction(_ action: JasonAction) {
