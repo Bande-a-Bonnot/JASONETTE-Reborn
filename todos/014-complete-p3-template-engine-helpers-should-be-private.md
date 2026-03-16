@@ -18,7 +18,7 @@ dependencies: []
 
 All internal helpers are accessible to tests and other in-module callers even though they are implementation details. Currently the tests only call `TemplateEngine.render(...)` — which is correct — but the door is open.
 
-Note: `internal` is required for the existing tests that call `TemplateEngine.interpolateString` and `TemplateEngine.renderArray` directly in `TemplateEngineTests.swift`. Check whether any tests call these directly before marking private.
+All helpers are now `private`. No tests call internal methods directly — all tests use the public `TemplateEngine.render(...)` entry point.
 
 ## Proposed Solution
 

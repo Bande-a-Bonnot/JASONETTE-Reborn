@@ -91,19 +91,20 @@ public struct AnyCodable: Codable, Sendable, Equatable, Hashable {
     }
 
     private func unwrapped(depth: Int) -> Any {
-        guard depth < 64 else { return value }
-        switch value {
-        case let arr as [AnyCodable]:
-            return arr.map { $0.unwrapped(depth: depth + 1) }
-        case let dict as [String: AnyCodable]:
-            return dict.mapValues { $0.unwrapped(depth: depth + 1) }
-        case let arr as [Any]:
-            return arr.map { ($0 as? AnyCodable)?.unwrapped(depth: depth + 1) ?? $0 }
-        case let dict as [String: Any]:
-            return dict.mapValues { ($0 as? AnyCodable)?.unwrapped(depth: depth + 1) ?? $0 }
-        default:
+        func recurse(_ value: Any, depth: Int) -> Any {
+            guard depth < 64 else { return value }
+            if let codable = value as? AnyCodable {
+                return recurse(codable.value, depth: depth)
+            }
+            if let array = value as? [Any] {
+                return array.map { recurse($0, depth: depth + 1) }
+            }
+            if let dictionary = value as? [String: Any] {
+                return dictionary.mapValues { recurse($0, depth: depth + 1) }
+            }
             return value
         }
+        return recurse(self.value, depth: depth)
     }
 
     public func encode(to encoder: Encoder) throws {

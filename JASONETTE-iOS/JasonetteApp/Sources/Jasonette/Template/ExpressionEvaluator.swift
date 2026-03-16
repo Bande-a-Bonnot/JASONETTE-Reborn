@@ -3,9 +3,8 @@ import Foundation
 /// Evaluates Jasonette template expressions like `{{$jason.name}}`.
 /// Uses a simple recursive-descent parser instead of a full JS engine.
 public enum ExpressionEvaluator {
-    // Cache: expression string → parsed Node tree
-    // Called only from @MainActor context via TemplateEngine, so no lock needed
     private static var _nodeCache: [String: Node] = [:]
+    private static let _cacheLock = NSLock()
     private static let maxCacheSize = 256
     private static let maxDepth = 20
 
@@ -15,17 +14,22 @@ public enum ExpressionEvaluator {
         guard !trimmed.isEmpty else { return nil }
 
         let node: Node
-        if let cached = _nodeCache[trimmed] {
+        _cacheLock.lock()
+        let cached = _nodeCache[trimmed]
+        _cacheLock.unlock()
+
+        if let cached {
             node = cached
         } else {
             let parser = ExpressionParser(trimmed)
             do {
                 let parsed = try parser.parse()
-                // Evict oldest entry if at capacity (simple size cap, not true LRU)
+                _cacheLock.lock()
                 if _nodeCache.count >= maxCacheSize {
                     _nodeCache.removeValue(forKey: _nodeCache.keys.first!)
                 }
                 _nodeCache[trimmed] = parsed
+                _cacheLock.unlock()
                 node = parsed
             } catch {
                 return nil
