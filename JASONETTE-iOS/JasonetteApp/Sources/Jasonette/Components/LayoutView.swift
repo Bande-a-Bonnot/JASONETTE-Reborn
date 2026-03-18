@@ -20,15 +20,15 @@ struct LayoutView: View {
         switch direction {
         case .vertical:
             VStack(alignment: alignment, spacing: spacing) {
-                ForEach(Array(components.enumerated()), id: \.offset) { _, component in
-                    ComponentView(component, headStyles: headStyles, onHref: onHref, onAction: onAction)
+                ForEach(components.indices, id: \.self) { index in
+                    ComponentView(components[index], headStyles: headStyles, onHref: onHref, onAction: onAction)
                 }
             }
         case .horizontal:
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(alignment: vAlignment, spacing: spacing) {
-                    ForEach(Array(components.enumerated()), id: \.offset) { _, component in
-                        ComponentView(component, headStyles: headStyles, onHref: onHref, onAction: onAction)
+                    ForEach(components.indices, id: \.self) { index in
+                        ComponentView(components[index], headStyles: headStyles, onHref: onHref, onAction: onAction)
                     }
                 }
             }
