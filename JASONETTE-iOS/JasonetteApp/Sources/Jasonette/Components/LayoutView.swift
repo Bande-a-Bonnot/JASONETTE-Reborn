@@ -25,9 +25,11 @@ struct LayoutView: View {
                 }
             }
         case .horizontal:
-            HStack(alignment: vAlignment, spacing: spacing) {
-                ForEach(Array(components.enumerated()), id: \.offset) { _, component in
-                    ComponentView(component, headStyles: headStyles, onHref: onHref, onAction: onAction)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: vAlignment, spacing: spacing) {
+                    ForEach(Array(components.enumerated()), id: \.offset) { _, component in
+                        ComponentView(component, headStyles: headStyles, onHref: onHref, onAction: onAction)
+                    }
                 }
             }
         }
