@@ -56,7 +56,10 @@ public final class JasonetteViewModel: ObservableObject {
         }
         actionDispatcher.setRenderHandler { [weak self] templateName in
             guard let self else { return }
-            self.activeTemplateName = templateName ?? "body"
+            let name = templateName ?? "body"
+            if self.document?.jason.head?.templates?[name] != nil {
+                self.activeTemplateName = name
+            }
             if let doc = self.document { self.render(doc) }
         }
     }
