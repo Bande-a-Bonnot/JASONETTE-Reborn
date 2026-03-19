@@ -212,8 +212,6 @@ final class TemplateRenderTests: XCTestCase {
         let vm = JasonetteViewModel(document: doc)
         await vm.load()
 
-        let before = vm.renderedRoot?.body?.sections?.first?.items?.first?.text
-
         // Try to switch to a template that doesn't exist
         let switchAction = JasonAction()
         switchAction.type = "$render"
