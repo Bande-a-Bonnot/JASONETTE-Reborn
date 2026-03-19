@@ -137,15 +137,30 @@ public struct JasonetteView: View {
             }
 
             if let items = section.items {
-                ForEach(Array(items.enumerated()), id: \.offset) { _, item in
-                    ComponentView(
-                        item,
-                        headStyles: headStyles,
-                        onHref: { viewModel.handleHref($0) },
-                        onAction: { viewModel.handleAction($0) }
-                    )
-                    .padding(.horizontal)
-                    .padding(.vertical, 2)
+                if section.type == "horizontal" {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 0) {
+                            ForEach(Array(items.enumerated()), id: \.offset) { _, item in
+                                ComponentView(
+                                    item,
+                                    headStyles: headStyles,
+                                    onHref: { viewModel.handleHref($0) },
+                                    onAction: { viewModel.handleAction($0) }
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    ForEach(Array(items.enumerated()), id: \.offset) { _, item in
+                        ComponentView(
+                            item,
+                            headStyles: headStyles,
+                            onHref: { viewModel.handleHref($0) },
+                            onAction: { viewModel.handleAction($0) }
+                        )
+                        .padding(.horizontal)
+                        .padding(.vertical, 2)
+                    }
                 }
             }
         }
