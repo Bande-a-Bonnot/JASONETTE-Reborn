@@ -14,7 +14,7 @@ public final class JasonetteViewModel: ObservableObject {
     @Published var loadState: LoadState = .idle
     @Published var renderedRoot: JasonRoot?
     @Published var alertConfig: AlertConfig?
-    @Published private var activeTemplateName: String = "body"
+    private var activeTemplateName: String = "body"
 
     struct AlertConfig: Identifiable {
         let id = UUID()
@@ -56,9 +56,7 @@ public final class JasonetteViewModel: ObservableObject {
         }
         actionDispatcher.setRenderHandler { [weak self] templateName in
             guard let self else { return }
-            if let name = templateName {
-                self.activeTemplateName = name
-            }
+            self.activeTemplateName = templateName ?? "body"
             if let doc = self.document { self.render(doc) }
         }
     }
