@@ -14,6 +14,7 @@ public final class JasonetteViewModel: ObservableObject {
     @Published var loadState: LoadState = .idle
     @Published var renderedRoot: JasonRoot?
     @Published var alertConfig: AlertConfig?
+    @Published private var activeTemplateName: String = "body"
 
     struct AlertConfig: Identifiable {
         let id = UUID()
@@ -52,6 +53,13 @@ public final class JasonetteViewModel: ObservableObject {
         }
         actionDispatcher.setAlertHandler { [weak self] title, description in
             self?.alertConfig = AlertConfig(title: title, description: description)
+        }
+        actionDispatcher.setRenderHandler { [weak self] templateName in
+            guard let self else { return }
+            if let name = templateName {
+                self.activeTemplateName = name
+            }
+            if let doc = self.document { self.render(doc) }
         }
     }
 
@@ -100,8 +108,8 @@ public final class JasonetteViewModel: ObservableObject {
         let data = head?.data?.compactMapValues { $0.unwrapped } ?? [:]
         let context = data.merging(stateManager.local) { _, new in new }
 
-        if let templates = head?.templates?.body {
-            let rendered = TemplateEngine.render(templates.unwrapped, context: context)
+        if let template = head?.templates?[activeTemplateName] {
+            let rendered = TemplateEngine.render(template.unwrapped, context: context)
 
             guard JSONSerialization.isValidJSONObject(rendered) else {
                 #if DEBUG
@@ -112,9 +120,8 @@ public final class JasonetteViewModel: ObservableObject {
             }
             do {
                 let renderedData = try JSONSerialization.data(withJSONObject: rendered)
-                var root = try decoder.decode(JasonRoot.self, from: renderedData)
-                root.head = head
-                renderedRoot = root
+                let body = try decoder.decode(JasonBody.self, from: renderedData)
+                renderedRoot = JasonRoot(head: head, body: body)
             } catch {
                 #if DEBUG
                 print("[Jasonette] render: template decode failed (\(error)), falling back to raw document")
