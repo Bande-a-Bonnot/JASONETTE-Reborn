@@ -1,4 +1,5 @@
 import XCTest
+import Combine
 @testable import Jasonette
 
 final class TemplateRenderTests: XCTestCase {
@@ -149,14 +150,22 @@ final class TemplateRenderTests: XCTestCase {
         XCTAssertEqual(vm.renderedRoot?.body?.sections?.first?.items?.first?.text, "Vertical: Bart")
 
         // Switch to "horizontal" template via $render action
+        let exp = expectation(description: "template switched")
+        let cancellable = vm.$renderedRoot
+            .dropFirst()
+            .sink { root in
+                if root?.body?.sections?.first?.items?.first?.text == "Horizontal: Bart" {
+                    exp.fulfill()
+                }
+            }
+
         let switchAction = JasonAction()
         switchAction.type = "$render"
         switchAction.options = ["template": AnyCodable("horizontal")]
         vm.handleAction(switchAction)
 
-        // Give the async action time to complete
-        try? await Task.sleep(nanoseconds: 100_000_000)
-
+        await fulfillment(of: [exp], timeout: 2.0)
+        cancellable.cancel()
         XCTAssertEqual(vm.renderedRoot?.body?.sections?.first?.items?.first?.text, "Horizontal: Bart")
     }
 
@@ -182,14 +191,21 @@ final class TemplateRenderTests: XCTestCase {
         XCTAssertEqual(vm.renderedRoot?.body?.sections?.first?.items?.first?.text, "Count: 1")
 
         // $render without template option re-renders current template
+        let exp = expectation(description: "re-rendered")
+        let cancellable = vm.$renderedRoot
+            .dropFirst()
+            .sink { _ in exp.fulfill() }
+
         let renderAction = JasonAction()
         renderAction.type = "$render"
         vm.handleAction(renderAction)
 
-        try? await Task.sleep(nanoseconds: 100_000_000)
+        await fulfillment(of: [exp], timeout: 2.0)
+        cancellable.cancel()
 
         // Should still show the body template (re-rendered)
         XCTAssertNotNil(vm.renderedRoot?.body)
+        XCTAssertEqual(vm.renderedRoot?.body?.sections?.first?.items?.first?.text, "Count: 1")
     }
 
     @MainActor
@@ -213,15 +229,22 @@ final class TemplateRenderTests: XCTestCase {
         await vm.load()
 
         // Try to switch to a template that doesn't exist
+        let exp = expectation(description: "render attempted")
+        let cancellable = vm.$renderedRoot
+            .dropFirst()
+            .sink { _ in exp.fulfill() }
+
         let switchAction = JasonAction()
         switchAction.type = "$render"
         switchAction.options = ["template": AnyCodable("nonexistent")]
         vm.handleAction(switchAction)
 
-        try? await Task.sleep(nanoseconds: 100_000_000)
+        await fulfillment(of: [exp], timeout: 2.0)
+        cancellable.cancel()
 
-        // Should still have content (either kept current or fell back to raw doc)
-        XCTAssertNotNil(vm.renderedRoot)
+        // Should still render the body template — unknown name is ignored
+        XCTAssertNotNil(vm.renderedRoot?.body)
+        XCTAssertEqual(vm.renderedRoot?.body?.sections?.first?.items?.first?.text, "Test")
     }
 
     // MARK: - $render action handler on ActionDispatcher
