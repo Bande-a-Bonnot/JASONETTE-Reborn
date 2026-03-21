@@ -79,15 +79,17 @@ final class ActionDispatcherTests: XCTestCase {
 
     // MARK: - $render
 
-    func testRenderTriggersObjectWillChange() async {
-        let expectation = expectation(description: "objectWillChange fired")
-        let cancellable = stateManager.objectWillChange.sink { _ in
+    func testRenderCallsRenderHandler() async {
+        let expectation = expectation(description: "render handler called")
+        var receivedTemplate: String? = "sentinel"
+        dispatcher.setRenderHandler { templateName in
+            receivedTemplate = templateName
             expectation.fulfill()
         }
         let action = decodeAction(["type": "$render"])
         await dispatcher.execute(action)
         await fulfillment(of: [expectation], timeout: 1.0)
-        cancellable.cancel()
+        XCTAssertNil(receivedTemplate)
     }
 
     // MARK: - $reload
