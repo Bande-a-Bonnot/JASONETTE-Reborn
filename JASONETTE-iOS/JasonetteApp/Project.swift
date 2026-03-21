@@ -14,7 +14,7 @@ let project = Project(
         .local(path: "."),
     ],
     settings: .settings(base: [
-        "MARKETING_VERSION": "0.1.0",
+        "MARKETING_VERSION": "2.0.0",
         "CURRENT_PROJECT_VERSION": "1",
     ]),
     targets: [
@@ -28,6 +28,8 @@ let project = Project(
             infoPlist: .extendingDefault(with: [
                 "UILaunchScreen": ["UIColorName": "", "UIImageName": ""],
                 "CFBundleDisplayName": "Jasonette",
+                "CFBundleShortVersionString": "$(MARKETING_VERSION)",
+                "CFBundleVersion": "$(CURRENT_PROJECT_VERSION)",
                 "ITSAppUsesNonExemptEncryption": false,
             ]),
             sources: [],
@@ -45,6 +47,8 @@ let project = Project(
             deploymentTargets: .macOS("13.0"),
             infoPlist: .extendingDefault(with: [
                 "CFBundleDisplayName": "Jasonette",
+                "CFBundleShortVersionString": "$(MARKETING_VERSION)",
+                "CFBundleVersion": "$(CURRENT_PROJECT_VERSION)",
                 "ITSAppUsesNonExemptEncryption": false,
             ]),
             sources: [],
@@ -61,6 +65,8 @@ let project = Project(
             deploymentTargets: .tvOS("16.0"),
             infoPlist: .extendingDefault(with: [
                 "CFBundleDisplayName": "Jasonette",
+                "CFBundleShortVersionString": "$(MARKETING_VERSION)",
+                "CFBundleVersion": "$(CURRENT_PROJECT_VERSION)",
                 "ITSAppUsesNonExemptEncryption": false,
             ]),
             sources: [],
@@ -77,6 +83,8 @@ let project = Project(
             deploymentTargets: .visionOS("1.0"),
             infoPlist: .extendingDefault(with: [
                 "CFBundleDisplayName": "Jasonette",
+                "CFBundleShortVersionString": "$(MARKETING_VERSION)",
+                "CFBundleVersion": "$(CURRENT_PROJECT_VERSION)",
                 "ITSAppUsesNonExemptEncryption": false,
             ]),
             sources: [],
