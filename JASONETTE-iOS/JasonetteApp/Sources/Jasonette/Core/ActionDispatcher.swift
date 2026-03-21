@@ -7,6 +7,7 @@ public final class ActionDispatcher: ObservableObject {
     private var navigationHandler: ((JasonHref) -> Void)?
     private var reloadHandler: (() -> Void)?
     private var alertHandler: ((String, String?) -> Void)?
+    private var renderHandler: ((String?) -> Void)?
     private var timers: [String: Timer] = [:]
     private var executingTimers: Set<String> = []
 
@@ -30,6 +31,10 @@ public final class ActionDispatcher: ObservableObject {
 
     public func setAlertHandler(_ handler: @escaping (String, String?) -> Void) {
         self.alertHandler = handler
+    }
+
+    public func setRenderHandler(_ handler: @escaping (String?) -> Void) {
+        self.renderHandler = handler
     }
 
     /// Invalidate all active timers. Call from view's onDisappear.
@@ -77,7 +82,8 @@ public final class ActionDispatcher: ObservableObject {
 
         // Render
         case "$render":
-            stateManager.objectWillChange.send()
+            let templateName = options["template"]?.string
+            renderHandler?(templateName)
 
         case "$reload":
             reloadHandler?()

@@ -12,6 +12,11 @@ public struct JasonDocument: Codable, Sendable {
 public struct JasonRoot: Codable, Sendable {
     public var head: JasonHead?
     public var body: JasonBody?
+
+    public init(head: JasonHead? = nil, body: JasonBody? = nil) {
+        self.head = head
+        self.body = body
+    }
 }
 
 public struct JasonHead: Codable, Sendable {
@@ -23,7 +28,24 @@ public struct JasonHead: Codable, Sendable {
 }
 
 public struct JasonTemplates: Codable, Sendable {
-    public var body: AnyCodable?
+    private var storage: [String: AnyCodable] = [:]
+
+    public subscript(name: String) -> AnyCodable? {
+        get { storage[name] }
+        set { storage[name] = newValue }
+    }
+
+    public var body: AnyCodable? { storage["body"] }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        storage = try container.decode([String: AnyCodable].self)
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(storage)
+    }
 }
 
 public struct JasonBody: Codable, Sendable {
@@ -41,6 +63,7 @@ public struct JasonHeader: Codable, Sendable {
 }
 
 public struct JasonSection: Codable, Sendable {
+    public var type: String?
     public var header: JasonComponent?
     public var items: [JasonComponent]?
     public var style: JasonStyle?
@@ -80,6 +103,8 @@ public final class JasonAction: Codable, @unchecked Sendable {
     public var options: [String: AnyCodable]?
     public var success: JasonAction?
     public var error: JasonAction?
+
+    public init() {}
 }
 
 public struct JasonFooter: Codable, Sendable {
