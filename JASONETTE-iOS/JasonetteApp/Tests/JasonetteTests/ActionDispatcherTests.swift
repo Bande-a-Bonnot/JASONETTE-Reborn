@@ -81,12 +81,15 @@ final class ActionDispatcherTests: XCTestCase {
 
     func testRenderCallsRenderHandler() async {
         let expectation = expectation(description: "render handler called")
-        dispatcher.setRenderHandler { _ in
+        var receivedTemplate: String? = "sentinel"
+        dispatcher.setRenderHandler { templateName in
+            receivedTemplate = templateName
             expectation.fulfill()
         }
         let action = decodeAction(["type": "$render"])
         await dispatcher.execute(action)
         await fulfillment(of: [expectation], timeout: 1.0)
+        XCTAssertNil(receivedTemplate)
     }
 
     // MARK: - $reload
