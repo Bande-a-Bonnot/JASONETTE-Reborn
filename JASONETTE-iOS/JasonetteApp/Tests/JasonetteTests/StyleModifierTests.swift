@@ -3,6 +3,13 @@ import XCTest
 
 final class StyleModifierTests: XCTestCase {
 
+    // MARK: - Helpers
+
+    private func decodeStyle(_ json: [String: Any]) -> JasonStyle {
+        let data = try! JSONSerialization.data(withJSONObject: json)
+        return try! JSONDecoder().decode(JasonStyle.self, from: data)
+    }
+
     // MARK: - Multi-class merging
 
     func testSingleClassResolution() {
@@ -130,6 +137,132 @@ final class StyleModifierTests: XCTestCase {
         let merged = base.merging(overlay)
         XCTAssertEqual(merged.top?.cgFloat, 10)
         XCTAssertNil(merged.left)
+    }
+
+    // MARK: - Opacity decoding
+
+    func testOpacityDecodes() {
+        let style = decodeStyle(["opacity": "0.5"])
+        XCTAssertEqual(style.opacity?.cgFloat, 0.5)
+    }
+
+    func testOpacityZeroDecodes() {
+        let style = decodeStyle(["opacity": "0"])
+        XCTAssertEqual(style.opacity?.cgFloat, 0)
+    }
+
+    func testOpacityOneDecodes() {
+        let style = decodeStyle(["opacity": "1"])
+        XCTAssertEqual(style.opacity?.cgFloat, 1)
+    }
+
+    func testOpacityMerging() {
+        let head = JasonStyle(opacity: AnyCodable(0.3))
+        let inline = JasonStyle(opacity: AnyCodable(0.8))
+        let merged = head.merging(inline)
+        XCTAssertEqual(merged.opacity?.cgFloat, 0.8)
+    }
+
+    func testOpacityMergingInlineOverridesHead() {
+        let headStyles: [String: JasonStyle] = [
+            "faded": JasonStyle(opacity: AnyCodable(0.3)),
+        ]
+        let inline = JasonStyle(opacity: AnyCodable(0.9))
+        let resolved = resolveStyles(className: "faded", headStyles: headStyles, inline: inline)
+        XCTAssertEqual(resolved.opacity?.cgFloat, 0.9)
+    }
+
+    func testOpacityNilWhenAbsent() {
+        let style = decodeStyle(["color": "#FF0000"])
+        XCTAssertNil(style.opacity)
+    }
+
+    // MARK: - Border decoding
+
+    func testBorderFieldsDecode() {
+        let style = decodeStyle(["border_width": "2", "border_color": "#000000"])
+        XCTAssertEqual(style.borderWidth?.cgFloat, 2)
+        XCTAssertEqual(style.borderColor, "#000000")
+    }
+
+    func testBorderColorWithoutWidth() {
+        let style = decodeStyle(["border_color": "#FF0000"])
+        XCTAssertNil(style.borderWidth)
+        XCTAssertEqual(style.borderColor, "#FF0000")
+    }
+
+    func testBorderWidthWithoutColor() {
+        let style = decodeStyle(["border_width": "1"])
+        XCTAssertEqual(style.borderWidth?.cgFloat, 1)
+        XCTAssertNil(style.borderColor)
+    }
+
+    // MARK: - Directional padding decoding
+
+    func testDirectionalPaddingDecodes() {
+        let style = decodeStyle(["padding_left": "10", "padding_top": "5"])
+        XCTAssertEqual(style.paddingLeft?.cgFloat, 10)
+        XCTAssertEqual(style.paddingTop?.cgFloat, 5)
+        XCTAssertNil(style.paddingRight)
+        XCTAssertNil(style.paddingBottom)
+    }
+
+    func testAllDirectionalPaddingDecodes() {
+        let style = decodeStyle([
+            "padding_left": "10",
+            "padding_right": "20",
+            "padding_top": "5",
+            "padding_bottom": "15",
+        ])
+        XCTAssertEqual(style.paddingLeft?.cgFloat, 10)
+        XCTAssertEqual(style.paddingRight?.cgFloat, 20)
+        XCTAssertEqual(style.paddingTop?.cgFloat, 5)
+        XCTAssertEqual(style.paddingBottom?.cgFloat, 15)
+    }
+
+    func testDirectionalPaddingWithUniform() {
+        let style = decodeStyle(["padding": "10", "padding_left": "20"])
+        XCTAssertEqual(style.padding?.cgFloat, 10)
+        XCTAssertEqual(style.paddingLeft?.cgFloat, 20)
+    }
+
+    // MARK: - Alignment decoding
+
+    func testAlignCenterDecodes() {
+        let style = decodeStyle(["align": "center"])
+        XCTAssertEqual(style.align, "center")
+    }
+
+    func testAlignLeftDecodes() {
+        let style = decodeStyle(["align": "left"])
+        XCTAssertEqual(style.align, "left")
+    }
+
+    func testAlignRightDecodes() {
+        let style = decodeStyle(["align": "right"])
+        XCTAssertEqual(style.align, "right")
+    }
+
+    func testAlignNilWhenAbsent() {
+        let style = decodeStyle(["color": "#FF0000"])
+        XCTAssertNil(style.align)
+    }
+
+    // MARK: - Regression: no new properties unchanged behavior
+
+    func testNoNewPropertiesIdenticalBehavior() {
+        let style = JasonStyle(font: "bold", color: "#FF0000")
+        let merged = style.merging(JasonStyle())
+        XCTAssertEqual(merged.font, "bold")
+        XCTAssertEqual(merged.color, "#FF0000")
+        XCTAssertNil(merged.opacity)
+        XCTAssertNil(merged.borderWidth)
+        XCTAssertNil(merged.borderColor)
+        XCTAssertNil(merged.paddingLeft)
+        XCTAssertNil(merged.paddingRight)
+        XCTAssertNil(merged.paddingTop)
+        XCTAssertNil(merged.paddingBottom)
+        XCTAssertNil(merged.align)
     }
 
     // MARK: - Helper
