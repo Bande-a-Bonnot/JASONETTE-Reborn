@@ -119,6 +119,9 @@ public struct JasonetteView: View {
                 }
             }
         }
+        .ifLet(body?.background?.string.flatMap { Color(css: $0) }) { view, color in
+            view.background(color.ignoresSafeArea())
+        }
         .onDisappear { viewModel.actionDispatcher.invalidateAllTimers() }
     }
 
