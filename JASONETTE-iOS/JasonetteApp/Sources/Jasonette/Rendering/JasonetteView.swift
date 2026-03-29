@@ -130,6 +130,7 @@ public struct JasonetteView: View {
 
         ZStack(alignment: alignment) {
             Color.clear
+                .allowsHitTesting(false)
             ComponentView(
                 component,
                 headStyles: headStyles,
@@ -169,6 +170,9 @@ public struct JasonetteView: View {
 
     /// Determine the ZStack alignment based on which positioning properties are set.
     private func layerAlignment(hasTop: Bool, hasBottom: Bool, hasLeft: Bool, hasRight: Bool) -> Alignment {
+        if !hasTop && !hasBottom && !hasLeft && !hasRight {
+            return .center
+        }
         let vertical: VerticalAlignment = hasBottom ? .bottom : .top
         let horizontal: HorizontalAlignment = hasRight && !hasLeft ? .trailing : .leading
         return Alignment(horizontal: horizontal, vertical: vertical)
