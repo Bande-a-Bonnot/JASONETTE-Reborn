@@ -187,7 +187,6 @@ public struct JasonetteView: View {
             // Input bar footer
             FooterInputView(
                 input: input,
-                headStyles: headStyles,
                 onAction: { viewModel.handleAction($0) }
             )
         }
@@ -203,7 +202,6 @@ public struct JasonetteView: View {
 @MainActor
 struct FooterInputView: View {
     let input: JasonFooterInput
-    let headStyles: [String: JasonStyle]
     let onAction: ((JasonAction) -> Void)?
 
     @EnvironmentObject private var stateManager: StateManager
@@ -218,9 +216,15 @@ struct FooterInputView: View {
             // Text field bound to StateManager
             let name = input.name ?? ""
             let placeholder = input.placeholder ?? ""
-            TextField(placeholder, text: stateManager.binding(forKey: name, default: ""))
-                .textFieldStyle(.roundedBorder)
-                .accessibilityIdentifier(name)
+            // Only bind to state if name is non-empty
+            if name.isEmpty {
+                TextField(placeholder, text: .constant(""))
+                    .textFieldStyle(.roundedBorder)
+            } else {
+                TextField(placeholder, text: stateManager.binding(forKey: name, default: ""))
+                    .textFieldStyle(.roundedBorder)
+                    .accessibilityIdentifier(name)
+            }
 
             // Optional right button (e.g. Send)
             if let right = input.right {
