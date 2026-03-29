@@ -67,34 +67,31 @@ public struct JasonetteView: View {
         let headStyles = head?.styles ?? [:]
         let headerStyle = body?.header?.style
 
-        VStack(spacing: 0) {
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 0) {
-                    // Sections
-                    if let sections = body?.sections {
-                        ForEach(Array(sections.enumerated()), id: \.offset) { _, section in
-                            sectionView(section, headStyles: headStyles)
-                        }
-                    }
-
-                    // Layers
-                    if let layers = body?.layers {
-                        ForEach(Array(layers.enumerated()), id: \.offset) { _, component in
-                            ComponentView(
-                                component,
-                                headStyles: headStyles,
-                                onHref: { viewModel.handleHref($0) },
-                                onAction: { viewModel.handleAction($0) }
-                            )
+        ZStack(alignment: .topLeading) {
+            VStack(spacing: 0) {
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 0) {
+                        // Sections
+                        if let sections = body?.sections {
+                            ForEach(Array(sections.enumerated()), id: \.offset) { _, section in
+                                sectionView(section, headStyles: headStyles)
+                            }
                         }
                     }
                 }
-            }
-            .refreshable { await viewModel.handlePull() }
+                .refreshable { await viewModel.handlePull() }
 
-            // Footer
-            if let footer = body?.footer {
-                footerView(footer, headStyles: headStyles)
+                // Footer
+                if let footer = body?.footer {
+                    footerView(footer, headStyles: headStyles)
+                }
+            }
+
+            // Layers — float above body content as positioned overlays
+            if let layers = body?.layers {
+                ForEach(Array(layers.enumerated()), id: \.offset) { _, component in
+                    layerView(component, headStyles: headStyles)
+                }
             }
         }
         .navigationTitle(head?.title ?? "")
@@ -120,6 +117,61 @@ public struct JasonetteView: View {
             }
         }
         .onDisappear { viewModel.actionDispatcher.invalidateAllTimers() }
+    }
+
+    @ViewBuilder
+    private func layerView(_ component: JasonComponent, headStyles: [String: JasonStyle]) -> some View {
+        let style = resolveLayerStyle(component, headStyles: headStyles)
+        let hasTop = style.top?.cgFloat != nil
+        let hasBottom = style.bottom?.cgFloat != nil
+        let hasLeft = style.left?.cgFloat != nil
+        let hasRight = style.right?.cgFloat != nil
+        let alignment = layerAlignment(hasTop: hasTop, hasBottom: hasBottom, hasLeft: hasLeft, hasRight: hasRight)
+
+        ZStack(alignment: alignment) {
+            Color.clear
+            ComponentView(
+                component,
+                headStyles: headStyles,
+                onHref: { viewModel.handleHref($0) },
+                onAction: { viewModel.handleAction($0) }
+            )
+            .ifLet(style.top?.cgFloat) { view, value in
+                view.padding(.top, value)
+            }
+            .ifLet(style.bottom?.cgFloat) { view, value in
+                view.padding(.bottom, value)
+            }
+            .ifLet(style.left?.cgFloat) { view, value in
+                view.padding(.leading, value)
+            }
+            .ifLet(style.right?.cgFloat) { view, value in
+                view.padding(.trailing, value)
+            }
+        }
+        .allowsHitTesting(true)
+    }
+
+    /// Resolve class + inline style for a layer component (mirrors JasonStyleModifier.resolved).
+    private func resolveLayerStyle(_ component: JasonComponent, headStyles: [String: JasonStyle]) -> JasonStyle {
+        var base = JasonStyle()
+        if let cls = component.class {
+            let classNames = cls.split(separator: " ").map(String.init)
+            for name in classNames {
+                if let headStyle = headStyles[name] {
+                    base = base.merging(headStyle)
+                }
+            }
+        }
+        guard let inline = component.style else { return base }
+        return base.merging(inline)
+    }
+
+    /// Determine the ZStack alignment based on which positioning properties are set.
+    private func layerAlignment(hasTop: Bool, hasBottom: Bool, hasLeft: Bool, hasRight: Bool) -> Alignment {
+        let vertical: VerticalAlignment = hasBottom ? .bottom : .top
+        let horizontal: HorizontalAlignment = hasRight && !hasLeft ? .trailing : .leading
+        return Alignment(horizontal: horizontal, vertical: vertical)
     }
 
     @ViewBuilder

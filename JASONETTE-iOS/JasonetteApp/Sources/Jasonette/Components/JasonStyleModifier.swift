@@ -113,7 +113,11 @@ extension JasonStyle {
             borderWidth: other.borderWidth ?? self.borderWidth,
             borderColor: other.borderColor ?? self.borderColor,
             align: other.align ?? self.align,
-            spacing: other.spacing ?? self.spacing
+            spacing: other.spacing ?? self.spacing,
+            top: other.top ?? self.top,
+            left: other.left ?? self.left,
+            bottom: other.bottom ?? self.bottom,
+            right: other.right ?? self.right
         )
     }
 }
