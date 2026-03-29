@@ -78,22 +78,20 @@ private extension View {
     func applyBorder(_ style: JasonStyle) -> some View {
         let radius = style.cornerRadius?.cgFloat ?? 0
         let hasRadius = style.cornerRadius != nil
-        let borderWidth = style.borderWidth?.cgFloat
-        let borderColor = style.borderColor.flatMap { Color(css: $0) }
 
-        if hasRadius && borderWidth != nil && borderColor != nil {
+        if hasRadius, let bw = style.borderWidth?.cgFloat, let bc = style.borderColor.flatMap({ Color(css: $0) }) {
             self
                 .clipShape(RoundedRectangle(cornerRadius: radius))
                 .overlay(
                     RoundedRectangle(cornerRadius: radius)
-                        .stroke(borderColor!, lineWidth: borderWidth!)
+                        .strokeBorder(bc, lineWidth: bw)
                 )
         } else if hasRadius {
             self.clipShape(RoundedRectangle(cornerRadius: radius))
-        } else if let bw = borderWidth, let bc = borderColor {
+        } else if let bw = style.borderWidth?.cgFloat, let bc = style.borderColor.flatMap({ Color(css: $0) }) {
             self.overlay(
                 RoundedRectangle(cornerRadius: 0)
-                    .stroke(bc, lineWidth: bw)
+                    .strokeBorder(bc, lineWidth: bw)
             )
         } else {
             self
@@ -114,7 +112,7 @@ private extension View {
     @ViewBuilder
     func applyOpacity(_ style: JasonStyle) -> some View {
         if let opacity = style.opacity?.cgFloat {
-            self.opacity(opacity)
+            self.opacity(min(max(opacity, 0), 1))
         } else {
             self
         }
