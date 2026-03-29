@@ -169,7 +169,7 @@ public struct JasonetteView: View {
     @ViewBuilder
     private func footerView(_ footer: JasonFooter, headStyles: [String: JasonStyle]) -> some View {
         if let tabs = footer.tabs, let items = tabs.items {
-            // Tab bar footer
+            // Tab bar footer — tabs take precedence over input
             HStack {
                 ForEach(Array(items.enumerated()), id: \.offset) { _, item in
                     ComponentView(
@@ -183,6 +183,79 @@ public struct JasonetteView: View {
             }
             .padding(.vertical, 8)
             .background(.background.shadow(.drop(radius: 1)))
+        } else if let input = footer.input {
+            // Input bar footer
+            FooterInputView(
+                input: input,
+                headStyles: headStyles,
+                onAction: { viewModel.handleAction($0) }
+            )
+        }
+    }
+}
+
+// MARK: - Footer Input View
+
+/// Renders `footer.input` as a text input bar at the bottom of the screen.
+///
+/// This is a structural element with fixed semantics — left button, text field,
+/// right button — not a generic component dispatch.
+@MainActor
+struct FooterInputView: View {
+    let input: JasonFooterInput
+    let headStyles: [String: JasonStyle]
+    let onAction: ((JasonAction) -> Void)?
+
+    @EnvironmentObject private var stateManager: StateManager
+
+    var body: some View {
+        HStack(spacing: 8) {
+            // Optional left button (e.g. camera icon)
+            if let left = input.left {
+                footerButton(for: left)
+            }
+
+            // Text field bound to StateManager
+            let name = input.name ?? ""
+            let placeholder = input.placeholder ?? ""
+            TextField(placeholder, text: stateManager.binding(forKey: name, default: ""))
+                .textFieldStyle(.roundedBorder)
+                .accessibilityIdentifier(name)
+
+            // Optional right button (e.g. Send)
+            if let right = input.right {
+                footerButton(for: right)
+            }
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 8)
+        .background(.background.shadow(.drop(radius: 1)))
+    }
+
+    @ViewBuilder
+    private func footerButton(for component: JasonComponent) -> some View {
+        let buttonContent = Group {
+            if let imageURL = component.imageURL, let url = URL(string: imageURL) {
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image.resizable().scaledToFit()
+                    default:
+                        Color.clear
+                    }
+                }
+                .frame(width: 24, height: 24)
+            } else if let text = component.text {
+                Text(text)
+                    .fontWeight(.medium)
+            }
+        }
+
+        if let action = component.action {
+            Button { onAction?(action) } label: { buttonContent }
+                .buttonStyle(.plain)
+        } else {
+            buttonContent
         }
     }
 }
