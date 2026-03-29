@@ -49,7 +49,7 @@ public struct ComponentView: View {
         case "label":
             LabelComponent(text: component.text ?? "")
         case "image":
-            ImageComponent(url: component.url, style: component.style)
+            ImageComponent(url: component.imageURL, style: component.style)
         case "button":
             ButtonComponent(text: component.text, url: component.url)
         case "textfield":
