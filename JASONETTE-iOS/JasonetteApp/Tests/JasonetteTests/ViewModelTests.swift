@@ -222,6 +222,7 @@ final class ViewModelTests: XCTestCase {
         ])
         let vm = JasonetteViewModel(document: doc)
         await vm.load()
+        XCTAssertEqual(vm.loadState, .loaded)
         XCTAssertEqual(vm.renderedRoot?.body?.background?.string, "#ff0000")
     }
 
@@ -239,6 +240,7 @@ final class ViewModelTests: XCTestCase {
         ])
         let vm = JasonetteViewModel(document: doc)
         await vm.load()
+        XCTAssertEqual(vm.loadState, .loaded)
         XCTAssertEqual(vm.renderedRoot?.body?.background?.string, "rgb(0,255,0)")
     }
 
