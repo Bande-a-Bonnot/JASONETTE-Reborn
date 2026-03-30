@@ -19,7 +19,12 @@ DerivedData/
 *.ipa
 *.dSYM.zip
 *.dSYM
+*.xcresult
+*.xcarchive
 Pods/
+
+# Crash reports / build artifacts
+crash-reports/
 
 # Android
 *.apk
