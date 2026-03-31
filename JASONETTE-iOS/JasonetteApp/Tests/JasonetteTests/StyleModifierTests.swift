@@ -72,6 +72,66 @@ final class StyleModifierTests: XCTestCase {
         XCTAssertEqual(merged.font, "bold")
     }
 
+    // MARK: - Positioning fields decoding
+
+    func testDecodingStyleWithPositioningFields() throws {
+        let json: [String: Any] = ["top": "10", "left": "20", "bottom": "30", "right": "40"]
+        let data = try JSONSerialization.data(withJSONObject: json)
+        let style = try JSONDecoder().decode(JasonStyle.self, from: data)
+        XCTAssertEqual(style.top?.cgFloat, 10)
+        XCTAssertEqual(style.left?.cgFloat, 20)
+        XCTAssertEqual(style.bottom?.cgFloat, 30)
+        XCTAssertEqual(style.right?.cgFloat, 40)
+    }
+
+    func testDecodingStyleWithNumericPositioningFields() throws {
+        let json: [String: Any] = ["top": 15, "left": 25]
+        let data = try JSONSerialization.data(withJSONObject: json)
+        let style = try JSONDecoder().decode(JasonStyle.self, from: data)
+        XCTAssertEqual(style.top?.cgFloat, 15)
+        XCTAssertEqual(style.left?.cgFloat, 25)
+        XCTAssertNil(style.bottom)
+        XCTAssertNil(style.right)
+    }
+
+    func testDecodingStyleWithoutPositioningFields() throws {
+        let json: [String: Any] = ["font": "bold"]
+        let data = try JSONSerialization.data(withJSONObject: json)
+        let style = try JSONDecoder().decode(JasonStyle.self, from: data)
+        XCTAssertNil(style.top)
+        XCTAssertNil(style.left)
+        XCTAssertNil(style.bottom)
+        XCTAssertNil(style.right)
+    }
+
+    // MARK: - Positioning fields merging
+
+    func testMergingPositioningFields() {
+        let base = JasonStyle(top: AnyCodable(10), left: AnyCodable(20))
+        let overlay = JasonStyle(bottom: AnyCodable(30), right: AnyCodable(40))
+        let merged = base.merging(overlay)
+        XCTAssertEqual(merged.top?.cgFloat, 10)
+        XCTAssertEqual(merged.left?.cgFloat, 20)
+        XCTAssertEqual(merged.bottom?.cgFloat, 30)
+        XCTAssertEqual(merged.right?.cgFloat, 40)
+    }
+
+    func testMergingPositioningFieldsInlineOverridesClass() {
+        let base = JasonStyle(top: AnyCodable(10), left: AnyCodable(20))
+        let overlay = JasonStyle(top: AnyCodable(99))
+        let merged = base.merging(overlay)
+        XCTAssertEqual(merged.top?.cgFloat, 99)
+        XCTAssertEqual(merged.left?.cgFloat, 20)
+    }
+
+    func testMergingPositioningFieldsNilDoesNotOverride() {
+        let base = JasonStyle(top: AnyCodable(10))
+        let overlay = JasonStyle()
+        let merged = base.merging(overlay)
+        XCTAssertEqual(merged.top?.cgFloat, 10)
+        XCTAssertNil(merged.left)
+    }
+
     // MARK: - Helper
 
     /// Simulates what JasonStyleModifier.resolved does
