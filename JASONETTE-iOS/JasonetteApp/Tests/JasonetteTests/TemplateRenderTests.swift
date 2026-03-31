@@ -349,6 +349,90 @@ final class TemplateRenderTests: XCTestCase {
         XCTAssertEqual(vm.renderedRoot?.body?.layers?.first?.text, "Floating")
     }
 
+    // MARK: - Layers with positioning style
+
+    @MainActor
+    func testLayerWithPositioningStyleDecodes() async {
+        let doc = makeDocument([
+            "$jason": [
+                "head": [
+                    "title": "Positioned Layers",
+                    "templates": [
+                        "body": [
+                            "sections": [
+                                ["items": [["type": "label", "text": "Content"]]]
+                            ],
+                            "layers": [
+                                [
+                                    "type": "label",
+                                    "text": "Bottom-Right",
+                                    "style": ["bottom": "10", "right": "20"]
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ])
+        let vm = JasonetteViewModel(document: doc)
+        await vm.load()
+        XCTAssertEqual(vm.loadState, .loaded)
+        let layer = vm.renderedRoot?.body?.layers?.first
+        XCTAssertNotNil(layer)
+        XCTAssertEqual(layer?.text, "Bottom-Right")
+        XCTAssertEqual(layer?.style?.bottom?.cgFloat, 10)
+        XCTAssertEqual(layer?.style?.right?.cgFloat, 20)
+    }
+
+    @MainActor
+    func testLayerWithNoPositioningStyleDecodes() async {
+        let doc = makeDocument([
+            "$jason": [
+                "head": [
+                    "title": "No Position",
+                    "templates": [
+                        "body": [
+                            "sections": [
+                                ["items": [["type": "label", "text": "Content"]]]
+                            ],
+                            "layers": [
+                                ["type": "label", "text": "Centered"]
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ])
+        let vm = JasonetteViewModel(document: doc)
+        await vm.load()
+        XCTAssertEqual(vm.loadState, .loaded)
+        let layer = vm.renderedRoot?.body?.layers?.first
+        XCTAssertNotNil(layer)
+        XCTAssertEqual(layer?.text, "Centered")
+        XCTAssertNil(layer?.style)
+    }
+
+    @MainActor
+    func testDocumentWithSectionsAndLayersBothDecode() async {
+        let doc = makeDocument([
+            "$jason": [
+                "body": [
+                    "sections": [
+                        ["items": [["type": "label", "text": "Section Content"]]]
+                    ],
+                    "layers": [
+                        ["type": "label", "text": "Overlay", "style": ["top": "5", "left": "10"]]
+                    ]
+                ]
+            ]
+        ])
+        XCTAssertEqual(doc.jason.body?.sections?.count, 1)
+        XCTAssertEqual(doc.jason.body?.layers?.count, 1)
+        XCTAssertEqual(doc.jason.body?.layers?.first?.text, "Overlay")
+        XCTAssertEqual(doc.jason.body?.layers?.first?.style?.top?.cgFloat, 5)
+        XCTAssertEqual(doc.jason.body?.layers?.first?.style?.left?.cgFloat, 10)
+    }
+
     // MARK: - JasonAction public init
 
     func testJasonActionCanBeCreatedProgrammatically() {
