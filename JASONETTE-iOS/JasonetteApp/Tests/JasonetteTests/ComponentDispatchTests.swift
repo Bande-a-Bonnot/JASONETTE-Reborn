@@ -282,4 +282,115 @@ final class ComponentDispatchTests: XCTestCase {
         XCTAssertNil(component.type)
         XCTAssertNil(component.text)
     }
+
+    // MARK: - image field (footer input pattern)
+
+    func testComponentWithImageField() {
+        let component = decodeComponent([
+            "image": "https://example.com/camera.png",
+            "action": ["type": "$media.camera"]
+        ])
+        XCTAssertEqual(component.image, "https://example.com/camera.png")
+        XCTAssertEqual(component.imageURL, "https://example.com/camera.png")
+        XCTAssertNil(component.url)
+    }
+
+    func testImageURLPrefersURLOverImage() {
+        let component = decodeComponent([
+            "type": "image",
+            "url": "https://example.com/primary.png",
+            "image": "https://example.com/fallback.png"
+        ])
+        XCTAssertEqual(component.imageURL, "https://example.com/primary.png")
+    }
+
+    // MARK: - Footer input decoding
+
+    private func decodeFooter(_ json: [String: Any]) -> JasonFooter {
+        let data = try! JSONSerialization.data(withJSONObject: json)
+        return try! JSONDecoder().decode(JasonFooter.self, from: data)
+    }
+
+    func testFooterInputDecodesTextfieldProperties() {
+        let footer = decodeFooter([
+            "input": [
+                "name": "message",
+                "placeholder": "Say something..."
+            ]
+        ])
+        XCTAssertNotNil(footer.input)
+        XCTAssertEqual(footer.input?.name, "message")
+        XCTAssertEqual(footer.input?.placeholder, "Say something...")
+    }
+
+    func testFooterInputDecodesLeftAndRightComponents() {
+        let footer = decodeFooter([
+            "input": [
+                "name": "message",
+                "placeholder": "Type...",
+                "left": [
+                    "image": "https://example.com/cam.png",
+                    "action": ["type": "$media.camera"]
+                ],
+                "right": [
+                    "text": "Send",
+                    "action": ["type": "$util.alert"]
+                ]
+            ]
+        ])
+        XCTAssertNotNil(footer.input?.left)
+        XCTAssertEqual(footer.input?.left?.image, "https://example.com/cam.png")
+        XCTAssertEqual(footer.input?.left?.imageURL, "https://example.com/cam.png")
+        XCTAssertEqual(footer.input?.left?.action?.type, "$media.camera")
+
+        XCTAssertNotNil(footer.input?.right)
+        XCTAssertEqual(footer.input?.right?.text, "Send")
+        XCTAssertEqual(footer.input?.right?.action?.type, "$util.alert")
+    }
+
+    func testFooterWithBothTabsAndInput() {
+        let footer = decodeFooter([
+            "tabs": [
+                "items": [
+                    ["type": "label", "text": "Tab1"]
+                ]
+            ],
+            "input": [
+                "name": "msg",
+                "placeholder": "Hi"
+            ]
+        ])
+        // Both decode — the view layer decides precedence (tabs win)
+        XCTAssertNotNil(footer.tabs)
+        XCTAssertNotNil(footer.input)
+        XCTAssertEqual(footer.tabs?.items?.count, 1)
+        XCTAssertEqual(footer.input?.name, "msg")
+    }
+
+    func testFooterInputTextfieldNameAccessibleForStateBinding() {
+        let footer = decodeFooter([
+            "input": [
+                "name": "chat_message",
+                "placeholder": "Enter text"
+            ]
+        ])
+        // The name field is what StateManager uses as the binding key
+        let name = footer.input?.name ?? ""
+        XCTAssertEqual(name, "chat_message")
+        XCTAssertFalse(name.isEmpty, "Name must be non-empty for state binding")
+    }
+
+    func testFooterInputWithOnlyTextfield() {
+        let footer = decodeFooter([
+            "input": [
+                "name": "query",
+                "placeholder": "Search..."
+            ]
+        ])
+        XCTAssertNotNil(footer.input)
+        XCTAssertNil(footer.input?.left)
+        XCTAssertNil(footer.input?.right)
+        XCTAssertEqual(footer.input?.name, "query")
+        XCTAssertEqual(footer.input?.placeholder, "Search...")
+    }
 }

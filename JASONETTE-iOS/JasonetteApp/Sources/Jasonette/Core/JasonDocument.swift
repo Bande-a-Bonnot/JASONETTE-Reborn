@@ -73,6 +73,7 @@ public final class JasonComponent: Codable, @unchecked Sendable {
     public var type: String?
     public var text: String?
     public var url: String?
+    public var image: String?
     public var name: String?
     public var value: AnyCodable?
     public var placeholder: String?
@@ -83,8 +84,11 @@ public final class JasonComponent: Codable, @unchecked Sendable {
     public var action: JasonAction?
     public var keyboard: String?
 
+    /// Returns the image URL, preferring `url` over `image` (footer input uses `image` key).
+    public var imageURL: String? { url ?? image }
+
     enum CodingKeys: String, CodingKey {
-        case type, text, url, name, value, placeholder
+        case type, text, url, image, name, value, placeholder
         case `class`
         case style, components, href, action, keyboard
     }
@@ -109,7 +113,14 @@ public final class JasonAction: Codable, @unchecked Sendable {
 
 public struct JasonFooter: Codable, Sendable {
     public var tabs: JasonTabs?
-    public var input: [String: JasonComponent]?
+    public var input: JasonFooterInput?
+}
+
+public struct JasonFooterInput: Codable, Sendable {
+    public var name: String?
+    public var placeholder: String?
+    public var left: JasonComponent?
+    public var right: JasonComponent?
 }
 
 public struct JasonTabs: Codable, Sendable {
