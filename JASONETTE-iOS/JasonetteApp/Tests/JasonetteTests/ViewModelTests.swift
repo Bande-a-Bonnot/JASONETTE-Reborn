@@ -206,6 +206,80 @@ final class ViewModelTests: XCTestCase {
         XCTAssertNotNil(vm.renderedRoot)
     }
 
+    // MARK: - Body background color
+
+    func testBodyBackgroundHexColorFlowsThrough() async {
+        let doc = makeDocument([
+            "$jason": [
+                "head": ["title": "BG Test"],
+                "body": [
+                    "background": "#ff0000",
+                    "sections": [
+                        ["items": [["type": "label", "text": "Red bg"]]]
+                    ]
+                ]
+            ]
+        ])
+        let vm = JasonetteViewModel(document: doc)
+        await vm.load()
+        XCTAssertEqual(vm.loadState, .loaded)
+        XCTAssertEqual(vm.renderedRoot?.body?.background?.string, "#ff0000")
+    }
+
+    func testBodyBackgroundRGBColorFlowsThrough() async {
+        let doc = makeDocument([
+            "$jason": [
+                "head": ["title": "BG RGB"],
+                "body": [
+                    "background": "rgb(0,255,0)",
+                    "sections": [
+                        ["items": [["type": "label", "text": "Green bg"]]]
+                    ]
+                ]
+            ]
+        ])
+        let vm = JasonetteViewModel(document: doc)
+        await vm.load()
+        XCTAssertEqual(vm.loadState, .loaded)
+        XCTAssertEqual(vm.renderedRoot?.body?.background?.string, "rgb(0,255,0)")
+    }
+
+    func testBodyWithoutBackgroundRendersNormally() async {
+        let doc = makeDocument([
+            "$jason": [
+                "head": ["title": "No BG"],
+                "body": [
+                    "sections": [
+                        ["items": [["type": "label", "text": "No background"]]]
+                    ]
+                ]
+            ]
+        ])
+        let vm = JasonetteViewModel(document: doc)
+        await vm.load()
+        XCTAssertEqual(vm.loadState, .loaded)
+        XCTAssertNil(vm.renderedRoot?.body?.background)
+    }
+
+    func testBodyWithInvalidBackgroundColorDoesNotCrash() async {
+        let doc = makeDocument([
+            "$jason": [
+                "head": ["title": "Invalid BG"],
+                "body": [
+                    "background": "not-a-color",
+                    "sections": [
+                        ["items": [["type": "label", "text": "Bad bg"]]]
+                    ]
+                ]
+            ]
+        ])
+        let vm = JasonetteViewModel(document: doc)
+        await vm.load()
+        XCTAssertEqual(vm.loadState, .loaded)
+        // The string is present but Color(css:) will return nil — no crash
+        XCTAssertEqual(vm.renderedRoot?.body?.background?.string, "not-a-color")
+    }
+
     // MARK: - $load lifecycle
 
     func testLoadLifecycleActionFires() async {
