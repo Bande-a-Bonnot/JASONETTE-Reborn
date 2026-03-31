@@ -13,6 +13,8 @@ struct JasonStyleModifier: ViewModifier {
             .applySpacing(resolved)
             .applyBorder(resolved)
             .applySize(resolved)
+            .applyOpacity(resolved)
+            .applyAlignment(resolved)
     }
 
     /// Merge head styles (from class, space-separated) with inline style. Inline wins.
@@ -59,14 +61,38 @@ private extension View {
 
     @ViewBuilder
     func applySpacing(_ style: JasonStyle) -> some View {
-        let p = style.padding?.cgFloat ?? 0
-        self.padding(p)
+        let uniform = style.padding?.cgFloat ?? 0
+        let top = style.paddingTop?.cgFloat ?? uniform
+        let bottom = style.paddingBottom?.cgFloat ?? uniform
+        let left = style.paddingLeft?.cgFloat ?? uniform
+        let right = style.paddingRight?.cgFloat ?? uniform
+
+        self
+            .padding(.top, top)
+            .padding(.bottom, bottom)
+            .padding(.leading, left)
+            .padding(.trailing, right)
     }
 
     @ViewBuilder
     func applyBorder(_ style: JasonStyle) -> some View {
-        if let radius = style.cornerRadius?.cgFloat {
+        let radius = style.cornerRadius?.cgFloat ?? 0
+        let hasRadius = style.cornerRadius != nil
+
+        if hasRadius, let bw = style.borderWidth?.cgFloat, let bc = style.borderColor.flatMap({ Color(css: $0) }) {
+            self
+                .clipShape(RoundedRectangle(cornerRadius: radius))
+                .overlay(
+                    RoundedRectangle(cornerRadius: radius)
+                        .strokeBorder(bc, lineWidth: bw)
+                )
+        } else if hasRadius {
             self.clipShape(RoundedRectangle(cornerRadius: radius))
+        } else if let bw = style.borderWidth?.cgFloat, let bc = style.borderColor.flatMap({ Color(css: $0) }) {
+            self.overlay(
+                RoundedRectangle(cornerRadius: 0)
+                    .strokeBorder(bc, lineWidth: bw)
+            )
         } else {
             self
         }
@@ -79,6 +105,29 @@ private extension View {
         if w != nil || h != nil {
             self.frame(width: w, height: h)
         } else {
+            self
+        }
+    }
+
+    @ViewBuilder
+    func applyOpacity(_ style: JasonStyle) -> some View {
+        if let opacity = style.opacity?.cgFloat {
+            self.opacity(min(max(opacity, 0), 1))
+        } else {
+            self
+        }
+    }
+
+    @ViewBuilder
+    func applyAlignment(_ style: JasonStyle) -> some View {
+        switch style.align {
+        case "center":
+            self.frame(maxWidth: .infinity, alignment: .center)
+        case "right":
+            self.frame(maxWidth: .infinity, alignment: .trailing)
+        case "left":
+            self.frame(maxWidth: .infinity, alignment: .leading)
+        default:
             self
         }
     }
@@ -117,7 +166,8 @@ extension JasonStyle {
             top: other.top ?? self.top,
             left: other.left ?? self.left,
             bottom: other.bottom ?? self.bottom,
-            right: other.right ?? self.right
+            right: other.right ?? self.right,
+            opacity: other.opacity ?? self.opacity
         )
     }
 }

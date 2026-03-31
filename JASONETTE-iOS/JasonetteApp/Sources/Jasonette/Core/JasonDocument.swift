@@ -149,9 +149,10 @@ public struct JasonStyle: Codable, Sendable {
     public var left: AnyCodable?
     public var bottom: AnyCodable?
     public var right: AnyCodable?
+    public var opacity: AnyCodable?
 
     enum CodingKeys: String, CodingKey {
-        case font, size, color, background, padding, width, height, align, spacing
+        case font, size, color, background, padding, width, height, align, spacing, opacity
         case top, left, bottom, right
         case paddingLeft = "padding_left"
         case paddingRight = "padding_right"
