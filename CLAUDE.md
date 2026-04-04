@@ -29,6 +29,36 @@ export SSH_AUTH_SOCK=~/.ssh/agent.sock
 
 ## Key Directories
 
+- `docs/HANDOFF.md` - **Read on new sessions. Update before compaction.** Current state, what works, what's broken, key patterns, file map.
 - `docs/plans/` - Implementation plans
-- `docs/solutions/` - Documented learnings
+- `docs/solutions/` - Documented learnings (27 docs, 11 categories). Search by YAML frontmatter: `module`, `tags`, `problem_type`, `category`
 - `todos/` - Pending work items
+
+## iOS Renderer
+
+Build & test: `cd JASONETTE-iOS/JasonetteApp && swift test`
+
+Pipeline: JSON → JasonDocument (Codable) → TemplateEngine → JasonetteViewModel → JasonetteView → ComponentView
+
+### Patterns
+
+- **Three-Place Rule**: New `JasonStyle` properties must go in (1) struct field, (2) `CodingKeys`, (3) `merging()`. Then verify rendering code reads it.
+- **ifLet for optional modifiers**: Never pass nil to SwiftUI modifiers like `.foregroundColor()` — nil actively overrides parent values. Use the `ifLet` conditional modifier pattern.
+- **strokeBorder not stroke**: `.stroke()` clips half the border outside bounds. `.strokeBorder()` draws inside.
+- **Structural elements get dedicated views**: Footer and header are NOT routed through `ComponentView` — they have fixed semantics (anchor to edges, specific sub-elements).
+- **Layers are ZStack overlays**: Positioned via `top`/`left`/`bottom`/`right` style properties using alignment + padding, above the ScrollView.
+
+### What's Implemented
+
+- 335 tests, 11 component types, 16 action types (4 stubs: `$get`, `$cache.get`, `$util.toast`, `$util.banner`)
+- See `docs/plans/2026-03-28-fix-ios-components-actions-audit-plan.md` for the full audit and remaining Phase B-D work
+
+## Tuist
+
+- Info.plist MUST use `$(MARKETING_VERSION)` and `$(CURRENT_PROJECT_VERSION)` — Tuist `.extendingDefault` hardcodes `1.0`/`1` otherwise
+- Version: `MARKETING_VERSION: "2.0.0"`, build number managed by Xcode Cloud
+- Team ID: `PKPPLFK854`
+
+## Parallel PR Workflow
+
+When shipping parallel PRs from worktrees, explicitly scope each agent to ONLY its assigned unit — agents will independently duplicate adjacent work otherwise. See `docs/solutions/best-practices/parallel-pr-swarm-with-git-worktrees.md`.
