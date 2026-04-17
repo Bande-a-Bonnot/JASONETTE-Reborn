@@ -231,12 +231,21 @@ public struct JasonetteView: View {
             // Tab bar footer — tabs take precedence over input
             HStack {
                 ForEach(Array(items.enumerated()), id: \.offset) { _, item in
-                    ComponentView(
-                        item,
-                        headStyles: headStyles,
-                        onHref: { viewModel.handleHref($0) },
-                        onAction: { viewModel.handleAction($0) }
-                    )
+                    Group {
+                        if item.type == nil {
+                            FooterTabItemView(
+                                item: item,
+                                onHref: { viewModel.handleHref($0) }
+                            )
+                        } else {
+                            ComponentView(
+                                item,
+                                headStyles: headStyles,
+                                onHref: { viewModel.handleHref($0) },
+                                onAction: { viewModel.handleAction($0) }
+                            )
+                        }
+                    }
                     .frame(maxWidth: .infinity)
                 }
             }
@@ -319,6 +328,61 @@ struct FooterInputView: View {
                 .buttonStyle(.plain)
         } else {
             buttonContent
+        }
+    }
+}
+
+// MARK: - Footer Tab Item View
+
+/// Renders a `footer.tabs.items` entry that has no `type` field.
+///
+/// Tab items use an implicit shape: `image`, `text`, optional `badge`, and `url`
+/// (which navigates when tapped). Routing these through `ComponentView` yields
+/// `[Unknown: nil]` because there is no component type — so they get their own
+/// structural view, like `FooterInputView`.
+@MainActor
+struct FooterTabItemView: View {
+    let item: JasonComponent
+    let onHref: ((JasonHref) -> Void)?
+
+    var body: some View {
+        let content = VStack(spacing: 2) {
+            ZStack(alignment: .topTrailing) {
+                if let urlString = item.image, let url = URL(string: urlString) {
+                    AsyncImage(url: url) { image in
+                        image.resizable().scaledToFit()
+                    } placeholder: {
+                        Color.clear
+                    }
+                    .frame(width: 24, height: 24)
+                }
+                if let badge = item.badge, !badge.isEmpty {
+                    Text(badge)
+                        .font(.caption2)
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 1)
+                        .background(Capsule().fill(.red))
+                        .offset(x: 6, y: -4)
+                }
+            }
+            if let text = item.text {
+                Text(text).font(.caption)
+            }
+        }
+
+        if let urlString = item.url, !urlString.isEmpty {
+            Button {
+                var href = item.href ?? JasonHref()
+                if href.url == nil { href.url = urlString }
+                onHref?(href)
+            } label: { content }
+                .buttonStyle(.plain)
+        } else if let href = item.href {
+            Button { onHref?(href) } label: { content }
+                .buttonStyle(.plain)
+        } else {
+            content
         }
     }
 }
