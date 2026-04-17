@@ -158,4 +158,49 @@ final class JasonDocumentTests: XCTestCase {
         XCTAssertEqual(tabs?[0].text, "Home")
         XCTAssertEqual(tabs?[1].text, "Settings")
     }
+
+    func testDecodeTypelessTabItemWithBadgeStyleAction() throws {
+        let json = """
+        {
+            "$jason": {
+                "body": {
+                    "footer": {
+                        "tabs": {
+                            "items": [
+                                {
+                                    "image": "https://example.com/i.png",
+                                    "text": "Info",
+                                    "badge": "2",
+                                    "url": "https://example.com/info.json",
+                                    "style": { "height": "21" }
+                                },
+                                {
+                                    "text": "Send",
+                                    "action": {
+                                        "type": "$util.alert",
+                                        "options": { "title": "hi" }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        }
+        """
+        let doc = try DocumentLoader().decode(json)
+        let tabs = doc.jason.body?.footer?.tabs?.items
+        XCTAssertEqual(tabs?.count, 2)
+
+        let first = tabs?[0]
+        XCTAssertNil(first?.type)
+        XCTAssertEqual(first?.badge, "2")
+        XCTAssertEqual(first?.style?.height?.cgFloat, 21)
+        XCTAssertEqual(first?.url, "https://example.com/info.json")
+
+        let second = tabs?[1]
+        XCTAssertNil(second?.type)
+        XCTAssertEqual(second?.action?.type, "$util.alert")
+        XCTAssertEqual(second?.action?.options?["title"]?.string, "hi")
+    }
 }

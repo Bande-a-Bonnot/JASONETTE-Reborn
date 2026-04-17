@@ -235,7 +235,8 @@ public struct JasonetteView: View {
                         if item.type == nil {
                             FooterTabItemView(
                                 item: item,
-                                onHref: { viewModel.handleHref($0) }
+                                onHref: { viewModel.handleHref($0) },
+                                onAction: { viewModel.handleAction($0) }
                             )
                         } else {
                             ComponentView(
@@ -344,8 +345,11 @@ struct FooterInputView: View {
 struct FooterTabItemView: View {
     let item: JasonComponent
     let onHref: ((JasonHref) -> Void)?
+    let onAction: ((JasonAction) -> Void)?
 
     var body: some View {
+        let iconWidth = item.style?.width?.cgFloat ?? item.style?.height?.cgFloat ?? 24
+        let iconHeight = item.style?.height?.cgFloat ?? item.style?.width?.cgFloat ?? 24
         let content = VStack(spacing: 2) {
             ZStack(alignment: .topTrailing) {
                 if let urlString = item.image, let url = URL(string: urlString) {
@@ -354,7 +358,7 @@ struct FooterTabItemView: View {
                     } placeholder: {
                         Color.clear
                     }
-                    .frame(width: 24, height: 24)
+                    .frame(width: iconWidth, height: iconHeight)
                 }
                 if let badge = item.badge, !badge.isEmpty {
                     Text(badge)
@@ -371,7 +375,10 @@ struct FooterTabItemView: View {
             }
         }
 
-        if let urlString = item.url, !urlString.isEmpty {
+        if let action = item.action {
+            Button { onAction?(action) } label: { content }
+                .buttonStyle(.plain)
+        } else if let urlString = item.url, !urlString.isEmpty {
             Button {
                 var href = item.href ?? JasonHref()
                 if href.url == nil { href.url = urlString }
