@@ -403,6 +403,64 @@ final class ActionDispatcherTests: XCTestCase {
         XCTAssertEqual(stateManager.get()["error_fired"] as? Bool, true)
     }
 
+    // MARK: - $network.request response shapes
+
+    private func makeStubbedDispatcher() -> ActionDispatcher {
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [StubURLProtocol.self]
+        let session = URLSession(configuration: config)
+        return ActionDispatcher(stateManager: stateManager, session: session)
+    }
+
+    private func stubJSON(_ body: String) {
+        let data = body.data(using: .utf8)!
+        StubURLProtocol.requestHandler = { req in
+            let resp = HTTPURLResponse(url: req.url!, statusCode: 200,
+                                      httpVersion: nil, headerFields: nil)!
+            return (resp, data)
+        }
+    }
+
+    func testNetworkRequestStoresDictResponse() async {
+        stubJSON("{\"ok\": true}")
+        let dispatcher = makeStubbedDispatcher()
+        let action = decodeAction([
+            "type": "$network.request",
+            "options": ["url": "https://example.com/a"]
+        ])
+        await dispatcher.execute(action)
+        let resp = stateManager.get()["$response"] as? [String: Any]
+        XCTAssertEqual(resp?["ok"] as? Bool, true)
+    }
+
+    func testNetworkRequestStoresArrayResponse() async {
+        stubJSON("[{\"id\":1},{\"id\":2}]")
+        let dispatcher = makeStubbedDispatcher()
+        let action = decodeAction([
+            "type": "$network.request",
+            "options": ["url": "https://example.com/b"]
+        ])
+        await dispatcher.execute(action)
+        let resp = stateManager.get()["$response"] as? [[String: Any]]
+        XCTAssertEqual(resp?.count, 2)
+        XCTAssertEqual(resp?[0]["id"] as? Int, 1)
+    }
+
+    func testNetworkRequestStoresPlainTextResponse() async {
+        StubURLProtocol.requestHandler = { req in
+            let resp = HTTPURLResponse(url: req.url!, statusCode: 200,
+                                      httpVersion: nil, headerFields: nil)!
+            return (resp, Data("hello world".utf8))
+        }
+        let dispatcher = makeStubbedDispatcher()
+        let action = decodeAction([
+            "type": "$network.request",
+            "options": ["url": "https://example.com/c"]
+        ])
+        await dispatcher.execute(action)
+        XCTAssertEqual(stateManager.get()["$response"] as? String, "hello world")
+    }
+
     // MARK: - Unknown action
 
     func testUnknownActionDoesNotCrash() async {
