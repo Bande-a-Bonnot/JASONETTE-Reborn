@@ -350,8 +350,12 @@ struct FooterTabItemView: View {
     let onAction: ((JasonAction) -> Void)?
 
     var body: some View {
-        let iconWidth = item.style?.width?.cgFloat ?? item.style?.height?.cgFloat ?? 24
-        let iconHeight = item.style?.height?.cgFloat ?? item.style?.width?.cgFloat ?? 24
+        // Icon size resolves class-defined styles (via headStyles) merged with
+        // inline style — matching how JasonStyleModifier resolves every other
+        // style property. Using item.style alone would ignore `class: "tab_icon"`.
+        let resolved = resolvedStyle()
+        let iconWidth = resolved.width?.cgFloat ?? resolved.height?.cgFloat ?? 24
+        let iconHeight = resolved.height?.cgFloat ?? resolved.width?.cgFloat ?? 24
         let content = VStack(spacing: 2) {
             ZStack(alignment: .topTrailing) {
                 if let urlString = item.image, let url = URL(string: urlString) {
@@ -376,11 +380,16 @@ struct FooterTabItemView: View {
                 Text(text).font(.caption)
             }
         }
+        .frame(maxWidth: .infinity)
+        .contentShape(Rectangle())
         .modifier(JasonStyleModifier(style: item.style, headStyles: headStyles, className: item.class))
 
         // Navigation priority mirrors ComponentView (href > action). The
-        // typeless tab-item shape also accepts a shorthand `url` on the item,
-        // which we promote into an href so url-only fixtures still navigate.
+        // typeless tab-item shape also accepts a shorthand `url` on the item;
+        // when `href` is absent we synthesize a `JasonHref` from `url` in a
+        // dedicated else-if branch so url-only fixtures still navigate. When
+        // both are present, `href` wins and its missing `.url` is populated
+        // from the shorthand.
         if let href = item.href {
             Button {
                 var h = href
@@ -403,5 +412,20 @@ struct FooterTabItemView: View {
         } else {
             content
         }
+    }
+
+    /// Merge class-resolved styles (via headStyles) with inline style, matching
+    /// JasonStyleModifier's resolution so that class-only sizing hits icons.
+    private func resolvedStyle() -> JasonStyle {
+        var base = JasonStyle()
+        if let cls = item.class {
+            for name in cls.split(separator: " ").map(String.init) {
+                if let headStyle = headStyles[name] {
+                    base = base.merging(headStyle)
+                }
+            }
+        }
+        guard let inline = item.style else { return base }
+        return base.merging(inline)
     }
 }

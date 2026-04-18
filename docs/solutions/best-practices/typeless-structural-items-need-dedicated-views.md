@@ -3,6 +3,7 @@ title: "Typeless structural items need dedicated views, not generic component di
 date: 2026-04-17
 module: JasonetteView
 problem_type: best_practice
+category: best-practices
 component: tooling
 severity: medium
 tags: [ios, swiftui, sdui, rendering-pattern, structural-views, footer]
@@ -84,8 +85,9 @@ With `item.type == nil`, every tab rendered the unknown-type fallback.
 if item.type == nil {
     FooterTabItemView(
         item: item,
+        headStyles: headStyles,                        // easy to forget
         onHref: { viewModel.handleHref($0) },
-        onAction: { viewModel.handleAction($0) }  // easy to forget
+        onAction: { viewModel.handleAction($0) }       // easy to forget
     )
 } else {
     ComponentView(item, headStyles: headStyles, onHref: ..., onAction: ...)
@@ -95,16 +97,20 @@ if item.type == nil {
 `FooterTabItemView` walks the affordance checklist:
 
 ```swift
-// Icon respects style (falls back to 24pt square)
-let iconWidth = item.style?.width?.cgFloat ?? item.style?.height?.cgFloat ?? 24
-let iconHeight = item.style?.height?.cgFloat ?? item.style?.width?.cgFloat ?? 24
+// Icon respects the resolved (class + inline) style; falls back to 24pt square.
+let resolved = JasonStyleModifier.resolve(style: item.style,
+                                          headStyles: headStyles,
+                                          className: item.class)
+let iconWidth = resolved.width?.cgFloat ?? resolved.height?.cgFloat ?? 24
+let iconHeight = resolved.height?.cgFloat ?? resolved.width?.cgFloat ?? 24
 AsyncImage(url: url) { $0.resizable().scaledToFit() }
     .frame(width: iconWidth, height: iconHeight)
 
 // Action priority mirrors ComponentView (href > action). The typeless tab-item
-// shape also accepts a shorthand `url` on the item itself, which we promote
-// into an href so url-only fixtures still navigate — rather than introducing
-// a separate `url` branch that would reorder precedence.
+// shape also accepts a shorthand `url` on the item; when `href` is absent we
+// synthesize a `JasonHref` from it in a dedicated `else if` branch so url-only
+// fixtures still navigate. When both `href` and `url` are present, `href` wins
+// and we populate its missing `.url` field from the shorthand.
 if let href = item.href {
     Button {
         var h = href
