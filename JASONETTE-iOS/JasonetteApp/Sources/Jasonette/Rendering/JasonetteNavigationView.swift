@@ -10,41 +10,67 @@ struct IdentifiableURL: Identifiable {
     init(_ url: URL) { self.id = url.absoluteString; self.url = url }
 }
 
-/// Navigation container that handles $href push/modal/web/app navigation.
+/// Navigation intent produced by a `JasonetteView`, consumed by its enclosing
+/// `JasonetteNavigationView`. Handlers are scoped to one presentation — the
+/// root container installs its own, each modal installs its own — so
+/// navigation inside a modal cannot mutate the parent's stack.
+public enum NavigationRequest: Sendable {
+    case push(URL)
+    case switchRoot(URL)
+    case modal(URL)
+    case back
+    case close
+    case web(URL)
+    case app(URL)
+}
+
+/// Navigation container. Owns a `NavigationStack`, its path, and one optional
+/// child modal presentation. Installs a scoped dispatch closure into every
+/// `JasonetteView` it creates so all href / action navigation events in this
+/// subtree mutate only this container's state.
 @MainActor
 public struct JasonetteNavigationView: View {
-    let rootURL: URL
-
+    @State private var currentRoot: URL
     @State private var path: [URL] = []
     @State private var modalURL: IdentifiableURL?
     @State private var safariURL: IdentifiableURL?
     @Environment(\.openURL) private var openURL
 
-    /// Schemes allowed for in-app web views.
+    /// Provided by the parent when this container is itself presented as a
+    /// sheet — used to dismiss the sheet on `$close`. `nil` at the root.
+    private let onClose: (() -> Void)?
+
     private static let webSchemes: Set<String> = ["https", "http"]
-    /// Schemes allowed for system URL opening (mailto, tel, etc.).
     private static let appSchemes: Set<String> = ["https", "http", "mailto", "tel", "sms"]
 
     public init(url: URL) {
-        self.rootURL = url
+        self._currentRoot = State(initialValue: url)
+        self.onClose = nil
+    }
+
+    /// Sheet-scoped initializer used by the modal branch below.
+    init(url: URL, onClose: @escaping () -> Void) {
+        self._currentRoot = State(initialValue: url)
+        self.onClose = onClose
     }
 
     public var body: some View {
         NavigationStack(path: $path) {
-            JasonetteView(url: rootURL)
+            JasonetteView(url: currentRoot, onNavigate: dispatch)
+                .id(currentRoot)
                 .navigationDestination(for: URL.self) { url in
-                    JasonetteView(url: url)
+                    JasonetteView(url: url, onNavigate: dispatch)
+                }
+                .toolbar {
+                    if onClose != nil {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Close") { onClose?() }
+                        }
+                    }
                 }
         }
         .sheet(item: $modalURL) { item in
-            NavigationStack {
-                JasonetteView(url: item.url)
-                    .toolbar {
-                        ToolbarItem(placement: .cancellationAction) {
-                            Button("Close") { modalURL = nil }
-                        }
-                    }
-            }
+            JasonetteNavigationView(url: item.url, onClose: { modalURL = nil })
         }
         #if os(iOS)
         .sheet(item: $safariURL) { item in
@@ -52,33 +78,34 @@ public struct JasonetteNavigationView: View {
                 .ignoresSafeArea()
         }
         #endif
-        .onReceive(NotificationCenter.default.publisher(for: .jasonetteNavigate)) { notification in
-            handleNavigation(notification)
-        }
     }
 
-    private func handleNavigation(_ notification: Notification) {
-        guard let userInfo = notification.userInfo else { return }
+    private func dispatch(_ request: NavigationRequest) {
+        switch request {
+        case .back:
+            if !path.isEmpty { path.removeLast() }
 
-        // Handle $back
-        if let back = userInfo["back"] as? Bool, back {
-            if !path.isEmpty {
-                path.removeLast()
+        case .close:
+            // Close the currently-presented child modal if any; otherwise ask
+            // our presenter to dismiss us (no-op at the root).
+            if modalURL != nil {
+                modalURL = nil
+            } else {
+                onClose?()
             }
-            return
-        }
 
-        // Handle $close
-        if let close = userInfo["close"] as? Bool, close {
-            modalURL = nil
-            return
-        }
+        case .push(let url):
+            path.append(url)
 
-        guard let href = userInfo["href"] as? JasonHref,
-              let url = userInfo["url"] as? URL else { return }
+        case .switchRoot(let url):
+            // Tab-bar semantics: replace the stack root and clear history.
+            path = []
+            currentRoot = url
 
-        switch href.view {
-        case "web":
+        case .modal(let url):
+            modalURL = IdentifiableURL(url)
+
+        case .web(let url):
             guard let scheme = url.scheme?.lowercased(),
                   Self.webSchemes.contains(scheme) else { return }
             #if os(iOS)
@@ -87,17 +114,10 @@ public struct JasonetteNavigationView: View {
             openURL(url)
             #endif
 
-        case "app":
+        case .app(let url):
             guard let scheme = url.scheme?.lowercased(),
                   Self.appSchemes.contains(scheme) else { return }
             openURL(url)
-
-        default:
-            if href.transition == "modal" {
-                modalURL = IdentifiableURL(url)
-            } else {
-                path.append(url)
-            }
         }
     }
 }

@@ -18,12 +18,12 @@ private extension View {
 public struct JasonetteView: View {
     @StateObject private var viewModel: JasonetteViewModel
 
-    public init(url: URL) {
-        _viewModel = StateObject(wrappedValue: JasonetteViewModel(url: url))
+    public init(url: URL, onNavigate: ((NavigationRequest) -> Void)? = nil) {
+        _viewModel = StateObject(wrappedValue: JasonetteViewModel(url: url, onNavigate: onNavigate))
     }
 
-    public init(document: JasonDocument) {
-        _viewModel = StateObject(wrappedValue: JasonetteViewModel(document: document))
+    public init(document: JasonDocument, onNavigate: ((NavigationRequest) -> Void)? = nil) {
+        _viewModel = StateObject(wrappedValue: JasonetteViewModel(document: document, onNavigate: onNavigate))
     }
 
     public var body: some View {
@@ -373,7 +373,6 @@ struct FooterTabItemView: View {
                 Text(text).font(.caption)
             }
         }
-        .frame(maxWidth: .infinity)
         .contentShape(Rectangle())
         // Apply the resolved style to the cell WITHOUT width/height: those
         // dimensions are icon-specific in the tab-item shape (real Jasonpedia
@@ -388,12 +387,18 @@ struct FooterTabItemView: View {
         // dedicated else-if branch so url-only fixtures still navigate. When
         // both are present, `href` wins and its missing `.url` is populated
         // from the shorthand.
+        //
+        // Tab taps are *switch* navigations, not pushes: they replace the
+        // stack root instead of stacking on top. We default `transition` to
+        // `"switch"` when the developer hasn't expressed an explicit intent
+        // (no transition, no special view like "web"/"app"/"$back"/"$close").
         if let href = item.href {
             Button {
                 var h = href
                 if h.url == nil, let urlString = item.url, !urlString.isEmpty {
                     h.url = urlString
                 }
+                if h.transition == nil, h.view == nil { h.transition = "switch" }
                 onHref?(h)
             } label: { content }
                 .buttonStyle(.plain)
@@ -401,6 +406,7 @@ struct FooterTabItemView: View {
             Button {
                 var href = JasonHref()
                 href.url = urlString
+                href.transition = "switch"
                 onHref?(href)
             } label: { content }
                 .buttonStyle(.plain)

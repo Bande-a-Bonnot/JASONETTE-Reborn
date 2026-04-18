@@ -30,17 +30,26 @@ public final class JasonetteViewModel: ObservableObject {
     let stateManager = StateManager()
     let actionDispatcher: ActionDispatcher
 
-    init(url: URL) {
+    /// Scoped navigation dispatch installed by the enclosing
+    /// `JasonetteNavigationView`. The root container installs one, each modal
+    /// installs its own — so navigation inside a modal never leaks into the
+    /// parent's stack. Default no-op keeps the viewmodel usable in tests and
+    /// previews without navigation wiring.
+    let onNavigate: (NavigationRequest) -> Void
+
+    init(url: URL, onNavigate: ((NavigationRequest) -> Void)? = nil) {
         self.url = url
         self.document = nil
         self.actionDispatcher = ActionDispatcher(stateManager: stateManager)
+        self.onNavigate = onNavigate ?? { _ in }
         wireHandlers()
     }
 
-    init(document: JasonDocument) {
+    init(document: JasonDocument, onNavigate: ((NavigationRequest) -> Void)? = nil) {
         self.url = nil
         self.document = document
         self.actionDispatcher = ActionDispatcher(stateManager: stateManager)
+        self.onNavigate = onNavigate ?? { _ in }
         wireHandlers()
     }
 
@@ -135,37 +144,26 @@ public final class JasonetteViewModel: ObservableObject {
     }
 
     func handleHref(_ href: JasonHref) {
-        // Handle $back
-        if href.view == "$back" {
-            NotificationCenter.default.post(
-                name: .jasonetteNavigate,
-                object: nil,
-                userInfo: ["back": true]
-            )
-            return
-        }
+        if href.view == "$back" { onNavigate(.back); return }
+        if href.view == "$close" { onNavigate(.close); return }
 
-        // Handle $close
-        if href.view == "$close" {
-            NotificationCenter.default.post(
-                name: .jasonetteNavigate,
-                object: nil,
-                userInfo: ["close": true]
-            )
-            return
-        }
+        guard let urlStr = href.url, let url = URL(string: urlStr) else { return }
 
-        if let urlStr = href.url, let url = URL(string: urlStr) {
-            // Validate scheme — app views allow tel/mailto/sms, others only http(s)
-            let appSchemes: Set<String> = ["http", "https", "mailto", "tel", "sms"]
-            let allowed = href.view == "app" ? appSchemes : DocumentLoader.allowedSchemes
-            guard let scheme = url.scheme?.lowercased(),
-                  allowed.contains(scheme) else { return }
-            NotificationCenter.default.post(
-                name: .jasonetteNavigate,
-                object: nil,
-                userInfo: ["href": href, "url": url]
-            )
+        let appSchemes: Set<String> = ["http", "https", "mailto", "tel", "sms"]
+        let allowed = href.view == "app" ? appSchemes : DocumentLoader.allowedSchemes
+        guard let scheme = url.scheme?.lowercased(), allowed.contains(scheme) else { return }
+
+        switch href.view {
+        case "web":
+            onNavigate(.web(url))
+        case "app":
+            onNavigate(.app(url))
+        default:
+            switch href.transition {
+            case "modal":  onNavigate(.modal(url))
+            case "switch": onNavigate(.switchRoot(url))
+            default:       onNavigate(.push(url))
+            }
         }
     }
 
@@ -183,8 +181,3 @@ public final class JasonetteViewModel: ObservableObject {
     }
 }
 
-// MARK: - Navigation notification
-
-public extension Notification.Name {
-    static let jasonetteNavigate = Notification.Name("jasonetteNavigate")
-}
