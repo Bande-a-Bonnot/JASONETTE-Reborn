@@ -17,6 +17,7 @@ private extension View {
 @MainActor
 public struct JasonetteView: View {
     @StateObject private var viewModel: JasonetteViewModel
+    @Environment(\.jasonetteIsInsideTabShell) private var isInsideTabShell
 
     public init(url: URL, onNavigate: ((NavigationRequest) -> Void)? = nil) {
         _viewModel = StateObject(wrappedValue: JasonetteViewModel(url: url, onNavigate: onNavigate))
@@ -216,7 +217,10 @@ public struct JasonetteView: View {
 
     @ViewBuilder
     private func footerView(_ footer: JasonFooter, headStyles: [String: JasonStyle]) -> some View {
-        if let tabs = footer.tabs, let items = tabs.items {
+        // The tab bar is an app-shell concern: if we're rendered inside a
+        // JasonetteTabShell, the shell already draws the persistent bar and
+        // any footer.tabs declared on pushed/secondary docs must be ignored.
+        if let tabs = footer.tabs, let items = tabs.items, !isInsideTabShell {
             // Tab bar footer — tabs take precedence over input.
             // spacing: 0 so per-item backgrounds/shadows align edge-to-edge.
             HStack(spacing: 0) {

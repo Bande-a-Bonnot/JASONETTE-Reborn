@@ -7,7 +7,7 @@ public struct JasonetteApp: App {
 
     public var body: some Scene {
         WindowGroup {
-            JasonetteNavigationView(
+            JasonetteRootView(
                 url: URL(string: "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/demo.json")!
             )
         }
