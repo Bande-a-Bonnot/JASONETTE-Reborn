@@ -156,19 +156,8 @@ public struct JasonetteView: View {
         .allowsHitTesting(true)
     }
 
-    /// Resolve class + inline style for a layer component (mirrors JasonStyleModifier.resolved).
     private func resolveLayerStyle(_ component: JasonComponent, headStyles: [String: JasonStyle]) -> JasonStyle {
-        var base = JasonStyle()
-        if let cls = component.class {
-            let classNames = cls.split(separator: " ").map(String.init)
-            for name in classNames {
-                if let headStyle = headStyles[name] {
-                    base = base.merging(headStyle)
-                }
-            }
-        }
-        guard let inline = component.style else { return base }
-        return base.merging(inline)
+        JasonStyle.resolve(for: component, headStyles: headStyles)
     }
 
     /// Determine the ZStack alignment based on which positioning properties are set.
@@ -228,8 +217,9 @@ public struct JasonetteView: View {
     @ViewBuilder
     private func footerView(_ footer: JasonFooter, headStyles: [String: JasonStyle]) -> some View {
         if let tabs = footer.tabs, let items = tabs.items {
-            // Tab bar footer — tabs take precedence over input
-            HStack {
+            // Tab bar footer — tabs take precedence over input.
+            // spacing: 0 so per-item backgrounds/shadows align edge-to-edge.
+            HStack(spacing: 0) {
                 ForEach(Array(items.enumerated()), id: \.offset) { _, item in
                     Group {
                         if item.type == nil {
@@ -422,18 +412,7 @@ struct FooterTabItemView: View {
         }
     }
 
-    /// Merge class-resolved styles (via headStyles) with inline style, matching
-    /// JasonStyleModifier's resolution so that class-only sizing hits icons.
     private func resolvedStyle() -> JasonStyle {
-        var base = JasonStyle()
-        if let cls = item.class {
-            for name in cls.split(separator: " ").map(String.init) {
-                if let headStyle = headStyles[name] {
-                    base = base.merging(headStyle)
-                }
-            }
-        }
-        guard let inline = item.style else { return base }
-        return base.merging(inline)
+        JasonStyle.resolve(for: item, headStyles: headStyles)
     }
 }

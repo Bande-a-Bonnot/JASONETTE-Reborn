@@ -294,18 +294,9 @@ final class StyleModifierTests: XCTestCase {
 
     // MARK: - Helper
 
-    /// Simulates what JasonStyleModifier.resolved does
+    /// Delegates to the centralized `JasonStyle.resolve` so these tests
+    /// exercise the real implementation used by JasonStyleModifier and views.
     private func resolveStyles(className: String?, headStyles: [String: JasonStyle], inline: JasonStyle?) -> JasonStyle {
-        var base = JasonStyle()
-        if let cls = className {
-            let classNames = cls.split(separator: " ").map(String.init)
-            for name in classNames {
-                if let headStyle = headStyles[name] {
-                    base = base.merging(headStyle)
-                }
-            }
-        }
-        guard let inline = inline else { return base }
-        return base.merging(inline)
+        JasonStyle.resolve(className: className, inline: inline, headStyles: headStyles)
     }
 }
