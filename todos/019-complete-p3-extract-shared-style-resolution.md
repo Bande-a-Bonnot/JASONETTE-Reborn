@@ -1,14 +1,17 @@
 ---
-status: ready
+status: complete
 priority: p3
 issue_id: "019"
 tags: [refactor, code-quality, code-review, dry]
 dependencies: []
 ---
 
-# Extract shared style resolution helper (resolveLayerStyle duplication)
+# Extract shared style resolution helper — ADDRESSED IN PR #17
 
-## Problem Statement
+## Resolution
+Centralized in PR #17. Added `JasonStyle.resolve(className:inline:headStyles:)` (single source of truth) and `JasonStyle.resolve(for:headStyles:)` (component convenience). All four call sites delegate: `JasonStyleModifier.resolved`, `JasonetteView.resolveLayerStyle`, `FooterTabItemView.resolvedStyle`, and the `StyleModifierTests.resolveStyles` test helper.
+
+## Problem Statement (original)
 `resolveLayerStyle` in `JasonetteView.swift` duplicates the class+inline merge logic from `JasonStyleModifier.resolved`. Three reviewers flagged this independently (Gemini, Copilot, CodeRabbit).
 
 ## Findings

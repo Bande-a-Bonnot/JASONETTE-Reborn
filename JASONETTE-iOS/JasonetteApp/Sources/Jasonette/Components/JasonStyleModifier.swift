@@ -17,19 +17,8 @@ struct JasonStyleModifier: ViewModifier {
             .applyAlignment(resolved)
     }
 
-    /// Merge head styles (from class, space-separated) with inline style. Inline wins.
     private var resolved: JasonStyle {
-        var base = JasonStyle()
-        if let cls = className {
-            let classNames = cls.split(separator: " ").map(String.init)
-            for name in classNames {
-                if let headStyle = headStyles[name] {
-                    base = base.merging(headStyle)
-                }
-            }
-        }
-        guard let inline = style else { return base }
-        return base.merging(inline)
+        JasonStyle.resolve(className: className, inline: style, headStyles: headStyles)
     }
 }
 
@@ -144,6 +133,38 @@ private extension View {
 // MARK: - JasonStyle merge + init helpers
 
 extension JasonStyle {
+    /// Merge class-defined styles (from headStyles, via space-separated class
+    /// names) with an inline style. Inline wins. Single source of truth for
+    /// class+inline resolution across `JasonStyleModifier`, layer rendering,
+    /// and structural views like `FooterTabItemView`.
+    static func resolve(className: String?, inline: JasonStyle?, headStyles: [String: JasonStyle]) -> JasonStyle {
+        var base = JasonStyle()
+        if let cls = className {
+            for name in cls.split(separator: " ").map(String.init) {
+                if let headStyle = headStyles[name] {
+                    base = base.merging(headStyle)
+                }
+            }
+        }
+        guard let inline else { return base }
+        return base.merging(inline)
+    }
+
+    /// Convenience: resolve a component's class + inline style.
+    static func resolve(for component: JasonComponent, headStyles: [String: JasonStyle]) -> JasonStyle {
+        resolve(className: component.class, inline: component.style, headStyles: headStyles)
+    }
+
+    /// Returns a copy with width/height cleared. Used by structural views like
+    /// FooterTabItemView where `height`/`width` size an inner child (the icon)
+    /// rather than the outer cell.
+    func withoutSize() -> JasonStyle {
+        var copy = self
+        copy.width = nil
+        copy.height = nil
+        return copy
+    }
+
     /// Merge another style on top, non-nil values win.
     func merging(_ other: JasonStyle) -> JasonStyle {
         JasonStyle(

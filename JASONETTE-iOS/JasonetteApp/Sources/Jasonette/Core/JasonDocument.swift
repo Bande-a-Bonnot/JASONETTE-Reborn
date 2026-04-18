@@ -83,6 +83,7 @@ public final class JasonComponent: Codable, @unchecked Sendable {
     public var href: JasonHref?
     public var action: JasonAction?
     public var keyboard: String?
+    public var badge: String?
 
     /// Returns the image URL, preferring `url` over `image` (footer input uses `image` key).
     public var imageURL: String? { url ?? image }
@@ -90,7 +91,7 @@ public final class JasonComponent: Codable, @unchecked Sendable {
     enum CodingKeys: String, CodingKey {
         case type, text, url, image, name, value, placeholder
         case `class`
-        case style, components, href, action, keyboard
+        case style, components, href, action, keyboard, badge
     }
 }
 

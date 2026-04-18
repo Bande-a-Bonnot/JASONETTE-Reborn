@@ -213,8 +213,10 @@ public final class ActionDispatcher: ObservableObject {
             throw ActionError.httpError((response as? HTTPURLResponse)?.statusCode ?? 0)
         }
 
-        if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+        if let json = try? JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed]) {
             stateManager.set(["$response": json])
+        } else if let text = String(data: data, encoding: .utf8) {
+            stateManager.set(["$response": text])
         }
     }
 

@@ -79,6 +79,33 @@ final class StyleModifierTests: XCTestCase {
         XCTAssertEqual(merged.font, "bold")
     }
 
+    // MARK: - withoutSize
+
+    func testWithoutSizeClearsWidthAndHeight() {
+        let style = JasonStyle(
+            color: "#FF0000",
+            background: "#00FF00",
+            padding: AnyCodable(8),
+            width: AnyCodable(21),
+            height: AnyCodable(21),
+            opacity: AnyCodable(0.5)
+        )
+        let stripped = style.withoutSize()
+        XCTAssertNil(stripped.width)
+        XCTAssertNil(stripped.height)
+        XCTAssertEqual(stripped.color, "#FF0000")
+        XCTAssertEqual(stripped.background, "#00FF00")
+        XCTAssertEqual(stripped.padding?.cgFloat, 8)
+        XCTAssertEqual(stripped.opacity?.cgFloat, 0.5)
+    }
+
+    func testWithoutSizeIsNonMutating() {
+        let style = JasonStyle(width: AnyCodable(24), height: AnyCodable(24))
+        _ = style.withoutSize()
+        XCTAssertEqual(style.width?.cgFloat, 24)
+        XCTAssertEqual(style.height?.cgFloat, 24)
+    }
+
     // MARK: - Positioning fields decoding
 
     func testDecodingStyleWithPositioningFields() throws {
@@ -267,18 +294,9 @@ final class StyleModifierTests: XCTestCase {
 
     // MARK: - Helper
 
-    /// Simulates what JasonStyleModifier.resolved does
+    /// Delegates to the centralized `JasonStyle.resolve` so these tests
+    /// exercise the real implementation used by JasonStyleModifier and views.
     private func resolveStyles(className: String?, headStyles: [String: JasonStyle], inline: JasonStyle?) -> JasonStyle {
-        var base = JasonStyle()
-        if let cls = className {
-            let classNames = cls.split(separator: " ").map(String.init)
-            for name in classNames {
-                if let headStyle = headStyles[name] {
-                    base = base.merging(headStyle)
-                }
-            }
-        }
-        guard let inline = inline else { return base }
-        return base.merging(inline)
+        JasonStyle.resolve(className: className, inline: inline, headStyles: headStyles)
     }
 }

@@ -156,19 +156,8 @@ public struct JasonetteView: View {
         .allowsHitTesting(true)
     }
 
-    /// Resolve class + inline style for a layer component (mirrors JasonStyleModifier.resolved).
     private func resolveLayerStyle(_ component: JasonComponent, headStyles: [String: JasonStyle]) -> JasonStyle {
-        var base = JasonStyle()
-        if let cls = component.class {
-            let classNames = cls.split(separator: " ").map(String.init)
-            for name in classNames {
-                if let headStyle = headStyles[name] {
-                    base = base.merging(headStyle)
-                }
-            }
-        }
-        guard let inline = component.style else { return base }
-        return base.merging(inline)
+        JasonStyle.resolve(for: component, headStyles: headStyles)
     }
 
     /// Determine the ZStack alignment based on which positioning properties are set.
@@ -228,15 +217,27 @@ public struct JasonetteView: View {
     @ViewBuilder
     private func footerView(_ footer: JasonFooter, headStyles: [String: JasonStyle]) -> some View {
         if let tabs = footer.tabs, let items = tabs.items {
-            // Tab bar footer — tabs take precedence over input
-            HStack {
+            // Tab bar footer — tabs take precedence over input.
+            // spacing: 0 so per-item backgrounds/shadows align edge-to-edge.
+            HStack(spacing: 0) {
                 ForEach(Array(items.enumerated()), id: \.offset) { _, item in
-                    ComponentView(
-                        item,
-                        headStyles: headStyles,
-                        onHref: { viewModel.handleHref($0) },
-                        onAction: { viewModel.handleAction($0) }
-                    )
+                    Group {
+                        if item.type == nil {
+                            FooterTabItemView(
+                                item: item,
+                                headStyles: headStyles,
+                                onHref: { viewModel.handleHref($0) },
+                                onAction: { viewModel.handleAction($0) }
+                            )
+                        } else {
+                            ComponentView(
+                                item,
+                                headStyles: headStyles,
+                                onHref: { viewModel.handleHref($0) },
+                                onAction: { viewModel.handleAction($0) }
+                            )
+                        }
+                    }
                     .frame(maxWidth: .infinity)
                 }
             }
@@ -320,5 +321,98 @@ struct FooterInputView: View {
         } else {
             buttonContent
         }
+    }
+}
+
+// MARK: - Footer Tab Item View
+
+/// Renders a `footer.tabs.items` entry that has no `type` field.
+///
+/// Tab items use an implicit shape: `image`, `text`, optional `badge`, and `url`
+/// (which navigates when tapped). Routing these through `ComponentView` yields
+/// `[Unknown: nil]` because there is no component type — so they get their own
+/// structural view, like `FooterInputView`.
+@MainActor
+struct FooterTabItemView: View {
+    let item: JasonComponent
+    let headStyles: [String: JasonStyle]
+    let onHref: ((JasonHref) -> Void)?
+    let onAction: ((JasonAction) -> Void)?
+
+    var body: some View {
+        // Icon size resolves class-defined styles (via headStyles) merged with
+        // inline style — matching how JasonStyleModifier resolves every other
+        // style property. Using item.style alone would ignore `class: "tab_icon"`.
+        let resolved = resolvedStyle()
+        let iconWidth = resolved.width?.cgFloat ?? resolved.height?.cgFloat ?? 24
+        let iconHeight = resolved.height?.cgFloat ?? resolved.width?.cgFloat ?? 24
+        // Strip width/height from the style applied to the cell; they size the
+        // icon (above) — applying them to the VStack cell would cap its frame.
+        let cellStyle = resolved.withoutSize()
+        let content = VStack(spacing: 2) {
+            ZStack(alignment: .topTrailing) {
+                if let urlString = item.image, let url = URL(string: urlString) {
+                    AsyncImage(url: url) { image in
+                        image.resizable().scaledToFit()
+                    } placeholder: {
+                        Color.clear
+                    }
+                    .frame(width: iconWidth, height: iconHeight)
+                }
+                if let badge = item.badge, !badge.isEmpty {
+                    Text(badge)
+                        .font(.caption2)
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 1)
+                        .background(Capsule().fill(.red))
+                        .offset(x: 6, y: -4)
+                }
+            }
+            if let text = item.text, !text.isEmpty {
+                Text(text).font(.caption)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .contentShape(Rectangle())
+        // Apply the resolved style to the cell WITHOUT width/height: those
+        // dimensions are icon-specific in the tab-item shape (real Jasonpedia
+        // fixtures set `"height": "21"` to size the icon) and clobbering the
+        // cell's height clips the caption. headStyles/className are already
+        // folded into `cellStyle`, so pass nil to avoid double-resolution.
+        .modifier(JasonStyleModifier(style: cellStyle, headStyles: [:], className: nil))
+
+        // Navigation priority mirrors ComponentView (href > action). The
+        // typeless tab-item shape also accepts a shorthand `url` on the item;
+        // when `href` is absent we synthesize a `JasonHref` from `url` in a
+        // dedicated else-if branch so url-only fixtures still navigate. When
+        // both are present, `href` wins and its missing `.url` is populated
+        // from the shorthand.
+        if let href = item.href {
+            Button {
+                var h = href
+                if h.url == nil, let urlString = item.url, !urlString.isEmpty {
+                    h.url = urlString
+                }
+                onHref?(h)
+            } label: { content }
+                .buttonStyle(.plain)
+        } else if let urlString = item.url, !urlString.isEmpty {
+            Button {
+                var href = JasonHref()
+                href.url = urlString
+                onHref?(href)
+            } label: { content }
+                .buttonStyle(.plain)
+        } else if let action = item.action {
+            Button { onAction?(action) } label: { content }
+                .buttonStyle(.plain)
+        } else {
+            content
+        }
+    }
+
+    private func resolvedStyle() -> JasonStyle {
+        JasonStyle.resolve(for: item, headStyles: headStyles)
     }
 }
