@@ -434,7 +434,10 @@ final class ActionDispatcherTests: XCTestCase {
     }
 
     func testNetworkRequestStoresArrayResponse() async {
-        stubJSON("[{\"id\":1},{\"id\":2}]")
+        // UUIDv7 per repo policy (CLAUDE.md: "Use UUIDv7 for all IDs. Strictly.")
+        let firstID = "019635b8-fa94-7101-8000-000000000001"
+        let secondID = "019635b8-fa94-7101-8000-000000000002"
+        stubJSON("[{\"id\":\"\(firstID)\"},{\"id\":\"\(secondID)\"}]")
         let dispatcher = makeStubbedDispatcher()
         let action = decodeAction([
             "type": "$network.request",
@@ -443,7 +446,8 @@ final class ActionDispatcherTests: XCTestCase {
         await dispatcher.execute(action)
         let resp = stateManager.get()["$response"] as? [[String: Any]]
         XCTAssertEqual(resp?.count, 2)
-        XCTAssertEqual(resp?[0]["id"] as? Int, 1)
+        XCTAssertEqual(resp?[0]["id"] as? String, firstID)
+        XCTAssertEqual(resp?[1]["id"] as? String, secondID)
     }
 
     func testNetworkRequestStoresPlainTextResponse() async {
@@ -459,6 +463,39 @@ final class ActionDispatcherTests: XCTestCase {
         ])
         await dispatcher.execute(action)
         XCTAssertEqual(stateManager.get()["$response"] as? String, "hello world")
+    }
+
+    func testNetworkRequestStoresJSONStringFragmentResponse() async {
+        stubJSON("\"hello json\"")
+        let dispatcher = makeStubbedDispatcher()
+        let action = decodeAction([
+            "type": "$network.request",
+            "options": ["url": "https://example.com/d"]
+        ])
+        await dispatcher.execute(action)
+        XCTAssertEqual(stateManager.get()["$response"] as? String, "hello json")
+    }
+
+    func testNetworkRequestStoresJSONNumberFragmentResponse() async {
+        stubJSON("42")
+        let dispatcher = makeStubbedDispatcher()
+        let action = decodeAction([
+            "type": "$network.request",
+            "options": ["url": "https://example.com/e"]
+        ])
+        await dispatcher.execute(action)
+        XCTAssertEqual(stateManager.get()["$response"] as? Int, 42)
+    }
+
+    func testNetworkRequestStoresJSONNullFragmentResponse() async {
+        stubJSON("null")
+        let dispatcher = makeStubbedDispatcher()
+        let action = decodeAction([
+            "type": "$network.request",
+            "options": ["url": "https://example.com/f"]
+        ])
+        await dispatcher.execute(action)
+        XCTAssertTrue(stateManager.get()["$response"] is NSNull)
     }
 
     // MARK: - Unknown action

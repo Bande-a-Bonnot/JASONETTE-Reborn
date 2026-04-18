@@ -33,7 +33,7 @@ The existing pattern in this codebase — documented in [`../ui-bugs/swiftui-sdu
 
 When you introduce a dedicated structural view, treat it as a **full replacement** for `ComponentView` for that node. Before shipping, walk an **affordance checklist**:
 
-1. **Every action route.** `ComponentView` handles `action`, `url`, and `href`. The new view must too — in the same priority order. Missing one turns some fixtures into inert views with no compile error.
+1. **Every action route.** `ComponentView` handles `href` before `action` and does *not* handle a direct `url` field (that's `ButtonComponent`-specific). The new view must mirror `href > action` at minimum. If the structural shape also accepts a shorthand `url` on the item (footer tab items do), promote it into the `href` branch so url-only fixtures still navigate — don't wire a separate fourth branch that reorders precedence. Missing one turns some fixtures into inert views with no compile error.
 2. **Every style property the generic renderer reads.** Width, height, padding (uniform and directional), opacity, border, alignment, color, background. Hard-coding `.frame(width: 24, height: 24)` for an icon silently overrides the `"height": "21"` the fixture author wrote.
 3. **Every optional field declared on the model.** If you added `badge: String?` to `JasonComponent`, the view must render it when present. If `placeholder` exists, honor it.
 4. **Closure and environment plumbing.** `onAction`, `onHref`, `StateManager`, `@Environment(\.openURL)` — anything the generic path injected must be wired by the dedicated view too. It's very easy to pass only `onHref` and forget `onAction`.
@@ -101,17 +101,26 @@ let iconHeight = item.style?.height?.cgFloat ?? item.style?.width?.cgFloat ?? 24
 AsyncImage(url: url) { $0.resizable().scaledToFit() }
     .frame(width: iconWidth, height: iconHeight)
 
-// Action priority: action > url > href (mirrors ComponentView)
-if let action = item.action {
-    Button { onAction?(action) } label: { content }.buttonStyle(.plain)
+// Action priority mirrors ComponentView (href > action). The typeless tab-item
+// shape also accepts a shorthand `url` on the item itself, which we promote
+// into an href so url-only fixtures still navigate — rather than introducing
+// a separate `url` branch that would reorder precedence.
+if let href = item.href {
+    Button {
+        var h = href
+        if h.url == nil, let urlString = item.url, !urlString.isEmpty {
+            h.url = urlString
+        }
+        onHref?(h)
+    } label: { content }.buttonStyle(.plain)
 } else if let urlString = item.url, !urlString.isEmpty {
     Button {
-        var href = item.href ?? JasonHref()
-        if href.url == nil { href.url = urlString }
+        var href = JasonHref()
+        href.url = urlString
         onHref?(href)
     } label: { content }.buttonStyle(.plain)
-} else if let href = item.href {
-    Button { onHref?(href) } label: { content }.buttonStyle(.plain)
+} else if let action = item.action {
+    Button { onAction?(action) } label: { content }.buttonStyle(.plain)
 }
 
 // Badge is optional but must be rendered when present

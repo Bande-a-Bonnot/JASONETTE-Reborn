@@ -235,6 +235,7 @@ public struct JasonetteView: View {
                         if item.type == nil {
                             FooterTabItemView(
                                 item: item,
+                                headStyles: headStyles,
                                 onHref: { viewModel.handleHref($0) },
                                 onAction: { viewModel.handleAction($0) }
                             )
@@ -344,6 +345,7 @@ struct FooterInputView: View {
 @MainActor
 struct FooterTabItemView: View {
     let item: JasonComponent
+    let headStyles: [String: JasonStyle]
     let onHref: ((JasonHref) -> Void)?
     let onAction: ((JasonAction) -> Void)?
 
@@ -370,23 +372,33 @@ struct FooterTabItemView: View {
                         .offset(x: 6, y: -4)
                 }
             }
-            if let text = item.text {
+            if let text = item.text, !text.isEmpty {
                 Text(text).font(.caption)
             }
         }
+        .modifier(JasonStyleModifier(style: item.style, headStyles: headStyles, className: item.class))
 
-        if let action = item.action {
-            Button { onAction?(action) } label: { content }
+        // Navigation priority mirrors ComponentView (href > action). The
+        // typeless tab-item shape also accepts a shorthand `url` on the item,
+        // which we promote into an href so url-only fixtures still navigate.
+        if let href = item.href {
+            Button {
+                var h = href
+                if h.url == nil, let urlString = item.url, !urlString.isEmpty {
+                    h.url = urlString
+                }
+                onHref?(h)
+            } label: { content }
                 .buttonStyle(.plain)
         } else if let urlString = item.url, !urlString.isEmpty {
             Button {
-                var href = item.href ?? JasonHref()
-                if href.url == nil { href.url = urlString }
+                var href = JasonHref()
+                href.url = urlString
                 onHref?(href)
             } label: { content }
                 .buttonStyle(.plain)
-        } else if let href = item.href {
-            Button { onHref?(href) } label: { content }
+        } else if let action = item.action {
+            Button { onAction?(action) } label: { content }
                 .buttonStyle(.plain)
         } else {
             content

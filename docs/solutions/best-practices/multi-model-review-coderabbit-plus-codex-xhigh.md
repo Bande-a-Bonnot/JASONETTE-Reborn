@@ -103,7 +103,7 @@ reading the diff yourself is faster.
 
 ## Examples
 
-Today's findings, with locations:
+Findings from 2026-04-17, with locations:
 
 | Sev | File | Issue |
 |-----|------|-------|
