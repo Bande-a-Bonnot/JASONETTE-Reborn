@@ -20,6 +20,7 @@ tags: [xcode-cloud, code-signing, unicode, apple-developer-account, tuist, cored
 Xcode Cloud archive task systematically crashed during the distribution/export phase. The build and archive succeeded, but CoreDeviceService (Apple's internal device management XPC service) hit a Swift assertion failure every time, preventing TestFlight upload.
 
 ## Environment
+
 - Module: JasonetteApp (Tuist + SPM)
 - Xcode Cloud macOS VM: MacVM1,1 running macOS 26.3 (25D125)
 - Xcode: 17C529 (toolchain)
@@ -27,6 +28,7 @@ Xcode Cloud archive task systematically crashed during the distribution/export p
 - Date: 2026-03-21
 
 ## Symptoms
+
 - `CoreDeviceService` crash: `EXC_BAD_INSTRUCTION (SIGILL)` in `_assertionFailure` -> `swift_errorInMain`
 - `teamName='(null)'` in every `IDEDistributionContext` in distribution logs
 - `IDEDistribution.critical.log`: "Unable to authenticate with App Store Connect (Error Domain=DVTITunesSoftwareServiceFoundation Code=1)"
