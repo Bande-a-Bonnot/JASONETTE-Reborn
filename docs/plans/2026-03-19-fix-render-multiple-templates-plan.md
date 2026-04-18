@@ -14,6 +14,7 @@ deepened: 2026-03-19
 **Research agents used:** learnings-researcher (anycodable, codable, swiftui), architecture-strategist, pattern-recognition, code-simplicity
 
 ### Key Improvements
+
 1. AnyCodable crash prevention: always `.unwrapped` before `JSONSerialization`
 2. Confirmed struct approach is safe (no recursive Codable issue)
 3. Conditional SwiftUI modifier application for horizontal section styling

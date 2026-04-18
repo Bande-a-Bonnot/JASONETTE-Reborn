@@ -35,7 +35,8 @@ The architecture assumed `head.templates` only had a `body` key. The Jasonette s
 
 Three fixes, each addressing a different layer:
 
-**1. JasonTemplates → dynamic dictionary**
+### 1. JasonTemplates → dynamic dictionary
+
 ```swift
 // Before: only "body" decoded
 public struct JasonTemplates: Codable, Sendable {
@@ -51,7 +52,8 @@ public struct JasonTemplates: Codable, Sendable {
 }
 ```
 
-**2. Decode template output as JasonBody, not JasonRoot**
+### 2. Decode template output as JasonBody, not JasonRoot
+
 ```swift
 // Before: failed because template output is {sections, layers}, not {head, body}
 var root = try decoder.decode(JasonRoot.self, from: renderedData)
@@ -61,7 +63,8 @@ let body = try decoder.decode(JasonBody.self, from: renderedData)
 renderedRoot = JasonRoot(head: head, body: body)
 ```
 
-**3. $render action reads options.template**
+### 3. $render action reads options.template
+
 ```swift
 // Before: no-op
 case "$render":

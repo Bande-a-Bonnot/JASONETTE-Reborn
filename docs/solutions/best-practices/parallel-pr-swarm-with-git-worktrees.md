@@ -78,6 +78,7 @@ git push --force-with-lease origin fix/feature-b
 ```
 
 ### Merge conflict resolution (additive)
+
 ```swift
 // Both PRs add fields to the same struct — include both
 <<<<<<< HEAD
