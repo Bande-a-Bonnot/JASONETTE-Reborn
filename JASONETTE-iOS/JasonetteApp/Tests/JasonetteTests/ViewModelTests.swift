@@ -65,49 +65,95 @@ final class ViewModelTests: XCTestCase {
         XCTAssertEqual(vm.renderedRoot?.head?.title, "No Templates")
     }
 
-    // MARK: - handleHref notifications
+    // MARK: - handleHref → NavigationRequest dispatch
 
-    func testHandleHrefPostsNotification() async {
-        let doc = simpleDocument()
-        let vm = JasonetteViewModel(document: doc)
-
-        let expectation = expectation(forNotification: .jasonetteNavigate, object: nil) { notification in
-            guard let url = notification.userInfo?["url"] as? URL else { return false }
-            return url.absoluteString == "https://example.com"
-        }
-
-        let href = JasonHref(url: "https://example.com", view: "push")
-        vm.handleHref(href)
-
-        await fulfillment(of: [expectation], timeout: 1.0)
+    /// Captures the most recent `NavigationRequest` emitted by a viewmodel.
+    /// Used instead of the old global NotificationCenter-based assertions so
+    /// tests exercise the same scoped dispatch path the UI uses.
+    private final class NavigationCapture {
+        var requests: [NavigationRequest] = []
+        var last: NavigationRequest? { requests.last }
     }
 
-    func testHandleHrefBackPostsBackTrue() async {
-        let doc = simpleDocument()
-        let vm = JasonetteViewModel(document: doc)
-
-        let expectation = expectation(forNotification: .jasonetteNavigate, object: nil) { notification in
-            notification.userInfo?["back"] as? Bool == true
-        }
-
-        let href = JasonHref(url: nil, view: "$back")
-        vm.handleHref(href)
-
-        await fulfillment(of: [expectation], timeout: 1.0)
+    private func makeViewModelCapturing(_ doc: JasonDocument) -> (JasonetteViewModel, NavigationCapture) {
+        let capture = NavigationCapture()
+        let vm = JasonetteViewModel(document: doc, onNavigate: { capture.requests.append($0) })
+        return (vm, capture)
     }
 
-    func testHandleHrefClosePostsCloseTrue() async {
-        let doc = simpleDocument()
-        let vm = JasonetteViewModel(document: doc)
-
-        let expectation = expectation(forNotification: .jasonetteNavigate, object: nil) { notification in
-            notification.userInfo?["close"] as? Bool == true
+    func testHandleHrefDefaultTransitionEmitsPush() {
+        let (vm, capture) = makeViewModelCapturing(simpleDocument())
+        vm.handleHref(JasonHref(url: "https://example.com", view: nil))
+        guard case .push(let url) = capture.last else {
+            return XCTFail("Expected .push, got \(String(describing: capture.last))")
         }
+        XCTAssertEqual(url.absoluteString, "https://example.com")
+    }
 
-        let href = JasonHref(url: nil, view: "$close")
-        vm.handleHref(href)
+    func testHandleHrefTransitionSwitchEmitsSwitchRoot() {
+        let (vm, capture) = makeViewModelCapturing(simpleDocument())
+        vm.handleHref(JasonHref(url: "https://example.com/tab2", view: nil, transition: "switch"))
+        guard case .switchRoot(let url) = capture.last else {
+            return XCTFail("Expected .switchRoot, got \(String(describing: capture.last))")
+        }
+        XCTAssertEqual(url.absoluteString, "https://example.com/tab2")
+    }
 
-        await fulfillment(of: [expectation], timeout: 1.0)
+    func testHandleHrefTransitionModalEmitsModal() {
+        let (vm, capture) = makeViewModelCapturing(simpleDocument())
+        vm.handleHref(JasonHref(url: "https://example.com/detail", view: nil, transition: "modal"))
+        guard case .modal(let url) = capture.last else {
+            return XCTFail("Expected .modal, got \(String(describing: capture.last))")
+        }
+        XCTAssertEqual(url.absoluteString, "https://example.com/detail")
+    }
+
+    func testHandleHrefViewWebEmitsWeb() {
+        let (vm, capture) = makeViewModelCapturing(simpleDocument())
+        vm.handleHref(JasonHref(url: "https://example.com", view: "web"))
+        guard case .web(let url) = capture.last else {
+            return XCTFail("Expected .web, got \(String(describing: capture.last))")
+        }
+        XCTAssertEqual(url.absoluteString, "https://example.com")
+    }
+
+    func testHandleHrefViewAppAllowsMailto() {
+        let (vm, capture) = makeViewModelCapturing(simpleDocument())
+        vm.handleHref(JasonHref(url: "mailto:test@example.com", view: "app"))
+        guard case .app(let url) = capture.last else {
+            return XCTFail("Expected .app, got \(String(describing: capture.last))")
+        }
+        XCTAssertEqual(url.scheme, "mailto")
+    }
+
+    func testHandleHrefBackEmitsBack() {
+        let (vm, capture) = makeViewModelCapturing(simpleDocument())
+        vm.handleHref(JasonHref(url: nil, view: "$back"))
+        guard case .back = capture.last else {
+            return XCTFail("Expected .back, got \(String(describing: capture.last))")
+        }
+    }
+
+    func testHandleHrefCloseEmitsClose() {
+        let (vm, capture) = makeViewModelCapturing(simpleDocument())
+        vm.handleHref(JasonHref(url: nil, view: "$close"))
+        guard case .close = capture.last else {
+            return XCTFail("Expected .close, got \(String(describing: capture.last))")
+        }
+    }
+
+    func testHandleHrefRejectsDisallowedScheme() {
+        let (vm, capture) = makeViewModelCapturing(simpleDocument())
+        vm.handleHref(JasonHref(url: "file:///etc/passwd", view: nil))
+        XCTAssertNil(capture.last, "Disallowed scheme must not dispatch a navigation")
+    }
+
+    func testHandleHrefDefaultHandlerIsNoop() {
+        // A viewmodel constructed without a navigation handler must not crash
+        // on handleHref — the default handler is a no-op so callers can work
+        // without wiring (tests, previews, future headless rendering).
+        let vm = JasonetteViewModel(document: simpleDocument())
+        vm.handleHref(JasonHref(url: "https://example.com", view: nil))
     }
 
     // MARK: - handlePull
