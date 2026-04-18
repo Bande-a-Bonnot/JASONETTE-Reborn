@@ -356,6 +356,9 @@ struct FooterTabItemView: View {
         let resolved = resolvedStyle()
         let iconWidth = resolved.width?.cgFloat ?? resolved.height?.cgFloat ?? 24
         let iconHeight = resolved.height?.cgFloat ?? resolved.width?.cgFloat ?? 24
+        // Strip width/height from the style applied to the cell; they size the
+        // icon (above) — applying them to the VStack cell would cap its frame.
+        let cellStyle = resolved.withoutSize()
         let content = VStack(spacing: 2) {
             ZStack(alignment: .topTrailing) {
                 if let urlString = item.image, let url = URL(string: urlString) {
@@ -382,7 +385,12 @@ struct FooterTabItemView: View {
         }
         .frame(maxWidth: .infinity)
         .contentShape(Rectangle())
-        .modifier(JasonStyleModifier(style: item.style, headStyles: headStyles, className: item.class))
+        // Apply the resolved style to the cell WITHOUT width/height: those
+        // dimensions are icon-specific in the tab-item shape (real Jasonpedia
+        // fixtures set `"height": "21"` to size the icon) and clobbering the
+        // cell's height clips the caption. headStyles/className are already
+        // folded into `cellStyle`, so pass nil to avoid double-resolution.
+        .modifier(JasonStyleModifier(style: cellStyle, headStyles: [:], className: nil))
 
         // Navigation priority mirrors ComponentView (href > action). The
         // typeless tab-item shape also accepts a shorthand `url` on the item;

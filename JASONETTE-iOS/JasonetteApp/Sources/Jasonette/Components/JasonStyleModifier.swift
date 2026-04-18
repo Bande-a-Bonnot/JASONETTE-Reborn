@@ -144,6 +144,16 @@ private extension View {
 // MARK: - JasonStyle merge + init helpers
 
 extension JasonStyle {
+    /// Returns a copy with width/height cleared. Used by structural views like
+    /// FooterTabItemView where `height`/`width` size an inner child (the icon)
+    /// rather than the outer cell.
+    func withoutSize() -> JasonStyle {
+        var copy = self
+        copy.width = nil
+        copy.height = nil
+        return copy
+    }
+
     /// Merge another style on top, non-nil values win.
     func merging(_ other: JasonStyle) -> JasonStyle {
         JasonStyle(
