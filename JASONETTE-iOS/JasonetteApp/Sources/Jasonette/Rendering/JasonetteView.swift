@@ -387,18 +387,12 @@ struct FooterTabItemView: View {
         // dedicated else-if branch so url-only fixtures still navigate. When
         // both are present, `href` wins and its missing `.url` is populated
         // from the shorthand.
-        //
-        // Tab taps are *switch* navigations, not pushes: they replace the
-        // stack root instead of stacking on top. We default `transition` to
-        // `"switch"` when the developer hasn't expressed an explicit intent
-        // (no transition, no special view like "web"/"app"/"$back"/"$close").
         if let href = item.href {
             Button {
                 var h = href
                 if h.url == nil, let urlString = item.url, !urlString.isEmpty {
                     h.url = urlString
                 }
-                if h.transition == nil, h.view == nil { h.transition = "switch" }
                 onHref?(h)
             } label: { content }
                 .buttonStyle(.plain)
@@ -406,7 +400,6 @@ struct FooterTabItemView: View {
             Button {
                 var href = JasonHref()
                 href.url = urlString
-                href.transition = "switch"
                 onHref?(href)
             } label: { content }
                 .buttonStyle(.plain)

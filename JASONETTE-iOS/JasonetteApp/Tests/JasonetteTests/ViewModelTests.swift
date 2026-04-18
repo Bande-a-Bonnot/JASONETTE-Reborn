@@ -90,11 +90,11 @@ final class ViewModelTests: XCTestCase {
         XCTAssertEqual(url.absoluteString, "https://example.com")
     }
 
-    func testHandleHrefTransitionSwitchEmitsSwitchRoot() {
+    func testHandleHrefTransitionSwitchEmitsSwitchTab() {
         let (vm, capture) = makeViewModelCapturing(simpleDocument())
         vm.handleHref(JasonHref(url: "https://example.com/tab2", view: nil, transition: "switch"))
-        guard case .switchRoot(let url) = capture.last else {
-            return XCTFail("Expected .switchRoot, got \(String(describing: capture.last))")
+        guard case .switchTab(let url) = capture.last else {
+            return XCTFail("Expected .switchTab, got \(String(describing: capture.last))")
         }
         XCTAssertEqual(url.absoluteString, "https://example.com/tab2")
     }

@@ -161,7 +161,7 @@ public final class JasonetteViewModel: ObservableObject {
         default:
             switch href.transition {
             case "modal":  onNavigate(.modal(url))
-            case "switch": onNavigate(.switchRoot(url))
+            case "switch": onNavigate(.switchTab(url))
             default:       onNavigate(.push(url))
             }
         }
