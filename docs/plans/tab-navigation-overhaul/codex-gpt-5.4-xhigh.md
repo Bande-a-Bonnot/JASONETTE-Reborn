@@ -139,7 +139,7 @@ final class StackState: ObservableObject {
 - Active highlight is driven by `selectedTabID`, full stop.
 - A link with `transition: "switch"` inside a tab shell means “select declared tab,” not “replace arbitrary root.”
 - If the target matches a declared tab root, select that tab.
-- If the target does not match a declared tab root, reject it as invalid `switch` usage and log in debug.
+- If the target does not match a declared tab root, fall through to normal `.push` on the current tab's stack.
 - Deep link to a declared tab root from outside the shell selects that tab without destroying its preserved stack.
 - Same-tab reselect pops that tab to root and issues a scroll-to-top signal for the root scroll view.
 - Switching away from a tab preserves its pushed stack exactly as-is.
@@ -155,7 +155,7 @@ final class StackState: ObservableObject {
 ## Edge Cases
 
 - `view:web` and `view:app` work as tab roots because `TabDescriptor` stores a full target type, not just a URL.
-- Action-only tabs are buttons, not tabs. They execute their action and do not change `selectedTabID`.
+- Action-only tabs are currently rejected at `TabDescriptor(from:)` construction and don't reach the shell. Dispatch-on-tap is planned (see `todos/026`); at that point they become buttons that execute their action without changing `selectedTabID`.
 - Two tabs with the same canonical target are invalid. Debug builds assert. Release builds keep the first and drop the rest.
 - `transition: "switch"` to a pushed detail URL is invalid. Tab switching targets tab roots only.
 - If a selected tab is removed by runtime shell update, selection moves to the first surviving tab.

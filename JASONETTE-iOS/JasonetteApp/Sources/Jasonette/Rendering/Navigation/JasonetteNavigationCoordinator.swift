@@ -52,14 +52,14 @@ final class JasonetteNavigationCoordinator: ObservableObject {
                 ?? selectable.first
         else {
             #if DEBUG
-            assertionFailure("footer.tabs declared no selectable document target — staying in single mode")
+            print("[Jasonette] footer.tabs declared no selectable document target — staying in single mode")
             #endif
             mode = .single(rootURL: entryURL, preloadedDoc: doc)
             return
         }
         if initial.descriptor.selectableURL != entryURL {
             #if DEBUG
-            assertionFailure("Bootstrap URL \(entryURL) not in declared tabs — first selectable tab used, bootstrap doc discarded")
+            print("[Jasonette] Bootstrap URL \(entryURL) not in declared tabs — first selectable tab used, bootstrap doc discarded")
             #endif
         }
 
@@ -94,7 +94,7 @@ final class JasonetteNavigationCoordinator: ObservableObject {
             let key = descriptor.target.canonicalKey
             if seen.contains(key) {
                 #if DEBUG
-                assertionFailure("Duplicate tab target \(key) — first kept, later dropped")
+                print("[Jasonette] Duplicate tab target \(key) — first kept, later dropped")
                 #endif
                 continue
             }
@@ -127,7 +127,7 @@ extension TabDescriptor {
 
         // Action-only tabs are not yet dispatched from the shell — tapping
         // them would be a silent no-op in release. Reject at construction
-        // until action dispatch is plumbed through (see todos/025).
+        // until action dispatch is plumbed through (see todos/026).
         if item.action != nil, item.href == nil, item.url == nil {
             return nil
         }

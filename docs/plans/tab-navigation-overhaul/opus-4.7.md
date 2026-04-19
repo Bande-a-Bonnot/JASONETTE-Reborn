@@ -255,7 +255,7 @@ Do **not** use `@SceneStorage` for paths v1 (serialization of `URL` arrays is fi
 ## 5. Edge cases the new design must handle
 
 | Case | Behavior | How |
-|---|---|---|
+| --- | --- | --- |
 | Tab item with `view: "web"` | Do NOT switch tabs; open Safari. | In `TabItemLabel`/selection path: the tab container detects `tab.view == "web"` and, instead of changing selection, calls `openURL(tab.url)` (iOS: presents `SafariView`). The tab stays visually unselected or we reject the selection in `onChange(of:)` by reverting. Easier: render these "tabs" as a distinct bar item that dispatches an href instead of participating in `TabView` selection. Honestly — deprecate `view:web` inside tabs; it's an abuse of the shape. Document it. |
 | Tab item with `view: "app"` | Same as above with `openURL`. | Same pattern. |
 | Deep link with `transition: "switch"` (programmatic `$href` to a tab URL) | Switch to the tab whose URL matches. If no match, push. | VM emits a new `NavigationRequest.switchTab(URL)` (replacing `.switchRoot`). The tab container installs an environment closure `switchToURL: (URL) -> Bool`. VM calls it; if it returns `true`, switch happened and we're done; if `false`, fall back to `.push`. |

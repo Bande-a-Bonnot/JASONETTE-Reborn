@@ -356,34 +356,44 @@ Each step is one commit (or small PR) on its own.
 - Write `docs/solutions/navigation-routing/tab-shell-architecture-2026-04.md`
   capturing the "shell owns selection, not stacks" lesson.
 
-## Files touched (summary)
+## Files touched (summary — reflects PR #20 as shipped)
 
-NEW:
+NEW (all under `Sources/Jasonette/Rendering/Navigation/`):
 
-- `Sources/Jasonette/Rendering/Coordinator/JasonetteNavigationCoordinator.swift`
-- `Sources/Jasonette/Rendering/Coordinator/StackState.swift`
-- `Sources/Jasonette/Rendering/Coordinator/TabShellState.swift`
-- `Sources/Jasonette/Rendering/Coordinator/TabDescriptor.swift`
-- `Sources/Jasonette/Rendering/Environment.swift`
-- `Sources/Jasonette/Rendering/FooterTabBar.swift`
-- `Tests/JasonetteTests/CoordinatorTests.swift`
-- `Tests/JasonetteTests/TabShellStateTests.swift`
+- `JasonetteNavigationCoordinator.swift`
+- `JasonetteEnvironment.swift`
+- `JasonetteRootView.swift`
+- `JasonetteTabShell.swift`
+- `FooterTabBar.swift`
+- `TabDescriptor.swift`
+- `TabEntry.swift`
+- `TabID.swift`
+- `TabShellState.swift`
+- `UUIDv7.swift`
+- `Tests/JasonetteTests/TabNavigationCoordinatorTests.swift`
 
 MODIFIED:
 
-- `Sources/Jasonette/Rendering/JasonetteNavigationView.swift` — rewrite.
-- `Sources/Jasonette/Rendering/JasonetteView.swift` — footer suppression,
-  preloadedDoc init, delete `FooterTabItemView`.
-- `Sources/Jasonette/Rendering/JasonetteViewModel.swift` — env closure
-  switch path.
-- `Tests/JasonetteTests/ViewModelTests.swift` — `switchRoot` → switchTab
-  rename, fall-through test.
+- `Sources/Jasonette/Rendering/JasonetteNavigationView.swift` — stripped
+  of `switchRoot` / `currentRoot` / `.id` stack bomb; now an opaque
+  navigable scope mounted per tab.
+- `Sources/Jasonette/Rendering/JasonetteView.swift` — footer suppression
+  inside tabs, `FooterTabItemView` removed.
+- `Sources/Jasonette/Rendering/JasonetteViewModel.swift` — env-closure
+  switch path (`jasonetteSwitchTab`), `switchRoot` removed.
+- `Tests/JasonetteTests/ViewModelTests.swift` — preload-seed refetch
+  test + `switchTab` emission test.
 
-DELETED (in step 5 or 7):
+DELETED:
 
 - `NavigationRequest.switchRoot` case.
-- `FooterTabItemView` (old).
-- `.id(currentRoot)` + `@State currentRoot`.
+- `FooterTabItemView` (old in-document footer path).
+- `.id(currentRoot)` + `@State currentRoot` stack-nuke.
+
+> There is no `StackState` / `Coordinator/` directory. Earlier drafts of
+> this plan used a `StackState` abstraction; the shipped design puts
+> each tab's stack inside its own `JasonetteNavigationView`'s
+> `NavigationStack`, so the type was never needed.
 
 ## Open questions for the user
 

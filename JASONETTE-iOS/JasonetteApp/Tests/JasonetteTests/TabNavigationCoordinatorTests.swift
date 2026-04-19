@@ -57,7 +57,7 @@ final class TabNavigationCoordinatorTests: XCTestCase {
     }
 
     /// Action-only tabs are rejected at descriptor construction until the
-    /// shell's action dispatcher is plumbed through (see todos/025). Otherwise
+    /// shell's action dispatcher is plumbed through (see todos/026). Otherwise
     /// the tab would render in the bar and silently no-op on tap.
     func testDescriptorFromComponentWithActionOnlyReturnsNil() {
         let c = JasonComponent()
@@ -156,20 +156,15 @@ final class TabNavigationCoordinatorTests: XCTestCase {
 
     func testCoordinatorDedupesByCanonicalTarget() {
         let c = JasonetteNavigationCoordinator(entryURL: URL(string: "https://a")!)
-        // In DEBUG builds this assertion-fails; run this test only in release
-        // of the assertion. We test the dedupe behavior via the static entry
-        // extractor in release-equivalent mode by building manually.
-        #if !DEBUG
         c.bootstrapDidLoad(doc: makeDoc(tabs: [
             tabItem(url: "https://a"),
             tabItem(url: "https://a"),
             tabItem(url: "https://b"),
         ]))
         guard case .tabs(let shell, _, _) = c.mode else {
-            return XCTFail("release build must still promote after dedupe")
+            return XCTFail("bootstrap with duplicate tabs must still promote")
         }
         XCTAssertEqual(shell.tabs.count, 2, "duplicate URL should be dropped")
-        #endif
     }
 
     func testCoordinatorBootstrapIsIdempotent() {
@@ -293,16 +288,16 @@ final class TabNavigationCoordinatorTests: XCTestCase {
 
     /// BLOCKER 2: footer with zero document tabs must NOT promote — there's
     /// nothing to display in the content area. Coordinator stays in `.single`
-    /// and debug-asserts.
+    /// and logs in debug.
     func testPromotionStaysInSingleWhenNoSelectableTabs() {
         let c = JasonetteNavigationCoordinator(entryURL: URL(string: "https://example.com/entry")!)
         let webItem = JasonComponent()
         var href = JasonHref(); href.url = "https://example.com/w"; href.view = "web"
         webItem.href = href
-        #if !DEBUG
         c.bootstrapDidLoad(doc: makeDoc(tabs: [webItem]))
-        guard case .single = c.mode else { return XCTFail("expected .single when no document tab exists") }
-        #endif
+        guard case .single = c.mode else {
+            return XCTFail("expected .single when no document tab exists")
+        }
     }
 
     /// HIGH 5: a footer item with both a target `url` and an `image` must
