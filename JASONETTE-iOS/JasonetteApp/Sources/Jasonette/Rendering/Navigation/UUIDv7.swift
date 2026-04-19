@@ -19,8 +19,11 @@ enum UUIDv7 {
         bytes[5] = UInt8(ms & 0xFF)
 
         var randBytes = [UInt8](repeating: 0, count: 10)
-        let status = randBytes.withUnsafeMutableBytes {
-            SecRandomCopyBytes(kSecRandomDefault, 10, $0.baseAddress!)
+        let status = randBytes.withUnsafeMutableBytes { buffer -> Int32 in
+            guard let address = buffer.baseAddress else {
+                preconditionFailure("randBytes buffer had nil baseAddress")
+            }
+            return SecRandomCopyBytes(kSecRandomDefault, 10, address)
         }
         precondition(status == errSecSuccess, "SecRandomCopyBytes failed (\(status))")
 
