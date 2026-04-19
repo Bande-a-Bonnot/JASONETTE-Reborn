@@ -355,13 +355,14 @@ final class ViewModelTests: XCTestCase {
 
     /// BLOCKER 1: once the seed has been rendered, subsequent `load()` calls
     /// must refetch from `url` — otherwise `$reload`/retry/pull-to-refresh
-    /// forever re-renders the stale seed. We prove this by pointing the VM
-    /// at an unreachable URL: the second load must fail with an error
-    /// (because it actually tried to fetch), not pass with the stale seed.
+    /// forever re-renders the stale seed. Proof: point the VM at a blocked
+    /// scheme (`file://`). `DocumentLoader` rejects it synchronously with
+    /// `DocumentError.blockedURL`, so the second load must reach `.error` —
+    /// deterministic and offline, no DNS-timeout variance.
     func testPreloadSeedRefetchesOnSecondLoad() async {
         let seed = simpleDocument(title: "Seed Title")
         let vm = JasonetteViewModel(
-            url: URL(string: "https://definitely-not-reachable.invalid/x.json")!,
+            url: URL(string: "file:///tmp/definitely-not-allowed.json")!,
             preloadedDoc: seed
         )
         await vm.load()
@@ -369,7 +370,7 @@ final class ViewModelTests: XCTestCase {
 
         await vm.load()
         if case .error = vm.loadState {
-            // Expected: the fetch attempt against the invalid host fails.
+            // Expected: DocumentLoader rejects the blocked scheme.
         } else {
             XCTFail("second load must refetch — got \(vm.loadState) instead of .error")
         }

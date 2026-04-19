@@ -56,13 +56,14 @@ final class TabNavigationCoordinatorTests: XCTestCase {
         XCTAssertNil(d?.selectableURL)
     }
 
-    func testDescriptorFromComponentWithActionIsNonSelectable() {
+    /// Action-only tabs are rejected at descriptor construction until the
+    /// shell's action dispatcher is plumbed through (see todos/025). Otherwise
+    /// the tab would render in the bar and silently no-op on tap.
+    func testDescriptorFromComponentWithActionOnlyReturnsNil() {
         let c = JasonComponent()
         let a = JasonAction(); a.type = "$reload"
         c.action = a
-        let d = TabDescriptor(from: c)
-        if case .action = d?.target {} else { return XCTFail("expected .action target") }
-        XCTAssertFalse(d?.isSelectable ?? true)
+        XCTAssertNil(TabDescriptor(from: c))
     }
 
     func testDescriptorFromComponentWithNoTargetReturnsNil() {

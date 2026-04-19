@@ -9,12 +9,16 @@ final class TabShellState: ObservableObject {
     let tabs: [TabEntry]
 
     /// Build a shell from an already-deduped, non-empty list of entries.
-    /// Panics on empty input in debug; release clamps to a single unusable
-    /// state that the caller should never hit if bootstrap did its job.
+    /// Traps (both debug and release, via `precondition`) on empty input or
+    /// on an initial selection that doesn't match a selectable tab. The
+    /// coordinator filters to selectable tabs before calling this — any trap
+    /// is a bug in the bootstrap path, not something callers can recover from.
     init(tabs: [TabEntry], initialSelection: TabID) {
         precondition(!tabs.isEmpty, "TabShellState requires at least one tab")
-        precondition(tabs.contains(where: { $0.id == initialSelection }),
-                     "initialSelection must match a tab in the list")
+        precondition(
+            tabs.contains(where: { $0.id == initialSelection && $0.descriptor.isSelectable }),
+            "initialSelection must match a selectable tab"
+        )
         self.tabs = tabs
         self.selectedTabID = initialSelection
     }

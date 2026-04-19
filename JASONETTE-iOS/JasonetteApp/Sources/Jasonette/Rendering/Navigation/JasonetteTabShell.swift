@@ -12,9 +12,11 @@ struct JasonetteTabShell: View {
     @Environment(\.openURL) private var openURL
 
     /// Canonical key of the tab the user last had selected when the scene was
-    /// active. Takes precedence over the coordinator's entry-URL match when
-    /// the key still resolves to a selectable tab. Deep links arriving after
-    /// restore still win because they mutate `selectedTabID` directly.
+    /// last active. Precedence: deep link > stored key > entry URL > first
+    /// tab. The coordinator has already applied "deep link (entry URL match)
+    /// or first selectable," so onAppear only overrides its choice when the
+    /// coordinator fell back to the first tab (i.e., entry URL did not match
+    /// any selectable tab).
     @SceneStorage("jasonette.selectedTab") private var storedKey: String = ""
 
     /// Tabs whose content has been mounted at least once. Hidden tabs stay
@@ -46,7 +48,18 @@ struct JasonetteTabShell: View {
             shell.switchToURLIfMatches(url)
         }
         .onAppear {
-            shell.selectByCanonicalKey(storedKey)
+            // Only let storedKey override when the coordinator's initial pick
+            // was a fallback to the first selectable tab — i.e., entry URL
+            // did not match any tab. If the coordinator matched the entry URL
+            // (deep link or direct launch), that wins.
+            let initial = shell.tabs.first(where: { $0.id == shell.selectedTabID })
+            let coordinatorMatchedEntry = initial?.descriptor.selectableURL == bootstrapURL
+            if !coordinatorMatchedEntry {
+                shell.selectByCanonicalKey(storedKey)
+            }
+            // Flush current selection's key back so a stale storedKey (points
+            // at a tab that no longer exists) doesn't linger across launches.
+            storedKey = shell.selectedCanonicalKey
             mounted.insert(shell.selectedTabID)
         }
         .onChange(of: shell.selectedTabID) { newID in

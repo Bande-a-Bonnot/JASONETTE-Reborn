@@ -6,8 +6,12 @@ import Foundation
 @MainActor
 final class JasonetteNavigationCoordinator: ObservableObject {
     enum Mode {
-        /// Single-stack mode. `preloadedDoc` is nil until the first fetch
-        /// completes — the root `JasonetteNavigationView` does the fetch.
+        /// Single-stack mode. Starts with `preloadedDoc == nil`; when the
+        /// bootstrap fetch completes, `bootstrapDidLoad(doc:)` stores the
+        /// loaded doc here if the app stays in `.single` (no `footer.tabs`).
+        /// That seed is consumed by the root `JasonetteNavigationView` on
+        /// first render; subsequent `$reload`/pull-to-refresh refetch from
+        /// `rootURL` regardless of the seed.
         case single(rootURL: URL, preloadedDoc: JasonDocument?)
 
         /// Tabbed mode. Carries the bootstrap document so the matching tab
@@ -17,6 +21,7 @@ final class JasonetteNavigationCoordinator: ObservableObject {
 
     @Published private(set) var mode: Mode
     let entryURL: URL
+    private var didBootstrap = false
 
     init(entryURL: URL) {
         self.entryURL = entryURL
@@ -26,8 +31,12 @@ final class JasonetteNavigationCoordinator: ObservableObject {
     /// Called when the bootstrap document finishes loading. Inspects
     /// `body.footer.tabs`; if present and non-empty, promotes to `.tabs`.
     /// If absent, updates `.single` with the loaded doc so later renders can
-    /// read it without re-fetching. Idempotent — second call is ignored.
+    /// read it without re-fetching. One-shot: guarded by `didBootstrap` so a
+    /// second call (e.g. after a `$reload` in single mode) never replaces the
+    /// preloaded document or re-promotes to `.tabs`.
     func bootstrapDidLoad(doc: JasonDocument) {
+        guard !didBootstrap else { return }
+        didBootstrap = true
         guard case .single = mode else { return }
 
         let entries = Self.entries(from: doc)
@@ -116,9 +125,11 @@ extension TabDescriptor {
             style: item.style
         )
 
-        if let action = item.action {
-            self.init(target: .action(action), label: label)
-            return
+        // Action-only tabs are not yet dispatched from the shell — tapping
+        // them would be a silent no-op in release. Reject at construction
+        // until action dispatch is plumbed through (see todos/025).
+        if item.action != nil, item.href == nil, item.url == nil {
+            return nil
         }
 
         let hrefView = item.href?.view

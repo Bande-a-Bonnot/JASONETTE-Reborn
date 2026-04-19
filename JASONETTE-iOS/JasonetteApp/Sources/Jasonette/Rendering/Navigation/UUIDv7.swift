@@ -1,4 +1,5 @@
 import Foundation
+import Security
 
 /// RFC 9562 UUIDv7: 48-bit millisecond timestamp + version + random.
 /// Coarsely time-ordered: IDs minted in different milliseconds sort in
@@ -18,7 +19,10 @@ enum UUIDv7 {
         bytes[5] = UInt8(ms & 0xFF)
 
         var randBytes = [UInt8](repeating: 0, count: 10)
-        _ = randBytes.withUnsafeMutableBytes { SecRandomCopyBytes(kSecRandomDefault, 10, $0.baseAddress!) }
+        let status = randBytes.withUnsafeMutableBytes {
+            SecRandomCopyBytes(kSecRandomDefault, 10, $0.baseAddress!)
+        }
+        precondition(status == errSecSuccess, "SecRandomCopyBytes failed (\(status))")
 
         bytes[6] = (randBytes[0] & 0x0F) | 0x70   // version 7
         bytes[7] = randBytes[1]
