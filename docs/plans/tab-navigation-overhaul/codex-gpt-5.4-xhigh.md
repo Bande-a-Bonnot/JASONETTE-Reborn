@@ -1,8 +1,8 @@
-**Verdict**
+## Verdict
 
 This is not a bug fix. It is a navigation-model rewrite. The current implementation is fundamentally incompatible with tab semantics because it models the whole app as one stack plus one mutable root.
 
-**Diagnosis**
+## Diagnosis
 
 - `JasonetteNavigationView` currently behaves like a single-stack browser, not a tab controller. A tab controller needs one persistent shell plus one independent stack per tab.
 - `path: [URL]` is the wrong model. A route is not just a URL. It needs stable identity, presentation style, and the ability to represent the same URL multiple times.
@@ -13,7 +13,7 @@ This is not a bug fix. It is a navigation-model rewrite. The current implementat
 - There is no stable active-tab identity. Without that, highlight state, reselect handling, restoration, and deep-link routing all stay brittle.
 - The current model will race under async loads. A tab switch that nukes the subtree during fetch or `$load` guarantees redundant work and nondeterministic UI state.
 
-**Architecture**
+## Architecture
 
 Make the navigation shell own tabs. Content renders screens. Tabs are not screens.
 
@@ -106,7 +106,7 @@ final class StackState: ObservableObject {
 }
 ```
 
-**Rules**
+## Rules
 
 - The tab bar lives in the root shell, outside document content, via `safeAreaInset(edge: .bottom)`.
 - Each tab owns its own `StackState`.
@@ -115,7 +115,7 @@ final class StackState: ObservableObject {
 - Once a tab host is mounted, it stays alive until the shell definition changes.
 - `FooterTabBar` is presentational plus tap dispatch only. It does not synthesize navigation requests.
 
-**Bootstrap Strategy**
+## Bootstrap Strategy
 
 - Start in `.single` mode with one bootstrap stack for the entry URL.
 - When the first root document finishes loading, inspect `doc.body.footer.tabs`.
@@ -126,7 +126,7 @@ final class StackState: ObservableObject {
 - Tab matching is by canonical target, not by display text.
 - If the bootstrap document declares tabs but none of the tab targets matches the bootstrap URL, treat the document as malformed: first tab becomes selected, the bootstrap screen is discarded, and debug builds assert.
 
-**Footer Override Policy**
+## Footer Override Policy
 
 - Only a tab root document may define the shell’s `footer.tabs`.
 - Pushed pages do not get to replace, hide, or mutate the shell tab bar.
@@ -134,7 +134,7 @@ final class StackState: ObservableObject {
 - Runtime shell changes via `$render` are allowed only when the active tab root document changes its own `footer.tabs`.
 - Shell updates diff by canonical target. Existing matching tabs keep their stack state. Removed tabs are dropped. New tabs are added lazily.
 
-**Deep Link and Active Tab Behavior**
+## Deep Link and Active Tab Behavior
 
 - Active highlight is driven by `selectedTabID`, full stop.
 - A link with `transition: "switch"` inside a tab shell means “select declared tab,” not “replace arbitrary root.”
@@ -144,7 +144,7 @@ final class StackState: ObservableObject {
 - Same-tab reselect pops that tab to root and issues a scroll-to-top signal for the root scroll view.
 - Switching away from a tab preserves its pushed stack exactly as-is.
 
-**Modal Semantics**
+## Modal Semantics
 
 - Modal presentation covers the tab bar. That is correct iOS behavior.
 - The underlying tab shell remains alive and unchanged beneath the modal.
@@ -152,7 +152,7 @@ final class StackState: ObservableObject {
 - `$back` inside a modal pops the modal’s own stack first; at modal root it dismisses the modal.
 - `$back` at a tab root is a no-op. It does not switch tabs and does not exit the shell.
 
-**Edge Cases**
+## Edge Cases
 
 - `view:web` and `view:app` work as tab roots because `TabDescriptor` stores a full target type, not just a URL.
 - Action-only tabs are buttons, not tabs. They execute their action and do not change `selectedTabID`.
@@ -161,7 +161,7 @@ final class StackState: ObservableObject {
 - If a selected tab is removed by runtime shell update, selection moves to the first surviving tab.
 - Scene recreation restores selected tab and lightweight route history through `@SceneStorage`; in-memory tab switches preserve full VM and scroll state without restoration machinery.
 
-**Delete / Rewrite / Keep**
+## Delete / Rewrite / Keep
 
 - Delete the single global `path: [URL]`.
 - Delete `currentRoot`.
@@ -174,7 +174,7 @@ final class StackState: ObservableObject {
 - Keep `StateManager`, but scope it to stable `ScreenState` instances, not ephemeral subtree rebuilds.
 - Keep component rendering. Tabs are a shell concern, not a component concern.
 
-**SwiftUI API Choices**
+## SwiftUI API Choices
 
 - Use `NavigationStack` per tab. That is the correct stack abstraction.
 - Use `@StateObject` for the root coordinator and long-lived stack/tab state owners.
@@ -183,14 +183,14 @@ final class StackState: ObservableObject {
 - Use `safeAreaInset(edge: .bottom)` for the persistent tab bar.
 - Do not use `TabView` / `.tabItem`. The system tab bar is the wrong fit here because you need action-only items, explicit reselect behavior, shell promotion after bootstrap, and JSON-defined icon/text/badge rendering without surrendering control.
 
-**Public API Surface**
+## Public API Surface
 
 - Keep the public surface minimal.
 - `JasonetteNavigationView(url:)` stays the sole public container.
 - Tabs remain document-driven. Do not expose public tab models just because the internals changed.
 - If any navigation API is public today, replace public `switchRoot` semantics with public `selectTab(id:)` only if truly required. Otherwise keep it internal.
 
-**Atomic Migration Order**
+## Atomic Migration Order
 
 1. Introduce `Route`, `ScreenState`, `StackState`, and `JasonetteNavigationCoordinator` with tests. No UI wiring yet.
 2. Replace URL-only push state with `Route`-based stacks. Remove `path: [URL]` from the public nav container.
