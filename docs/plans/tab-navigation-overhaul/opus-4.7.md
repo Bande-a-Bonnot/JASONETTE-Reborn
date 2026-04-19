@@ -1,6 +1,10 @@
-I've read the code. Noting the reminders; proceeding with the review without additional file reads.
-
 # Tab Navigation Overhaul Proposal
+
+> **Status: superseded.** This document was an early proposal favouring
+> SwiftUI `TabView`. The canonical design — shell owns selection, tabs
+> are opaque nav scopes — lives in [`plan.md`](plan.md) and
+> [`codex-gpt-5.4-xhigh.md`](codex-gpt-5.4-xhigh.md). Kept for history
+> and for the diagnosis section (§1) which still stands.
 
 ## 1. Diagnosis — you're right, and it's worse than you said
 
@@ -8,7 +12,7 @@ Current `JasonetteNavigationView` treats tabs as "replace the stack root." That'
 
 **Concrete failures, most of them load-bearing:**
 
-1. **State is destroyed on every tab tap.** `JasonetteView` owns a `@StateObject private var viewModel`. SwiftUI attaches `@StateObject` lifetime to view identity. `.id(currentRoot)` at the top is a nuke — every tab switch changes the identity, SwiftUI tears down the view, the `@StateObject` is deallocated, `StateManager` (which holds `local` state), `ActionDispatcher` timers, `$load` lifecycle, scroll position, focus, keyboard — gone. Come back to Tab A → you get a fresh network fetch and a fresh `$load`. That alone is "completely fucked up."
+1. **State is destroyed on every tab tap.** `JasonetteView` owns a `@StateObject private var viewModel`. SwiftUI attaches `@StateObject` lifetime to view identity. `.id(currentRoot)` at the top is a nuke — every tab switch changes the identity, SwiftUI tears down the view, the `@StateObject` is deallocated, `StateManager` (which holds `local` state), `ActionDispatcher` timers, `$load` lifecycle, scroll position, focus, keyboard — gone. Come back to Tab A → you get a fresh network fetch and a fresh `$load`. That alone is catastrophic.
 
 2. **Path is shared across tabs.** `@State var path: [URL]` is a single array. Tab A pushes detail → tap Tab B → `path = []` wipes Tab A's stack. Return to Tab A → you land on the root, not the detail you were reading. Classic UITabBarController preserves per-tab stacks. We preserve zero.
 
@@ -352,9 +356,9 @@ Each step is an atomic commit per the project conventions.
 
 ## Files touched
 
-- `/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/Sources/Jasonette/Rendering/JasonetteNavigationView.swift` — replace with `JasonetteNavigationStack`, delete `switchRoot`.
-- `/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/Sources/Jasonette/Rendering/JasonetteView.swift` — delete `FooterTabItemView`, gate `footerView`'s tabs branch on the env flag.
-- `/Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn/JASONETTE-iOS/JasonetteApp/Sources/Jasonette/Rendering/JasonetteViewModel.swift` — replace `switchRoot` branch in `handleHref` with env-closure path.
+- `../../../JASONETTE-iOS/JasonetteApp/Sources/Jasonette/Rendering/JasonetteNavigationView.swift` — replace with `JasonetteNavigationStack`, delete `switchRoot`.
+- `../../../JASONETTE-iOS/JasonetteApp/Sources/Jasonette/Rendering/JasonetteView.swift` — delete `FooterTabItemView`, gate `footerView`'s tabs branch on the env flag.
+- `../../../JASONETTE-iOS/JasonetteApp/Sources/Jasonette/Rendering/JasonetteViewModel.swift` — replace `switchRoot` branch in `handleHref` with env-closure path.
 - NEW: `Sources/Jasonette/Rendering/JasonetteRootView.swift`.
 - NEW: `Sources/Jasonette/Rendering/JasonetteTabContainer.swift`.
 - NEW: `Sources/Jasonette/Rendering/JasonetteEnvironment.swift` (env keys).

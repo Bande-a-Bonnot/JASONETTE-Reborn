@@ -148,7 +148,9 @@ final class TabNavigationCoordinatorTests: XCTestCase {
             tabItem(url: "https://a"),
             tabItem(url: "https://b"),
         ]))
-        guard case .tabs(let shell, _, _) = c.mode else { return XCTFail() }
+        guard case .tabs(let shell, _, _) = c.mode else {
+            return XCTFail("bootstrap with selectable tabs must promote to .tabs")
+        }
         XCTAssertEqual(shell.selectedTabID, shell.tabs[1].id)
     }
 
@@ -163,7 +165,9 @@ final class TabNavigationCoordinatorTests: XCTestCase {
             tabItem(url: "https://a"),
             tabItem(url: "https://b"),
         ]))
-        guard case .tabs(let shell, _, _) = c.mode else { return XCTFail() }
+        guard case .tabs(let shell, _, _) = c.mode else {
+            return XCTFail("release build must still promote after dedupe")
+        }
         XCTAssertEqual(shell.tabs.count, 2, "duplicate URL should be dropped")
         #endif
     }
@@ -174,7 +178,9 @@ final class TabNavigationCoordinatorTests: XCTestCase {
         guard case .tabs = c.mode else { return XCTFail("first call should promote") }
         // Second call with different tabs must not demote or re-promote.
         c.bootstrapDidLoad(doc: makeDoc(tabs: [tabItem(url: "https://z")]))
-        guard case .tabs(let shell, _, _) = c.mode else { return XCTFail() }
+        guard case .tabs(let shell, _, _) = c.mode else {
+            return XCTFail("second bootstrap must not demote — mode must stay .tabs")
+        }
         XCTAssertEqual(shell.tabs.first?.descriptor.selectableURL, URL(string: "https://a"))
     }
 
@@ -190,7 +196,9 @@ final class TabNavigationCoordinatorTests: XCTestCase {
             tabItem(url: "https://b"),
         ]))
         XCTAssertTrue(c.switchToURLIfTab(URL(string: "https://b")!))
-        guard case .tabs(let shell, _, _) = c.mode else { return XCTFail() }
+        guard case .tabs(let shell, _, _) = c.mode else {
+            return XCTFail("switchToURLIfTab requires .tabs mode")
+        }
         XCTAssertEqual(shell.selectedTabID, shell.tabs[1].id)
     }
 

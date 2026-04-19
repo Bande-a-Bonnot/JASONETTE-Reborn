@@ -255,7 +255,7 @@ calls `jasonetteSwitchTab(url)` for `transition == "switch"`; falls back to
 ## Rules (invariants the design enforces)
 
 - The tab bar lives outside document content, via `safeAreaInset(edge: .bottom)`.
-- Each tab owns its own `StackState`. Selection changes never touch stacks.
+- Each tab owns its own opaque navigable scope (a `JasonetteNavigationView`). Selection changes never touch stacks.
 - Tab identity is by `TabID` (UUIDv7), never by URL.
 - Pushed pages inside a tab ignore their own `footer.tabs` (env-gated).
 - `$back` at a tab root is a no-op. It does not switch tabs.
