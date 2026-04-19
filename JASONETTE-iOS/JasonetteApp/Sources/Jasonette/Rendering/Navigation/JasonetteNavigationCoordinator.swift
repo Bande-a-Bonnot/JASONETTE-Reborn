@@ -139,18 +139,15 @@ extension TabDescriptor {
 
         // Same allowlist as JasonetteViewModel.handleHref so a tab can't open
         // a URL that a programmatic href would have been rejected for.
-        let documentSchemes: Set<String> = DocumentLoader.allowedSchemes
-        let appSchemes: Set<String> = ["http", "https", "mailto", "tel", "sms"]
-
         switch hrefView {
         case "web":
-            guard documentSchemes.contains(scheme) else { return nil }
+            guard DocumentLoader.allowedSchemes.contains(scheme) else { return nil }
             self.init(target: .web(url), label: label)
         case "app":
-            guard appSchemes.contains(scheme) else { return nil }
+            guard DocumentLoader.appSchemes.contains(scheme) else { return nil }
             self.init(target: .app(url), label: label)
         default:
-            guard documentSchemes.contains(scheme) else { return nil }
+            guard DocumentLoader.allowedSchemes.contains(scheme) else { return nil }
             self.init(target: .document(url), label: label)
         }
     }

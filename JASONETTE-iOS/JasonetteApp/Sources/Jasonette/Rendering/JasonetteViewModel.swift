@@ -169,8 +169,7 @@ public final class JasonetteViewModel: ObservableObject {
 
         guard let urlStr = href.url, let url = URL(string: urlStr) else { return }
 
-        let appSchemes: Set<String> = ["http", "https", "mailto", "tel", "sms"]
-        let allowed = href.view == "app" ? appSchemes : DocumentLoader.allowedSchemes
+        let allowed = href.view == "app" ? DocumentLoader.appSchemes : DocumentLoader.allowedSchemes
         guard let scheme = url.scheme?.lowercased(), allowed.contains(scheme) else { return }
 
         switch href.view {

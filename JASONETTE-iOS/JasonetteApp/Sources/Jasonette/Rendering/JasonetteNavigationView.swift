@@ -53,8 +53,8 @@ struct JasonetteNavigationView: View {
     /// sheet — used to dismiss the sheet on `$close`. `nil` at the root.
     private let onClose: (() -> Void)?
 
-    private static let webSchemes: Set<String> = ["https", "http"]
-    private static let appSchemes: Set<String> = ["https", "http", "mailto", "tel", "sms"]
+    // Scheme allowlists live on DocumentLoader to keep nav, action dispatch,
+    // footer tabs, and $href in lockstep.
 
     init(url: URL, preloadedDoc: JasonDocument? = nil) {
         self.rootURL = url
@@ -129,7 +129,7 @@ struct JasonetteNavigationView: View {
 
         case .web(let url):
             guard let scheme = url.scheme?.lowercased(),
-                  Self.webSchemes.contains(scheme) else { return }
+                  DocumentLoader.allowedSchemes.contains(scheme) else { return }
             #if os(iOS)
             safariURL = IdentifiableURL(url)
             #else
@@ -138,7 +138,7 @@ struct JasonetteNavigationView: View {
 
         case .app(let url):
             guard let scheme = url.scheme?.lowercased(),
-                  Self.appSchemes.contains(scheme) else { return }
+                  DocumentLoader.appSchemes.contains(scheme) else { return }
             openURL(url)
         }
     }

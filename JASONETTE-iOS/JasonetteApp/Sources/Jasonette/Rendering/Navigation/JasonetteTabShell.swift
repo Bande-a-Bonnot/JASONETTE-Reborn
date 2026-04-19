@@ -31,7 +31,9 @@ struct JasonetteTabShell: View {
         ZStack {
             // Only document tabs produce content; web/app/action tabs live in
             // the bar and are handled on tap, never rendered in the stack.
-            ForEach(shell.tabs.filter { $0.descriptor.isSelectable }) { tab in
+            // `selectableTabs` is precomputed on `TabShellState`, not filtered
+            // per render.
+            ForEach(shell.selectableTabs) { tab in
                 let selected = tab.id == shell.selectedTabID
                 content(for: tab)
                     .opacity(selected ? 1 : 0)
@@ -57,15 +59,15 @@ struct JasonetteTabShell: View {
         }
         #endif
         .onAppear {
-            // Only let storedKey override when the coordinator's initial pick
-            // was a fallback to the first selectable tab — i.e., entry URL
-            // did not match any tab. If the coordinator matched the entry URL
-            // (deep link or direct launch), that wins.
-            let initial = shell.tabs.first(where: { $0.id == shell.selectedTabID })
-            let coordinatorMatchedEntry = initial?.descriptor.selectableURL == bootstrapURL
-            if !coordinatorMatchedEntry {
-                shell.selectByCanonicalKey(storedKey)
-            }
+            // Precedence: stored key > coordinator's pick (entry URL match,
+            // else first selectable). A non-empty stored key always wins when
+            // it still resolves to a selectable tab — otherwise the shell
+            // would always re-open on the entry tab in the common case where
+            // the entry URL is itself a tab, and users would never see their
+            // last selection restored. `selectByCanonicalKey` is a no-op on
+            // miss, so an unknown/stale key leaves the coordinator's pick
+            // intact.
+            shell.selectByCanonicalKey(storedKey)
             // Flush current selection's key back so a stale storedKey (points
             // at a tab that no longer exists) doesn't linger across launches.
             storedKey = shell.selectedCanonicalKey

@@ -7,6 +7,10 @@ import SwiftUI
 final class TabShellState: ObservableObject {
     @Published private(set) var selectedTabID: TabID
     let tabs: [TabEntry]
+    /// Precomputed subset of `tabs` whose descriptors are `.document` (i.e.
+    /// have a mounted scope). The shell's ZStack iterates this instead of
+    /// filtering on every render. Stable for the lifetime of the state.
+    let selectableTabs: [TabEntry]
 
     /// Build a shell from an already-deduped, non-empty list of entries.
     /// Traps (both debug and release, via `precondition`) on empty input or
@@ -20,6 +24,7 @@ final class TabShellState: ObservableObject {
             "initialSelection must match a selectable tab"
         )
         self.tabs = tabs
+        self.selectableTabs = tabs.filter { $0.descriptor.isSelectable }
         self.selectedTabID = initialSelection
     }
 
