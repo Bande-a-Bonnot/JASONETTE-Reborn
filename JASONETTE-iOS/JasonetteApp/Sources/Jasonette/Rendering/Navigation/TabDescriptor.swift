@@ -14,8 +14,11 @@ struct TabDescriptor: Sendable {
         case web(URL)
         /// External app open. Tap does NOT change selection.
         case app(URL)
-        /// Fire a JSON action on tap. Selection unchanged.
-        case action(JasonAction)
+        // `.action` (fire a JSON action on tap, selection unchanged) will be
+        // added back when action dispatch is plumbed through — tracked in
+        // `todos/026-ready-p2-action-tab-dispatch.md`. Until then, action-only
+        // footer items are rejected at `TabDescriptor(from:)` construction and
+        // the shell has no unreachable no-op branch to ship by accident.
 
         /// String form used for duplicate detection at bootstrap.
         var canonicalKey: String {
@@ -23,7 +26,6 @@ struct TabDescriptor: Sendable {
             case .document(let url): return "doc:\(url.absoluteString)"
             case .web(let url):      return "web:\(url.absoluteString)"
             case .app(let url):      return "app:\(url.absoluteString)"
-            case .action(let a):     return "act:\(ObjectIdentifier(a).hashValue)"
             }
         }
     }

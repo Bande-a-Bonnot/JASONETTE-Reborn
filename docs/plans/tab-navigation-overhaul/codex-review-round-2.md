@@ -17,7 +17,11 @@
 
 - **HIGH (fixed in PR #20)**: Tab icon extraction is wrong for normal tabs. `TabDescriptor.init?(from:)` now reads `item.image` directly instead of `item.imageURL`. [JasonetteNavigationCoordinator.swift](../../../JASONETTE-iOS/JasonetteApp/Sources/Jasonette/Rendering/Navigation/JasonetteNavigationCoordinator.swift#L96) stores `iconURL` from `item.imageURL`, but [JasonDocument.swift](../../../JASONETTE-iOS/JasonetteApp/Sources/Jasonette/Core/JasonDocument.swift#L88) defines `imageURL` as `url ?? image`. For a standard footer tab with both a target `url` and an `image`, the icon becomes the document URL, so [FooterTabBar.swift](../../../JASONETTE-iOS/JasonetteApp/Sources/Jasonette/Rendering/Navigation/FooterTabBar.swift#L40) tries to render JSON as an image.
 
-- **MEDIUM (open)**: The package still exposes the broken entry point. [JasonetteNavigationView.swift](../../../JASONETTE-iOS/JasonetteApp/Sources/Jasonette/Rendering/JasonetteNavigationView.swift#L35) remains `public`, while the fixed bootstrap/shell path starts at [JasonetteRootView.swift](../../../JASONETTE-iOS/JasonetteApp/Sources/Jasonette/Rendering/Navigation/JasonetteRootView.swift#L11). Any external caller still using `JasonetteNavigationView(url:)` keeps the old broken tab model and silently misses this overhaul.
+- **MEDIUM (fixed in PR #20)**: The package no longer exposes the broken
+  entry point. `JasonetteNavigationView`, `JasonetteView`, and
+  `NavigationRequest` were demoted to `internal` in `cbd1ef9`; external
+  callers must use `JasonetteRootView(url:)`, which drives the one-shot
+  `.single → .tabs` promotion through the coordinator.
 
 ## Questions
 

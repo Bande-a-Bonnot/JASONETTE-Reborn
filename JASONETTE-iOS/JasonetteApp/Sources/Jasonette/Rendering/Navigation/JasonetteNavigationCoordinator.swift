@@ -45,7 +45,7 @@ final class JasonetteNavigationCoordinator: ObservableObject {
             return
         }
 
-        // Initial selection must land on a document tab — `.web/.app/.action`
+        // Initial selection must land on a document tab — `.web` and `.app`
         // render nothing, so selecting one would boot into a blank shell.
         let selectable = entries.filter { $0.descriptor.isSelectable }
         guard let initial = selectable.first(where: { $0.descriptor.selectableURL == entryURL })

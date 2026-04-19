@@ -88,9 +88,16 @@ struct JasonetteTabShell: View {
         switch tab.descriptor.target {
         case .document(let url):
             if mounted.contains(tab.id) {
+                // Preloaded-doc hand-off is a fetch optimization, not a
+                // correctness invariant — on miss, `JasonetteView` just
+                // re-fetches from `url`. `standardized` absorbs the common
+                // differences (e.g. `…/home` vs `…/home/`) between the
+                // author-declared footer URL and the bootstrap URL. Query-
+                // order or case-of-host divergence still misses; cost is
+                // one extra fetch, not a broken shell.
                 JasonetteNavigationView(
                     url: url,
-                    preloadedDoc: url == bootstrapURL ? bootstrapDoc : nil
+                    preloadedDoc: url.standardized == bootstrapURL.standardized ? bootstrapDoc : nil
                 )
             } else {
                 Color.clear
@@ -114,10 +121,6 @@ struct JasonetteTabShell: View {
             #endif
         case .app(let url):
             openURL(url)
-        case .action:
-            #if DEBUG
-            print("[Jasonette] Tab action dispatch not yet implemented")
-            #endif
         }
     }
 }

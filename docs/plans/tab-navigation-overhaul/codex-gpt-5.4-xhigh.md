@@ -1,3 +1,11 @@
+> **Status:** historical. This is a pre-implementation plan from an
+> earlier codex pass; some specifics (e.g. `JasonetteNavigationView(url:)`
+> as the public container) drifted during implementation. The shipped
+> model is captured in `plan.md` — `JasonetteRootView(url:)` is the
+> public entry, `JasonetteNavigationView` / `JasonetteView` are internal.
+> Treat this doc as archival context for the rationale, not as a
+> specification of what shipped.
+
 ## Verdict
 
 This is not a bug fix. It is a navigation-model rewrite. The current implementation is fundamentally incompatible with tab semantics because it models the whole app as one stack plus one mutable root.
@@ -186,7 +194,10 @@ final class StackState: ObservableObject {
 ## Public API Surface
 
 - Keep the public surface minimal.
-- `JasonetteNavigationView(url:)` stays the sole public container.
+- `JasonetteRootView(url:)` is the sole public entry point (was
+  `JasonetteNavigationView(url:)` in the pre-implementation plan;
+  changed during implementation so external callers can't bypass the
+  `.single → .tabs` promotion).
 - Tabs remain document-driven. Do not expose public tab models just because the internals changed.
 - If any navigation API is public today, replace public `switchRoot` semantics with public `selectTab(id:)` only if truly required. Otherwise keep it internal.
 
