@@ -41,9 +41,16 @@ final class TabShellState: ObservableObject {
     /// Match a URL against the tabs' selectable targets. If one matches,
     /// select it and return true. Returns false for no match — caller should
     /// fall through to `.push`.
+    ///
+    /// Comparison uses `.standardized` on both sides so `transition: "switch"`
+    /// hrefs that differ only in `.`/`..` path segments still resolve to the
+    /// same tab the coordinator picked at bootstrap. Trailing slashes and
+    /// host casing are deliberately not normalized — that matches the
+    /// `canonicalKey` invariant.
     @discardableResult
     func switchToURLIfMatches(_ url: URL) -> Bool {
-        guard let hit = tabs.first(where: { $0.descriptor.selectableURL == url }) else {
+        let target = url.standardized
+        guard let hit = tabs.first(where: { $0.descriptor.selectableURL?.standardized == target }) else {
             return false
         }
         selectedTabID = hit.id

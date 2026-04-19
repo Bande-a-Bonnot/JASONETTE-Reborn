@@ -47,8 +47,12 @@ final class JasonetteNavigationCoordinator: ObservableObject {
 
         // Initial selection must land on a document tab — `.web` and `.app`
         // render nothing, so selecting one would boot into a blank shell.
+        // Match by `.standardized` to absorb `.`/`..` path differences so
+        // this stays in lockstep with `TabDescriptor.Target.canonicalKey`
+        // and `JasonetteTabShell`'s preload-doc hand-off.
         let selectable = entries.filter { $0.descriptor.isSelectable }
-        guard let initial = selectable.first(where: { $0.descriptor.selectableURL == entryURL })
+        let entryStd = entryURL.standardized
+        guard let initial = selectable.first(where: { $0.descriptor.selectableURL?.standardized == entryStd })
                 ?? selectable.first
         else {
             #if DEBUG
@@ -57,7 +61,7 @@ final class JasonetteNavigationCoordinator: ObservableObject {
             mode = .single(rootURL: entryURL, preloadedDoc: doc)
             return
         }
-        if initial.descriptor.selectableURL != entryURL {
+        if initial.descriptor.selectableURL?.standardized != entryStd {
             #if DEBUG
             print("[Jasonette] Bootstrap URL \(entryURL) not in declared tabs — first selectable tab used, bootstrap doc discarded")
             #endif
