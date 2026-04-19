@@ -263,8 +263,10 @@ calls `jasonetteSwitchTab(url)` for `transition == "switch"`; falls back to
   scroll-top signal (phase 2 — scaffold the signal now, wire consumers later).
 - Modals present above the tab bar (iOS default with `.sheet`).
 - Duplicate tab targets are rejected: debug asserts, release keeps first.
-- Action-only tabs (`item.action` set, no URL) dispatch the action and do NOT
-  change `selectedTabID`.
+- Action-only tabs (`item.action` set, no URL) are currently rejected at
+  `TabDescriptor(from:)` construction and do not appear in the shell.
+  Dispatch-on-tap (executing the action without changing `selectedTabID`)
+  is planned — see `todos/026-ready-p2-action-tab-dispatch.md`.
 
 ## Atomic migration order
 

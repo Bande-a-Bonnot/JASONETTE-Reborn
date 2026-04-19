@@ -14,7 +14,7 @@ struct IdentifiableURL: Identifiable {
 /// `JasonetteNavigationView`. Handlers are scoped to one presentation — the
 /// root container installs its own, each modal installs its own — so
 /// navigation inside a modal cannot mutate the parent's stack.
-public enum NavigationRequest: Sendable {
+enum NavigationRequest: Sendable {
     case push(URL)
     /// Request that the enclosing tab shell select the tab matching this URL.
     /// If no shell is present or no tab matches, falls through to `.push`.
@@ -40,7 +40,7 @@ public enum NavigationRequest: Sendable {
 /// rather than as a persistent shell bar, and `transition:"switch"` hrefs
 /// can only fall back to `.push` since there is no enclosing shell.
 @MainActor
-public struct JasonetteNavigationView: View {
+struct JasonetteNavigationView: View {
     let rootURL: URL
     let preloadedDoc: JasonDocument?
     @State private var path: [URL] = []
@@ -56,7 +56,7 @@ public struct JasonetteNavigationView: View {
     private static let webSchemes: Set<String> = ["https", "http"]
     private static let appSchemes: Set<String> = ["https", "http", "mailto", "tel", "sms"]
 
-    public init(url: URL, preloadedDoc: JasonDocument? = nil) {
+    init(url: URL, preloadedDoc: JasonDocument? = nil) {
         self.rootURL = url
         self.preloadedDoc = preloadedDoc
         self.onClose = nil
@@ -69,7 +69,7 @@ public struct JasonetteNavigationView: View {
         self.onClose = onClose
     }
 
-    public var body: some View {
+    var body: some View {
         NavigationStack(path: $path) {
             rootContent
                 .navigationDestination(for: URL.self) { url in
