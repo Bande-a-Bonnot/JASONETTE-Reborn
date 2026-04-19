@@ -36,10 +36,21 @@ final class JasonetteNavigationCoordinator: ObservableObject {
             return
         }
 
-        let initial = entries.first { $0.descriptor.selectableURL == entryURL } ?? entries.first!
+        // Initial selection must land on a document tab — `.web/.app/.action`
+        // render nothing, so selecting one would boot into a blank shell.
+        let selectable = entries.filter { $0.descriptor.isSelectable }
+        guard let initial = selectable.first(where: { $0.descriptor.selectableURL == entryURL })
+                ?? selectable.first
+        else {
+            #if DEBUG
+            assertionFailure("footer.tabs declared no selectable document target — staying in single mode")
+            #endif
+            mode = .single(rootURL: entryURL, preloadedDoc: doc)
+            return
+        }
         if initial.descriptor.selectableURL != entryURL {
             #if DEBUG
-            assertionFailure("Bootstrap URL \(entryURL) not in declared tabs — first tab selected, bootstrap doc discarded")
+            assertionFailure("Bootstrap URL \(entryURL) not in declared tabs — first selectable tab used, bootstrap doc discarded")
             #endif
         }
 
@@ -90,12 +101,17 @@ final class JasonetteNavigationCoordinator: ObservableObject {
 
 extension TabDescriptor {
     /// Convert a footer-tabs `JasonComponent` into a descriptor. Returns nil
-    /// for items that have no recognizable target (no href, no url, no
-    /// action). The caller filters these out.
+    /// for items that have no recognizable target or whose URL scheme isn't
+    /// allowed for that target kind — same scheme allowlist `handleHref` uses.
+    /// The caller filters these out.
+    ///
+    /// Icon resolution reads `item.image` directly. `item.imageURL` falls
+    /// back to `item.url`, which for tabs is the target document URL — that
+    /// would try to render JSON as an image.
     init?(from item: JasonComponent) {
         let label = TabLabelSpec(
             text: item.text,
-            iconURL: item.imageURL.flatMap(URL.init(string:)),
+            iconURL: item.image.flatMap(URL.init(string:)),
             badge: item.badge,
             style: item.style
         )
@@ -108,13 +124,22 @@ extension TabDescriptor {
         let hrefView = item.href?.view
         let urlString = item.href?.url ?? item.url
         guard let s = urlString, let url = URL(string: s) else { return nil }
+        guard let scheme = url.scheme?.lowercased() else { return nil }
+
+        // Same allowlist as JasonetteViewModel.handleHref so a tab can't open
+        // a URL that a programmatic href would have been rejected for.
+        let documentSchemes: Set<String> = DocumentLoader.allowedSchemes
+        let appSchemes: Set<String> = ["http", "https", "mailto", "tel", "sms"]
 
         switch hrefView {
         case "web":
+            guard documentSchemes.contains(scheme) else { return nil }
             self.init(target: .web(url), label: label)
         case "app":
+            guard appSchemes.contains(scheme) else { return nil }
             self.init(target: .app(url), label: label)
         default:
+            guard documentSchemes.contains(scheme) else { return nil }
             self.init(target: .document(url), label: label)
         }
     }

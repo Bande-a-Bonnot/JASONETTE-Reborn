@@ -336,4 +336,42 @@ final class ViewModelTests: XCTestCase {
         await vm.load()
         XCTAssertEqual(vm.stateManager.get()["loaded_lifecycle"] as? Bool, true)
     }
+
+    // MARK: - Preload seed + reload (Codex review round 2 regression)
+
+    /// BLOCKER 1: a VM constructed with `init(url:preloadedDoc:)` renders the
+    /// seed on first load without hitting the network. The seed's head
+    /// title must appear in `renderedRoot`.
+    func testPreloadSeedRendersFirstLoadWithoutFetch() async {
+        let seed = simpleDocument(title: "Seed Title")
+        let vm = JasonetteViewModel(
+            url: URL(string: "https://not-reachable.invalid/x.json")!,
+            preloadedDoc: seed
+        )
+        await vm.load()
+        XCTAssertEqual(vm.loadState, .loaded, "seed should render without fetch")
+        XCTAssertEqual(vm.renderedRoot?.head?.title, "Seed Title")
+    }
+
+    /// BLOCKER 1: once the seed has been rendered, subsequent `load()` calls
+    /// must refetch from `url` — otherwise `$reload`/retry/pull-to-refresh
+    /// forever re-renders the stale seed. We prove this by pointing the VM
+    /// at an unreachable URL: the second load must fail with an error
+    /// (because it actually tried to fetch), not pass with the stale seed.
+    func testPreloadSeedRefetchesOnSecondLoad() async {
+        let seed = simpleDocument(title: "Seed Title")
+        let vm = JasonetteViewModel(
+            url: URL(string: "https://definitely-not-reachable.invalid/x.json")!,
+            preloadedDoc: seed
+        )
+        await vm.load()
+        XCTAssertEqual(vm.loadState, .loaded, "first load uses seed")
+
+        await vm.load()
+        if case .error = vm.loadState {
+            // Expected: the fetch attempt against the invalid host fails.
+        } else {
+            XCTFail("second load must refetch — got \(vm.loadState) instead of .error")
+        }
+    }
 }

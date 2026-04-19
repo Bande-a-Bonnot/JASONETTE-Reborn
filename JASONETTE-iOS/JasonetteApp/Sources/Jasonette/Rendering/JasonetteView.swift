@@ -27,6 +27,13 @@ public struct JasonetteView: View {
         _viewModel = StateObject(wrappedValue: JasonetteViewModel(document: document, onNavigate: onNavigate))
     }
 
+    /// Seeded init: render `preloadedDoc` on first load, refetch from `url`
+    /// on subsequent reloads. Used by the tab shell to avoid a duplicate
+    /// fetch of the bootstrap document while preserving reload semantics.
+    public init(url: URL, preloadedDoc: JasonDocument, onNavigate: ((NavigationRequest) -> Void)? = nil) {
+        _viewModel = StateObject(wrappedValue: JasonetteViewModel(url: url, preloadedDoc: preloadedDoc, onNavigate: onNavigate))
+    }
+
     public var body: some View {
         Group {
             switch viewModel.loadState {

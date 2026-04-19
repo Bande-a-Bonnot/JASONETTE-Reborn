@@ -12,12 +12,16 @@ final class TabNavigationCoordinatorTests: XCTestCase {
         XCTAssertEqual(id.8 & 0xC0, 0x80, "variant bits should be 10xx")
     }
 
-    func testUUIDv7IsTimeOrdered() {
+    /// UUIDv7 is only time-ordered across millisecond boundaries; within the
+    /// same millisecond the tail is random. The sleep here is deliberately
+    /// >1ms to hit the cross-ms path — the within-ms path has no ordering
+    /// guarantee and must not be tested.
+    func testUUIDv7IsTimeOrderedAcrossMilliseconds() {
         let a = UUIDv7.generate()
-        usleep(2_000) // 2ms
+        usleep(2_000) // 2ms — forces the ms counter to advance
         let b = UUIDv7.generate()
         XCTAssertLessThanOrEqual(a.uuidString, b.uuidString,
-                                 "later IDs must sort after earlier ones")
+                                 "IDs minted in different ms must sort in generation order")
     }
 
     // MARK: TabDescriptor conversion
@@ -257,5 +261,79 @@ final class TabNavigationCoordinatorTests: XCTestCase {
         XCTAssertEqual(shell.selectedCanonicalKey, a.target.canonicalKey)
         shell.select(tabs[1].id)
         XCTAssertEqual(shell.selectedCanonicalKey, b.target.canonicalKey)
+    }
+
+    // MARK: Codex review round 2 regressions
+
+    /// BLOCKER 2: footer with a non-document tab first (e.g. [web, document])
+    /// must still boot into a selectable tab when the entry URL matches one.
+    /// Otherwise the shell would boot into a `Color.clear` content area.
+    func testPromotionInitialSelectionSkipsNonSelectableFirstTab() {
+        let entry = URL(string: "https://example.com/doc")!
+        let c = JasonetteNavigationCoordinator(entryURL: entry)
+        let webItem = JasonComponent()
+        var href = JasonHref(); href.url = "https://example.com/w"; href.view = "web"
+        webItem.href = href
+        c.bootstrapDidLoad(doc: makeDoc(tabs: [webItem, tabItem(url: "https://example.com/doc")]))
+        guard case .tabs(let shell, _, _) = c.mode else { return XCTFail("expected .tabs") }
+        let selected = shell.tabs.first(where: { $0.id == shell.selectedTabID })
+        XCTAssertNotNil(selected)
+        XCTAssertTrue(selected?.descriptor.isSelectable == true, "initial selection must be a document tab")
+        XCTAssertEqual(selected?.descriptor.selectableURL, entry)
+    }
+
+    /// BLOCKER 2: footer with zero document tabs must NOT promote — there's
+    /// nothing to display in the content area. Coordinator stays in `.single`
+    /// and debug-asserts.
+    func testPromotionStaysInSingleWhenNoSelectableTabs() {
+        let c = JasonetteNavigationCoordinator(entryURL: URL(string: "https://example.com/entry")!)
+        let webItem = JasonComponent()
+        var href = JasonHref(); href.url = "https://example.com/w"; href.view = "web"
+        webItem.href = href
+        #if !DEBUG
+        c.bootstrapDidLoad(doc: makeDoc(tabs: [webItem]))
+        guard case .single = c.mode else { return XCTFail("expected .single when no document tab exists") }
+        #endif
+    }
+
+    /// HIGH 5: a footer item with both a target `url` and an `image` must
+    /// use the image as icon, not the target document URL. The old
+    /// `imageURL` helper returned `url ?? image`, so an AsyncImage would
+    /// have tried to render a JSON document as an image.
+    func testDescriptorIconReadsImageFieldNotTargetURL() {
+        let c = JasonComponent()
+        c.url = "https://example.com/target.json"
+        c.image = "https://example.com/icon.png"
+        let d = TabDescriptor(from: c)
+        XCTAssertEqual(d?.label.iconURL?.absoluteString, "https://example.com/icon.png",
+                       "icon must come from `image`, not target URL")
+    }
+
+    /// HIGH 4: document/web tabs must reject non-http(s) schemes. A tab
+    /// advertising `file:///etc/passwd` must not be constructed.
+    func testDescriptorRejectsDisallowedDocumentScheme() {
+        let c = JasonComponent(); c.url = "file:///etc/passwd"
+        XCTAssertNil(TabDescriptor(from: c))
+    }
+
+    func testDescriptorRejectsDisallowedWebScheme() {
+        let c = JasonComponent()
+        var href = JasonHref(); href.url = "javascript:alert(1)"; href.view = "web"
+        c.href = href
+        XCTAssertNil(TabDescriptor(from: c))
+    }
+
+    /// HIGH 4: `view:"app"` has a wider allowlist (mailto/tel/sms) than
+    /// document/web. `mailto:` must work, `javascript:` must not.
+    func testDescriptorAppAcceptsMailtoRejectsJavascript() {
+        let ok = JasonComponent()
+        var mailHref = JasonHref(); mailHref.url = "mailto:a@b.c"; mailHref.view = "app"
+        ok.href = mailHref
+        XCTAssertNotNil(TabDescriptor(from: ok))
+
+        let bad = JasonComponent()
+        var jsHref = JasonHref(); jsHref.url = "javascript:alert(1)"; jsHref.view = "app"
+        bad.href = jsHref
+        XCTAssertNil(TabDescriptor(from: bad))
     }
 }

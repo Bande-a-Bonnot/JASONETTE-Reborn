@@ -1,8 +1,10 @@
 import Foundation
 
 /// RFC 9562 UUIDv7: 48-bit millisecond timestamp + version + random.
-/// Time-ordered so IDs generated later sort after earlier ones — useful for
-/// stable tab ordering and any other insertion-order-sensitive identity.
+/// Coarsely time-ordered: IDs minted in different milliseconds sort in
+/// generation order. Within a single millisecond, ordering is random — no
+/// sub-ms monotonic counter is maintained. Callers that require strict
+/// monotonicity should not rely on string-sort order.
 enum UUIDv7 {
     static func generate() -> UUID {
         var bytes = [UInt8](repeating: 0, count: 16)

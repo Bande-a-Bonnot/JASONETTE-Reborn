@@ -17,11 +17,18 @@ struct JasonetteTabShell: View {
     /// restore still win because they mutate `selectedTabID` directly.
     @SceneStorage("jasonette.selectedTab") private var storedKey: String = ""
 
+    /// Tabs whose content has been mounted at least once. Hidden tabs stay
+    /// as `Color.clear` until first selection so they don't eagerly fetch,
+    /// run `$load`, or hold timers. Once mounted, a tab stays mounted for
+    /// the rest of the scene's lifetime — that's what preserves its VM,
+    /// nav path, scroll position, and modal slot across later re-selections.
+    @State private var mounted: Set<TabID> = []
+
     var body: some View {
         ZStack {
             ForEach(shell.tabs) { tab in
                 let selected = tab.id == shell.selectedTabID
-                content(for: tab)
+                content(for: tab, selected: selected)
                     .opacity(selected ? 1 : 0)
                     .allowsHitTesting(selected)
                     .accessibilityHidden(!selected)
@@ -38,20 +45,28 @@ struct JasonetteTabShell: View {
         .environment(\.jasonetteSwitchTab) { url in
             shell.switchToURLIfMatches(url)
         }
-        .onAppear { shell.selectByCanonicalKey(storedKey) }
-        .onChange(of: shell.selectedTabID) { _ in
+        .onAppear {
+            shell.selectByCanonicalKey(storedKey)
+            mounted.insert(shell.selectedTabID)
+        }
+        .onChange(of: shell.selectedTabID) { newID in
             storedKey = shell.selectedCanonicalKey
+            mounted.insert(newID)
         }
     }
 
     @ViewBuilder
-    private func content(for tab: TabEntry) -> some View {
+    private func content(for tab: TabEntry, selected: Bool) -> some View {
         switch tab.descriptor.target {
         case .document(let url):
-            JasonetteNavigationView(
-                url: url,
-                preloadedDoc: url == bootstrapURL ? bootstrapDoc : nil
-            )
+            if mounted.contains(tab.id) {
+                JasonetteNavigationView(
+                    url: url,
+                    preloadedDoc: url == bootstrapURL ? bootstrapDoc : nil
+                )
+            } else {
+                Color.clear
+            }
         case .web, .app, .action:
             // Non-selectable tabs have no mounted scope. The tap is handled
             // in `handleTap` and does not change selection, so rendering

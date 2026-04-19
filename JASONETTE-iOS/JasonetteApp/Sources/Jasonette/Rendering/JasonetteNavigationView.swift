@@ -31,6 +31,14 @@ public enum NavigationRequest: Sendable {
 /// and flips visibility — but that is the shell's concern. The nav view
 /// just runs its own stack and asks the shell (via env) to switch tabs
 /// when a `.switchTab` request arrives.
+///
+/// App authors should use `JasonetteRootView(url:)` as the app entry
+/// point — that's the view that promotes to the tab shell when the
+/// bootstrap document declares `body.footer.tabs`. Mounting
+/// `JasonetteNavigationView` directly is supported but keeps you in
+/// single-stack mode: `footer.tabs` is rendered in-page by `JasonetteView`
+/// rather than as a persistent shell bar, and `transition:"switch"` hrefs
+/// can only fall back to `.push` since there is no enclosing shell.
 @MainActor
 public struct JasonetteNavigationView: View {
     let rootURL: URL
@@ -89,7 +97,7 @@ public struct JasonetteNavigationView: View {
     @ViewBuilder
     private var rootContent: some View {
         if let doc = preloadedDoc {
-            JasonetteView(document: doc, onNavigate: dispatch)
+            JasonetteView(url: rootURL, preloadedDoc: doc, onNavigate: dispatch)
         } else {
             JasonetteView(url: rootURL, onNavigate: dispatch)
         }
