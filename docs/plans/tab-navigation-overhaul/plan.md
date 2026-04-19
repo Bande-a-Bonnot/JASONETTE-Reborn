@@ -340,10 +340,10 @@ Each step is one commit (or small PR) on its own.
 - `$back` at a tab root: no-op (guard `!path.isEmpty`).
 - Modal presentation above the shell: `.sheet` at the navigation-view level
   already covers the bar (iOS default).
-- Duplicate target rejection: `#if DEBUG assertionFailure()`; release keeps
-  first.
-- Entry URL not in declared tabs: first tab selected, bootstrap doc
-  discarded, debug-assert.
+- Duplicate target rejection: `#if DEBUG print("[Jasonette] Duplicate tab …")`
+  in debug; release silently keeps the first.
+- Entry URL not in declared tabs: first selectable tab is selected and the
+  mismatch is logged via `#if DEBUG print(...)` (no assertion).
 - `@SceneStorage("jasonette.selectedTab")` for selection only (paths
   deferred).
 - Tests for each edge case.
