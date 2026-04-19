@@ -10,6 +10,7 @@ struct JasonetteTabShell: View {
     let bootstrapDoc: JasonDocument
     let bootstrapURL: URL
     @Environment(\.openURL) private var openURL
+    @State private var safariURL: IdentifiableURL?
 
     /// Canonical key of the tab the user last had selected when the scene was
     /// last active. Precedence: deep link > stored key > entry URL > first
@@ -28,9 +29,11 @@ struct JasonetteTabShell: View {
 
     var body: some View {
         ZStack {
-            ForEach(shell.tabs) { tab in
+            // Only document tabs produce content; web/app/action tabs live in
+            // the bar and are handled on tap, never rendered in the stack.
+            ForEach(shell.tabs.filter { $0.descriptor.isSelectable }) { tab in
                 let selected = tab.id == shell.selectedTabID
-                content(for: tab, selected: selected)
+                content(for: tab)
                     .opacity(selected ? 1 : 0)
                     .allowsHitTesting(selected)
                     .accessibilityHidden(!selected)
@@ -47,6 +50,12 @@ struct JasonetteTabShell: View {
         .environment(\.jasonetteSwitchTab) { url in
             shell.switchToURLIfMatches(url)
         }
+        #if os(iOS)
+        .sheet(item: $safariURL) { item in
+            SafariView(url: item.url)
+                .ignoresSafeArea()
+        }
+        #endif
         .onAppear {
             // Only let storedKey override when the coordinator's initial pick
             // was a fallback to the first selectable tab — i.e., entry URL
@@ -68,8 +77,12 @@ struct JasonetteTabShell: View {
         }
     }
 
+    /// Only called for selectable tabs (filtered in `body`). The default
+    /// branch covers non-selectable descriptors that should never reach here
+    /// — if one does, the filter and `TabDescriptor.isSelectable` are out of
+    /// sync, which is a caller bug, not data.
     @ViewBuilder
-    private func content(for tab: TabEntry, selected: Bool) -> some View {
+    private func content(for tab: TabEntry) -> some View {
         switch tab.descriptor.target {
         case .document(let url):
             if mounted.contains(tab.id) {
@@ -80,10 +93,7 @@ struct JasonetteTabShell: View {
             } else {
                 Color.clear
             }
-        case .web, .app, .action:
-            // Non-selectable tabs have no mounted scope. The tap is handled
-            // in `handleTap` and does not change selection, so rendering
-            // Color.clear here is fine — the tab is visible in the bar only.
+        default:
             Color.clear
         }
     }
@@ -92,7 +102,15 @@ struct JasonetteTabShell: View {
         switch tab.descriptor.target {
         case .document:
             shell.select(tab.id)
-        case .web(let url), .app(let url):
+        case .web(let url):
+            // Parity with JasonetteNavigationView.dispatch(.web): in-app
+            // Safari on iOS, system browser elsewhere.
+            #if os(iOS)
+            safariURL = IdentifiableURL(url)
+            #else
+            openURL(url)
+            #endif
+        case .app(let url):
             openURL(url)
         case .action:
             #if DEBUG
