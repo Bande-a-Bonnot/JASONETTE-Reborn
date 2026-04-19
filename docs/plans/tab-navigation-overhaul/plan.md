@@ -379,8 +379,11 @@ MODIFIED:
 - `Sources/Jasonette/Rendering/JasonetteNavigationView.swift` — stripped
   of `switchRoot` / `currentRoot` / `.id` stack bomb; now an opaque
   navigable scope mounted per tab.
-- `Sources/Jasonette/Rendering/JasonetteView.swift` — footer suppression
-  inside tabs, `FooterTabItemView` removed.
+- `Sources/Jasonette/Rendering/JasonetteView.swift` — inside a tab shell,
+  in-document `footer.tabs` is suppressed so descendant pages can't
+  replace the shell bar. `FooterTabItemView` still exists for the legacy
+  non-shell footer path, but the shell's tab bar is rendered by
+  `FooterTabBar` and never routes through it.
 - `Sources/Jasonette/Rendering/JasonetteViewModel.swift` — env-closure
   switch path (`jasonetteSwitchTab`), `switchRoot` removed.
 - `Tests/JasonetteTests/ViewModelTests.swift` — preload-seed refetch
@@ -389,8 +392,12 @@ MODIFIED:
 DELETED:
 
 - `NavigationRequest.switchRoot` case.
-- `FooterTabItemView` (old in-document footer path).
 - `.id(currentRoot)` + `@State currentRoot` stack-nuke.
+- `FooterTabItemView` *as a tab-switch href synthesizer.* The view
+  itself is still defined in `JasonetteView.swift` for the legacy
+  non-shell footer code path; what got deleted is its former habit of
+  synthesizing `href.transition = "switch"` for every tap. The shell's
+  bar (`FooterTabBar`) does not route taps through it.
 
 > There is no `StackState` / `Coordinator/` directory. Earlier drafts of
 > this plan used a `StackState` abstraction; the shipped design puts
