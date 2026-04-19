@@ -11,6 +11,12 @@ struct JasonetteTabShell: View {
     let bootstrapURL: URL
     @Environment(\.openURL) private var openURL
 
+    /// Canonical key of the tab the user last had selected when the scene was
+    /// active. Takes precedence over the coordinator's entry-URL match when
+    /// the key still resolves to a selectable tab. Deep links arriving after
+    /// restore still win because they mutate `selectedTabID` directly.
+    @SceneStorage("jasonette.selectedTab") private var storedKey: String = ""
+
     var body: some View {
         ZStack {
             ForEach(shell.tabs) { tab in
@@ -31,6 +37,10 @@ struct JasonetteTabShell: View {
         .environment(\.jasonetteIsInsideTabShell, true)
         .environment(\.jasonetteSwitchTab) { url in
             shell.switchToURLIfMatches(url)
+        }
+        .onAppear { shell.selectByCanonicalKey(storedKey) }
+        .onChange(of: shell.selectedTabID) { _ in
+            storedKey = shell.selectedCanonicalKey
         }
     }
 

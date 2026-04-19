@@ -40,4 +40,24 @@ final class TabShellState: ObservableObject {
         selectedTabID = hit.id
         return true
     }
+
+    /// SceneStorage restore path. If the stored canonical key still matches a
+    /// currently-selectable tab, flip selection and return true. Returns
+    /// false when the stored key is empty, unknown (tab bar changed between
+    /// launches), or points at a non-selectable tab.
+    @discardableResult
+    func selectByCanonicalKey(_ key: String) -> Bool {
+        guard !key.isEmpty,
+              let hit = tabs.first(where: { $0.descriptor.target.canonicalKey == key }),
+              hit.descriptor.isSelectable
+        else { return false }
+        selectedTabID = hit.id
+        return true
+    }
+
+    /// Canonical key of the currently-selected tab. Used to persist selection
+    /// across launches via `@SceneStorage`.
+    var selectedCanonicalKey: String {
+        tabs.first(where: { $0.id == selectedTabID })?.descriptor.target.canonicalKey ?? ""
+    }
 }

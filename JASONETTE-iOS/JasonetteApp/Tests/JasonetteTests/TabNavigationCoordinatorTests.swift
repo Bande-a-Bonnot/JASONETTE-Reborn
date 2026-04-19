@@ -210,4 +210,52 @@ final class TabNavigationCoordinatorTests: XCTestCase {
         let root = JasonRoot(head: nil, body: body)
         return JasonDocument(jason: root)
     }
+
+    // MARK: SceneStorage restore
+
+    func testSelectByCanonicalKeyRestoresMatchingSelectableTab() {
+        let a = doc("https://example.com/a.json")
+        let b = doc("https://example.com/b.json")
+        let tabs = [TabEntry(descriptor: a), TabEntry(descriptor: b)]
+        let shell = TabShellState(tabs: tabs, initialSelection: tabs[0].id)
+
+        let restored = shell.selectByCanonicalKey(b.target.canonicalKey)
+        XCTAssertTrue(restored)
+        XCTAssertEqual(shell.selectedTabID, tabs[1].id)
+    }
+
+    func testSelectByCanonicalKeyReturnsFalseForEmptyKey() {
+        let a = doc("https://example.com/a.json")
+        let tabs = [TabEntry(descriptor: a)]
+        let shell = TabShellState(tabs: tabs, initialSelection: tabs[0].id)
+        XCTAssertFalse(shell.selectByCanonicalKey(""))
+        XCTAssertEqual(shell.selectedTabID, tabs[0].id)
+    }
+
+    func testSelectByCanonicalKeyReturnsFalseForStaleKey() {
+        let a = doc("https://example.com/a.json")
+        let tabs = [TabEntry(descriptor: a)]
+        let shell = TabShellState(tabs: tabs, initialSelection: tabs[0].id)
+        XCTAssertFalse(shell.selectByCanonicalKey("doc:https://gone.example.com"))
+        XCTAssertEqual(shell.selectedTabID, tabs[0].id)
+    }
+
+    func testSelectByCanonicalKeyRejectsNonSelectableTab() {
+        let a = doc("https://example.com/a.json")
+        let webDesc = TabDescriptor(target: .web(URL(string: "https://example.com/w")!), label: label())
+        let tabs = [TabEntry(descriptor: a), TabEntry(descriptor: webDesc)]
+        let shell = TabShellState(tabs: tabs, initialSelection: tabs[0].id)
+        XCTAssertFalse(shell.selectByCanonicalKey(webDesc.target.canonicalKey))
+        XCTAssertEqual(shell.selectedTabID, tabs[0].id)
+    }
+
+    func testSelectedCanonicalKeyReflectsSelection() {
+        let a = doc("https://example.com/a.json")
+        let b = doc("https://example.com/b.json")
+        let tabs = [TabEntry(descriptor: a), TabEntry(descriptor: b)]
+        let shell = TabShellState(tabs: tabs, initialSelection: tabs[0].id)
+        XCTAssertEqual(shell.selectedCanonicalKey, a.target.canonicalKey)
+        shell.select(tabs[1].id)
+        XCTAssertEqual(shell.selectedCanonicalKey, b.target.canonicalKey)
+    }
 }
