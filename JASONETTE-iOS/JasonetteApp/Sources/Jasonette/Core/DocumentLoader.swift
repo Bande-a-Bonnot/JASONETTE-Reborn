@@ -10,7 +10,16 @@ public final class DocumentLoader: Sendable {
         self.decoder = JSONDecoder()
     }
 
+    /// Schemes accepted for document URLs (HTTP fetch). Used by
+    /// `DocumentLoader.load`, `ActionDispatcher` `$href`, footer-tab
+    /// `.document` / `.web` construction.
     static let allowedSchemes: Set<String> = ["http", "https"]
+
+    /// Schemes accepted for `href.view == "app"` external-app navigation.
+    /// Superset of `allowedSchemes`: also opens `mailto:` / `tel:` / `sms:`
+    /// via the system. Used by `JasonetteViewModel.handleHref`, the nav
+    /// view's `.app` dispatch, and footer-tab `.app` construction.
+    static let appSchemes: Set<String> = ["http", "https", "mailto", "tel", "sms"]
 
     /// Load a document from a URL.
     public func load(from url: URL) async throws -> JasonDocument {

@@ -90,11 +90,11 @@ final class ViewModelTests: XCTestCase {
         XCTAssertEqual(url.absoluteString, "https://example.com")
     }
 
-    func testHandleHrefTransitionSwitchEmitsSwitchRoot() {
+    func testHandleHrefTransitionSwitchEmitsSwitchTab() {
         let (vm, capture) = makeViewModelCapturing(simpleDocument())
         vm.handleHref(JasonHref(url: "https://example.com/tab2", view: nil, transition: "switch"))
-        guard case .switchRoot(let url) = capture.last else {
-            return XCTFail("Expected .switchRoot, got \(String(describing: capture.last))")
+        guard case .switchTab(let url) = capture.last else {
+            return XCTFail("Expected .switchTab, got \(String(describing: capture.last))")
         }
         XCTAssertEqual(url.absoluteString, "https://example.com/tab2")
     }
@@ -335,5 +335,44 @@ final class ViewModelTests: XCTestCase {
         let vm = JasonetteViewModel(document: doc)
         await vm.load()
         XCTAssertEqual(vm.stateManager.get()["loaded_lifecycle"] as? Bool, true)
+    }
+
+    // MARK: - Preload seed + reload (Codex review round 2 regression)
+
+    /// BLOCKER 1: a VM constructed with `init(url:preloadedDoc:)` renders the
+    /// seed on first load without hitting the network. The seed's head
+    /// title must appear in `renderedRoot`.
+    func testPreloadSeedRendersFirstLoadWithoutFetch() async {
+        let seed = simpleDocument(title: "Seed Title")
+        let vm = JasonetteViewModel(
+            url: URL(string: "https://not-reachable.invalid/x.json")!,
+            preloadedDoc: seed
+        )
+        await vm.load()
+        XCTAssertEqual(vm.loadState, .loaded, "seed should render without fetch")
+        XCTAssertEqual(vm.renderedRoot?.head?.title, "Seed Title")
+    }
+
+    /// BLOCKER 1: once the seed has been rendered, subsequent `load()` calls
+    /// must refetch from `url` — otherwise `$reload`/retry/pull-to-refresh
+    /// forever re-renders the stale seed. Proof: point the VM at a blocked
+    /// scheme (`file://`). `DocumentLoader` rejects it synchronously with
+    /// `DocumentError.blockedURL`, so the second load must reach `.error` —
+    /// deterministic and offline, no DNS-timeout variance.
+    func testPreloadSeedRefetchesOnSecondLoad() async {
+        let seed = simpleDocument(title: "Seed Title")
+        let vm = JasonetteViewModel(
+            url: URL(string: "file:///tmp/definitely-not-allowed.json")!,
+            preloadedDoc: seed
+        )
+        await vm.load()
+        XCTAssertEqual(vm.loadState, .loaded, "first load uses seed")
+
+        await vm.load()
+        if case .error = vm.loadState {
+            // Expected: DocumentLoader rejects the blocked scheme.
+        } else {
+            XCTFail("second load must refetch — got \(vm.loadState) instead of .error")
+        }
     }
 }

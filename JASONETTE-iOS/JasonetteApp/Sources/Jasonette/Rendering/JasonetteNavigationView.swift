@@ -14,9 +14,11 @@ struct IdentifiableURL: Identifiable {
 /// `JasonetteNavigationView`. Handlers are scoped to one presentation — the
 /// root container installs its own, each modal installs its own — so
 /// navigation inside a modal cannot mutate the parent's stack.
-public enum NavigationRequest: Sendable {
+enum NavigationRequest: Sendable {
     case push(URL)
-    case switchRoot(URL)
+    /// Request that the enclosing tab shell select the tab matching this URL.
+    /// If no shell is present or no tab matches, falls through to `.push`.
+    case switchTab(URL)
     case modal(URL)
     case back
     case close
@@ -24,40 +26,52 @@ public enum NavigationRequest: Sendable {
     case app(URL)
 }
 
-/// Navigation container. Owns a `NavigationStack`, its path, and one optional
-/// child modal presentation. Installs a scoped dispatch closure into every
-/// `JasonetteView` it creates so all href / action navigation events in this
-/// subtree mutate only this container's state.
+/// One navigable Jasonette scope: a NavigationStack + its own modal slot.
+/// Knows nothing about tabs. A tab shell mounts N of these, one per tab,
+/// and flips visibility — but that is the shell's concern. The nav view
+/// just runs its own stack and asks the shell (via env) to switch tabs
+/// when a `.switchTab` request arrives.
+///
+/// App authors should use `JasonetteRootView(url:)` as the app entry
+/// point — that's the view that promotes to the tab shell when the
+/// bootstrap document declares `body.footer.tabs`. Mounting
+/// `JasonetteNavigationView` directly is supported but keeps you in
+/// single-stack mode: `footer.tabs` is rendered in-page by `JasonetteView`
+/// rather than as a persistent shell bar, and `transition:"switch"` hrefs
+/// can only fall back to `.push` since there is no enclosing shell.
 @MainActor
-public struct JasonetteNavigationView: View {
-    @State private var currentRoot: URL
+struct JasonetteNavigationView: View {
+    let rootURL: URL
+    let preloadedDoc: JasonDocument?
     @State private var path: [URL] = []
     @State private var modalURL: IdentifiableURL?
     @State private var safariURL: IdentifiableURL?
     @Environment(\.openURL) private var openURL
+    @Environment(\.jasonetteSwitchTab) private var switchTab
 
     /// Provided by the parent when this container is itself presented as a
     /// sheet — used to dismiss the sheet on `$close`. `nil` at the root.
     private let onClose: (() -> Void)?
 
-    private static let webSchemes: Set<String> = ["https", "http"]
-    private static let appSchemes: Set<String> = ["https", "http", "mailto", "tel", "sms"]
+    // Scheme allowlists live on DocumentLoader to keep nav, action dispatch,
+    // footer tabs, and $href in lockstep.
 
-    public init(url: URL) {
-        self._currentRoot = State(initialValue: url)
+    init(url: URL, preloadedDoc: JasonDocument? = nil) {
+        self.rootURL = url
+        self.preloadedDoc = preloadedDoc
         self.onClose = nil
     }
 
     /// Sheet-scoped initializer used by the modal branch below.
-    init(url: URL, onClose: @escaping () -> Void) {
-        self._currentRoot = State(initialValue: url)
+    init(url: URL, preloadedDoc: JasonDocument? = nil, onClose: @escaping () -> Void) {
+        self.rootURL = url
+        self.preloadedDoc = preloadedDoc
         self.onClose = onClose
     }
 
-    public var body: some View {
+    var body: some View {
         NavigationStack(path: $path) {
-            JasonetteView(url: currentRoot, onNavigate: dispatch)
-                .id(currentRoot)
+            rootContent
                 .navigationDestination(for: URL.self) { url in
                     JasonetteView(url: url, onNavigate: dispatch)
                 }
@@ -80,6 +94,15 @@ public struct JasonetteNavigationView: View {
         #endif
     }
 
+    @ViewBuilder
+    private var rootContent: some View {
+        if let doc = preloadedDoc {
+            JasonetteView(url: rootURL, preloadedDoc: doc, onNavigate: dispatch)
+        } else {
+            JasonetteView(url: rootURL, onNavigate: dispatch)
+        }
+    }
+
     private func dispatch(_ request: NavigationRequest) {
         switch request {
         case .back:
@@ -97,17 +120,16 @@ public struct JasonetteNavigationView: View {
         case .push(let url):
             path.append(url)
 
-        case .switchRoot(let url):
-            // Tab-bar semantics: replace the stack root and clear history.
-            path = []
-            currentRoot = url
+        case .switchTab(let url):
+            // Ask the enclosing tab shell. No shell or no match → push.
+            if !switchTab(url) { path.append(url) }
 
         case .modal(let url):
             modalURL = IdentifiableURL(url)
 
         case .web(let url):
             guard let scheme = url.scheme?.lowercased(),
-                  Self.webSchemes.contains(scheme) else { return }
+                  DocumentLoader.allowedSchemes.contains(scheme) else { return }
             #if os(iOS)
             safariURL = IdentifiableURL(url)
             #else
@@ -116,7 +138,7 @@ public struct JasonetteNavigationView: View {
 
         case .app(let url):
             guard let scheme = url.scheme?.lowercased(),
-                  Self.appSchemes.contains(scheme) else { return }
+                  DocumentLoader.appSchemes.contains(scheme) else { return }
             openURL(url)
         }
     }

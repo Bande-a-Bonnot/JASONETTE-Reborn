@@ -15,18 +15,26 @@ private extension View {
 
 /// Main view that renders a complete Jasonette document.
 @MainActor
-public struct JasonetteView: View {
+struct JasonetteView: View {
     @StateObject private var viewModel: JasonetteViewModel
+    @Environment(\.jasonetteIsInsideTabShell) private var isInsideTabShell
 
-    public init(url: URL, onNavigate: ((NavigationRequest) -> Void)? = nil) {
+    init(url: URL, onNavigate: ((NavigationRequest) -> Void)? = nil) {
         _viewModel = StateObject(wrappedValue: JasonetteViewModel(url: url, onNavigate: onNavigate))
     }
 
-    public init(document: JasonDocument, onNavigate: ((NavigationRequest) -> Void)? = nil) {
+    init(document: JasonDocument, onNavigate: ((NavigationRequest) -> Void)? = nil) {
         _viewModel = StateObject(wrappedValue: JasonetteViewModel(document: document, onNavigate: onNavigate))
     }
 
-    public var body: some View {
+    /// Seeded init: render `preloadedDoc` on first load, refetch from `url`
+    /// on subsequent reloads. Used by the tab shell to avoid a duplicate
+    /// fetch of the bootstrap document while preserving reload semantics.
+    init(url: URL, preloadedDoc: JasonDocument, onNavigate: ((NavigationRequest) -> Void)? = nil) {
+        _viewModel = StateObject(wrappedValue: JasonetteViewModel(url: url, preloadedDoc: preloadedDoc, onNavigate: onNavigate))
+    }
+
+    var body: some View {
         Group {
             switch viewModel.loadState {
             case .idle, .loading:
@@ -216,7 +224,10 @@ public struct JasonetteView: View {
 
     @ViewBuilder
     private func footerView(_ footer: JasonFooter, headStyles: [String: JasonStyle]) -> some View {
-        if let tabs = footer.tabs, let items = tabs.items {
+        // The tab bar is an app-shell concern: if we're rendered inside a
+        // JasonetteTabShell, the shell already draws the persistent bar and
+        // any footer.tabs declared on pushed/secondary docs must be ignored.
+        if let tabs = footer.tabs, let items = tabs.items, !isInsideTabShell {
             // Tab bar footer — tabs take precedence over input.
             // spacing: 0 so per-item backgrounds/shadows align edge-to-edge.
             HStack(spacing: 0) {
@@ -387,18 +398,12 @@ struct FooterTabItemView: View {
         // dedicated else-if branch so url-only fixtures still navigate. When
         // both are present, `href` wins and its missing `.url` is populated
         // from the shorthand.
-        //
-        // Tab taps are *switch* navigations, not pushes: they replace the
-        // stack root instead of stacking on top. We default `transition` to
-        // `"switch"` when the developer hasn't expressed an explicit intent
-        // (no transition, no special view like "web"/"app"/"$back"/"$close").
         if let href = item.href {
             Button {
                 var h = href
                 if h.url == nil, let urlString = item.url, !urlString.isEmpty {
                     h.url = urlString
                 }
-                if h.transition == nil, h.view == nil { h.transition = "switch" }
                 onHref?(h)
             } label: { content }
                 .buttonStyle(.plain)
@@ -406,7 +411,6 @@ struct FooterTabItemView: View {
             Button {
                 var href = JasonHref()
                 href.url = urlString
-                href.transition = "switch"
                 onHref?(href)
             } label: { content }
                 .buttonStyle(.plain)

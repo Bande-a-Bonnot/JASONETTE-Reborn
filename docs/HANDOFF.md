@@ -1,6 +1,6 @@
 # Agent Handoff Document
 
-Last updated: 2026-03-31
+Last updated: 2026-04-19
 
 **Update this file before context compaction and at the end of significant sessions.**
 
@@ -8,7 +8,7 @@ Last updated: 2026-03-31
 
 ### Test Suite
 
-- 335 tests, 0 failures
+- 382 tests, 0 failures (as of 2026-04-19 on `refactor/tab-navigation-step-1-scaffolding`)
 - Run: `cd JASONETTE-iOS/JasonetteApp && swift test`
 - Build: `swift build` (<1s)
 
@@ -64,7 +64,9 @@ Map pins/region, secure textfield (`SecureField`), HTML component (`WKWebView`),
 
 ### Phase D — Data & Navigation
 
-`$network.request` drops array responses, tabs render `[Unknown: nil]`, relative URL resolution for sub-demo href
+`$network.request` drops array responses, relative URL resolution for sub-demo href
+
+Tab navigation was rewritten on branch `refactor/tab-navigation-step-1-scaffolding` (plan at `docs/plans/tab-navigation-overhaul/plan.md`). Shell owns selection; each tab is an opaque `JasonetteNavigationView` mounted lazily on first selection and kept alive after. See solution doc `architecture-patterns/swiftui-tab-shell-opaque-scope-navigation.md`.
 
 ### Open P3 Todos (8)
 
@@ -120,6 +122,7 @@ Key docs for this codebase:
 - `best-practices/automated-review-comment-handling.md` — CodeRabbit/Gemini/Copilot handling
 - `integration-issues/xcode-cloud-accent-character-team-name-crash.md` — accent in account name
 - `architecture-patterns/reviving-a-decade-old-cross-platform-project.md` — 19 learnings from the revival
+- `architecture-patterns/swiftui-tab-shell-opaque-scope-navigation.md` — shell owns selection, each tab owns its own nav; lazy mount + SceneStorage canonical-key restore
 - `runtime-errors/anycodable-nsjsonserialization-crash.md` — always `.unwrapped` before JSONSerialization
 
 ---
@@ -132,6 +135,9 @@ JASONETTE-iOS/JasonetteApp/
 │   ├── Core/           — JasonDocument.swift, ActionDispatcher.swift, StateManager.swift, AnyCodable.swift, DocumentLoader.swift
 │   ├── Template/       — TemplateEngine.swift, ExpressionParser.swift, ExpressionEvaluator.swift
 │   ├── Rendering/      — JasonetteView.swift, JasonetteViewModel.swift, JasonetteNavigationView.swift
+│   │   └── Navigation/ — JasonetteRootView, JasonetteTabShell, JasonetteNavigationCoordinator,
+│   │                     TabShellState, TabEntry/TabDescriptor/TabID, FooterTabBar, UUIDv7,
+│   │                     JasonetteEnvironment (env keys: isInsideTabShell, switchTab)
 │   └── Components/     — ComponentRegistry.swift, JasonStyleModifier.swift, LayoutView.swift, + individual components
 ├── Tests/JasonetteTests/  — 17 test files
 ├── Project.swift          — Tuist manifest

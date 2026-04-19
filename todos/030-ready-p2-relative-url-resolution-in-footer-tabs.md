@@ -1,0 +1,64 @@
+---
+status: ready
+priority: p2
+issue_id: "030"
+tags: [ios, urls, tabs, icons]
+dependencies: []
+---
+
+# Resolve relative URLs in footer-tab `image` / `href.url` against document base
+
+## Problem Statement
+
+gemini-code-assist flagged `TabDescriptor.init(from:)` for
+unconditional `URL(string:)` on `item.image` and the href/url
+strings. A relative path like `"icons/home.png"` or `"/home"` is
+accepted by `URL(string:)`, but the resulting `URL` has no scheme
+and is rejected by the scheme allowlist a few lines down. Net
+effect: relative references silently disappear from the shell.
+
+This matches the pre-existing pattern elsewhere in the renderer —
+icons, images, and hrefs everywhere use `URL(string:)` without a
+base URL. So the correct fix is broader than footer tabs: the
+renderer needs to plumb the *document's* URL through to every place
+that currently parses a string as an absolute URL, and resolve
+relatives with `URL(string:relativeTo:)`.
+
+## Findings
+
+- `TabDescriptor.init(from:)` sees the raw footer-tab `JasonComponent`
+  with no document-URL context. The coordinator that calls it has
+  `entryURL`, but we don't currently thread it in.
+- Many other renderer sites have the same bug pattern — this is
+  a cross-cutting fix, not a one-off.
+- Icons on footer tabs are the most visible symptom today: an app
+  hosted at `https://example.com/home.json` with `"image":
+  "icons/home.png"` gets a blank icon because the resulting URL has
+  no scheme.
+
+## Recommended Action
+
+1. Add a `baseURL: URL` parameter to `TabDescriptor.init(from:)` and
+   plumb it from `JasonetteNavigationCoordinator.makeEntries` (which
+   already has `entryURL`).
+2. Inside, use `URL(string: str, relativeTo: baseURL)?.absoluteURL`
+   before applying the scheme allowlist.
+3. Audit other renderer URL parses (`ImageComponent`, `LayersView`,
+   `ActionDispatcher` href, etc.) and apply the same resolution.
+   Likely deserves its own helper (`JasonURL.resolve(_:against:)`)
+   rather than copy-pasting the two-argument `URL` init.
+
+## Acceptance Criteria
+
+- [ ] Footer tabs with relative `image` paths render their icons
+- [ ] Footer tabs with relative `href.url` or `url` still route
+      correctly (scheme check happens after resolution)
+- [ ] Tests cover relative → absolute resolution with and without
+      a leading `/`
+- [ ] Audit of other renderer URL parses completed; either fixed
+      or flagged with a linked todo
+
+## Notes
+
+Source: gemini round-4 review on PR #20
+([comment 3106831645](https://github.com/Bande-a-Bonnot/JASONETTE-Reborn/pull/20#discussion_r3106831645)).

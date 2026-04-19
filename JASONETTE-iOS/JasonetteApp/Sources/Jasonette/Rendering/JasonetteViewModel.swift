@@ -24,6 +24,10 @@ public final class JasonetteViewModel: ObservableObject {
 
     private let url: URL?
     private var document: JasonDocument?
+    /// True once the preloaded seed document (if any) has been rendered. After
+    /// that, `load()` refetches from `url` — otherwise `$reload`, retry, and
+    /// pull-to-refresh-without-`$pull` would forever re-render the stale seed.
+    private var seedConsumed: Bool = false
     private let loader = DocumentLoader()
     private let decoder = JSONDecoder()
     private var loadTask: Task<Void, Never>?
@@ -48,6 +52,17 @@ public final class JasonetteViewModel: ObservableObject {
     init(document: JasonDocument, onNavigate: ((NavigationRequest) -> Void)? = nil) {
         self.url = nil
         self.document = document
+        self.actionDispatcher = ActionDispatcher(stateManager: stateManager)
+        self.onNavigate = onNavigate ?? { _ in }
+        wireHandlers()
+    }
+
+    /// Seed the VM with a document already fetched by the bootstrap and the
+    /// URL it came from. First `load()` renders the seed without a network
+    /// round-trip; subsequent `load()`/`reload()` refetch from `url`.
+    init(url: URL, preloadedDoc: JasonDocument, onNavigate: ((NavigationRequest) -> Void)? = nil) {
+        self.url = url
+        self.document = preloadedDoc
         self.actionDispatcher = ActionDispatcher(stateManager: stateManager)
         self.onNavigate = onNavigate ?? { _ in }
         wireHandlers()
@@ -89,9 +104,14 @@ public final class JasonetteViewModel: ObservableObject {
     func load() async {
         loadState = .loading
         do {
-            if document == nil, let url {
+            // Fetch from URL except on the very first load when a preloaded
+            // seed is waiting. That seed is rendered once, then every
+            // subsequent load() refetches so `$reload`/retry/pull work.
+            let hasUnconsumedSeed = document != nil && !seedConsumed
+            if let url, !hasUnconsumedSeed {
                 document = try await loader.load(from: url)
             }
+            seedConsumed = true
             guard let doc = document else {
                 loadState = .error("No document")
                 return
@@ -149,8 +169,7 @@ public final class JasonetteViewModel: ObservableObject {
 
         guard let urlStr = href.url, let url = URL(string: urlStr) else { return }
 
-        let appSchemes: Set<String> = ["http", "https", "mailto", "tel", "sms"]
-        let allowed = href.view == "app" ? appSchemes : DocumentLoader.allowedSchemes
+        let allowed = href.view == "app" ? DocumentLoader.appSchemes : DocumentLoader.allowedSchemes
         guard let scheme = url.scheme?.lowercased(), allowed.contains(scheme) else { return }
 
         switch href.view {
@@ -161,7 +180,7 @@ public final class JasonetteViewModel: ObservableObject {
         default:
             switch href.transition {
             case "modal":  onNavigate(.modal(url))
-            case "switch": onNavigate(.switchRoot(url))
+            case "switch": onNavigate(.switchTab(url))
             default:       onNavigate(.push(url))
             }
         }
