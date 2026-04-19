@@ -38,10 +38,24 @@ private struct FooterTabCell: View {
         VStack(spacing: 2) {
             ZStack(alignment: .topTrailing) {
                 if let url = descriptor.label.iconURL {
-                    AsyncImage(url: url) { image in
-                        image.resizable().scaledToFit()
-                    } placeholder: {
-                        Color.clear
+                    // Phase-based API so `.failure` shows a visible fallback
+                    // instead of silently leaving a tappable blank space.
+                    // `Color.clear` stays for `.empty` (still loading) so a
+                    // slow-but-successful fetch doesn't flash a broken icon.
+                    AsyncImage(url: url) { phase in
+                        switch phase {
+                        case .success(let image):
+                            image.resizable().scaledToFit()
+                        case .failure:
+                            Image(systemName: "photo")
+                                .resizable()
+                                .scaledToFit()
+                                .foregroundStyle(.secondary)
+                        case .empty:
+                            Color.clear
+                        @unknown default:
+                            Color.clear
+                        }
                     }
                     .frame(width: 24, height: 24)
                 }
