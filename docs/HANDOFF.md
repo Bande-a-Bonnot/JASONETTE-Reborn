@@ -1,6 +1,6 @@
 # Agent Handoff Document
 
-Last updated: 2026-04-19
+Last updated: 2026-04-20
 
 **Update this file before context compaction and at the end of significant sessions.**
 
@@ -8,7 +8,7 @@ Last updated: 2026-04-19
 
 ### Test Suite
 
-- 382 tests, 0 failures (as of 2026-04-19 on `refactor/tab-navigation-step-1-scaffolding`)
+- 382 tests, 0 failures (tab navigation rewrite merged to `main` via PR #20 squash `11b9fca`)
 - Run: `cd JASONETTE-iOS/JasonetteApp && swift test`
 - Build: `swift build` (<1s)
 
@@ -66,20 +66,30 @@ Map pins/region, secure textfield (`SecureField`), HTML component (`WKWebView`),
 
 `$network.request` drops array responses, relative URL resolution for sub-demo href
 
-Tab navigation was rewritten on branch `refactor/tab-navigation-step-1-scaffolding` (plan at `docs/plans/tab-navigation-overhaul/plan.md`). Shell owns selection; each tab is an opaque `JasonetteNavigationView` mounted lazily on first selection and kept alive after. See solution doc `architecture-patterns/swiftui-tab-shell-opaque-scope-navigation.md`.
+Tab navigation rewrite is on `main` (PR #20, plan at `docs/plans/tab-navigation-overhaul/plan.md`). Shell owns selection; each tab is an opaque `JasonetteNavigationView` mounted lazily on first selection and kept alive after. See solution doc `architecture-patterns/swiftui-tab-shell-opaque-scope-navigation.md`.
 
-### Open P3 Todos (8)
+### Open Todos
 
-```
-todos/015 — sectionView code duplication (defer until 3rd section type)
-todos/016 — solution doc version inconsistency
-todos/017 — plan doc hygiene
-todos/018 — ButtonComponent imageURL consistency
-todos/019 — extract shared resolveLayerStyle helper
-todos/020 — same-axis layer constraints (left+right, top+bottom)
-todos/021 — add rgba/hex8 background color tests
-todos/022 — footer button image failure placeholder
-```
+P2:
+- `todos/025` — footer tab-bar style/icon parity
+- `todos/026` — action-tab dispatch
+- `todos/028` — android Kotlin test unresolved references (pre-existing CI red, unrelated to iOS work)
+- `todos/030` — relative URL resolution in footer tabs
+
+P3:
+- `todos/015` — sectionView code duplication (defer until 3rd section type)
+- `todos/016` — solution doc version inconsistency
+- `todos/017` — plan doc hygiene
+- `todos/018` — ButtonComponent imageURL consistency
+- `todos/020` — same-axis layer constraints
+- `todos/021` — rgba/hex8 background color tests
+- `todos/022` — footer button image failure placeholder
+- `todos/027` — action-tab canonical-key content hash
+- `todos/029` — onChange iOS 17 modernization
+
+Nice-to-have (P3):
+- `todos/031` — investigate ZStack nav-title collision (gemini r5/6/7/8 concern)
+- `todos/032` — codebase-wide URL normalization utility (supersedes `.standardized` per-site)
 
 ---
 
@@ -110,7 +120,7 @@ Not inside the ScrollView. Positioned via alignment + padding from the aligned e
 
 ---
 
-## Solution Docs (27 total, 11 categories)
+## Solution Docs (41 total, 11 categories)
 
 Search `docs/solutions/` by YAML frontmatter: `module`, `tags`, `problem_type`, `category`.
 
@@ -120,6 +130,10 @@ Key docs for this codebase:
 - `build-errors/tuist-extendingdefault-hardcoded-version.md` — Tuist Info.plist versioning
 - `best-practices/parallel-pr-swarm-with-git-worktrees.md` — worktree swarm pattern
 - `best-practices/automated-review-comment-handling.md` — CodeRabbit/Gemini/Copilot handling
+- `best-practices/url-identity-semantics-belong-at-the-url-layer.md` — URL normalization belongs at the URL layer, not at each call site
+- `best-practices/github-review-decision-stickiness-dismiss-stale-reviews.md` — `reviewDecision` only transitions on formal reviews; dismiss stale CHANGES_REQUESTED via API
+- `best-practices/loop-mode-pr-babysit-discipline.md` — Monitor + ScheduleWakeup discipline for long-running PR-babysit sessions
+- `best-practices/deferred-feedback-todo-four-part-structure.md` — Context + Ask + Why-not-now + Locked-in tests
 - `integration-issues/xcode-cloud-accent-character-team-name-crash.md` — accent in account name
 - `architecture-patterns/reviving-a-decade-old-cross-platform-project.md` — 19 learnings from the revival
 - `architecture-patterns/swiftui-tab-shell-opaque-scope-navigation.md` — shell owns selection, each tab owns its own nav; lazy mount + SceneStorage canonical-key restore
