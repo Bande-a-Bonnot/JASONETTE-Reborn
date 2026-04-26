@@ -108,10 +108,16 @@ class JasonetteViewModel(
         if (element == null) return null
         return when (element) {
             is kotlinx.serialization.json.JsonPrimitive -> {
-                if (element.isString) element.content
-                else element.content.toIntOrNull()
-                    ?: element.content.toDoubleOrNull()
-                    ?: element.content.toBooleanStrictOrNull()
+                val content = element.content
+                if (element.isString) content
+                else if (content == "true") true
+                else if (content == "false") false
+                else if (content == "null") null
+                else if (content.contains('.') || content.contains('e', ignoreCase = true)) {
+                    content.toDoubleOrNull() ?: content
+                } else {
+                    content.toIntOrNull() ?: content.toLongOrNull() ?: content
+                }
             }
             is kotlinx.serialization.json.JsonArray -> element.map { jsonElementToAny(it) }
             is kotlinx.serialization.json.JsonObject -> element.entries.associate {
@@ -125,6 +131,7 @@ class JasonetteViewModel(
             null -> kotlinx.serialization.json.JsonNull
             is String -> kotlinx.serialization.json.JsonPrimitive(value)
             is Int -> kotlinx.serialization.json.JsonPrimitive(value)
+            is Long -> kotlinx.serialization.json.JsonPrimitive(value)
             is Double -> kotlinx.serialization.json.JsonPrimitive(value)
             is Boolean -> kotlinx.serialization.json.JsonPrimitive(value)
             is List<*> -> kotlinx.serialization.json.JsonArray(value.map { anyToJsonElement(it) })

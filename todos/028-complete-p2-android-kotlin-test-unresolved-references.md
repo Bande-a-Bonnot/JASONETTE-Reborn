@@ -64,7 +64,7 @@ Android CI is red on every PR including merged ones.
 
 ## Notes
 
-Completed in PR #21, squash `92e65dd` (2026-04-26). Android CI passed on the PR before merge; local Gradle verification was blocked by this environment having no Java runtime.
+Completed in PR #21, squash `92e65dd` (2026-04-26). The `pull_request` Android job ran and passed on PR #21 before merge, then ran and passed again on non-Android-change PR #22 before merge because the workflow runs Android on every PR. Local Gradle verification was blocked by this environment having no Java runtime.
 
 Source: noticed while addressing PR #20 review feedback (2026-04-19).
 The workflow gating pattern is `if: needs.changes.outputs.android ==
