@@ -1,6 +1,6 @@
 # Agent Handoff Document
 
-Last updated: 2026-04-20
+Last updated: 2026-04-26
 
 **Update this file before context compaction and at the end of significant sessions.**
 
@@ -8,9 +8,10 @@ Last updated: 2026-04-20
 
 ### Test Suite
 
-- 382 tests, 0 failures (tab navigation rewrite merged to `main` via PR #20 squash `11b9fca`)
-- Run: `cd JASONETTE-iOS/JasonetteApp && swift test`
-- Build: `swift build` (<1s)
+- iOS: 386 tests, 0 failures (verified 2026-04-23; tab navigation rewrite merged to `main` via PR #20 squash `11b9fca`)
+- Android CI: green on PR #21 / `main` (2026-04-26); Kotlin JSON primitive accessor compile failures fixed by squash `92e65dd`
+- Run iOS: `cd JASONETTE-iOS/JasonetteApp && swift test`
+- Build iOS: `swift build` (<1s)
 
 ### Version
 
@@ -64,7 +65,7 @@ Map pins/region, secure textfield (`SecureField`), HTML component (`WKWebView`),
 
 ### Phase D — Data & Navigation
 
-`$network.request` drops array responses, relative URL resolution for sub-demo href
+Relative URL resolution for sub-demo href/footer tabs remains open. `$network.request` response shape preservation is fixed on `main` (PR #17): object, array, string, number, and null JSON response bodies are stored under `$response`.
 
 Tab navigation rewrite is on `main` (PR #20, plan at `docs/plans/tab-navigation-overhaul/plan.md`). Shell owns selection; each tab is an opaque `JasonetteNavigationView` mounted lazily on first selection and kept alive after. See solution doc `architecture-patterns/swiftui-tab-shell-opaque-scope-navigation.md`.
 
@@ -73,7 +74,6 @@ Tab navigation rewrite is on `main` (PR #20, plan at `docs/plans/tab-navigation-
 P2:
 - `todos/025` — footer tab-bar style/icon parity
 - `todos/026` — action-tab dispatch
-- `todos/028` — android Kotlin test unresolved references (pre-existing CI red, unrelated to iOS work)
 - `todos/030` — relative URL resolution in footer tabs
 
 P3:
@@ -163,7 +163,7 @@ JASONETTE-iOS/JasonetteApp/
 ## Git & CI
 
 - `export SSH_AUTH_SOCK=~/.ssh/agent.sock` before push/pull/fetch
-- Android CI fails on all PRs (pre-existing Kotlin test errors, unrelated to iOS work)
+- Android CI: `android` check currently green after PR #21 fixed Kotlin test unresolved references
 - iOS CI: `ios` + `lint` + `changes` checks must pass
 - CodeRabbit reviews PRs automatically; rate-limits on 4+ simultaneous PRs
 - Xcode Cloud handles archive → TestFlight

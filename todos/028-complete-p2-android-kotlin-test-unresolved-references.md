@@ -1,5 +1,5 @@
 ---
-status: ready
+status: complete
 priority: p2
 issue_id: "028"
 tags: [android, ci, tests]
@@ -58,11 +58,13 @@ Android CI is red on every PR including merged ones.
 
 ## Acceptance Criteria
 
-- [ ] `:app:compileDebugUnitTestKotlin` succeeds on CI
-- [ ] `android` CI job goes green on a non-Android-change PR
-- [ ] Tests in `CrossPlatformTest.kt` and `StyleModifierTest.kt` run
+- [x] `:app:compileDebugUnitTestKotlin` succeeds on CI
+- [x] `android` CI job goes green on a non-Android-change PR
+- [x] Tests in `CrossPlatformTest.kt` and `StyleModifierTest.kt` run
 
 ## Notes
+
+Completed in PR #21, squash `92e65dd` (2026-04-26). Android CI passed on the PR before merge; local Gradle verification was blocked by this environment having no Java runtime.
 
 Source: noticed while addressing PR #20 review feedback (2026-04-19).
 The workflow gating pattern is `if: needs.changes.outputs.android ==
