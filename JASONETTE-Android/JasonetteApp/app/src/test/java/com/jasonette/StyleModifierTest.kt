@@ -2,6 +2,7 @@ package com.jasonette
 
 import com.jasonette.core.JasonStyle
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.floatOrNull
 import org.junit.Assert.*
 import org.junit.Test
 

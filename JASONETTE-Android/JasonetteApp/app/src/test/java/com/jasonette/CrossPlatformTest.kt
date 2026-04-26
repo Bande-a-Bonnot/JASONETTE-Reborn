@@ -2,6 +2,12 @@ package com.jasonette
 
 import com.jasonette.core.DocumentLoader
 import com.jasonette.template.TemplateEngine
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import org.junit.Assert.*
 import org.junit.Test
 import java.io.File
@@ -30,27 +36,26 @@ class CrossPlatformTest {
         return parseJson(file.readText()) as Map<String, Any?>
     }
 
-    /** Simple recursive JSON parser using kotlinx.serialization is overkill here;
-     *  use the org.json classes available on the JVM test classpath. */
+    /** Simple recursive JSON parser for shared fixture data. */
     private fun parseJson(text: String): Any? {
         // Use kotlinx.serialization to parse, then convert to plain Map/List/primitives
-        val element = kotlinx.serialization.json.Json.parseToJsonElement(text)
+        val element = Json.parseToJsonElement(text)
         return jsonElementToAny(element)
     }
 
-    private fun jsonElementToAny(element: kotlinx.serialization.json.JsonElement): Any? =
+    private fun jsonElementToAny(element: JsonElement): Any? =
         when (element) {
-            is kotlinx.serialization.json.JsonPrimitive -> {
-                if (element.isString) element.content
-                else if (element.content == "true") true
-                else if (element.content == "false") false
-                else if (element.content == "null") null
-                else if (element.content.contains(".")) element.double
-                else element.int
+            is JsonPrimitive -> {
+                val content = element.content
+                if (element.isString) content
+                else if (content == "true") true
+                else if (content == "false") false
+                else if (content == "null") null
+                else content.toIntOrNull() ?: content.toLongOrNull() ?: content.toDoubleOrNull() ?: content
             }
-            is kotlinx.serialization.json.JsonArray ->
+            is JsonArray ->
                 element.map { jsonElementToAny(it) }
-            is kotlinx.serialization.json.JsonObject ->
+            is JsonObject ->
                 element.toMap().mapValues { (_, v) -> jsonElementToAny(v) }
         }
 
@@ -80,12 +85,12 @@ class CrossPlatformTest {
 
         val result = TemplateEngine.render(template, context)
         assertEquals(
-            kotlinx.serialization.json.Json.encodeToString(
-                kotlinx.serialization.json.JsonElement.serializer(),
+            Json.encodeToString(
+                JsonElement.serializer(),
                 anyToJsonElement(expected)
             ),
-            kotlinx.serialization.json.Json.encodeToString(
-                kotlinx.serialization.json.JsonElement.serializer(),
+            Json.encodeToString(
+                JsonElement.serializer(),
                 anyToJsonElement(result)
             )
         )
@@ -103,12 +108,12 @@ class CrossPlatformTest {
 
         val result = TemplateEngine.render(template, contextTrue)
         assertEquals(
-            kotlinx.serialization.json.Json.encodeToString(
-                kotlinx.serialization.json.JsonElement.serializer(),
+            Json.encodeToString(
+                JsonElement.serializer(),
                 anyToJsonElement(expectedTrue)
             ),
-            kotlinx.serialization.json.Json.encodeToString(
-                kotlinx.serialization.json.JsonElement.serializer(),
+            Json.encodeToString(
+                JsonElement.serializer(),
                 anyToJsonElement(result)
             )
         )
@@ -168,8 +173,8 @@ class CrossPlatformTest {
     @Test
     fun testDocumentDecoding() {
         val fixture = loadFixture("document-full.json")
-        val jsonStr = kotlinx.serialization.json.Json.encodeToString(
-            kotlinx.serialization.json.JsonElement.serializer(),
+        val jsonStr = Json.encodeToString(
+            JsonElement.serializer(),
             anyToJsonElement(fixture)
         )
         val doc = DocumentLoader().decode(jsonStr)
@@ -191,19 +196,19 @@ class CrossPlatformTest {
 
     // -- Helpers --
 
-    private fun anyToJsonElement(value: Any?): kotlinx.serialization.json.JsonElement =
+    private fun anyToJsonElement(value: Any?): JsonElement =
         when (value) {
-            null -> kotlinx.serialization.json.JsonNull
-            is Boolean -> kotlinx.serialization.json.JsonPrimitive(value)
-            is Int -> kotlinx.serialization.json.JsonPrimitive(value)
-            is Long -> kotlinx.serialization.json.JsonPrimitive(value)
-            is Double -> kotlinx.serialization.json.JsonPrimitive(value)
-            is Float -> kotlinx.serialization.json.JsonPrimitive(value)
-            is String -> kotlinx.serialization.json.JsonPrimitive(value)
-            is List<*> -> kotlinx.serialization.json.JsonArray(value.map { anyToJsonElement(it) })
-            is Map<*, *> -> kotlinx.serialization.json.JsonObject(
+            null -> JsonNull
+            is Boolean -> JsonPrimitive(value)
+            is Int -> JsonPrimitive(value)
+            is Long -> JsonPrimitive(value)
+            is Double -> JsonPrimitive(value)
+            is Float -> JsonPrimitive(value)
+            is String -> JsonPrimitive(value)
+            is List<*> -> JsonArray(value.map { anyToJsonElement(it) })
+            is Map<*, *> -> JsonObject(
                 value.entries.associate { (k, v) -> k.toString() to anyToJsonElement(v) }
             )
-            else -> kotlinx.serialization.json.JsonPrimitive(value.toString())
+            else -> JsonPrimitive(value.toString())
         }
 }
