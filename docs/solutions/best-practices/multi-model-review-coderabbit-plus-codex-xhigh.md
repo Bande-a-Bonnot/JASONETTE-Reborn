@@ -59,6 +59,29 @@ Severity-tag each finding (P1/P2/P3). Be terse." \
 Then `cat /tmp/codex-review.md` and triage each finding with the framework from
 [automated-review-comment-handling.md](./automated-review-comment-handling.md).
 
+### Pi + Codex 5.5 variant
+
+When running through pi instead of the Codex CLI, keep the same direct-task
+shape and disable skills/context if you want a bounded review rather than a
+larger meta-workflow:
+
+```bash
+git diff main...HEAD > /tmp/review.diff
+
+pi --model openai-codex/gpt-5.5 \
+  --thinking xhigh \
+  --no-tools \
+  --no-context-files \
+  --no-skills \
+  -p @/tmp/review.diff \
+  'DIRECT TASK — review this diff for correctness regressions, edge cases, missing tests, and documentation overclaims. Severity-tag findings P1/P2/P3. Be terse.' \
+  > /tmp/codex55-review.md
+```
+
+This 2026-04-26 variant caught two non-code issues that normal bot review did
+not: todo/handoff wording overclaimed CI evidence, and an Android fixture parser
+could silently round oversized integer-looking JSON values after the first fix.
+
 ### Gotchas
 
 - **The `DIRECT TASK` preamble is load-bearing.** Review-style prompts match
@@ -97,6 +120,8 @@ hearing about it from a user is much higher.
   signatures) — callers may silently stop reading fields
 - Any PR touching **style application** — hard-coded values that shadow the
   style struct are invisible to pattern matchers
+- Any PR that **closes todos or updates handoff/CI status** — documentation
+  overclaims are reviewable defects, not harmless prose
 
 Skip for pure refactors with no behavior change, or diffs under ~30 lines where
 reading the diff yourself is faster.
@@ -114,8 +139,23 @@ Findings from 2026-04-17, with locations:
 Two landed in `509ec91` before the PR opened; the missing-tests P3 was addressed
 in the same follow-up commit with a decode test for typeless tab items.
 
+## Boundary: This Is Review-Only, Not Foundry Red/Green
+
+Codex xhigh review is a strong second-pass review layer, but it is not the
+Foundry adversarial process. Foundry red/green requires independent test and
+implementation workers plus an information barrier: red writes tests from the
+Definition of Done, green implements from the How section, and the orchestrator
+returns only test-name PASS/FAIL outcomes. Do not call normal PR review
+"adversarial" unless that barrier exists.
+
 ## Related
 
+- [foundry-adversarial-red-green-information-barrier.md](../workflow-issues/foundry-adversarial-red-green-information-barrier.md)
+  — the Foundry red/green information-barrier workflow this review pattern does
+  not replace
+- [todo-completion-notes-ci-evidence.md](../documentation-gaps/todo-completion-notes-ci-evidence.md)
+  — how to phrase CI and handoff evidence so Codex/reviewers do not have to
+  catch overclaims later
 - [automated-review-comment-handling.md](./automated-review-comment-handling.md)
   — triage framework for findings from any reviewer (human or bot)
 - [typeless-structural-items-need-dedicated-views.md](./typeless-structural-items-need-dedicated-views.md)

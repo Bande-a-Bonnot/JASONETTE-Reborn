@@ -51,13 +51,20 @@ class CrossPlatformTest {
                 else if (content == "true") true
                 else if (content == "false") false
                 else if (content == "null") null
-                else content.toIntOrNull() ?: content.toLongOrNull() ?: content.toDoubleOrNull() ?: content
+                else if (content.contains('.') || content.contains('e', ignoreCase = true)) content.toDoubleOrNull() ?: content
+                else content.toIntOrNull() ?: content.toLongOrNull() ?: content
             }
             is JsonArray ->
                 element.map { jsonElementToAny(it) }
             is JsonObject ->
                 element.toMap().mapValues { (_, v) -> jsonElementToAny(v) }
         }
+
+    @Test
+    fun testOversizedIntegerFixtureValuePreservesPrecision() {
+        assertEquals("9223372036854775808", parseJson("9223372036854775808"))
+        assertEquals("-9223372036854775809", parseJson("-9223372036854775809"))
+    }
 
     // -- Template simple interpolation --
 

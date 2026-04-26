@@ -63,6 +63,8 @@ CodeRabbit's `CHANGES_REQUESTED` state persists even after pushing fixes. To fli
 
 CodeRabbit rate-limits when multiple PRs are pushed simultaneously. It will review the first and return "Rate limit exceeded" on the rest. Wait for the cooldown, then trigger manually with `@coderabbitai review`.
 
+A rate-limit summary is **not** a review. Do not describe a PR as CodeRabbit-reviewed or CodeRabbit-approved unless the bot submitted a formal review. If you merge while rate-limited, record the actual evidence instead, e.g. "CodeRabbit rate-limited; CI passed and an independent Codex xhigh/pi review found no blockers."
+
 ### Triage framework
 
 | Severity | Action | Example |
@@ -78,6 +80,7 @@ CodeRabbit rate-limits when multiple PRs are pushed simultaneously. It will revi
 - Deferred items without todos get lost — reviewers remember promises
 - Different bots need different reply mechanisms — using the wrong API silently fails
 - Rate limits on parallel PRs can block all reviews if not anticipated
+- Review coverage can be overstated if rate-limit comments are treated as approvals
 
 ## When to Apply
 
@@ -86,6 +89,15 @@ CodeRabbit rate-limits when multiple PRs are pushed simultaneously. It will revi
 - When using a swarm/parallel PR workflow
 
 ## Examples
+
+### Recording a rate-limited PR honestly
+
+```bash
+# If CodeRabbit only posted a rate-limit issue comment, there may be no formal review
+# body to read. Record that explicitly in the PR/handoff instead of implying approval.
+gh pr view <pr> --json reviews,comments \
+  --jq '{reviews: [.reviews[] | {author:.author.login,state}], comments: [.comments[] | select(.body | contains("Rate limit exceeded")) | .body[:120]]}'
+```
 
 ### Finding nested CodeRabbit nitpicks
 

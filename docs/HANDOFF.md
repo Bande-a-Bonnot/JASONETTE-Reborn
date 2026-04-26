@@ -9,7 +9,7 @@ Last updated: 2026-04-26
 ### Test Suite
 
 - iOS: 386 tests, 0 failures (verified 2026-04-23; tab navigation rewrite merged to `main` via PR #20 squash `11b9fca`)
-- Android CI: green on PR #21 / `main` (2026-04-26); Kotlin JSON primitive accessor compile failures fixed by squash `92e65dd`
+- Android CI: `pull_request` Android job ran/passed on PR #21 and non-Android-change PR #22 before merge (workflow runs Android on all PRs); Kotlin JSON primitive accessor compile failures fixed by squash `92e65dd`
 - Run iOS: `cd JASONETTE-iOS/JasonetteApp && swift test`
 - Build iOS: `swift build` (<1s)
 
@@ -86,6 +86,7 @@ P3:
 - `todos/022` — footer button image failure placeholder
 - `todos/027` — action-tab canonical-key content hash
 - `todos/029` — onChange iOS 17 modernization
+- `todos/033` — Android JSON decimal/exponent precision policy
 
 Nice-to-have (P3):
 - `todos/031` — investigate ZStack nav-title collision (gemini r5/6/7/8 concern)
@@ -118,9 +119,13 @@ Footer and header are NOT routed through `ComponentView`. They have fixed semant
 
 Not inside the ScrollView. Positioned via alignment + padding from the aligned edge. `Color.clear.allowsHitTesting(false)` as spacer.
 
+### Process Mode: Review-Only vs Foundry Red/Green
+
+Do not call normal CodeRabbit/Gemini/Codex review "adversarial". Foundry red/green means red writes tests from Definition of Done, green implements from How, and the orchestrator sends only test-name PASS/FAIL outcomes while preserving the information barrier. See `workflow-issues/foundry-adversarial-red-green-information-barrier.md`.
+
 ---
 
-## Solution Docs (41 total, 11 categories)
+## Solution Docs (44 total, category dirs plus legacy root docs)
 
 Search `docs/solutions/` by YAML frontmatter: `module`, `tags`, `problem_type`, `category`.
 
@@ -129,15 +134,19 @@ Key docs for this codebase:
 - `build-errors/swiftui-modifier-gotchas.md` — nil-override trap, strokeBorder, all optional modifiers
 - `build-errors/tuist-extendingdefault-hardcoded-version.md` — Tuist Info.plist versioning
 - `best-practices/parallel-pr-swarm-with-git-worktrees.md` — worktree swarm pattern
-- `best-practices/automated-review-comment-handling.md` — CodeRabbit/Gemini/Copilot handling
+- `best-practices/automated-review-comment-handling.md` — CodeRabbit/Gemini/Copilot handling; rate-limit comments are not reviews
+- `best-practices/multi-model-review-coderabbit-plus-codex-xhigh.md` — CodeRabbit + Codex/pi xhigh second-pass review (review-only, not Foundry red/green)
 - `best-practices/url-identity-semantics-belong-at-the-url-layer.md` — URL normalization belongs at the URL layer, not at each call site
 - `best-practices/github-review-decision-stickiness-dismiss-stale-reviews.md` — `reviewDecision` only transitions on formal reviews; dismiss stale CHANGES_REQUESTED via API
 - `best-practices/loop-mode-pr-babysit-discipline.md` — Monitor + ScheduleWakeup discipline for long-running PR-babysit sessions
 - `best-practices/deferred-feedback-todo-four-part-structure.md` — Context + Ask + Why-not-now + Locked-in tests
+- `workflow-issues/foundry-adversarial-red-green-information-barrier.md` — Foundry red/green = red tests from DoD, green implementation from How, PASS/FAIL-only mediation
+- `documentation-gaps/todo-completion-notes-ci-evidence.md` — handoff/todo CI claims need precise PR/run/event evidence
 - `integration-issues/xcode-cloud-accent-character-team-name-crash.md` — accent in account name
 - `architecture-patterns/reviving-a-decade-old-cross-platform-project.md` — 19 learnings from the revival
 - `architecture-patterns/swiftui-tab-shell-opaque-scope-navigation.md` — shell owns selection, each tab owns its own nav; lazy mount + SceneStorage canonical-key restore
 - `runtime-errors/anycodable-nsjsonserialization-crash.md` — always `.unwrapped` before JSONSerialization
+- `build-errors/kotlinx-json-numeric-accessors-android-test-compile.md` — Android Kotlin JSON accessor imports + aligned test/production plain-integer parsing
 
 ---
 
