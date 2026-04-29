@@ -85,6 +85,10 @@ final class JasonetteNavigationCoordinator: ObservableObject {
             #endif
         }
 
+        // On a miss, keep `bootstrapURL` as the preload identity key. No
+        // selectable tab matched it (checked above), so `JasonetteTabShell`
+        // will not hand `bootstrapDoc` to the fallback first tab and that tab
+        // will fetch normally.
         let preloadURL = matchedBootstrapAlias ? (initial.descriptor.selectableURL ?? bootstrapURL) : bootstrapURL
         let shell = TabShellState(tabs: entries, initialSelection: initial.id)
         mode = .tabs(shell: shell, bootstrapDoc: doc, bootstrapURL: preloadURL)

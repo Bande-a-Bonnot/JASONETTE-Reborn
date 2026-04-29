@@ -93,6 +93,11 @@ final class TabNavigationCoordinatorTests: XCTestCase {
         XCTAssertNil(TabDescriptor(from: c))
     }
 
+    func testDescriptorWithEmptyURLReturnsNil() {
+        let c = JasonComponent(); c.url = ""
+        XCTAssertNil(TabDescriptor(from: c, baseURL: URL(string: "https://example.com/app/index.json")!))
+    }
+
     func testDescriptorWithRelativeIconAndNoBaseDropsIcon() {
         let c = JasonComponent()
         c.url = "https://example.com/target.json"
@@ -300,6 +305,21 @@ final class TabNavigationCoordinatorTests: XCTestCase {
             return XCTFail("bootstrap with selectable tabs must promote to .tabs")
         }
         XCTAssertEqual(shell.selectedTabID, shell.tabs[1].id)
+    }
+
+    func testCoordinatorFallbackSelectionKeepsBootstrapURLUnmatched() {
+        let entry = URL(string: "https://entry.example.com/index.json")!
+        let c = JasonetteNavigationCoordinator(entryURL: entry)
+        c.bootstrapDidLoad(doc: makeDoc(tabs: [
+            tabItem(url: "https://example.com/a.json"),
+            tabItem(url: "https://example.com/b.json"),
+        ]))
+        guard case .tabs(let shell, _, let bootstrapURL) = c.mode else {
+            return XCTFail("expected .tabs")
+        }
+        XCTAssertEqual(shell.selectedTabID, shell.tabs[0].id)
+        XCTAssertEqual(bootstrapURL, entry)
+        XCTAssertNotEqual(shell.tabs[0].descriptor.selectableURL?.standardized, bootstrapURL.standardized)
     }
 
     func testCoordinatorDedupesByCanonicalTarget() {
