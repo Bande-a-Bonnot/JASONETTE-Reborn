@@ -39,7 +39,7 @@ final class JasonetteNavigationCoordinator: ObservableObject {
         didBootstrap = true
         guard case .single = mode else { return }
 
-        let entries = Self.entries(from: doc)
+        let entries = Self.entries(from: doc, baseURL: entryURL)
         guard !entries.isEmpty else {
             mode = .single(rootURL: entryURL, preloadedDoc: doc)
             return
@@ -84,7 +84,7 @@ final class JasonetteNavigationCoordinator: ObservableObject {
     /// Convert `doc.body.footer.tabs.items` into deduped `TabEntry`s.
     /// Invalid items (no URL and no action) are dropped. Duplicates by
     /// canonical target key are dropped (first wins); debug-asserts.
-    static func entries(from doc: JasonDocument) -> [TabEntry] {
+    static func entries(from doc: JasonDocument, baseURL: URL) -> [TabEntry] {
         guard let items = doc.jason.body?.footer?.tabs?.items, !items.isEmpty else {
             return []
         }
@@ -94,7 +94,7 @@ final class JasonetteNavigationCoordinator: ObservableObject {
         out.reserveCapacity(items.count)
 
         for item in items {
-            guard let descriptor = TabDescriptor(from: item) else { continue }
+            guard let descriptor = TabDescriptor(from: item, baseURL: baseURL) else { continue }
             let key = descriptor.target.canonicalKey
             if seen.contains(key) {
                 #if DEBUG
@@ -121,10 +121,10 @@ extension TabDescriptor {
     /// Icon resolution reads `item.image` directly. `item.imageURL` falls
     /// back to `item.url`, which for tabs is the target document URL — that
     /// would try to render JSON as an image.
-    init?(from item: JasonComponent) {
+    init?(from item: JasonComponent, baseURL: URL? = nil) {
         let label = TabLabelSpec(
             text: item.text,
-            iconURL: item.image.flatMap(URL.init(string:)),
+            iconURL: item.image.flatMap { JasonURL.resolve($0, against: baseURL) },
             badge: item.badge,
             style: item.style
         )
@@ -138,7 +138,7 @@ extension TabDescriptor {
 
         let hrefView = item.href?.view
         let urlString = item.href?.url ?? item.url
-        guard let s = urlString, let url = URL(string: s) else { return nil }
+        guard let s = urlString, let url = JasonURL.resolve(s, against: baseURL) else { return nil }
         guard let scheme = url.scheme?.lowercased() else { return nil }
 
         // Same allowlist as JasonetteViewModel.handleHref so a tab can't open

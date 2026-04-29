@@ -1,5 +1,5 @@
 ---
-status: ready
+status: complete
 priority: p2
 issue_id: "030"
 tags: [ios, urls, tabs, icons]
@@ -7,6 +7,8 @@ dependencies: []
 ---
 
 # Resolve relative URLs in footer-tab `image` / `href.url` against document base
+
+Completed: 2026-04-29
 
 ## Problem Statement
 
@@ -57,6 +59,19 @@ relatives with `URL(string:relativeTo:)`.
       a leading `/`
 - [ ] Audit of other renderer URL parses completed; either fixed
       or flagged with a linked todo
+
+## Completion Notes
+
+- Added `JasonURL.resolve(_:against:)` as the shared relative-resolution helper.
+- Plumbed `entryURL` from `JasonetteNavigationCoordinator.bootstrapDidLoad` into
+  `TabDescriptor.init(from:baseURL:)`.
+- Footer-tab `image`, shorthand `url`, and `href.url` now resolve against the
+  bootstrap document URL before scheme allowlist checks.
+- Added tests for relative paths, root-relative paths, relative hrefs, relative
+  icons, coordinator entry-URL plumbing, and disallowed schemes after resolution.
+- Ran `cd JASONETTE-iOS/JasonetteApp && swift test`: 392 tests, 0 failures.
+- Audit of other URL parses completed; remaining non-tab renderer/action work is
+  tracked in `todos/034-ready-p2-codebase-wide-relative-url-resolution.md`.
 
 ## Notes
 
