@@ -52,8 +52,14 @@ final class JasonetteNavigationCoordinator: ObservableObject {
         // this stays in lockstep with `TabDescriptor.Target.canonicalKey`
         // and `JasonetteTabShell`'s preload-doc hand-off.
         let selectable = entries.filter { $0.descriptor.isSelectable }
-        let entryStd = bootstrapURL.standardized
-        guard let initial = selectable.first(where: { $0.descriptor.selectableURL?.standardized == entryStd })
+        let bootstrapStd = bootstrapURL.standardized
+        let entryStd = entryURL.standardized
+        let bootstrapAliases = [bootstrapStd, entryStd]
+        func matchesBootstrapAlias(_ url: URL?) -> Bool {
+            guard let url else { return false }
+            return bootstrapAliases.contains(url.standardized)
+        }
+        guard let initial = selectable.first(where: { matchesBootstrapAlias($0.descriptor.selectableURL) })
                 ?? selectable.first
         else {
             #if DEBUG
@@ -62,14 +68,16 @@ final class JasonetteNavigationCoordinator: ObservableObject {
             mode = .single(rootURL: entryURL, preloadedDoc: doc)
             return
         }
-        if initial.descriptor.selectableURL?.standardized != entryStd {
+        let matchedBootstrapAlias = matchesBootstrapAlias(initial.descriptor.selectableURL)
+        if !matchedBootstrapAlias {
             #if DEBUG
             print("[Jasonette] Bootstrap URL \(bootstrapURL) not in declared tabs — first selectable tab used, bootstrap doc discarded")
             #endif
         }
 
+        let preloadURL = matchedBootstrapAlias ? (initial.descriptor.selectableURL ?? bootstrapURL) : bootstrapURL
         let shell = TabShellState(tabs: entries, initialSelection: initial.id)
-        mode = .tabs(shell: shell, bootstrapDoc: doc, bootstrapURL: bootstrapURL)
+        mode = .tabs(shell: shell, bootstrapDoc: doc, bootstrapURL: preloadURL)
     }
 
     /// Env closure target for `transition: "switch"` hrefs deep inside a tab.

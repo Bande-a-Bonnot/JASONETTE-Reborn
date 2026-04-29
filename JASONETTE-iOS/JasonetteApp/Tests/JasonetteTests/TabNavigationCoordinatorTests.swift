@@ -71,7 +71,7 @@ final class TabNavigationCoordinatorTests: XCTestCase {
         let c = JasonComponent(); c.url = "../tabs/./home.json"
         let baseURL = URL(string: "https://example.com/app/v1/index.json")!
         let d = TabDescriptor(from: c, baseURL: baseURL)
-        XCTAssertEqual(d?.selectableURL?.standardized.absoluteString, "https://example.com/app/tabs/home.json")
+        XCTAssertEqual(d?.selectableURL?.absoluteString, "https://example.com/app/tabs/home.json")
     }
 
     func testDescriptorResolvesProtocolRelativeURLAgainstBaseURL() {
@@ -213,6 +213,21 @@ final class TabNavigationCoordinatorTests: XCTestCase {
         XCTAssertEqual(bootstrapURL, documentURL)
         XCTAssertEqual(shell.tabs[0].descriptor.selectableURL?.absoluteString, "https://cdn.example.com/final/index.json")
         XCTAssertEqual(shell.tabs[1].descriptor.selectableURL?.absoluteString, "https://cdn.example.com/settings.json")
+    }
+
+    func testCoordinatorMatchesOriginalEntryURLAfterDocumentURLRedirect() {
+        let entry = URL(string: "https://example.com/app/index.json")!
+        let documentURL = URL(string: "https://cdn.example.com/final/index.json")!
+        let c = JasonetteNavigationCoordinator(entryURL: entry)
+        c.bootstrapDidLoad(doc: makeDoc(tabs: [
+            tabItem(url: "https://example.com/app/other.json"),
+            tabItem(url: "https://example.com/app/index.json"),
+        ]), documentURL: documentURL)
+        guard case .tabs(let shell, _, let bootstrapURL) = c.mode else {
+            return XCTFail("expected .tabs")
+        }
+        XCTAssertEqual(shell.selectedTabID, shell.tabs[1].id)
+        XCTAssertEqual(bootstrapURL, entry)
     }
 
     func testCoordinatorSelectsMatchingTabOnPromotion() {

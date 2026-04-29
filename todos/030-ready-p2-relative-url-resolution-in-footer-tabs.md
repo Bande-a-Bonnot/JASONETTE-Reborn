@@ -6,18 +6,20 @@ tags: [ios, urls, tabs, icons]
 dependencies: []
 ---
 
-# Resolve relative URLs in footer-tab `image` / `href.url` against document base
+# Resolve relative URLs in shell-mounted footer-tab `image` / `href.url` against document base
 
 Completed: 2026-04-29
 
 ## Problem Statement
 
-gemini-code-assist flagged `TabDescriptor.init(from:)` for
+gemini-code-assist flagged the shell-mounted footer tab `TabDescriptor.init(from:)` for
 unconditional `URL(string:)` on `item.image` and the href/url
 strings. A relative path like `"icons/home.png"` or `"/home"` is
 accepted by `URL(string:)`, but the resulting `URL` has no scheme
 and is rejected by the scheme allowlist a few lines down. Net
-effect: relative references silently disappear from the shell.
+effect: relative references silently disappear from the shell. This completed
+fix is scoped to the shell-mounted tab path; the legacy `FooterTabItemView` path
+remains tracked in `todos/034`.
 
 This matches the pre-existing pattern elsewhere in the renderer —
 icons, images, and hrefs everywhere use `URL(string:)` without a
@@ -69,10 +71,11 @@ relatives with `URL(string:relativeTo:)`.
 - Shell-mounted footer-tab `image`, shorthand `url`, and `href.url` now resolve
   against the loaded document URL before scheme allowlist checks.
 - Added tests for relative paths, root-relative paths, relative hrefs, relative
-  icons, coordinator document-URL plumbing, redirect/final-URL metadata, missing
-  base URLs, protocol-relative URLs, dot segments, query-only URLs, and
-  disallowed schemes after resolution.
-- Ran `cd JASONETTE-iOS/JasonetteApp && swift test`: 398 tests, 0 failures.
+  icons, coordinator document-URL plumbing, response/final-URL metadata,
+  original-entry-URL matching after redirects, missing base URLs,
+  protocol-relative URLs, dot segments, query-only URLs, and disallowed schemes
+  after resolution.
+- Ran `cd JASONETTE-iOS/JasonetteApp && swift test`: 400 tests, 0 failures.
 - Audit of other URL parses completed; remaining non-tab renderer/action work is
   tracked in `todos/034-ready-p2-codebase-wide-relative-url-resolution.md`.
 

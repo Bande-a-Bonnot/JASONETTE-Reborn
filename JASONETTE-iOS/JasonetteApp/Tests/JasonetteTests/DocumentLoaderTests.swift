@@ -58,7 +58,7 @@ final class DocumentLoaderTests: XCTestCase {
         XCTAssertEqual(doc.jason.body?.sections?.first?.items?.first?.text, "Hello")
     }
 
-    func testLoadWithMetadataReturnsFinalResponseURL() async throws {
+    func testLoadWithMetadataReturnsResponseURL() async throws {
         let finalURL = URL(string: "https://cdn.example.com/final/doc.json")!
         StubURLProtocol.requestHandler = { _ in
             let response = HTTPURLResponse(
@@ -72,6 +72,21 @@ final class DocumentLoaderTests: XCTestCase {
         let loaded = try await loader.loadWithMetadata(from: URL(string: "https://example.com/doc.json")!)
         XCTAssertEqual(loaded.document.jason.head?.title, "Sample")
         XCTAssertEqual(loaded.url, finalURL)
+    }
+
+    func testLoadWithMetadataFallsBackWhenResponseURLSchemeIsDisallowed() async throws {
+        let requestedURL = URL(string: "https://example.com/doc.json")!
+        StubURLProtocol.requestHandler = { _ in
+            let response = HTTPURLResponse(
+                url: URL(string: "file:///tmp/doc.json")!,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: nil
+            )!
+            return (response, Data(self.sampleJSON.utf8))
+        }
+        let loaded = try await loader.loadWithMetadata(from: requestedURL)
+        XCTAssertEqual(loaded.url, requestedURL)
     }
 
     func testLoadThrowsOn404() async {
