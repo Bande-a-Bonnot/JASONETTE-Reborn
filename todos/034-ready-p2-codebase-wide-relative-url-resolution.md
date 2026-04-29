@@ -6,7 +6,7 @@ tags: [ios, urls, renderer, actions]
 dependencies: []
 ---
 
-# Resolve relative URLs outside footer-tab descriptors
+# Resolve relative URLs outside shell-mounted tab descriptors
 
 ## Problem Statement
 
@@ -15,7 +15,8 @@ Todo/030 fixed relative URL resolution for shell-mounted footer tabs by adding
 `TabDescriptor.init(from:baseURL:)`. The rest of the renderer still contains
 plain `URL(string:)` parses with no document-base context, so relative URLs in
 body components/actions can still fail scheme validation or render as blank
-assets.
+assets. This includes the legacy `FooterTabItemView` path; todo/030 covered the
+new shell-mounted `TabDescriptor` path only.
 
 ## Findings
 

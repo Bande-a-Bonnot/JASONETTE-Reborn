@@ -21,6 +21,11 @@ final class JasonetteNavigationCoordinator: ObservableObject {
 
     @Published private(set) var mode: Mode
     let entryURL: URL
+    /// Final loaded document URL used as the relative-reference base for the
+    /// bootstrap document. Distinct from the shell's `bootstrapURL`, which is
+    /// a preload identity key and may intentionally be the original entry URL
+    /// when authors declare absolute pre-redirect tab URLs.
+    private(set) var bootstrapDocumentURL: URL?
     private var didBootstrap = false
 
     init(entryURL: URL) {
@@ -40,6 +45,7 @@ final class JasonetteNavigationCoordinator: ObservableObject {
         guard case .single = mode else { return }
 
         let bootstrapURL = documentURL ?? entryURL
+        bootstrapDocumentURL = bootstrapURL
         let entries = Self.entries(from: doc, baseURL: bootstrapURL)
         guard !entries.isEmpty else {
             mode = .single(rootURL: entryURL, preloadedDoc: doc)

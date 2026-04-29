@@ -113,6 +113,24 @@ final class TabNavigationCoordinatorTests: XCTestCase {
         XCTAssertNil(d?.selectableURL)
     }
 
+    func testDescriptorResolvesRelativeWebHrefBeforeAllowlist() {
+        let c = JasonComponent()
+        var href = JasonHref(); href.url = "pages/help.html"; href.view = "web"
+        c.href = href
+        let d = TabDescriptor(from: c, baseURL: URL(string: "https://example.com/app/index.json")!)
+        guard case .web(let url) = d?.target else { return XCTFail("expected .web target") }
+        XCTAssertEqual(url.absoluteString, "https://example.com/app/pages/help.html")
+    }
+
+    func testDescriptorResolvesRelativeAppHrefBeforeAllowlist() {
+        let c = JasonComponent()
+        var href = JasonHref(); href.url = "pages/help.html"; href.view = "app"
+        c.href = href
+        let d = TabDescriptor(from: c, baseURL: URL(string: "https://example.com/app/index.json")!)
+        guard case .app(let url) = d?.target else { return XCTFail("expected .app target") }
+        XCTAssertEqual(url.absoluteString, "https://example.com/app/pages/help.html")
+    }
+
     /// Action-only tabs are rejected at descriptor construction until the
     /// shell's action dispatcher is plumbed through (see todos/026). Otherwise
     /// the tab would render in the bar and silently no-op on tap.
@@ -210,9 +228,23 @@ final class TabNavigationCoordinatorTests: XCTestCase {
         guard case .tabs(let shell, _, let bootstrapURL) = c.mode else {
             return XCTFail("expected .tabs")
         }
+        XCTAssertEqual(c.bootstrapDocumentURL, documentURL)
         XCTAssertEqual(bootstrapURL, documentURL)
         XCTAssertEqual(shell.tabs[0].descriptor.selectableURL?.absoluteString, "https://cdn.example.com/final/index.json")
         XCTAssertEqual(shell.tabs[1].descriptor.selectableURL?.absoluteString, "https://cdn.example.com/settings.json")
+    }
+
+    func testCoordinatorResolvesRelativeTabIconAgainstDocumentURL() {
+        let entry = URL(string: "https://example.com/app/index.json")!
+        let documentURL = URL(string: "https://cdn.example.com/final/index.json")!
+        let c = JasonetteNavigationCoordinator(entryURL: entry)
+        let item = tabItem(url: "index.json")
+        item.image = "icons/home.png"
+        c.bootstrapDidLoad(doc: makeDoc(tabs: [item]), documentURL: documentURL)
+        guard case .tabs(let shell, _, _) = c.mode else {
+            return XCTFail("expected .tabs")
+        }
+        XCTAssertEqual(shell.tabs[0].descriptor.label.iconURL?.absoluteString, "https://cdn.example.com/final/icons/home.png")
     }
 
     func testCoordinatorMatchesOriginalEntryURLAfterDocumentURLRedirect() {
