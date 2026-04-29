@@ -46,13 +46,11 @@ public final class DocumentLoader: Sendable {
             )
         }
         let responseURL = response.url ?? url
-        let metadataURL: URL
-        if let responseScheme = responseURL.scheme?.lowercased(), Self.allowedSchemes.contains(responseScheme) {
-            metadataURL = responseURL
-        } else {
-            metadataURL = url
+        guard let responseScheme = responseURL.scheme?.lowercased(),
+              Self.allowedSchemes.contains(responseScheme) else {
+            throw DocumentError.blockedURL
         }
-        return LoadedDocument(document: try decode(data), url: metadataURL)
+        return LoadedDocument(document: try decode(data), url: responseURL)
     }
 
     /// Decode a document from JSON data.

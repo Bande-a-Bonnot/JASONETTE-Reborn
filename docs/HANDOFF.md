@@ -8,7 +8,7 @@ Last updated: 2026-04-29
 
 ### Test Suite
 
-- iOS: 400 tests, 0 failures (verified 2026-04-29 after footer-tab relative URL resolution Codex follow-up; tab navigation rewrite merged to `main` via PR #20 squash `11b9fca`)
+- iOS: 402 tests, 0 failures (verified 2026-04-29 after footer-tab relative URL resolution Codex follow-up; tab navigation rewrite merged to `main` via PR #20 squash `11b9fca`)
 - Android CI: `pull_request` Android job ran/passed on PR #21, non-Android-change PR #22, and follow-up PR #23; Kotlin JSON primitive accessor compile failures fixed by squash `92e65dd`; oversized plain-integer JSON parsing aligned between Android test helper and production renderer in `c3f4f8f`
 - Run iOS: `cd JASONETTE-iOS/JasonetteApp && swift test`
 - Build iOS: `swift build` (<1s)

@@ -74,7 +74,7 @@ final class DocumentLoaderTests: XCTestCase {
         XCTAssertEqual(loaded.url, finalURL)
     }
 
-    func testLoadWithMetadataFallsBackWhenResponseURLSchemeIsDisallowed() async throws {
+    func testLoadWithMetadataRejectsDisallowedResponseURLScheme() async {
         let requestedURL = URL(string: "https://example.com/doc.json")!
         StubURLProtocol.requestHandler = { _ in
             let response = HTTPURLResponse(
@@ -85,8 +85,14 @@ final class DocumentLoaderTests: XCTestCase {
             )!
             return (response, Data(self.sampleJSON.utf8))
         }
-        let loaded = try await loader.loadWithMetadata(from: requestedURL)
-        XCTAssertEqual(loaded.url, requestedURL)
+        do {
+            _ = try await loader.loadWithMetadata(from: requestedURL)
+            XCTFail("Expected blockedURL error")
+        } catch DocumentLoader.DocumentError.blockedURL {
+            // expected
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
     }
 
     func testLoadThrowsOn404() async {

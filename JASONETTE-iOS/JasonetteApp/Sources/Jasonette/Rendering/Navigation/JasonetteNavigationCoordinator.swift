@@ -54,12 +54,14 @@ final class JasonetteNavigationCoordinator: ObservableObject {
         let selectable = entries.filter { $0.descriptor.isSelectable }
         let bootstrapStd = bootstrapURL.standardized
         let entryStd = entryURL.standardized
-        let bootstrapAliases = [bootstrapStd, entryStd]
-        func matchesBootstrapAlias(_ url: URL?) -> Bool {
-            guard let url else { return false }
-            return bootstrapAliases.contains(url.standardized)
+        func matches(_ url: URL?, _ candidate: URL) -> Bool {
+            url?.standardized == candidate.standardized
         }
-        guard let initial = selectable.first(where: { matchesBootstrapAlias($0.descriptor.selectableURL) })
+        func matchesBootstrapAlias(_ url: URL?) -> Bool {
+            matches(url, bootstrapStd) || matches(url, entryStd)
+        }
+        guard let initial = selectable.first(where: { matches($0.descriptor.selectableURL, bootstrapStd) })
+                ?? selectable.first(where: { matches($0.descriptor.selectableURL, entryStd) })
                 ?? selectable.first
         else {
             #if DEBUG

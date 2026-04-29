@@ -54,7 +54,7 @@ relatives with `URL(string:relativeTo:)`.
 
 ## Acceptance Criteria
 
-- [x] Shell-mounted footer tabs with relative `image` paths render their icons
+- [x] Shell-mounted footer tabs with relative `image` paths resolve their icon URLs
 - [x] Shell-mounted footer tabs with relative `href.url` or `url` still route
       correctly (scheme check happens after resolution)
 - [x] Tests cover relative → absolute resolution with and without
@@ -72,10 +72,10 @@ relatives with `URL(string:relativeTo:)`.
   against the loaded document URL before scheme allowlist checks.
 - Added tests for relative paths, root-relative paths, relative hrefs, relative
   icons, coordinator document-URL plumbing, response/final-URL metadata,
-  original-entry-URL matching after redirects, missing base URLs,
-  protocol-relative URLs, dot segments, query-only URLs, and disallowed schemes
-  after resolution.
-- Ran `cd JASONETTE-iOS/JasonetteApp && swift test`: 400 tests, 0 failures.
+  original-entry-URL matching after redirects, final-URL precedence, relative vs
+  absolute dedupe, missing base URLs, protocol-relative URLs, dot segments,
+  query-only URLs, and disallowed schemes after resolution.
+- Ran `cd JASONETTE-iOS/JasonetteApp && swift test`: 402 tests, 0 failures.
 - Audit of other URL parses completed; remaining non-tab renderer/action work is
   tracked in `todos/034-ready-p2-codebase-wide-relative-url-resolution.md`.
 
