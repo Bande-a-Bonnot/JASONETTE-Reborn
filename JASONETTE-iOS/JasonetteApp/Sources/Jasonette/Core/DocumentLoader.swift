@@ -2,6 +2,11 @@ import Foundation
 
 /// Loads and decodes $jason documents from URLs or local data.
 public final class DocumentLoader: Sendable {
+    public struct LoadedDocument: Sendable {
+        public let document: JasonDocument
+        public let url: URL
+    }
+
     private let session: URLSession
     private let decoder: JSONDecoder
 
@@ -23,6 +28,12 @@ public final class DocumentLoader: Sendable {
 
     /// Load a document from a URL.
     public func load(from url: URL) async throws -> JasonDocument {
+        try await loadWithMetadata(from: url).document
+    }
+
+    /// Load a document and return the final response URL. The final URL matters
+    /// for resolving authored relative references after HTTP redirects.
+    public func loadWithMetadata(from url: URL) async throws -> LoadedDocument {
         guard let scheme = url.scheme?.lowercased(),
               Self.allowedSchemes.contains(scheme) else {
             throw DocumentError.blockedURL
@@ -34,7 +45,7 @@ public final class DocumentLoader: Sendable {
                 (response as? HTTPURLResponse)?.statusCode ?? 0
             )
         }
-        return try decode(data)
+        return LoadedDocument(document: try decode(data), url: response.url ?? url)
     }
 
     /// Decode a document from JSON data.

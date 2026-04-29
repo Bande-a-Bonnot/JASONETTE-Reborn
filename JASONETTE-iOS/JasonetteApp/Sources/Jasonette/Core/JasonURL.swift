@@ -14,6 +14,7 @@ enum JasonURL {
         if let baseURL {
             return URL(string: string, relativeTo: baseURL)?.absoluteURL
         }
-        return URL(string: string)?.absoluteURL
+        guard let url = URL(string: string), url.scheme != nil else { return nil }
+        return url.absoluteURL
     }
 }

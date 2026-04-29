@@ -59,8 +59,8 @@ public struct JasonetteRootView: View {
 
     private func runBootstrap() async {
         do {
-            let doc = try await loader.load(from: coordinator.entryURL)
-            coordinator.bootstrapDidLoad(doc: doc)
+            let loaded = try await loader.loadWithMetadata(from: coordinator.entryURL)
+            coordinator.bootstrapDidLoad(doc: loaded.document, documentURL: loaded.url)
             bootstrap = .ready
         } catch is CancellationError {
             return

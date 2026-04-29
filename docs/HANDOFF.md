@@ -8,7 +8,7 @@ Last updated: 2026-04-29
 
 ### Test Suite
 
-- iOS: 392 tests, 0 failures (verified 2026-04-29 after footer-tab relative URL resolution; tab navigation rewrite merged to `main` via PR #20 squash `11b9fca`)
+- iOS: 398 tests, 0 failures (verified 2026-04-29 after footer-tab relative URL resolution follow-up; tab navigation rewrite merged to `main` via PR #20 squash `11b9fca`)
 - Android CI: `pull_request` Android job ran/passed on PR #21, non-Android-change PR #22, and follow-up PR #23; Kotlin JSON primitive accessor compile failures fixed by squash `92e65dd`; oversized plain-integer JSON parsing aligned between Android test helper and production renderer in `c3f4f8f`
 - Run iOS: `cd JASONETTE-iOS/JasonetteApp && swift test`
 - Build iOS: `swift build` (<1s)
@@ -65,7 +65,7 @@ Map pins/region, secure textfield (`SecureField`), HTML component (`WKWebView`),
 
 ### Phase D — Data & Navigation
 
-Footer-tab relative URL resolution is fixed locally: `TabDescriptor.init(from:baseURL:)` resolves tab `image`, shorthand `url`, and `href.url` against the bootstrap `entryURL` via `JasonURL.resolve(_:against:)` before scheme allowlist checks. Broader non-tab renderer/action relative URL plumbing remains tracked by `todos/034`. `$network.request` response shape preservation is fixed on `main` (PR #17): object, array, string, number, and null JSON response bodies are stored under `$response`.
+Shell-mounted footer-tab relative URL resolution is fixed locally: `DocumentLoader.loadWithMetadata` captures the final loaded document URL, and `TabDescriptor.init(from:baseURL:)` resolves tab `image`, shorthand `url`, and `href.url` against it via `JasonURL.resolve(_:against:)` before scheme allowlist checks. Broader non-tab renderer/action relative URL plumbing, including the legacy `FooterTabItemView` path, remains tracked by `todos/034`. `$network.request` response shape preservation is fixed on `main` (PR #17): object, array, string, number, and null JSON response bodies are stored under `$response`.
 
 Tab navigation rewrite is on `main` (PR #20, plan at `docs/plans/tab-navigation-overhaul/plan.md`). Shell owns selection; each tab is an opaque `JasonetteNavigationView` mounted lazily on first selection and kept alive after. See solution doc `architecture-patterns/swiftui-tab-shell-opaque-scope-navigation.md`.
 

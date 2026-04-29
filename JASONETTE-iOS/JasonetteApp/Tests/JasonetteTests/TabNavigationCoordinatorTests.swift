@@ -67,6 +67,40 @@ final class TabNavigationCoordinatorTests: XCTestCase {
         XCTAssertEqual(d?.selectableURL?.absoluteString, "https://example.com/app/tabs/real.json")
     }
 
+    func testDescriptorResolvesDotSegmentsAgainstBaseURL() {
+        let c = JasonComponent(); c.url = "../tabs/./home.json"
+        let baseURL = URL(string: "https://example.com/app/v1/index.json")!
+        let d = TabDescriptor(from: c, baseURL: baseURL)
+        XCTAssertEqual(d?.selectableURL?.standardized.absoluteString, "https://example.com/app/tabs/home.json")
+    }
+
+    func testDescriptorResolvesProtocolRelativeURLAgainstBaseURL() {
+        let c = JasonComponent(); c.url = "//cdn.example.com/tabs/home.json"
+        let baseURL = URL(string: "https://example.com/app/index.json")!
+        let d = TabDescriptor(from: c, baseURL: baseURL)
+        XCTAssertEqual(d?.selectableURL?.absoluteString, "https://cdn.example.com/tabs/home.json")
+    }
+
+    func testDescriptorResolvesQueryOnlyURLAgainstBaseURL() {
+        let c = JasonComponent(); c.url = "?tab=home#top"
+        let baseURL = URL(string: "https://example.com/app/index.json")!
+        let d = TabDescriptor(from: c, baseURL: baseURL)
+        XCTAssertEqual(d?.selectableURL?.absoluteString, "https://example.com/app/index.json?tab=home#top")
+    }
+
+    func testDescriptorWithRelativeURLAndNoBaseReturnsNil() {
+        let c = JasonComponent(); c.url = "tabs/home.json"
+        XCTAssertNil(TabDescriptor(from: c))
+    }
+
+    func testDescriptorWithRelativeIconAndNoBaseDropsIcon() {
+        let c = JasonComponent()
+        c.url = "https://example.com/target.json"
+        c.image = "icons/home.png"
+        let d = TabDescriptor(from: c)
+        XCTAssertNil(d?.label.iconURL)
+    }
+
     func testDescriptorFromComponentWithViewWebIsNonSelectable() {
         let c = JasonComponent()
         var href = JasonHref()
@@ -165,18 +199,20 @@ final class TabNavigationCoordinatorTests: XCTestCase {
         XCTAssertEqual(shell.tabs[0].descriptor.selectableURL, URL(string: "https://a"))
     }
 
-    func testCoordinatorResolvesRelativeTabTargetsAgainstEntryURL() {
+    func testCoordinatorResolvesRelativeTabTargetsAgainstDocumentURL() {
         let entry = URL(string: "https://example.com/app/index.json")!
+        let documentURL = URL(string: "https://cdn.example.com/final/index.json")!
         let c = JasonetteNavigationCoordinator(entryURL: entry)
         c.bootstrapDidLoad(doc: makeDoc(tabs: [
             tabItem(url: "index.json"),
             tabItem(url: "/settings.json"),
-        ]))
-        guard case .tabs(let shell, _, _) = c.mode else {
+        ]), documentURL: documentURL)
+        guard case .tabs(let shell, _, let bootstrapURL) = c.mode else {
             return XCTFail("expected .tabs")
         }
-        XCTAssertEqual(shell.tabs[0].descriptor.selectableURL?.absoluteString, "https://example.com/app/index.json")
-        XCTAssertEqual(shell.tabs[1].descriptor.selectableURL?.absoluteString, "https://example.com/settings.json")
+        XCTAssertEqual(bootstrapURL, documentURL)
+        XCTAssertEqual(shell.tabs[0].descriptor.selectableURL?.absoluteString, "https://cdn.example.com/final/index.json")
+        XCTAssertEqual(shell.tabs[1].descriptor.selectableURL?.absoluteString, "https://cdn.example.com/settings.json")
     }
 
     func testCoordinatorSelectsMatchingTabOnPromotion() {
@@ -374,8 +410,8 @@ final class TabNavigationCoordinatorTests: XCTestCase {
     }
 
     func testDescriptorRejectsDisallowedSchemeAfterBaseResolution() {
-        let c = JasonComponent(); c.url = "file:///etc/passwd"
-        let baseURL = URL(string: "https://example.com/app/index.json")!
+        let c = JasonComponent(); c.url = "tabs/home.json"
+        let baseURL = URL(string: "file:///tmp/index.json")!
         XCTAssertNil(TabDescriptor(from: c, baseURL: baseURL))
     }
 

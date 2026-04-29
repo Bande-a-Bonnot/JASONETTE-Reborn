@@ -58,6 +58,22 @@ final class DocumentLoaderTests: XCTestCase {
         XCTAssertEqual(doc.jason.body?.sections?.first?.items?.first?.text, "Hello")
     }
 
+    func testLoadWithMetadataReturnsFinalResponseURL() async throws {
+        let finalURL = URL(string: "https://cdn.example.com/final/doc.json")!
+        StubURLProtocol.requestHandler = { _ in
+            let response = HTTPURLResponse(
+                url: finalURL,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: nil
+            )!
+            return (response, Data(self.sampleJSON.utf8))
+        }
+        let loaded = try await loader.loadWithMetadata(from: URL(string: "https://example.com/doc.json")!)
+        XCTAssertEqual(loaded.document.jason.head?.title, "Sample")
+        XCTAssertEqual(loaded.url, finalURL)
+    }
+
     func testLoadThrowsOn404() async {
         stub(statusCode: 404)
         let url = URL(string: "https://example.com/missing.json")!

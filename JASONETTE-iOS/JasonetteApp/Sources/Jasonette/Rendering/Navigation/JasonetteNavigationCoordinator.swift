@@ -34,12 +34,13 @@ final class JasonetteNavigationCoordinator: ObservableObject {
     /// read it without re-fetching. One-shot: guarded by `didBootstrap` so a
     /// second call (e.g. after a `$reload` in single mode) never replaces the
     /// preloaded document or re-promotes to `.tabs`.
-    func bootstrapDidLoad(doc: JasonDocument) {
+    func bootstrapDidLoad(doc: JasonDocument, documentURL: URL? = nil) {
         guard !didBootstrap else { return }
         didBootstrap = true
         guard case .single = mode else { return }
 
-        let entries = Self.entries(from: doc, baseURL: entryURL)
+        let bootstrapURL = documentURL ?? entryURL
+        let entries = Self.entries(from: doc, baseURL: bootstrapURL)
         guard !entries.isEmpty else {
             mode = .single(rootURL: entryURL, preloadedDoc: doc)
             return
@@ -51,7 +52,7 @@ final class JasonetteNavigationCoordinator: ObservableObject {
         // this stays in lockstep with `TabDescriptor.Target.canonicalKey`
         // and `JasonetteTabShell`'s preload-doc hand-off.
         let selectable = entries.filter { $0.descriptor.isSelectable }
-        let entryStd = entryURL.standardized
+        let entryStd = bootstrapURL.standardized
         guard let initial = selectable.first(where: { $0.descriptor.selectableURL?.standardized == entryStd })
                 ?? selectable.first
         else {
@@ -63,12 +64,12 @@ final class JasonetteNavigationCoordinator: ObservableObject {
         }
         if initial.descriptor.selectableURL?.standardized != entryStd {
             #if DEBUG
-            print("[Jasonette] Bootstrap URL \(entryURL) not in declared tabs — first selectable tab used, bootstrap doc discarded")
+            print("[Jasonette] Bootstrap URL \(bootstrapURL) not in declared tabs — first selectable tab used, bootstrap doc discarded")
             #endif
         }
 
         let shell = TabShellState(tabs: entries, initialSelection: initial.id)
-        mode = .tabs(shell: shell, bootstrapDoc: doc, bootstrapURL: entryURL)
+        mode = .tabs(shell: shell, bootstrapDoc: doc, bootstrapURL: bootstrapURL)
     }
 
     /// Env closure target for `transition: "switch"` hrefs deep inside a tab.

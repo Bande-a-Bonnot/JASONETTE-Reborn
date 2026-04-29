@@ -52,24 +52,27 @@ relatives with `URL(string:relativeTo:)`.
 
 ## Acceptance Criteria
 
-- [ ] Footer tabs with relative `image` paths render their icons
-- [ ] Footer tabs with relative `href.url` or `url` still route
+- [x] Shell-mounted footer tabs with relative `image` paths render their icons
+- [x] Shell-mounted footer tabs with relative `href.url` or `url` still route
       correctly (scheme check happens after resolution)
-- [ ] Tests cover relative → absolute resolution with and without
+- [x] Tests cover relative → absolute resolution with and without
       a leading `/`
-- [ ] Audit of other renderer URL parses completed; either fixed
+- [x] Audit of other renderer URL parses completed; either fixed
       or flagged with a linked todo
 
 ## Completion Notes
 
 - Added `JasonURL.resolve(_:against:)` as the shared relative-resolution helper.
-- Plumbed `entryURL` from `JasonetteNavigationCoordinator.bootstrapDidLoad` into
+- Plumbed the loaded document URL from `DocumentLoader.loadWithMetadata` through
+  `JasonetteNavigationCoordinator.bootstrapDidLoad(doc:documentURL:)` into
   `TabDescriptor.init(from:baseURL:)`.
-- Footer-tab `image`, shorthand `url`, and `href.url` now resolve against the
-  bootstrap document URL before scheme allowlist checks.
+- Shell-mounted footer-tab `image`, shorthand `url`, and `href.url` now resolve
+  against the loaded document URL before scheme allowlist checks.
 - Added tests for relative paths, root-relative paths, relative hrefs, relative
-  icons, coordinator entry-URL plumbing, and disallowed schemes after resolution.
-- Ran `cd JASONETTE-iOS/JasonetteApp && swift test`: 392 tests, 0 failures.
+  icons, coordinator document-URL plumbing, redirect/final-URL metadata, missing
+  base URLs, protocol-relative URLs, dot segments, query-only URLs, and
+  disallowed schemes after resolution.
+- Ran `cd JASONETTE-iOS/JasonetteApp && swift test`: 398 tests, 0 failures.
 - Audit of other URL parses completed; remaining non-tab renderer/action work is
   tracked in `todos/034-ready-p2-codebase-wide-relative-url-resolution.md`.
 
