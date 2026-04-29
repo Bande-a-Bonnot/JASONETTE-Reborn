@@ -470,6 +470,15 @@ final class TabNavigationCoordinatorTests: XCTestCase {
         XCTAssertEqual(d?.label.iconURL?.absoluteString, "https://example.com/app/icons/home.png")
     }
 
+    func testDescriptorResolvesRootRelativeIconAgainstBaseURL() {
+        let c = JasonComponent()
+        c.url = "https://example.com/target.json"
+        c.image = "/icons/home.png"
+        let baseURL = URL(string: "https://example.com/app/index.json")!
+        let d = TabDescriptor(from: c, baseURL: baseURL)
+        XCTAssertEqual(d?.label.iconURL?.absoluteString, "https://example.com/icons/home.png")
+    }
+
     /// HIGH 4: document/web tabs must reject non-http(s) schemes. A tab
     /// advertising `file:///etc/passwd` must not be constructed.
     func testDescriptorRejectsDisallowedDocumentScheme() {

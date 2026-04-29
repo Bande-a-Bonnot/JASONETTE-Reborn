@@ -21,10 +21,12 @@ final class JasonetteNavigationCoordinator: ObservableObject {
 
     @Published private(set) var mode: Mode
     let entryURL: URL
-    /// Final loaded document URL used as the relative-reference base for the
-    /// bootstrap document. Distinct from the shell's `bootstrapURL`, which is
-    /// a preload identity key and may intentionally be the original entry URL
-    /// when authors declare absolute pre-redirect tab URLs.
+    /// Final loaded document URL used as the relative-reference base while
+    /// extracting shell-mounted tab descriptors from the bootstrap document.
+    /// This is distinct from the shell's `bootstrapURL`, which is only a
+    /// preload identity key and may intentionally be the original entry URL
+    /// when authors declare absolute pre-redirect tab URLs. Broader body/action
+    /// base-URL plumbing remains tracked by todos/034.
     private(set) var bootstrapDocumentURL: URL?
     private var didBootstrap = false
 
