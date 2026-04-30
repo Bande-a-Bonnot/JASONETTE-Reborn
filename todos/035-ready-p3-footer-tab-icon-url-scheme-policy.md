@@ -1,5 +1,5 @@
 ---
-status: ready
+status: complete
 priority: p3
 issue_id: "035"
 tags: [ios, tabs, urls, security, code-review]
@@ -7,6 +7,8 @@ dependencies: []
 ---
 
 # Define shell footer-tab icon URL scheme policy
+
+Completed: 2026-04-30
 
 ## Problem Statement
 
@@ -31,14 +33,23 @@ policy is inconsistent and should be deliberate rather than incidental.
 
 ## Acceptance Criteria
 
-- [ ] Footer-tab icon scheme behavior is documented in code/tests
-- [ ] Disallowed icon schemes are either rejected or explicitly preserved by policy
-- [ ] Tests cover at least `https`, `file`, and one custom scheme
-- [ ] Non-tab image scheme behavior is audited or linked to a follow-up
+- [x] Footer-tab icon scheme behavior is documented in code/tests
+- [x] Disallowed icon schemes are either rejected or explicitly preserved by policy
+- [x] Tests cover at least `https`, `file`, and one custom scheme
+- [x] Non-tab image scheme behavior is audited or linked to a follow-up
+
+## Completion Notes
+
+- Shell-mounted footer-tab icon URLs now use the document/web allowlist
+  (`http`/`https`) after `JasonURL.resolve`.
+- `file:` and a custom scheme are covered by
+  `testDescriptorDropsDisallowedIconSchemes`.
+- `https` icon coverage exists in `testDescriptorIconReadsImageFieldNotTargetURL`
+  and relative/root-relative icon tests.
+- Non-tab image URL parsing remains part of the broader URL plumbing audit in
+  `todos/034-ready-p2-codebase-wide-relative-url-resolution.md`.
 
 ## Notes
 
-Deferred from PR #24 because the inconsistency predates relative URL resolution,
-and tightening image scheme policy may affect currently-authored content. PR #24
-is scoped to resolving shell-mounted tab descriptor URLs against the document
-base.
+Original Codex PR #24 finding: `TabDescriptor.init(from:baseURL:)` applied
+scheme allowlists to tab targets but not to `item.image` icon URLs.

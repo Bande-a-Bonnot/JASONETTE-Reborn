@@ -9,6 +9,7 @@ struct JasonetteTabShell: View {
     @ObservedObject var shell: TabShellState
     let bootstrapDoc: JasonDocument
     let bootstrapURL: URL
+    let bootstrapDocumentURL: URL?
     @Environment(\.openURL) private var openURL
     @State private var safariURL: IdentifiableURL?
 
@@ -96,9 +97,11 @@ struct JasonetteTabShell: View {
                 // `TabShellState.switchToURLIfMatches`. Trailing slashes,
                 // host casing, and query-order divergence still miss; cost
                 // is one extra fetch, not a broken shell.
+                let shouldPreload = url.standardized == bootstrapURL.standardized
                 JasonetteNavigationView(
                     url: url,
-                    preloadedDoc: url.standardized == bootstrapURL.standardized ? bootstrapDoc : nil
+                    preloadedDoc: shouldPreload ? bootstrapDoc : nil,
+                    preloadedDocumentURL: shouldPreload ? bootstrapDocumentURL : nil
                 )
             } else {
                 Color.clear

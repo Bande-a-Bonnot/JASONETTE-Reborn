@@ -51,7 +51,8 @@ public struct JasonetteRootView: View {
                 JasonetteTabShell(
                     shell: shell,
                     bootstrapDoc: bootstrapDoc,
-                    bootstrapURL: bootstrapURL
+                    bootstrapURL: bootstrapURL,
+                    bootstrapDocumentURL: coordinator.bootstrapDocumentURL
                 )
             }
         }

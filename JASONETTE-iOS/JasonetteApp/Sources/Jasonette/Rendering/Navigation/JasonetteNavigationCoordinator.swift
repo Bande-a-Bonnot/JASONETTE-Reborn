@@ -145,9 +145,16 @@ extension TabDescriptor {
     /// back to `item.url`, which for tabs is the target document URL — that
     /// would try to render JSON as an image.
     init?(from item: JasonComponent, baseURL: URL? = nil) {
+        let iconURL = item.image
+            .flatMap { JasonURL.resolve($0, against: baseURL) }
+            .flatMap { url -> URL? in
+                guard let scheme = url.scheme?.lowercased(),
+                      DocumentLoader.allowedSchemes.contains(scheme) else { return nil }
+                return url
+            }
         let label = TabLabelSpec(
             text: item.text,
-            iconURL: item.image.flatMap { JasonURL.resolve($0, against: baseURL) },
+            iconURL: iconURL,
             badge: item.badge,
             style: item.style
         )

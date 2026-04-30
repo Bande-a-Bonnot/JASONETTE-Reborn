@@ -23,6 +23,7 @@ public final class JasonetteViewModel: ObservableObject {
     }
 
     private let url: URL?
+    private(set) var documentURL: URL?
     private var document: JasonDocument?
     /// True once the preloaded seed document (if any) has been rendered. After
     /// that, `load()` refetches from `url` — otherwise `$reload`, retry, and
@@ -43,6 +44,7 @@ public final class JasonetteViewModel: ObservableObject {
 
     init(url: URL, onNavigate: ((NavigationRequest) -> Void)? = nil) {
         self.url = url
+        self.documentURL = url
         self.document = nil
         self.actionDispatcher = ActionDispatcher(stateManager: stateManager)
         self.onNavigate = onNavigate ?? { _ in }
@@ -51,6 +53,7 @@ public final class JasonetteViewModel: ObservableObject {
 
     init(document: JasonDocument, onNavigate: ((NavigationRequest) -> Void)? = nil) {
         self.url = nil
+        self.documentURL = nil
         self.document = document
         self.actionDispatcher = ActionDispatcher(stateManager: stateManager)
         self.onNavigate = onNavigate ?? { _ in }
@@ -60,8 +63,9 @@ public final class JasonetteViewModel: ObservableObject {
     /// Seed the VM with a document already fetched by the bootstrap and the
     /// URL it came from. First `load()` renders the seed without a network
     /// round-trip; subsequent `load()`/`reload()` refetch from `url`.
-    init(url: URL, preloadedDoc: JasonDocument, onNavigate: ((NavigationRequest) -> Void)? = nil) {
+    init(url: URL, preloadedDoc: JasonDocument, documentURL: URL? = nil, onNavigate: ((NavigationRequest) -> Void)? = nil) {
         self.url = url
+        self.documentURL = documentURL ?? url
         self.document = preloadedDoc
         self.actionDispatcher = ActionDispatcher(stateManager: stateManager)
         self.onNavigate = onNavigate ?? { _ in }
@@ -109,7 +113,9 @@ public final class JasonetteViewModel: ObservableObject {
             // subsequent load() refetches so `$reload`/retry/pull work.
             let hasUnconsumedSeed = document != nil && !seedConsumed
             if let url, !hasUnconsumedSeed {
-                document = try await loader.load(from: url)
+                let loaded = try await loader.loadWithMetadata(from: url)
+                document = loaded.document
+                documentURL = loaded.url
             }
             seedConsumed = true
             guard let doc = document else {
