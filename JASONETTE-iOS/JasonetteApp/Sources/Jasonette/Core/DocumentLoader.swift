@@ -15,6 +15,9 @@ public final class DocumentLoader: Sendable {
     private let session: URLSession
     private let decoder: JSONDecoder
 
+    /// Create a loader. `loadWithMetadata(from:)` installs a per-request task
+    /// delegate to enforce redirect scheme validation; injected sessions should
+    /// not depend on custom redirect-delegate callbacks for document loads.
     public init(session: URLSession = .shared) {
         self.session = session
         self.decoder = JSONDecoder()
@@ -37,7 +40,10 @@ public final class DocumentLoader: Sendable {
     }
 
     /// Load a document and return the final response URL. The final URL matters
-    /// for resolving authored relative references after HTTP redirects.
+    /// for resolving authored relative references after HTTP redirects. Redirect
+    /// scheme validation is enforced with a request-scoped task delegate, so
+    /// custom session redirect delegates are not part of `DocumentLoader`'s
+    /// supported extension surface.
     public func loadWithMetadata(from url: URL) async throws -> LoadedDocument {
         guard let scheme = url.scheme?.lowercased(),
               Self.allowedSchemes.contains(scheme) else {
