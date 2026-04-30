@@ -29,9 +29,9 @@ public final class DocumentLoader: Sendable {
     /// `.document` / `.web` construction.
     static let allowedSchemes: Set<String> = ["http", "https"]
 
-    /// Schemes accepted for remote image/icon assets. Kept separate from
-    /// document URL policy so asset compatibility does not drift if document
-    /// fetch schemes ever change.
+    /// Schemes accepted for shell footer-tab icon assets. Kept separate from
+    /// document URL policy so icon compatibility does not drift if document
+    /// fetch schemes ever change; non-tab image policy is tracked separately.
     static let imageSchemes: Set<String> = ["http", "https"]
 
     /// Schemes accepted for `href.view == "app"` external-app navigation.
@@ -64,9 +64,11 @@ public final class DocumentLoader: Sendable {
     }
 
     /// Load a document and return the final response URL. The final URL matters
-    /// for resolving authored relative references after HTTP redirects. Redirect
-    /// scheme validation is enforced with a request-scoped task delegate, so
-    /// custom URLSession delegate callbacks are not part of `DocumentLoader`'s
+    /// for resolving authored relative references after HTTP redirects. Used by
+    /// shell bootstrap and normal `JasonetteViewModel` URL loads so final
+    /// document-base metadata is preserved consistently. Redirect scheme
+    /// validation is enforced with a request-scoped task delegate, so custom
+    /// URLSession delegate callbacks are not part of `DocumentLoader`'s
     /// supported extension surface.
     public func loadWithMetadata(from url: URL) async throws -> LoadedDocument {
         guard let scheme = url.scheme?.lowercased(),
