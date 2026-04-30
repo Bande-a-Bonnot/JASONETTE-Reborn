@@ -7,7 +7,7 @@ enum JasonURL {
     /// Authored URL strings are resolved to absolute URLs. Empty authored URL
     /// strings are treated as unsupported and return nil; use an explicit
     /// document URL for current-page targets. Relative paths are interpreted the
-    /// same way a browser resolves links from a document: `icons/home.png`
+    /// same Foundation/RFC-style way links resolve from a document: `icons/home.png`
     /// beside `https://example.com/app/home.json` becomes
     /// `https://example.com/app/icons/home.png`, while `/home` becomes
     /// `https://example.com/home`.

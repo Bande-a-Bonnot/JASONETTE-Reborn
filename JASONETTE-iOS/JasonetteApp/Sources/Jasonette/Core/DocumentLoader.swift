@@ -15,7 +15,7 @@ public final class DocumentLoader: Sendable {
     private let session: URLSession
     private let decoder: JSONDecoder
 
-    /// Create a loader. `loadWithMetadata(from:)` installs a per-request task
+    /// Create a loader. Network document loads install a per-request task
     /// delegate to enforce redirect scheme validation; injected sessions should
     /// not depend on custom URLSession delegate callbacks (redirect, auth,
     /// trust, metrics, etc.) for document loads.
@@ -35,20 +35,10 @@ public final class DocumentLoader: Sendable {
     /// view's `.app` dispatch, and footer-tab `.app` construction.
     static let appSchemes: Set<String> = ["http", "https", "mailto", "tel", "sms"]
 
-    /// Load a document from a URL.
+    /// Load a document from a URL. Uses the same redirect and final response
+    /// URL scheme validation as `loadWithMetadata(from:)`.
     public func load(from url: URL) async throws -> JasonDocument {
-        guard let scheme = url.scheme?.lowercased(),
-              Self.allowedSchemes.contains(scheme) else {
-            throw DocumentError.blockedURL
-        }
-        let (data, response) = try await session.data(from: url)
-        guard let httpResponse = response as? HTTPURLResponse,
-              (200..<300).contains(httpResponse.statusCode) else {
-            throw DocumentError.httpError(
-                (response as? HTTPURLResponse)?.statusCode ?? 0
-            )
-        }
-        return try decode(data)
+        try await loadWithMetadata(from: url).document
     }
 
     /// Load a document and return the final response URL. The final URL matters
@@ -66,16 +56,16 @@ public final class DocumentLoader: Sendable {
         if redirectDelegate.didBlockRedirect {
             throw DocumentError.blockedURL
         }
+        let responseURL = response.url ?? url
+        guard let responseScheme = responseURL.scheme?.lowercased(),
+              Self.allowedSchemes.contains(responseScheme) else {
+            throw DocumentError.blockedURL
+        }
         guard let httpResponse = response as? HTTPURLResponse,
               (200..<300).contains(httpResponse.statusCode) else {
             throw DocumentError.httpError(
                 (response as? HTTPURLResponse)?.statusCode ?? 0
             )
-        }
-        let responseURL = response.url ?? url
-        guard let responseScheme = responseURL.scheme?.lowercased(),
-              Self.allowedSchemes.contains(responseScheme) else {
-            throw DocumentError.blockedURL
         }
         return LoadedDocument(document: try decode(data), url: responseURL)
     }

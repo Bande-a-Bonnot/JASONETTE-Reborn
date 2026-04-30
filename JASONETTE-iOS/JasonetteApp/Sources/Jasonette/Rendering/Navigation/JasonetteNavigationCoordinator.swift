@@ -141,9 +141,9 @@ extension TabDescriptor {
     /// allowed for that target kind — same scheme allowlist `handleHref` uses.
     /// The caller filters these out.
     ///
-    /// Icon resolution reads `item.image` directly. `item.imageURL` falls
-    /// back to `item.url`, which for tabs is the target document URL — that
-    /// would try to render JSON as an image.
+    /// Icon resolution reads `item.image` directly and accepts only http(s)
+    /// image URLs. `item.imageURL` falls back to `item.url`, which for tabs is
+    /// the target document URL — that would try to render JSON as an image.
     init?(from item: JasonComponent, baseURL: URL? = nil) {
         let iconURL = item.image
             .flatMap { JasonURL.resolve($0, against: baseURL) }
