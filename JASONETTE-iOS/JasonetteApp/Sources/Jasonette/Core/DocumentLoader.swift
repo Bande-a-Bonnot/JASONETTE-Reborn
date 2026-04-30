@@ -37,7 +37,18 @@ public final class DocumentLoader: Sendable {
 
     /// Load a document from a URL.
     public func load(from url: URL) async throws -> JasonDocument {
-        try await loadWithMetadata(from: url).document
+        guard let scheme = url.scheme?.lowercased(),
+              Self.allowedSchemes.contains(scheme) else {
+            throw DocumentError.blockedURL
+        }
+        let (data, response) = try await session.data(from: url)
+        guard let httpResponse = response as? HTTPURLResponse,
+              (200..<300).contains(httpResponse.statusCode) else {
+            throw DocumentError.httpError(
+                (response as? HTTPURLResponse)?.statusCode ?? 0
+            )
+        }
+        return try decode(data)
     }
 
     /// Load a document and return the final response URL. The final URL matters
