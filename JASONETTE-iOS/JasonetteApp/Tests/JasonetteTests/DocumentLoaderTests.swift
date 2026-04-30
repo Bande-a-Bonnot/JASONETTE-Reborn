@@ -95,6 +95,27 @@ final class DocumentLoaderTests: XCTestCase {
         }
     }
 
+    func testLoadRejectsDisallowedResponseURLScheme() async {
+        let requestedURL = URL(string: "https://example.com/doc.json")!
+        StubURLProtocol.requestHandler = { _ in
+            let response = HTTPURLResponse(
+                url: URL(string: "file:///tmp/doc.json")!,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: nil
+            )!
+            return (response, Data(self.sampleJSON.utf8))
+        }
+        do {
+            _ = try await loader.load(from: requestedURL)
+            XCTFail("Expected blockedURL error")
+        } catch DocumentLoader.DocumentError.blockedURL {
+            // expected
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+    }
+
     func testLoadThrowsOn404() async {
         stub(statusCode: 404)
         let url = URL(string: "https://example.com/missing.json")!

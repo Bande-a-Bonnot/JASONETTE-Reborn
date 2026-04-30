@@ -5,6 +5,11 @@ public final class DocumentLoader: Sendable {
     public struct LoadedDocument: Sendable {
         public let document: JasonDocument
         public let url: URL
+
+        public init(document: JasonDocument, url: URL) {
+            self.document = document
+            self.url = url
+        }
     }
 
     private let session: URLSession
