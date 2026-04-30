@@ -149,7 +149,7 @@ extension TabDescriptor {
             .flatMap { JasonURL.resolve($0, against: baseURL) }
             .flatMap { url -> URL? in
                 guard let scheme = url.scheme?.lowercased(),
-                      DocumentLoader.allowedSchemes.contains(scheme) else { return nil }
+                      DocumentLoader.imageSchemes.contains(scheme) else { return nil }
                 return url
             }
         let label = TabLabelSpec(

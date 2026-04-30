@@ -29,6 +29,11 @@ public final class DocumentLoader: Sendable {
     /// `.document` / `.web` construction.
     static let allowedSchemes: Set<String> = ["http", "https"]
 
+    /// Schemes accepted for remote image/icon assets. Kept separate from
+    /// document URL policy so asset compatibility does not drift if document
+    /// fetch schemes ever change.
+    static let imageSchemes: Set<String> = ["http", "https"]
+
     /// Schemes accepted for `href.view == "app"` external-app navigation.
     /// Superset of `allowedSchemes`: also opens `mailto:` / `tel:` / `sms:`
     /// via the system. Used by `JasonetteViewModel.handleHref`, the nav
