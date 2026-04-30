@@ -15,6 +15,7 @@ final class DocumentLoaderTests: XCTestCase {
 
     override func tearDown() {
         StubURLProtocol.requestHandler = nil
+        StubURLProtocol.redirectHandler = nil
         super.tearDown()
     }
 
@@ -116,6 +117,28 @@ final class DocumentLoaderTests: XCTestCase {
         }
     }
 
+    func testLoadWithMetadataFollowsHTTPSRedirectAndReturnsFinalURL() async throws {
+        let startURL = URL(string: "https://example.com/start.json")!
+        let finalURL = URL(string: "https://cdn.example.com/final.json")!
+        StubURLProtocol.redirectHandler = { request in
+            request.url == startURL ? URLRequest(url: finalURL) : nil
+        }
+        StubURLProtocol.requestHandler = { request in
+            XCTAssertEqual(request.url, finalURL)
+            let response = HTTPURLResponse(
+                url: finalURL,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: nil
+            )!
+            return (response, Data(self.sampleJSON.utf8))
+        }
+
+        let loaded = try await loader.loadWithMetadata(from: startURL)
+        XCTAssertEqual(loaded.url, finalURL)
+        XCTAssertEqual(loaded.document.jason.head?.title, "Sample")
+    }
+
     func testRedirectValidatorAllowsHTTPSRedirects() {
         let validator = DocumentLoader.RedirectSchemeValidator()
         let request = URLRequest(url: URL(string: "https://example.com/final.json")!)
@@ -126,6 +149,7 @@ final class DocumentLoaderTests: XCTestCase {
             headerFields: ["Location": "https://example.com/final.json"]
         )!
         let task = URLSession.shared.dataTask(with: URL(string: "https://example.com/start.json")!)
+        defer { task.cancel() }
 
         let expectation = expectation(description: "redirect completion")
         validator.urlSession(.shared, task: task, willPerformHTTPRedirection: response, newRequest: request) { redirectedRequest in
@@ -146,6 +170,7 @@ final class DocumentLoaderTests: XCTestCase {
             headerFields: ["Location": "file:///tmp/final.json"]
         )!
         let task = URLSession.shared.dataTask(with: URL(string: "https://example.com/start.json")!)
+        defer { task.cancel() }
 
         let expectation = expectation(description: "redirect completion")
         validator.urlSession(.shared, task: task, willPerformHTTPRedirection: response, newRequest: request) { redirectedRequest in
