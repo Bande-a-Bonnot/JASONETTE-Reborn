@@ -8,7 +8,7 @@ Last updated: 2026-04-29
 
 ### Test Suite
 
-- iOS: 411 tests, 0 failures (verified 2026-04-30 after footer-tab relative URL resolution review follow-up; tab navigation rewrite merged to `main` via PR #20 squash `11b9fca`)
+- iOS: 412 tests, 0 failures (verified 2026-04-30 after footer-tab relative URL resolution review follow-up; tab navigation rewrite merged to `main` via PR #20 squash `11b9fca`)
 - Android CI: `pull_request` Android job ran/passed on PR #21, non-Android-change PR #22, and follow-up PR #23; Kotlin JSON primitive accessor compile failures fixed by squash `92e65dd`; oversized plain-integer JSON parsing aligned between Android test helper and production renderer in `c3f4f8f`
 - Run iOS: `cd JASONETTE-iOS/JasonetteApp && swift test`
 - Build iOS: `swift build` (<1s)
@@ -74,7 +74,7 @@ Tab navigation rewrite is on `main` (PR #20, plan at `docs/plans/tab-navigation-
 P2:
 - `todos/025` — footer tab-bar style/icon parity
 - `todos/026` — action-tab dispatch
-- `todos/034` — codebase-wide relative URL resolution outside footer tabs
+- `todos/034` — relative URL resolution outside shell-mounted tab descriptors (includes legacy footer tab view)
 
 P3:
 - `todos/015` — sectionView code duplication (defer until 3rd section type)
@@ -87,6 +87,7 @@ P3:
 - `todos/027` — action-tab canonical-key content hash
 - `todos/029` — onChange iOS 17 modernization
 - `todos/033` — Android JSON decimal/exponent precision policy (Gemini PR #23 follow-up; plain integers fixed, decimal/exponent still use `Double` by current contract)
+- `todos/036` — non-tab image URL scheme policy (PR #24 follow-up)
 
 Nice-to-have (P3):
 - `todos/031` — investigate ZStack nav-title collision (gemini r5/6/7/8 concern)

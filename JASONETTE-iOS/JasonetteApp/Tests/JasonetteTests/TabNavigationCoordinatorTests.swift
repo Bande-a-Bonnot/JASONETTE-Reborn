@@ -191,20 +191,35 @@ final class TabNavigationCoordinatorTests: XCTestCase {
 
     func testCoordinatorStartsInSingleMode() {
         let c = JasonetteNavigationCoordinator(entryURL: URL(string: "https://x")!)
-        guard case .single(let url, let doc) = c.mode else {
+        guard case .single(let url, let doc, let documentURL) = c.mode else {
             return XCTFail("expected .single, got \(c.mode)")
         }
         XCTAssertEqual(url.absoluteString, "https://x")
         XCTAssertNil(doc)
+        XCTAssertNil(documentURL)
     }
 
     func testCoordinatorStaysInSingleWhenNoTabs() {
         let c = JasonetteNavigationCoordinator(entryURL: URL(string: "https://x")!)
         c.bootstrapDidLoad(doc: makeDoc(tabs: []))
-        guard case .single(_, let preloaded) = c.mode else {
+        guard case .single(_, let preloaded, let documentURL) = c.mode else {
             return XCTFail("expected .single")
         }
         XCTAssertNotNil(preloaded, "loaded doc should be preserved on .single")
+        XCTAssertEqual(documentURL, URL(string: "https://x")!)
+    }
+
+    func testCoordinatorPreservesDocumentURLInSingleModeAfterRedirect() {
+        let entryURL = URL(string: "https://example.com/entry.json")!
+        let documentURL = URL(string: "https://cdn.example.com/final.json")!
+        let c = JasonetteNavigationCoordinator(entryURL: entryURL)
+        c.bootstrapDidLoad(doc: makeDoc(tabs: []), documentURL: documentURL)
+        guard case .single(let rootURL, let preloaded, let preloadedDocumentURL) = c.mode else {
+            return XCTFail("expected .single")
+        }
+        XCTAssertEqual(rootURL, entryURL)
+        XCTAssertNotNil(preloaded)
+        XCTAssertEqual(preloadedDocumentURL, documentURL)
     }
 
     func testCoordinatorPromotesToTabsWhenTabsDeclared() {
@@ -503,12 +518,16 @@ final class TabNavigationCoordinatorTests: XCTestCase {
         let fileIcon = JasonComponent()
         fileIcon.url = "https://example.com/target.json"
         fileIcon.image = "file:///tmp/icon.png"
-        XCTAssertNil(TabDescriptor(from: fileIcon)?.label.iconURL)
+        let fileDescriptor = TabDescriptor(from: fileIcon)
+        XCTAssertNotNil(fileDescriptor)
+        XCTAssertNil(fileDescriptor?.label.iconURL)
 
         let customIcon = JasonComponent()
         customIcon.url = "https://example.com/target.json"
         customIcon.image = "custom://icon"
-        XCTAssertNil(TabDescriptor(from: customIcon)?.label.iconURL)
+        let customDescriptor = TabDescriptor(from: customIcon)
+        XCTAssertNotNil(customDescriptor)
+        XCTAssertNil(customDescriptor?.label.iconURL)
     }
 
     /// HIGH 4: document/web tabs must reject non-http(s) schemes. A tab

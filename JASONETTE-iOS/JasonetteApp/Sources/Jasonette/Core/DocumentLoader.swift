@@ -43,7 +43,11 @@ public final class DocumentLoader: Sendable {
               Self.allowedSchemes.contains(scheme) else {
             throw DocumentError.blockedURL
         }
-        let (data, response) = try await session.data(from: url)
+        let redirectDelegate = RedirectSchemeValidator()
+        let (data, response) = try await session.data(for: URLRequest(url: url), delegate: redirectDelegate)
+        if redirectDelegate.didBlockRedirect {
+            throw DocumentError.blockedURL
+        }
         guard let httpResponse = response as? HTTPURLResponse,
               (200..<300).contains(httpResponse.statusCode) else {
             throw DocumentError.httpError(
@@ -69,6 +73,35 @@ public final class DocumentLoader: Sendable {
             throw DocumentError.invalidEncoding
         }
         return try decode(data)
+    }
+
+    private final class RedirectSchemeValidator: NSObject, URLSessionTaskDelegate, @unchecked Sendable {
+        private let lock = NSLock()
+        private var blocked = false
+
+        var didBlockRedirect: Bool {
+            lock.lock()
+            defer { lock.unlock() }
+            return blocked
+        }
+
+        func urlSession(
+            _ session: URLSession,
+            task: URLSessionTask,
+            willPerformHTTPRedirection response: HTTPURLResponse,
+            newRequest request: URLRequest,
+            completionHandler: @escaping @Sendable (URLRequest?) -> Void
+        ) {
+            guard let scheme = request.url?.scheme?.lowercased(),
+                  DocumentLoader.allowedSchemes.contains(scheme) else {
+                lock.lock()
+                blocked = true
+                lock.unlock()
+                completionHandler(nil)
+                return
+            }
+            completionHandler(request)
+        }
     }
 
     public enum DocumentError: Error, LocalizedError {

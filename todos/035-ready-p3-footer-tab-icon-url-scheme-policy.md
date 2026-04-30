@@ -46,8 +46,10 @@ policy is inconsistent and should be deliberate rather than incidental.
   `testDescriptorDropsDisallowedIconSchemes`.
 - `https` icon coverage exists in `testDescriptorIconReadsImageFieldNotTargetURL`
   and relative/root-relative icon tests.
-- Non-tab image URL parsing remains part of the broader URL plumbing audit in
-  `todos/034-ready-p2-codebase-wide-relative-url-resolution.md`.
+- Non-tab relative image URL parsing remains part of the broader URL plumbing
+  audit in `todos/034-ready-p2-codebase-wide-relative-url-resolution.md`.
+- Non-tab absolute image scheme policy is tracked separately in
+  `todos/036-ready-p3-non-tab-image-url-scheme-policy.md`.
 
 ## Notes
 

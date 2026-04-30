@@ -12,7 +12,7 @@ final class JasonetteNavigationCoordinator: ObservableObject {
         /// That seed is consumed by the root `JasonetteNavigationView` on
         /// first render; subsequent `$reload`/pull-to-refresh refetch from
         /// `rootURL` regardless of the seed.
-        case single(rootURL: URL, preloadedDoc: JasonDocument?)
+        case single(rootURL: URL, preloadedDoc: JasonDocument?, preloadedDocumentURL: URL?)
 
         /// Tabbed mode. Carries the bootstrap document so the matching tab
         /// can render without a second fetch.
@@ -32,7 +32,7 @@ final class JasonetteNavigationCoordinator: ObservableObject {
 
     init(entryURL: URL) {
         self.entryURL = entryURL
-        self.mode = .single(rootURL: entryURL, preloadedDoc: nil)
+        self.mode = .single(rootURL: entryURL, preloadedDoc: nil, preloadedDocumentURL: nil)
     }
 
     /// Called when the bootstrap document finishes loading. Inspects
@@ -50,7 +50,7 @@ final class JasonetteNavigationCoordinator: ObservableObject {
         bootstrapDocumentURL = bootstrapURL
         let entries = Self.entries(from: doc, baseURL: bootstrapURL)
         guard !entries.isEmpty else {
-            mode = .single(rootURL: entryURL, preloadedDoc: doc)
+            mode = .single(rootURL: entryURL, preloadedDoc: doc, preloadedDocumentURL: bootstrapURL)
             return
         }
 
@@ -75,7 +75,7 @@ final class JasonetteNavigationCoordinator: ObservableObject {
             #if DEBUG
             print("[Jasonette] footer.tabs declared no selectable document target — staying in single mode")
             #endif
-            mode = .single(rootURL: entryURL, preloadedDoc: doc)
+            mode = .single(rootURL: entryURL, preloadedDoc: doc, preloadedDocumentURL: bootstrapURL)
             return
         }
         let matchedBootstrapAlias = matchesBootstrapAlias(initial.descriptor.selectableURL)
