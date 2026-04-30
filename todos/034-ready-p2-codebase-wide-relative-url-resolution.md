@@ -34,7 +34,7 @@ model/component/action context before they can safely use `JasonURL.resolve`.
 
 ## Recommended Action
 
-1. Add document-base URL context to `JasonetteViewModel` and expose it to
+1. Thread/expose the existing `JasonetteViewModel.documentURL` context to
    rendering/action code that parses authored URL strings.
 2. Replace plain `URL(string:)` at the audited sites with
    `JasonURL.resolve(raw, against: documentURL)`.

@@ -116,6 +116,46 @@ final class DocumentLoaderTests: XCTestCase {
         }
     }
 
+    func testRedirectValidatorAllowsHTTPSRedirects() {
+        let validator = DocumentLoader.RedirectSchemeValidator()
+        let request = URLRequest(url: URL(string: "https://example.com/final.json")!)
+        let response = HTTPURLResponse(
+            url: URL(string: "https://example.com/start.json")!,
+            statusCode: 302,
+            httpVersion: nil,
+            headerFields: ["Location": "https://example.com/final.json"]
+        )!
+        let task = URLSession.shared.dataTask(with: URL(string: "https://example.com/start.json")!)
+
+        let expectation = expectation(description: "redirect completion")
+        validator.urlSession(.shared, task: task, willPerformHTTPRedirection: response, newRequest: request) { redirectedRequest in
+            XCTAssertEqual(redirectedRequest?.url, request.url)
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 1)
+        XCTAssertFalse(validator.didBlockRedirect)
+    }
+
+    func testRedirectValidatorBlocksDisallowedRedirectSchemes() {
+        let validator = DocumentLoader.RedirectSchemeValidator()
+        let request = URLRequest(url: URL(string: "file:///tmp/final.json")!)
+        let response = HTTPURLResponse(
+            url: URL(string: "https://example.com/start.json")!,
+            statusCode: 302,
+            httpVersion: nil,
+            headerFields: ["Location": "file:///tmp/final.json"]
+        )!
+        let task = URLSession.shared.dataTask(with: URL(string: "https://example.com/start.json")!)
+
+        let expectation = expectation(description: "redirect completion")
+        validator.urlSession(.shared, task: task, willPerformHTTPRedirection: response, newRequest: request) { redirectedRequest in
+            XCTAssertNil(redirectedRequest)
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 1)
+        XCTAssertTrue(validator.didBlockRedirect)
+    }
+
     func testLoadThrowsOn404() async {
         stub(statusCode: 404)
         let url = URL(string: "https://example.com/missing.json")!

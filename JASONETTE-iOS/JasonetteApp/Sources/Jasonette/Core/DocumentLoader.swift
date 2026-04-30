@@ -17,7 +17,8 @@ public final class DocumentLoader: Sendable {
 
     /// Create a loader. `loadWithMetadata(from:)` installs a per-request task
     /// delegate to enforce redirect scheme validation; injected sessions should
-    /// not depend on custom redirect-delegate callbacks for document loads.
+    /// not depend on custom URLSession delegate callbacks (redirect, auth,
+    /// trust, metrics, etc.) for document loads.
     public init(session: URLSession = .shared) {
         self.session = session
         self.decoder = JSONDecoder()
@@ -42,7 +43,7 @@ public final class DocumentLoader: Sendable {
     /// Load a document and return the final response URL. The final URL matters
     /// for resolving authored relative references after HTTP redirects. Redirect
     /// scheme validation is enforced with a request-scoped task delegate, so
-    /// custom session redirect delegates are not part of `DocumentLoader`'s
+    /// custom URLSession delegate callbacks are not part of `DocumentLoader`'s
     /// supported extension surface.
     public func loadWithMetadata(from url: URL) async throws -> LoadedDocument {
         guard let scheme = url.scheme?.lowercased(),
@@ -81,7 +82,7 @@ public final class DocumentLoader: Sendable {
         return try decode(data)
     }
 
-    private final class RedirectSchemeValidator: NSObject, URLSessionTaskDelegate, @unchecked Sendable {
+    final class RedirectSchemeValidator: NSObject, URLSessionTaskDelegate, @unchecked Sendable {
         private let lock = NSLock()
         private var blocked = false
 
