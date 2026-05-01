@@ -1,21 +1,25 @@
 ---
-status: ready
+status: complete
 priority: p2
 issue_id: "030"
 tags: [ios, urls, tabs, icons]
 dependencies: []
 ---
 
-# Resolve relative URLs in footer-tab `image` / `href.url` against document base
+# Resolve relative URLs in shell-mounted tab descriptors only
+
+Completed: 2026-04-29
 
 ## Problem Statement
 
-gemini-code-assist flagged `TabDescriptor.init(from:)` for
+gemini-code-assist flagged the shell-mounted footer tab `TabDescriptor.init(from:)` for
 unconditional `URL(string:)` on `item.image` and the href/url
 strings. A relative path like `"icons/home.png"` or `"/home"` is
 accepted by `URL(string:)`, but the resulting `URL` has no scheme
 and is rejected by the scheme allowlist a few lines down. Net
-effect: relative references silently disappear from the shell.
+effect: relative references silently disappear from the shell. This completed
+fix is scoped to the shell-mounted tab path; the legacy `FooterTabItemView` path
+remains tracked in `todos/034`.
 
 This matches the pre-existing pattern elsewhere in the renderer —
 icons, images, and hrefs everywhere use `URL(string:)` without a
@@ -50,13 +54,30 @@ relatives with `URL(string:relativeTo:)`.
 
 ## Acceptance Criteria
 
-- [ ] Footer tabs with relative `image` paths render their icons
-- [ ] Footer tabs with relative `href.url` or `url` still route
+- [x] Shell-mounted footer tabs with relative `image` paths resolve their icon URLs
+- [x] Shell-mounted footer tabs with relative `href.url` or `url` still route
       correctly (scheme check happens after resolution)
-- [ ] Tests cover relative → absolute resolution with and without
+- [x] Tests cover relative → absolute resolution with and without
       a leading `/`
-- [ ] Audit of other renderer URL parses completed; either fixed
+- [x] Audit of other renderer URL parses completed; either fixed
       or flagged with a linked todo
+
+## Completion Notes
+
+- Added `JasonURL.resolve(_:against:)` as the shared relative-resolution helper.
+- Plumbed the loaded document URL from `DocumentLoader.loadWithMetadata` through
+  `JasonetteNavigationCoordinator.bootstrapDidLoad(doc:documentURL:)` into
+  `TabDescriptor.init(from:baseURL:)`.
+- Shell-mounted footer-tab `image`, shorthand `url`, and `href.url` now resolve
+  against the loaded document URL before scheme allowlist checks.
+- Added tests for relative paths, root-relative paths, relative hrefs, relative
+  icons, coordinator document-URL plumbing, response/final-URL metadata,
+  original-entry-URL matching after redirects, final-URL precedence, relative vs
+  absolute dedupe, missing base URLs, protocol-relative URLs, dot segments,
+  query-only URLs, and disallowed schemes after resolution.
+- Ran `cd JASONETTE-iOS/JasonetteApp && swift test`: 415 tests, 0 failures.
+- Audit of other URL parses completed; remaining non-tab renderer/action work is
+  tracked in `todos/034-ready-p2-codebase-wide-relative-url-resolution.md`.
 
 ## Notes
 

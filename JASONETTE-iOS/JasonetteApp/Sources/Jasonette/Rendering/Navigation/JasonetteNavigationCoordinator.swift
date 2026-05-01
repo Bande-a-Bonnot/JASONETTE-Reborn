@@ -12,7 +12,7 @@ final class JasonetteNavigationCoordinator: ObservableObject {
         /// That seed is consumed by the root `JasonetteNavigationView` on
         /// first render; subsequent `$reload`/pull-to-refresh refetch from
         /// `rootURL` regardless of the seed.
-        case single(rootURL: URL, preloadedDoc: JasonDocument?)
+        case single(rootURL: URL, preloadedDoc: JasonDocument?, preloadedDocumentURL: URL?)
 
         /// Tabbed mode. Carries the bootstrap document so the matching tab
         /// can render without a second fetch.
@@ -21,11 +21,18 @@ final class JasonetteNavigationCoordinator: ObservableObject {
 
     @Published private(set) var mode: Mode
     let entryURL: URL
+    /// Final loaded document URL used as the relative-reference base while
+    /// extracting shell-mounted tab descriptors from the bootstrap document.
+    /// This is distinct from the shell's `bootstrapURL`, which is only a
+    /// preload identity key and may intentionally be the original entry URL
+    /// when authors declare absolute pre-redirect tab URLs. Broader body/action
+    /// base-URL plumbing remains tracked by todos/034.
+    private(set) var bootstrapDocumentURL: URL?
     private var didBootstrap = false
 
     init(entryURL: URL) {
         self.entryURL = entryURL
-        self.mode = .single(rootURL: entryURL, preloadedDoc: nil)
+        self.mode = .single(rootURL: entryURL, preloadedDoc: nil, preloadedDocumentURL: nil)
     }
 
     /// Called when the bootstrap document finishes loading. Inspects
@@ -34,14 +41,16 @@ final class JasonetteNavigationCoordinator: ObservableObject {
     /// read it without re-fetching. One-shot: guarded by `didBootstrap` so a
     /// second call (e.g. after a `$reload` in single mode) never replaces the
     /// preloaded document or re-promotes to `.tabs`.
-    func bootstrapDidLoad(doc: JasonDocument) {
+    func bootstrapDidLoad(doc: JasonDocument, documentURL: URL? = nil) {
         guard !didBootstrap else { return }
         didBootstrap = true
         guard case .single = mode else { return }
 
-        let entries = Self.entries(from: doc)
+        let bootstrapURL = documentURL ?? entryURL
+        bootstrapDocumentURL = bootstrapURL
+        let entries = Self.entries(from: doc, baseURL: bootstrapURL)
         guard !entries.isEmpty else {
-            mode = .single(rootURL: entryURL, preloadedDoc: doc)
+            mode = .single(rootURL: entryURL, preloadedDoc: doc, preloadedDocumentURL: bootstrapURL)
             return
         }
 
@@ -51,24 +60,38 @@ final class JasonetteNavigationCoordinator: ObservableObject {
         // this stays in lockstep with `TabDescriptor.Target.canonicalKey`
         // and `JasonetteTabShell`'s preload-doc hand-off.
         let selectable = entries.filter { $0.descriptor.isSelectable }
+        let bootstrapStd = bootstrapURL.standardized
         let entryStd = entryURL.standardized
-        guard let initial = selectable.first(where: { $0.descriptor.selectableURL?.standardized == entryStd })
+        func matches(_ url: URL?, _ candidate: URL) -> Bool {
+            url?.standardized == candidate.standardized
+        }
+        func matchesBootstrapAlias(_ url: URL?) -> Bool {
+            matches(url, bootstrapStd) || matches(url, entryStd)
+        }
+        guard let initial = selectable.first(where: { matches($0.descriptor.selectableURL, bootstrapStd) })
+                ?? selectable.first(where: { matches($0.descriptor.selectableURL, entryStd) })
                 ?? selectable.first
         else {
             #if DEBUG
             print("[Jasonette] footer.tabs declared no selectable document target — staying in single mode")
             #endif
-            mode = .single(rootURL: entryURL, preloadedDoc: doc)
+            mode = .single(rootURL: entryURL, preloadedDoc: doc, preloadedDocumentURL: bootstrapURL)
             return
         }
-        if initial.descriptor.selectableURL?.standardized != entryStd {
+        let matchedBootstrapAlias = matchesBootstrapAlias(initial.descriptor.selectableURL)
+        if !matchedBootstrapAlias {
             #if DEBUG
-            print("[Jasonette] Bootstrap URL \(entryURL) not in declared tabs — first selectable tab used, bootstrap doc discarded")
+            print("[Jasonette] Bootstrap URL \(bootstrapURL) not in declared tabs — first selectable tab used, bootstrap doc discarded")
             #endif
         }
 
+        // On a miss, keep `bootstrapURL` as the preload identity key. No
+        // selectable tab matched it (checked above), so `JasonetteTabShell`
+        // will not hand `bootstrapDoc` to the fallback first tab and that tab
+        // will fetch normally.
+        let preloadURL = matchedBootstrapAlias ? (initial.descriptor.selectableURL ?? bootstrapURL) : bootstrapURL
         let shell = TabShellState(tabs: entries, initialSelection: initial.id)
-        mode = .tabs(shell: shell, bootstrapDoc: doc, bootstrapURL: entryURL)
+        mode = .tabs(shell: shell, bootstrapDoc: doc, bootstrapURL: preloadURL)
     }
 
     /// Env closure target for `transition: "switch"` hrefs deep inside a tab.
@@ -84,7 +107,7 @@ final class JasonetteNavigationCoordinator: ObservableObject {
     /// Convert `doc.body.footer.tabs.items` into deduped `TabEntry`s.
     /// Invalid items (no URL and no action) are dropped. Duplicates by
     /// canonical target key are dropped (first wins); debug-asserts.
-    static func entries(from doc: JasonDocument) -> [TabEntry] {
+    static func entries(from doc: JasonDocument, baseURL: URL) -> [TabEntry] {
         guard let items = doc.jason.body?.footer?.tabs?.items, !items.isEmpty else {
             return []
         }
@@ -94,7 +117,7 @@ final class JasonetteNavigationCoordinator: ObservableObject {
         out.reserveCapacity(items.count)
 
         for item in items {
-            guard let descriptor = TabDescriptor(from: item) else { continue }
+            guard let descriptor = TabDescriptor(from: item, baseURL: baseURL) else { continue }
             let key = descriptor.target.canonicalKey
             if seen.contains(key) {
                 #if DEBUG
@@ -118,13 +141,20 @@ extension TabDescriptor {
     /// allowed for that target kind — same scheme allowlist `handleHref` uses.
     /// The caller filters these out.
     ///
-    /// Icon resolution reads `item.image` directly. `item.imageURL` falls
-    /// back to `item.url`, which for tabs is the target document URL — that
-    /// would try to render JSON as an image.
-    init?(from item: JasonComponent) {
+    /// Icon resolution reads `item.image` directly and accepts only http(s)
+    /// image URLs. `item.imageURL` falls back to `item.url`, which for tabs is
+    /// the target document URL — that would try to render JSON as an image.
+    init?(from item: JasonComponent, baseURL: URL? = nil) {
+        let iconURL = item.image
+            .flatMap { JasonURL.resolve($0, against: baseURL) }
+            .flatMap { url -> URL? in
+                guard let scheme = url.scheme?.lowercased(),
+                      DocumentLoader.imageSchemes.contains(scheme) else { return nil }
+                return url
+            }
         let label = TabLabelSpec(
             text: item.text,
-            iconURL: item.image.flatMap(URL.init(string:)),
+            iconURL: iconURL,
             badge: item.badge,
             style: item.style
         )
@@ -138,7 +168,7 @@ extension TabDescriptor {
 
         let hrefView = item.href?.view
         let urlString = item.href?.url ?? item.url
-        guard let s = urlString, let url = URL(string: s) else { return nil }
+        guard let s = urlString, let url = JasonURL.resolve(s, against: baseURL) else { return nil }
         guard let scheme = url.scheme?.lowercased() else { return nil }
 
         // Same allowlist as JasonetteViewModel.handleHref so a tab can't open

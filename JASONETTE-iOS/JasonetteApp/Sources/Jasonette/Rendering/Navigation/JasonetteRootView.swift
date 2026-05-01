@@ -44,14 +44,19 @@ public struct JasonetteRootView: View {
                     }
                 }
 
-            case (.ready, .single(let rootURL, let preloadedDoc)):
-                JasonetteNavigationView(url: rootURL, preloadedDoc: preloadedDoc)
+            case (.ready, .single(let rootURL, let preloadedDoc, let preloadedDocumentURL)):
+                JasonetteNavigationView(
+                    url: rootURL,
+                    preloadedDoc: preloadedDoc,
+                    preloadedDocumentURL: preloadedDocumentURL
+                )
 
             case (.ready, .tabs(let shell, let bootstrapDoc, let bootstrapURL)):
                 JasonetteTabShell(
                     shell: shell,
                     bootstrapDoc: bootstrapDoc,
-                    bootstrapURL: bootstrapURL
+                    bootstrapURL: bootstrapURL,
+                    bootstrapDocumentURL: coordinator.bootstrapDocumentURL
                 )
             }
         }
@@ -59,8 +64,8 @@ public struct JasonetteRootView: View {
 
     private func runBootstrap() async {
         do {
-            let doc = try await loader.load(from: coordinator.entryURL)
-            coordinator.bootstrapDidLoad(doc: doc)
+            let loaded = try await loader.loadWithMetadata(from: coordinator.entryURL)
+            coordinator.bootstrapDidLoad(doc: loaded.document, documentURL: loaded.url)
             bootstrap = .ready
         } catch is CancellationError {
             return

@@ -43,6 +43,7 @@ enum NavigationRequest: Sendable {
 struct JasonetteNavigationView: View {
     let rootURL: URL
     let preloadedDoc: JasonDocument?
+    let preloadedDocumentURL: URL?
     @State private var path: [URL] = []
     @State private var modalURL: IdentifiableURL?
     @State private var safariURL: IdentifiableURL?
@@ -56,16 +57,18 @@ struct JasonetteNavigationView: View {
     // Scheme allowlists live on DocumentLoader to keep nav, action dispatch,
     // footer tabs, and $href in lockstep.
 
-    init(url: URL, preloadedDoc: JasonDocument? = nil) {
+    init(url: URL, preloadedDoc: JasonDocument? = nil, preloadedDocumentURL: URL? = nil) {
         self.rootURL = url
         self.preloadedDoc = preloadedDoc
+        self.preloadedDocumentURL = preloadedDocumentURL
         self.onClose = nil
     }
 
     /// Sheet-scoped initializer used by the modal branch below.
-    init(url: URL, preloadedDoc: JasonDocument? = nil, onClose: @escaping () -> Void) {
+    init(url: URL, preloadedDoc: JasonDocument? = nil, preloadedDocumentURL: URL? = nil, onClose: @escaping () -> Void) {
         self.rootURL = url
         self.preloadedDoc = preloadedDoc
+        self.preloadedDocumentURL = preloadedDocumentURL
         self.onClose = onClose
     }
 
@@ -97,7 +100,7 @@ struct JasonetteNavigationView: View {
     @ViewBuilder
     private var rootContent: some View {
         if let doc = preloadedDoc {
-            JasonetteView(url: rootURL, preloadedDoc: doc, onNavigate: dispatch)
+            JasonetteView(url: rootURL, preloadedDoc: doc, documentURL: preloadedDocumentURL, onNavigate: dispatch)
         } else {
             JasonetteView(url: rootURL, onNavigate: dispatch)
         }

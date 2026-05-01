@@ -2,9 +2,23 @@ import Foundation
 
 /// Loads and decodes $jason documents from URLs or local data.
 public final class DocumentLoader: Sendable {
+    public struct LoadedDocument: Sendable {
+        public let document: JasonDocument
+        public let url: URL
+
+        public init(document: JasonDocument, url: URL) {
+            self.document = document
+            self.url = url
+        }
+    }
+
     private let session: URLSession
     private let decoder: JSONDecoder
 
+    /// Create a loader. `loadWithMetadata(from:)` installs a per-request task
+    /// delegate to enforce redirect scheme validation; injected sessions should
+    /// not depend on custom URLSession delegate callbacks (redirect, auth,
+    /// trust, metrics, etc.) for metadata-preserving document loads.
     public init(session: URLSession = .shared) {
         self.session = session
         self.decoder = JSONDecoder()
@@ -15,19 +29,31 @@ public final class DocumentLoader: Sendable {
     /// `.document` / `.web` construction.
     static let allowedSchemes: Set<String> = ["http", "https"]
 
+    /// Schemes accepted for shell footer-tab icon assets. Kept separate from
+    /// document URL policy so icon compatibility does not drift if document
+    /// fetch schemes ever change; non-tab image policy is tracked separately.
+    static let imageSchemes: Set<String> = ["http", "https"]
+
     /// Schemes accepted for `href.view == "app"` external-app navigation.
     /// Superset of `allowedSchemes`: also opens `mailto:` / `tel:` / `sms:`
     /// via the system. Used by `JasonetteViewModel.handleHref`, the nav
     /// view's `.app` dispatch, and footer-tab `.app` construction.
     static let appSchemes: Set<String> = ["http", "https", "mailto", "tel", "sms"]
 
-    /// Load a document from a URL.
+    /// Load a document from a URL. This legacy API preserves injected-session
+    /// delegate behavior by using `URLSession.data(from:)`; shell bootstrap
+    /// code that needs redirect metadata uses `loadWithMetadata(from:)`.
     public func load(from url: URL) async throws -> JasonDocument {
         guard let scheme = url.scheme?.lowercased(),
               Self.allowedSchemes.contains(scheme) else {
             throw DocumentError.blockedURL
         }
         let (data, response) = try await session.data(from: url)
+        let responseURL = response.url ?? url
+        guard let responseScheme = responseURL.scheme?.lowercased(),
+              Self.allowedSchemes.contains(responseScheme) else {
+            throw DocumentError.blockedURL
+        }
         guard let httpResponse = response as? HTTPURLResponse,
               (200..<300).contains(httpResponse.statusCode) else {
             throw DocumentError.httpError(
@@ -35,6 +61,37 @@ public final class DocumentLoader: Sendable {
             )
         }
         return try decode(data)
+    }
+
+    /// Load a document and return the final response URL. The final URL matters
+    /// for resolving authored relative references after HTTP redirects. Used by
+    /// shell bootstrap and normal `JasonetteViewModel` URL loads so final
+    /// document-base metadata is preserved consistently. Redirect scheme
+    /// validation is enforced with a request-scoped task delegate, so custom
+    /// URLSession delegate callbacks are not part of `DocumentLoader`'s
+    /// supported extension surface.
+    public func loadWithMetadata(from url: URL) async throws -> LoadedDocument {
+        guard let scheme = url.scheme?.lowercased(),
+              Self.allowedSchemes.contains(scheme) else {
+            throw DocumentError.blockedURL
+        }
+        let redirectDelegate = RedirectSchemeValidator()
+        let (data, response) = try await session.data(for: URLRequest(url: url), delegate: redirectDelegate)
+        if redirectDelegate.didBlockRedirect {
+            throw DocumentError.blockedURL
+        }
+        let responseURL = response.url ?? url
+        guard let responseScheme = responseURL.scheme?.lowercased(),
+              Self.allowedSchemes.contains(responseScheme) else {
+            throw DocumentError.blockedURL
+        }
+        guard let httpResponse = response as? HTTPURLResponse,
+              (200..<300).contains(httpResponse.statusCode) else {
+            throw DocumentError.httpError(
+                (response as? HTTPURLResponse)?.statusCode ?? 0
+            )
+        }
+        return LoadedDocument(document: try decode(data), url: responseURL)
     }
 
     /// Decode a document from JSON data.
@@ -48,6 +105,35 @@ public final class DocumentLoader: Sendable {
             throw DocumentError.invalidEncoding
         }
         return try decode(data)
+    }
+
+    final class RedirectSchemeValidator: NSObject, URLSessionTaskDelegate, @unchecked Sendable {
+        private let lock = NSLock()
+        private var blocked = false
+
+        var didBlockRedirect: Bool {
+            lock.lock()
+            defer { lock.unlock() }
+            return blocked
+        }
+
+        func urlSession(
+            _ session: URLSession,
+            task: URLSessionTask,
+            willPerformHTTPRedirection response: HTTPURLResponse,
+            newRequest request: URLRequest,
+            completionHandler: @escaping @Sendable (URLRequest?) -> Void
+        ) {
+            guard let scheme = request.url?.scheme?.lowercased(),
+                  DocumentLoader.allowedSchemes.contains(scheme) else {
+                lock.lock()
+                blocked = true
+                lock.unlock()
+                completionHandler(nil)
+                return
+            }
+            completionHandler(request)
+        }
     }
 
     public enum DocumentError: Error, LocalizedError {

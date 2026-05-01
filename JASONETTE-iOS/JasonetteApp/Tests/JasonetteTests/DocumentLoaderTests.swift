@@ -15,6 +15,7 @@ final class DocumentLoaderTests: XCTestCase {
 
     override func tearDown() {
         StubURLProtocol.requestHandler = nil
+        StubURLProtocol.redirectHandler = nil
         super.tearDown()
     }
 
@@ -56,6 +57,128 @@ final class DocumentLoaderTests: XCTestCase {
         let doc = try await loader.load(from: url)
         XCTAssertEqual(doc.jason.body?.sections?.count, 1)
         XCTAssertEqual(doc.jason.body?.sections?.first?.items?.first?.text, "Hello")
+    }
+
+    func testLoadWithMetadataReturnsResponseURL() async throws {
+        let finalURL = URL(string: "https://cdn.example.com/final/doc.json")!
+        StubURLProtocol.requestHandler = { _ in
+            let response = HTTPURLResponse(
+                url: finalURL,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: nil
+            )!
+            return (response, Data(self.sampleJSON.utf8))
+        }
+        let loaded = try await loader.loadWithMetadata(from: URL(string: "https://example.com/doc.json")!)
+        XCTAssertEqual(loaded.document.jason.head?.title, "Sample")
+        XCTAssertEqual(loaded.url, finalURL)
+    }
+
+    func testLoadWithMetadataRejectsDisallowedResponseURLScheme() async {
+        let requestedURL = URL(string: "https://example.com/doc.json")!
+        StubURLProtocol.requestHandler = { _ in
+            let response = HTTPURLResponse(
+                url: URL(string: "file:///tmp/doc.json")!,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: nil
+            )!
+            return (response, Data(self.sampleJSON.utf8))
+        }
+        do {
+            _ = try await loader.loadWithMetadata(from: requestedURL)
+            XCTFail("Expected blockedURL error")
+        } catch DocumentLoader.DocumentError.blockedURL {
+            // expected
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+    }
+
+    func testLoadRejectsDisallowedResponseURLScheme() async {
+        let requestedURL = URL(string: "https://example.com/doc.json")!
+        StubURLProtocol.requestHandler = { _ in
+            let response = HTTPURLResponse(
+                url: URL(string: "file:///tmp/doc.json")!,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: nil
+            )!
+            return (response, Data(self.sampleJSON.utf8))
+        }
+        do {
+            _ = try await loader.load(from: requestedURL)
+            XCTFail("Expected blockedURL error")
+        } catch DocumentLoader.DocumentError.blockedURL {
+            // expected
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+    }
+
+    func testLoadWithMetadataFollowsHTTPSRedirectAndReturnsFinalURL() async throws {
+        let startURL = URL(string: "https://example.com/start.json")!
+        let finalURL = URL(string: "https://cdn.example.com/final.json")!
+        StubURLProtocol.redirectHandler = { request in
+            request.url == startURL ? URLRequest(url: finalURL) : nil
+        }
+        StubURLProtocol.requestHandler = { request in
+            XCTAssertEqual(request.url, finalURL)
+            let response = HTTPURLResponse(
+                url: finalURL,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: nil
+            )!
+            return (response, Data(self.sampleJSON.utf8))
+        }
+
+        let loaded = try await loader.loadWithMetadata(from: startURL)
+        XCTAssertEqual(loaded.url, finalURL)
+        XCTAssertEqual(loaded.document.jason.head?.title, "Sample")
+    }
+
+    func testRedirectValidatorAllowsHTTPSRedirects() {
+        let validator = DocumentLoader.RedirectSchemeValidator()
+        let request = URLRequest(url: URL(string: "https://example.com/final.json")!)
+        let response = HTTPURLResponse(
+            url: URL(string: "https://example.com/start.json")!,
+            statusCode: 302,
+            httpVersion: nil,
+            headerFields: ["Location": "https://example.com/final.json"]
+        )!
+        let task = URLSession.shared.dataTask(with: URL(string: "https://example.com/start.json")!)
+        defer { task.cancel() }
+
+        let expectation = expectation(description: "redirect completion")
+        validator.urlSession(.shared, task: task, willPerformHTTPRedirection: response, newRequest: request) { redirectedRequest in
+            XCTAssertEqual(redirectedRequest?.url, request.url)
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 1)
+        XCTAssertFalse(validator.didBlockRedirect)
+    }
+
+    func testRedirectValidatorBlocksDisallowedRedirectSchemes() {
+        let validator = DocumentLoader.RedirectSchemeValidator()
+        let request = URLRequest(url: URL(string: "file:///tmp/final.json")!)
+        let response = HTTPURLResponse(
+            url: URL(string: "https://example.com/start.json")!,
+            statusCode: 302,
+            httpVersion: nil,
+            headerFields: ["Location": "file:///tmp/final.json"]
+        )!
+        let task = URLSession.shared.dataTask(with: URL(string: "https://example.com/start.json")!)
+        defer { task.cancel() }
+
+        let expectation = expectation(description: "redirect completion")
+        validator.urlSession(.shared, task: task, willPerformHTTPRedirection: response, newRequest: request) { redirectedRequest in
+            XCTAssertNil(redirectedRequest)
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 1)
+        XCTAssertTrue(validator.didBlockRedirect)
     }
 
     func testLoadThrowsOn404() async {

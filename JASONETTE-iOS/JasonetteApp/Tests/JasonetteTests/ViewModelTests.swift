@@ -46,6 +46,14 @@ final class ViewModelTests: XCTestCase {
         XCTAssertEqual(vm.loadState, .loaded)
     }
 
+    func testPreloadedDocumentURLIsPreservedSeparatelyFromIdentityURL() async {
+        let identityURL = URL(string: "https://example.com/app/index.json")!
+        let documentURL = URL(string: "https://cdn.example.com/final/index.json")!
+        let vm = JasonetteViewModel(url: identityURL, preloadedDoc: simpleDocument(), documentURL: documentURL)
+        await vm.loadIfNeeded()
+        XCTAssertEqual(vm.documentURL, documentURL)
+    }
+
     // MARK: - Render fallback
 
     func testRenderFallsBackToRawDocumentWithoutTemplates() async {
