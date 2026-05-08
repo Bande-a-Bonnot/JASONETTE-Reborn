@@ -468,6 +468,72 @@ final class ActionDispatcherTests: XCTestCase {
         XCTAssertEqual(stateManager.get()["blocked_after_resolution"] as? Bool, true)
     }
 
+    func testNetworkRequestSuccessChainKeepsOriginalDocumentURLWhenDispatcherBaseChanges() async {
+        let originalBase = URL(string: "https://example.com/app/index.json")!
+        let reloadedBase = URL(string: "https://cdn.example.com/new/index.json")!
+        let dispatcher = makeStubbedDispatcher(documentURL: originalBase)
+        let lock = NSLock()
+        var requestedURLs: [URL] = []
+
+        StubURLProtocol.requestHandler = { request in
+            lock.lock()
+            requestedURLs.append(request.url!)
+            let count = requestedURLs.count
+            lock.unlock()
+
+            if count == 1 {
+                let didUpdateBase = DispatchSemaphore(value: 0)
+                Task { @MainActor in
+                    dispatcher.setDocumentURL(reloadedBase)
+                    didUpdateBase.signal()
+                }
+                _ = didUpdateBase.wait(timeout: .now() + 1.0)
+            }
+
+            let resp = HTTPURLResponse(url: request.url!, statusCode: 200,
+                                      httpVersion: nil, headerFields: nil)!
+            return (resp, Data("{}".utf8))
+        }
+
+        let action = decodeAction([
+            "type": "$network.request",
+            "options": ["url": "api/first"],
+            "success": [
+                "type": "$network.request",
+                "options": ["url": "api/second"]
+            ]
+        ])
+        await dispatcher.execute(action)
+
+        lock.lock()
+        let urls = requestedURLs
+        lock.unlock()
+        XCTAssertEqual(urls, [
+            URL(string: "https://example.com/app/api/first")!,
+            URL(string: "https://example.com/app/api/second")!
+        ])
+    }
+
+    func testHrefSuccessChainKeepsOriginalDocumentURLWhenDispatcherBaseChanges() async {
+        let originalBase = URL(string: "https://example.com/app/index.json")!
+        let reloadedBase = URL(string: "https://cdn.example.com/new/index.json")!
+        let dispatcher = makeStubbedDispatcher(documentURL: originalBase)
+        var receivedHrefs: [JasonHref] = []
+        dispatcher.setNavigationHandler { receivedHrefs.append($0) }
+        dispatcher.setReloadHandler { dispatcher.setDocumentURL(reloadedBase) }
+
+        let action = decodeAction([
+            "type": "$reload",
+            "success": [
+                "type": "$href",
+                "options": ["url": "detail.json"]
+            ]
+        ])
+        await dispatcher.execute(action)
+
+        XCTAssertEqual(receivedHrefs.first?.url, "https://example.com/app/detail.json")
+    }
+
     func testNetworkRequestStoresDictResponse() async {
         stubJSON("{\"ok\": true}")
         let dispatcher = makeStubbedDispatcher()

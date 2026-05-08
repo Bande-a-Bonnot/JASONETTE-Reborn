@@ -50,19 +50,23 @@ public final class ActionDispatcher: ObservableObject {
     }
 
     public func execute(_ action: JasonAction) async {
+        await execute(action, baseURL: documentURL)
+    }
+
+    private func execute(_ action: JasonAction, baseURL: URL?) async {
         do {
-            try await dispatch(action)
+            try await dispatch(action, baseURL: baseURL)
             if let success = action.success {
-                await execute(success)
+                await execute(success, baseURL: baseURL)
             }
         } catch {
             if let errorAction = action.error {
-                await execute(errorAction)
+                await execute(errorAction, baseURL: baseURL)
             }
         }
     }
 
-    private func dispatch(_ action: JasonAction) async throws {
+    private func dispatch(_ action: JasonAction, baseURL: URL?) async throws {
         guard let type = action.type else { return }
         let options = action.options ?? [:]
 
@@ -97,8 +101,9 @@ public final class ActionDispatcher: ObservableObject {
         // Navigation
         case "$href":
             if let url = options["url"]?.string {
+                let resolvedURL = JasonURL.resolve(url, against: baseURL)?.absoluteString ?? url
                 let href = JasonHref(
-                    url: url,
+                    url: resolvedURL,
                     view: options["view"]?.string,
                     transition: options["transition"]?.string,
                     fresh: options["fresh"]?.bool
@@ -116,7 +121,7 @@ public final class ActionDispatcher: ObservableObject {
 
         // Network
         case "$network.request":
-            try await networkRequest(options)
+            try await networkRequest(options, baseURL: baseURL)
 
         // Util
         case "$util.alert":
@@ -129,7 +134,7 @@ public final class ActionDispatcher: ObservableObject {
 
         // Timer
         case "$timer.start":
-            startTimer(options, successAction: action.success)
+            startTimer(options, successAction: action.success, baseURL: baseURL)
 
         case "$timer.stop":
             let name = options["name"]?.string ?? "default"
@@ -143,7 +148,7 @@ public final class ActionDispatcher: ObservableObject {
 
     // MARK: - Timer
 
-    private func startTimer(_ options: [String: AnyCodable], successAction: JasonAction?) {
+    private func startTimer(_ options: [String: AnyCodable], successAction: JasonAction?, baseURL: URL?) {
         let name = options["name"]?.string ?? "default"
         let interval = max(options["interval"]?.double ?? 1.0, Self.minTimerInterval)
         let repeats = options["repeats"]?.bool ?? true
@@ -162,7 +167,7 @@ public final class ActionDispatcher: ObservableObject {
                 guard !self.executingTimers.contains(name) else { return }
                 self.executingTimers.insert(name)
                 defer { self.executingTimers.remove(name) }
-                await self.execute(successAction)
+                await self.execute(successAction, baseURL: baseURL)
                 if !repeats {
                     self.timers[name] = nil
                 }
@@ -178,9 +183,9 @@ public final class ActionDispatcher: ObservableObject {
         "set-cookie", "transfer-encoding", "content-length"
     ]
 
-    private func networkRequest(_ options: [String: AnyCodable]) async throws {
+    private func networkRequest(_ options: [String: AnyCodable], baseURL: URL?) async throws {
         guard let urlStr = options["url"]?.string,
-              let url = JasonURL.resolve(urlStr, against: documentURL) else {
+              let url = JasonURL.resolve(urlStr, against: baseURL) else {
             throw ActionError.invalidURL
         }
 

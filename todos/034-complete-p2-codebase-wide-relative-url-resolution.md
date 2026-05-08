@@ -60,12 +60,14 @@ model/component/action context before they can safely use `JasonURL.resolve`.
   input buttons, and the legacy footer-tab-item icon path.
 - `$href` navigation and `$network.request.options.url` now resolve authored
   relative paths against the current loaded document URL before their existing
-  scheme allowlist checks.
+  scheme allowlist checks. Action chains and timer-deferred actions capture the
+  document URL at chain/timer start so reloads cannot retarget in-flight
+  relative follow-up actions.
 - Added tests for relative and root-relative `$href`, relative and root-relative
-  `$network.request`, post-resolution scheme rejection, and representative asset
-  renderers.
+  `$network.request`, post-resolution scheme rejection, action-chain base
+  capture, and representative asset renderers.
 - Verified with `cd JASONETTE-iOS/JasonetteApp && swift test` on 2026-05-08:
-  427 tests, 0 failures.
+  429 tests, 0 failures.
 
 ## Notes
 
