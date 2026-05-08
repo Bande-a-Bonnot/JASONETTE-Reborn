@@ -3,9 +3,14 @@ import SwiftUI
 struct ImageComponent: View {
     let url: String?
     let style: JasonStyle?
+    let documentURL: URL?
+
+    var resolvedURL: URL? {
+        url.flatMap { JasonURL.resolve($0, against: documentURL) }
+    }
 
     var body: some View {
-        if let urlStr = url, let url = URL(string: urlStr) {
+        if let url = resolvedURL {
             AsyncImage(url: url) { phase in
                 switch phase {
                 case .success(let image):

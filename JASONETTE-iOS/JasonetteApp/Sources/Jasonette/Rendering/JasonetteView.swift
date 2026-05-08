@@ -146,7 +146,8 @@ struct JasonetteView: View {
                 component,
                 headStyles: headStyles,
                 onHref: { viewModel.handleHref($0) },
-                onAction: { viewModel.handleAction($0) }
+                onAction: { viewModel.handleAction($0) },
+                documentURL: viewModel.documentURL
             )
             .ifLet(style.top?.cgFloat) { view, value in
                 view.padding(.top, value)
@@ -186,7 +187,8 @@ struct JasonetteView: View {
                     header,
                     headStyles: headStyles,
                     onHref: { viewModel.handleHref($0) },
-                    onAction: { viewModel.handleAction($0) }
+                    onAction: { viewModel.handleAction($0) },
+                    documentURL: viewModel.documentURL
                 )
                 .padding(.horizontal)
                 .padding(.vertical, 4)
@@ -201,7 +203,8 @@ struct JasonetteView: View {
                                     item,
                                     headStyles: headStyles,
                                     onHref: { viewModel.handleHref($0) },
-                                    onAction: { viewModel.handleAction($0) }
+                                    onAction: { viewModel.handleAction($0) },
+                                    documentURL: viewModel.documentURL
                                 )
                             }
                         }
@@ -212,7 +215,8 @@ struct JasonetteView: View {
                             item,
                             headStyles: headStyles,
                             onHref: { viewModel.handleHref($0) },
-                            onAction: { viewModel.handleAction($0) }
+                            onAction: { viewModel.handleAction($0) },
+                            documentURL: viewModel.documentURL
                         )
                         .padding(.horizontal)
                         .padding(.vertical, 2)
@@ -238,14 +242,16 @@ struct JasonetteView: View {
                                 item: item,
                                 headStyles: headStyles,
                                 onHref: { viewModel.handleHref($0) },
-                                onAction: { viewModel.handleAction($0) }
+                                onAction: { viewModel.handleAction($0) },
+                                documentURL: viewModel.documentURL
                             )
                         } else {
                             ComponentView(
                                 item,
                                 headStyles: headStyles,
                                 onHref: { viewModel.handleHref($0) },
-                                onAction: { viewModel.handleAction($0) }
+                                onAction: { viewModel.handleAction($0) },
+                                documentURL: viewModel.documentURL
                             )
                         }
                     }
@@ -258,7 +264,8 @@ struct JasonetteView: View {
             // Input bar footer
             FooterInputView(
                 input: input,
-                onAction: { viewModel.handleAction($0) }
+                onAction: { viewModel.handleAction($0) },
+                documentURL: viewModel.documentURL
             )
         }
     }
@@ -274,6 +281,7 @@ struct JasonetteView: View {
 struct FooterInputView: View {
     let input: JasonFooterInput
     let onAction: ((JasonAction) -> Void)?
+    let documentURL: URL?
 
     @EnvironmentObject private var stateManager: StateManager
 
@@ -310,7 +318,7 @@ struct FooterInputView: View {
     @ViewBuilder
     private func footerButton(for component: JasonComponent) -> some View {
         let buttonContent = Group {
-            if let imageURL = component.imageURL, let url = URL(string: imageURL) {
+            if let url = resolvedImageURL(for: component) {
                 AsyncImage(url: url) { phase in
                     switch phase {
                     case .success(let image):
@@ -333,6 +341,10 @@ struct FooterInputView: View {
             buttonContent
         }
     }
+
+    func resolvedImageURL(for component: JasonComponent) -> URL? {
+        component.imageURL.flatMap { JasonURL.resolve($0, against: documentURL) }
+    }
 }
 
 // MARK: - Footer Tab Item View
@@ -349,6 +361,7 @@ struct FooterTabItemView: View {
     let headStyles: [String: JasonStyle]
     let onHref: ((JasonHref) -> Void)?
     let onAction: ((JasonAction) -> Void)?
+    let documentURL: URL?
 
     var body: some View {
         // Icon size resolves class-defined styles (via headStyles) merged with
@@ -362,7 +375,7 @@ struct FooterTabItemView: View {
         let cellStyle = resolved.withoutSize()
         let content = VStack(spacing: 2) {
             ZStack(alignment: .topTrailing) {
-                if let urlString = item.image, let url = URL(string: urlString) {
+                if let url = resolvedIconURL {
                     AsyncImage(url: url) { image in
                         image.resizable().scaledToFit()
                     } placeholder: {
@@ -420,6 +433,10 @@ struct FooterTabItemView: View {
         } else {
             content
         }
+    }
+
+    var resolvedIconURL: URL? {
+        item.image.flatMap { JasonURL.resolve($0, against: documentURL) }
     }
 
     private func resolvedStyle() -> JasonStyle {

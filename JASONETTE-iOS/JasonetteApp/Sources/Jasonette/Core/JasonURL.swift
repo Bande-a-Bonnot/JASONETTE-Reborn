@@ -19,4 +19,19 @@ enum JasonURL {
         guard let url = URL(string: string), url.scheme != nil else { return nil }
         return url.absoluteURL
     }
+
+    /// Resolve an authored URL and keep it only when the resulting absolute URL
+    /// uses one of the caller's accepted schemes. Scheme validation intentionally
+    /// happens after relative resolution so `/api` is checked as `https://…/api`,
+    /// while absolute `file:` / `javascript:` strings stay blocked.
+    static func resolve(
+        _ string: String,
+        against baseURL: URL?,
+        allowedSchemes: Set<String>
+    ) -> URL? {
+        guard let url = resolve(string, against: baseURL),
+              let scheme = url.scheme?.lowercased(),
+              allowedSchemes.contains(scheme) else { return nil }
+        return url
+    }
 }

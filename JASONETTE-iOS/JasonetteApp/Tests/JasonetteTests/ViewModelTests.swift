@@ -107,6 +107,36 @@ final class ViewModelTests: XCTestCase {
         XCTAssertEqual(url.absoluteString, "https://example.com/tab2")
     }
 
+    func testHandleHrefResolvesRelativeURLAgainstDocumentURL() {
+        let capture = NavigationCapture()
+        let vm = JasonetteViewModel(
+            url: URL(string: "https://entry.example.com/start.json")!,
+            preloadedDoc: simpleDocument(),
+            documentURL: URL(string: "https://cdn.example.com/app/index.json")!,
+            onNavigate: { capture.requests.append($0) }
+        )
+        vm.handleHref(JasonHref(url: "details/page.json", view: nil))
+        guard case .push(let url) = capture.last else {
+            return XCTFail("Expected .push, got \(String(describing: capture.last))")
+        }
+        XCTAssertEqual(url, URL(string: "https://cdn.example.com/app/details/page.json")!)
+    }
+
+    func testHandleHrefResolvesRootRelativeURLAgainstDocumentURL() {
+        let capture = NavigationCapture()
+        let vm = JasonetteViewModel(
+            url: URL(string: "https://entry.example.com/start.json")!,
+            preloadedDoc: simpleDocument(),
+            documentURL: URL(string: "https://cdn.example.com/app/index.json")!,
+            onNavigate: { capture.requests.append($0) }
+        )
+        vm.handleHref(JasonHref(url: "/global/page.json", view: nil))
+        guard case .push(let url) = capture.last else {
+            return XCTFail("Expected .push, got \(String(describing: capture.last))")
+        }
+        XCTAssertEqual(url, URL(string: "https://cdn.example.com/global/page.json")!)
+    }
+
     func testHandleHrefTransitionModalEmitsModal() {
         let (vm, capture) = makeViewModelCapturing(simpleDocument())
         vm.handleHref(JasonHref(url: "https://example.com/detail", view: nil, transition: "modal"))

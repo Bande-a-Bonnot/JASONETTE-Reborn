@@ -13,6 +13,7 @@ struct LayoutView: View {
     let style: JasonStyle?
     let onHref: ((JasonHref) -> Void)?
     let onAction: ((JasonAction) -> Void)?
+    let documentURL: URL?
 
     var body: some View {
         let spacing = style?.spacing?.cgFloat ?? 8
@@ -21,14 +22,26 @@ struct LayoutView: View {
         case .vertical:
             VStack(alignment: alignment, spacing: spacing) {
                 ForEach(components.indices, id: \.self) { index in
-                    ComponentView(components[index], headStyles: headStyles, onHref: onHref, onAction: onAction)
+                    ComponentView(
+                        components[index],
+                        headStyles: headStyles,
+                        onHref: onHref,
+                        onAction: onAction,
+                        documentURL: documentURL
+                    )
                 }
             }
         case .horizontal:
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(alignment: vAlignment, spacing: spacing) {
                     ForEach(components.indices, id: \.self) { index in
-                        ComponentView(components[index], headStyles: headStyles, onHref: onHref, onAction: onAction)
+                        ComponentView(
+                            components[index],
+                            headStyles: headStyles,
+                            onHref: onHref,
+                            onAction: onAction,
+                            documentURL: documentURL
+                        )
                     }
                 }
             }

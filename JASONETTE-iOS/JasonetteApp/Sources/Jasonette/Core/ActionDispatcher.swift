@@ -15,10 +15,16 @@ public final class ActionDispatcher: ObservableObject {
     private static let minTimerInterval: TimeInterval = 0.1
 
     private let session: URLSession
+    private var documentURL: URL?
 
-    public init(stateManager: StateManager, session: URLSession = .shared) {
+    public init(stateManager: StateManager, session: URLSession = .shared, documentURL: URL? = nil) {
         self.session = session
         self.stateManager = stateManager
+        self.documentURL = documentURL
+    }
+
+    public func setDocumentURL(_ url: URL?) {
+        documentURL = url
     }
 
     public func setNavigationHandler(_ handler: @escaping (JasonHref) -> Void) {
@@ -174,7 +180,7 @@ public final class ActionDispatcher: ObservableObject {
 
     private func networkRequest(_ options: [String: AnyCodable]) async throws {
         guard let urlStr = options["url"]?.string,
-              let url = URL(string: urlStr) else {
+              let url = JasonURL.resolve(urlStr, against: documentURL) else {
             throw ActionError.invalidURL
         }
 

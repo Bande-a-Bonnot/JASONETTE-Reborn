@@ -7,17 +7,20 @@ public struct ComponentView: View {
     let headStyles: [String: JasonStyle]
     let onHref: ((JasonHref) -> Void)?
     let onAction: ((JasonAction) -> Void)?
+    let documentURL: URL?
 
     public init(
         _ component: JasonComponent,
         headStyles: [String: JasonStyle] = [:],
         onHref: ((JasonHref) -> Void)? = nil,
-        onAction: ((JasonAction) -> Void)? = nil
+        onAction: ((JasonAction) -> Void)? = nil,
+        documentURL: URL? = nil
     ) {
         self.component = component
         self.headStyles = headStyles
         self.onHref = onHref
         self.onAction = onAction
+        self.documentURL = documentURL
     }
 
     public var body: some View {
@@ -49,9 +52,9 @@ public struct ComponentView: View {
         case "label":
             LabelComponent(text: component.text ?? "")
         case "image":
-            ImageComponent(url: component.imageURL, style: component.style)
+            ImageComponent(url: component.imageURL, style: component.style, documentURL: documentURL)
         case "button":
-            ButtonComponent(text: component.text, url: component.url)
+            ButtonComponent(text: component.text, url: component.url, documentURL: documentURL)
         case "textfield":
             TextFieldComponent(
                 name: component.name ?? "",
@@ -82,7 +85,8 @@ public struct ComponentView: View {
                 headStyles: headStyles,
                 style: component.style,
                 onHref: onHref,
-                onAction: onAction
+                onAction: onAction,
+                documentURL: documentURL
             )
         case "horizontal":
             LayoutView(
@@ -91,7 +95,8 @@ public struct ComponentView: View {
                 headStyles: headStyles,
                 style: component.style,
                 onHref: onHref,
-                onAction: onAction
+                onAction: onAction,
+                documentURL: documentURL
             )
         default:
             Text("[Unknown: \(component.type ?? "nil")]")

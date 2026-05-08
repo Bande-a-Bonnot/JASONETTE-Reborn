@@ -405,11 +405,11 @@ final class ActionDispatcherTests: XCTestCase {
 
     // MARK: - $network.request response shapes
 
-    private func makeStubbedDispatcher() -> ActionDispatcher {
+    private func makeStubbedDispatcher(documentURL: URL? = nil) -> ActionDispatcher {
         let config = URLSessionConfiguration.ephemeral
         config.protocolClasses = [StubURLProtocol.self]
         let session = URLSession(configuration: config)
-        return ActionDispatcher(stateManager: stateManager, session: session)
+        return ActionDispatcher(stateManager: stateManager, session: session, documentURL: documentURL)
     }
 
     private func stubJSON(_ body: String) {
@@ -419,6 +419,53 @@ final class ActionDispatcherTests: XCTestCase {
                                       httpVersion: nil, headerFields: nil)!
             return (resp, data)
         }
+    }
+
+    func testNetworkRequestResolvesRelativeURLAgainstDocumentURL() async {
+        let expectation = expectation(description: "request received")
+        StubURLProtocol.requestHandler = { request in
+            XCTAssertEqual(request.url, URL(string: "https://example.com/app/api/items")!)
+            expectation.fulfill()
+            let resp = HTTPURLResponse(url: request.url!, statusCode: 200,
+                                      httpVersion: nil, headerFields: nil)!
+            return (resp, Data("{}".utf8))
+        }
+        let dispatcher = makeStubbedDispatcher(documentURL: URL(string: "https://example.com/app/index.json")!)
+        let action = decodeAction([
+            "type": "$network.request",
+            "options": ["url": "api/items"]
+        ])
+        await dispatcher.execute(action)
+        await fulfillment(of: [expectation], timeout: 1.0)
+    }
+
+    func testNetworkRequestResolvesRootRelativeURLAgainstDocumentURL() async {
+        let expectation = expectation(description: "request received")
+        StubURLProtocol.requestHandler = { request in
+            XCTAssertEqual(request.url, URL(string: "https://example.com/api/items")!)
+            expectation.fulfill()
+            let resp = HTTPURLResponse(url: request.url!, statusCode: 200,
+                                      httpVersion: nil, headerFields: nil)!
+            return (resp, Data("{}".utf8))
+        }
+        let dispatcher = makeStubbedDispatcher(documentURL: URL(string: "https://example.com/app/index.json")!)
+        let action = decodeAction([
+            "type": "$network.request",
+            "options": ["url": "/api/items"]
+        ])
+        await dispatcher.execute(action)
+        await fulfillment(of: [expectation], timeout: 1.0)
+    }
+
+    func testNetworkRequestRejectsDisallowedSchemeAfterResolution() async {
+        let dispatcher = makeStubbedDispatcher(documentURL: URL(string: "https://example.com/app/index.json")!)
+        let action = decodeAction([
+            "type": "$network.request",
+            "options": ["url": "javascript:alert(1)"],
+            "error": ["type": "$set", "options": ["blocked_after_resolution": true]]
+        ])
+        await dispatcher.execute(action)
+        XCTAssertEqual(stateManager.get()["blocked_after_resolution"] as? Bool, true)
     }
 
     func testNetworkRequestStoresDictResponse() async {

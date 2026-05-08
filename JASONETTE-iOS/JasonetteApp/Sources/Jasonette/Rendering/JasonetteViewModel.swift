@@ -46,7 +46,7 @@ public final class JasonetteViewModel: ObservableObject {
         self.url = url
         self.documentURL = url
         self.document = nil
-        self.actionDispatcher = ActionDispatcher(stateManager: stateManager)
+        self.actionDispatcher = ActionDispatcher(stateManager: stateManager, documentURL: url)
         self.onNavigate = onNavigate ?? { _ in }
         wireHandlers()
     }
@@ -64,10 +64,11 @@ public final class JasonetteViewModel: ObservableObject {
     /// URL it came from. First `load()` renders the seed without a network
     /// round-trip; subsequent `load()`/`reload()` refetch from `url`.
     init(url: URL, preloadedDoc: JasonDocument, documentURL: URL? = nil, onNavigate: ((NavigationRequest) -> Void)? = nil) {
+        let resolvedDocumentURL = documentURL ?? url
         self.url = url
-        self.documentURL = documentURL ?? url
+        self.documentURL = resolvedDocumentURL
         self.document = preloadedDoc
-        self.actionDispatcher = ActionDispatcher(stateManager: stateManager)
+        self.actionDispatcher = ActionDispatcher(stateManager: stateManager, documentURL: resolvedDocumentURL)
         self.onNavigate = onNavigate ?? { _ in }
         wireHandlers()
     }
@@ -116,6 +117,7 @@ public final class JasonetteViewModel: ObservableObject {
                 let loaded = try await loader.loadWithMetadata(from: url)
                 document = loaded.document
                 documentURL = loaded.url
+                actionDispatcher.setDocumentURL(loaded.url)
             }
             seedConsumed = true
             guard let doc = document else {
@@ -173,10 +175,10 @@ public final class JasonetteViewModel: ObservableObject {
         if href.view == "$back" { onNavigate(.back); return }
         if href.view == "$close" { onNavigate(.close); return }
 
-        guard let urlStr = href.url, let url = URL(string: urlStr) else { return }
+        guard let urlStr = href.url else { return }
 
         let allowed = href.view == "app" ? DocumentLoader.appSchemes : DocumentLoader.allowedSchemes
-        guard let scheme = url.scheme?.lowercased(), allowed.contains(scheme) else { return }
+        guard let url = JasonURL.resolve(urlStr, against: documentURL, allowedSchemes: allowed) else { return }
 
         switch href.view {
         case "web":

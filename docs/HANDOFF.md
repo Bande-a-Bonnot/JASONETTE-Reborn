@@ -1,6 +1,6 @@
 # Agent Handoff Document
 
-Last updated: 2026-04-30
+Last updated: 2026-05-08
 
 **Update this file before context compaction and at the end of significant sessions.**
 
@@ -8,7 +8,7 @@ Last updated: 2026-04-30
 
 ### Test Suite
 
-- iOS: 415 tests, 0 failures (verified 2026-04-30 after footer-tab relative URL resolution review follow-up; tab navigation rewrite merged to `main` via PR #20 squash `11b9fca`)
+- iOS: 427 tests, 0 failures (verified 2026-05-08 after codebase-wide relative URL resolution for renderer/action paths; tab navigation rewrite merged to `main` via PR #20 squash `11b9fca`)
 - Android CI: `pull_request` Android job ran/passed on PR #21, non-Android-change PR #22, and follow-up PR #23; Kotlin JSON primitive accessor compile failures fixed by squash `92e65dd`; oversized plain-integer JSON parsing aligned between Android test helper and production renderer in `c3f4f8f`
 - Run iOS: `cd JASONETTE-iOS/JasonetteApp && swift test`
 - Build iOS: `swift build` (<1s)
@@ -65,7 +65,7 @@ Map pins/region, secure textfield (`SecureField`), HTML component (`WKWebView`),
 
 ### Phase D — Data & Navigation
 
-Shell-mounted footer-tab relative URL resolution is fixed locally: `DocumentLoader.loadWithMetadata` captures the final loaded document URL, and `TabDescriptor.init(from:baseURL:)` resolves tab `image`, shorthand `url`, and `href.url` against it via `JasonURL.resolve(_:against:)` before scheme allowlist checks. Broader non-tab renderer/action relative URL plumbing, including the legacy `FooterTabItemView` path, remains tracked by `todos/034`. `$network.request` response shape preservation is fixed on `main` (PR #17): object, array, string, number, and null JSON response bodies are stored under `$response`.
+Relative URL resolution now uses the final loaded document URL across shell-mounted footer tabs and the main renderer/action paths. `DocumentLoader.loadWithMetadata` captures the final URL; `TabDescriptor.init(from:baseURL:)`, `JasonetteViewModel.handleHref`, `$network.request`, body image/button components, footer input buttons, and the legacy `FooterTabItemView` icon path resolve authored relative references via `JasonURL.resolve` before navigation/network scheme allowlist checks. `$network.request` response shape preservation is fixed on `main` (PR #17): object, array, string, number, and null JSON response bodies are stored under `$response`.
 
 Tab navigation rewrite is on `main` (PR #20, plan at `docs/plans/tab-navigation-overhaul/plan.md`). Shell owns selection; each tab is an opaque `JasonetteNavigationView` mounted lazily on first selection and kept alive after. See solution doc `architecture-patterns/swiftui-tab-shell-opaque-scope-navigation.md`.
 
@@ -74,7 +74,6 @@ Tab navigation rewrite is on `main` (PR #20, plan at `docs/plans/tab-navigation-
 P2:
 - `todos/025` — footer tab-bar style/icon parity
 - `todos/026` — action-tab dispatch
-- `todos/034` — relative URL resolution outside shell-mounted tab descriptors (includes legacy footer tab view)
 
 P3:
 - `todos/015` — sectionView code duplication (defer until 3rd section type)

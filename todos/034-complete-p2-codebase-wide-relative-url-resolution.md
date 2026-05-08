@@ -1,5 +1,5 @@
 ---
-status: ready
+status: complete
 priority: p2
 issue_id: "034"
 tags: [ios, urls, renderer, actions]
@@ -7,6 +7,8 @@ dependencies: []
 ---
 
 # Resolve relative URLs outside shell-mounted tab descriptors
+
+Completed: 2026-05-08
 
 ## Problem Statement
 
@@ -43,11 +45,27 @@ model/component/action context before they can safely use `JasonURL.resolve`.
 
 ## Acceptance Criteria
 
-- [ ] Body image/button URLs resolve relative to the loaded document URL
-- [ ] `href.url` resolves relative to the loaded document URL before push/modal/web/app/switch dispatch
-- [ ] `$network.request.options.url` resolves relative to the action document URL
-- [ ] Existing disallowed-scheme protections still reject `file:` / `javascript:` after resolution
-- [ ] Tests cover relative path and leading-slash path for at least href and one asset component
+- [x] Body image/button URLs resolve relative to the loaded document URL
+- [x] `href.url` resolves relative to the loaded document URL before push/modal/web/app/switch dispatch
+- [x] `$network.request.options.url` resolves relative to the action document URL
+- [x] Existing disallowed-scheme protections still reject `file:` / `javascript:` after resolution
+- [x] Tests cover relative path and leading-slash path for at least href and one asset component
+
+## Completion Notes
+
+- Added `JasonURL.resolve(_:against:allowedSchemes:)` so scheme checks happen
+  after relative URL resolution.
+- Threaded `JasonetteViewModel.documentURL` into `ActionDispatcher`,
+  `ComponentView`, nested `LayoutView`, body image/button components, footer
+  input buttons, and the legacy footer-tab-item icon path.
+- `$href` navigation and `$network.request.options.url` now resolve authored
+  relative paths against the current loaded document URL before their existing
+  scheme allowlist checks.
+- Added tests for relative and root-relative `$href`, relative and root-relative
+  `$network.request`, post-resolution scheme rejection, and representative asset
+  renderers.
+- Verified with `cd JASONETTE-iOS/JasonetteApp && swift test` on 2026-05-08:
+  427 tests, 0 failures.
 
 ## Notes
 
