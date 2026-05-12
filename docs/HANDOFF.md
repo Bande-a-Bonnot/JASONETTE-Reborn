@@ -87,6 +87,8 @@ P3:
 - `todos/029` — onChange iOS 17 modernization
 - `todos/033` — Android JSON decimal/exponent precision policy (Gemini PR #23 follow-up; plain integers fixed, decimal/exponent still use `Double` by current contract)
 - `todos/036` — non-tab image URL scheme policy (PR #24 follow-up)
+- `todos/037` — ViewModel documentURL redirect coverage
+- `todos/038` — footer-tab app-scheme baseURL coverage
 
 Nice-to-have (P3):
 - `todos/031` — investigate ZStack nav-title collision (gemini r5/6/7/8 concern)

@@ -76,8 +76,9 @@ relatives with `URL(string:relativeTo:)`.
   absolute dedupe, missing base URLs, protocol-relative URLs, dot segments,
   query-only URLs, and disallowed schemes after resolution.
 - Ran `cd JASONETTE-iOS/JasonetteApp && swift test`: 415 tests, 0 failures.
-- Audit of other URL parses completed; remaining non-tab renderer/action work is
-  tracked in `todos/034-ready-p2-codebase-wide-relative-url-resolution.md`.
+- Audit of other URL parses completed; remaining non-tab renderer/action work
+  was tracked and completed in
+  `todos/034-complete-p2-codebase-wide-relative-url-resolution.md`.
 
 ## Notes
 
