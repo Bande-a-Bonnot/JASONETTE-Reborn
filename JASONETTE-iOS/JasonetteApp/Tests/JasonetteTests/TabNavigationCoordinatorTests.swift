@@ -514,6 +514,42 @@ final class TabNavigationCoordinatorTests: XCTestCase {
         XCTAssertEqual(d?.label.iconURL?.absoluteString, "https://example.com/icons/home.png")
     }
 
+    func testDescriptorAcceptsSystemIconAsSymbolName() {
+        let c = JasonComponent()
+        c.url = "https://example.com/target.json"
+        c.image = "system://house.fill"
+        let d = TabDescriptor(from: c)
+        XCTAssertNil(d?.label.iconURL)
+        XCTAssertEqual(d?.label.systemImageName, "house.fill")
+    }
+
+    func testEntriesMergeFooterTabsStyleIntoLabelStyle() {
+        var inherited = JasonStyle()
+        inherited.background = "#000000"
+        inherited.color = "#111111"
+        inherited.width = AnyCodable(21)
+
+        var inline = JasonStyle()
+        inline.color = "#222222"
+
+        let item = tabItem(url: "https://example.com/target.json")
+        item.style = inline
+
+        var body = JasonBody()
+        var footer = JasonFooter()
+        var tabs = JasonTabs()
+        tabs.items = [item]
+        tabs.style = inherited
+        footer.tabs = tabs
+        body.footer = footer
+        let doc = JasonDocument(jason: JasonRoot(head: nil, body: body))
+
+        let entries = JasonetteNavigationCoordinator.entries(from: doc, baseURL: URL(string: "https://example.com/index.json")!)
+        XCTAssertEqual(entries.first?.descriptor.label.style?.background, "#000000")
+        XCTAssertEqual(entries.first?.descriptor.label.style?.color, "#222222")
+        XCTAssertEqual(entries.first?.descriptor.label.style?.width, AnyCodable(21))
+    }
+
     func testDescriptorDropsDisallowedIconSchemes() {
         let fileIcon = JasonComponent()
         fileIcon.url = "https://example.com/target.json"

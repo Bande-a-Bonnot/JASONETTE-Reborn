@@ -55,6 +55,15 @@ struct TabDescriptor: Sendable {
 struct TabLabelSpec: Sendable {
     let text: String?
     let iconURL: URL?
+    let systemImageName: String?
     let badge: String?
     let style: JasonStyle?
+
+    init(text: String?, iconURL: URL?, systemImageName: String? = nil, badge: String?, style: JasonStyle?) {
+        self.text = text
+        self.iconURL = iconURL
+        self.systemImageName = systemImageName
+        self.badge = badge
+        self.style = style
+    }
 }

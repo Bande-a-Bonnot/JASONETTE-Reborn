@@ -108,7 +108,9 @@ final class JasonetteNavigationCoordinator: ObservableObject {
     /// Invalid items (no URL and no action) are dropped. Duplicates by
     /// canonical target key are dropped (first wins); debug-asserts.
     static func entries(from doc: JasonDocument, baseURL: URL) -> [TabEntry] {
-        guard let items = doc.jason.body?.footer?.tabs?.items, !items.isEmpty else {
+        guard let tabs = doc.jason.body?.footer?.tabs,
+              let items = tabs.items,
+              !items.isEmpty else {
             return []
         }
 
@@ -117,7 +119,7 @@ final class JasonetteNavigationCoordinator: ObservableObject {
         out.reserveCapacity(items.count)
 
         for item in items {
-            guard let descriptor = TabDescriptor(from: item, baseURL: baseURL) else { continue }
+            guard let descriptor = TabDescriptor(from: item, baseURL: baseURL, inheritedStyle: tabs.style) else { continue }
             let key = descriptor.target.canonicalKey
             if seen.contains(key) {
                 #if DEBUG
@@ -144,19 +146,21 @@ extension TabDescriptor {
     /// Icon resolution reads `item.image` directly and accepts only http(s)
     /// image URLs. `item.imageURL` falls back to `item.url`, which for tabs is
     /// the target document URL — that would try to render JSON as an image.
-    init?(from item: JasonComponent, baseURL: URL? = nil) {
-        let iconURL = item.image
+    init?(from item: JasonComponent, baseURL: URL? = nil, inheritedStyle: JasonStyle? = nil) {
+        let systemImageName = item.image.flatMap(Self.systemImageName)
+        let iconURL: URL? = systemImageName == nil ? item.image
             .flatMap { JasonURL.resolve($0, against: baseURL) }
             .flatMap { url -> URL? in
                 guard let scheme = url.scheme?.lowercased(),
                       DocumentLoader.imageSchemes.contains(scheme) else { return nil }
                 return url
-            }
+            } : nil
         let label = TabLabelSpec(
             text: item.text,
             iconURL: iconURL,
+            systemImageName: systemImageName,
             badge: item.badge,
-            style: item.style
+            style: inheritedStyle?.merging(item.style ?? JasonStyle()) ?? item.style
         )
 
         // Action-only tabs are not yet dispatched from the shell — tapping
@@ -184,5 +188,12 @@ extension TabDescriptor {
             guard DocumentLoader.allowedSchemes.contains(scheme) else { return nil }
             self.init(target: .document(url), label: label)
         }
+    }
+
+    private static func systemImageName(from image: String) -> String? {
+        guard image.lowercased().hasPrefix("system://") else { return nil }
+        let rawName = String(image.dropFirst("system://".count))
+            .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        return rawName.isEmpty ? nil : rawName
     }
 }

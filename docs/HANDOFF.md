@@ -1,6 +1,6 @@
 # Agent Handoff Document
 
-Last updated: 2026-05-08
+Last updated: 2026-05-12
 
 **Update this file before context compaction and at the end of significant sessions.**
 
@@ -8,7 +8,7 @@ Last updated: 2026-05-08
 
 ### Test Suite
 
-- iOS: 429 tests, 0 failures (verified 2026-05-08 after codebase-wide relative URL resolution for renderer/action paths plus Codex xhigh follow-up for action-chain base capture; tab navigation rewrite merged to `main` via PR #20 squash `11b9fca`)
+- iOS: 431 tests, 0 failures (verified 2026-05-12 after footer tab-bar style/icon parity fixes; previous tab navigation rewrite merged to `main` via PR #20 squash `11b9fca`)
 - Android CI: `pull_request` Android job ran/passed on PR #21, non-Android-change PR #22, and follow-up PR #23; Kotlin JSON primitive accessor compile failures fixed by squash `92e65dd`; oversized plain-integer JSON parsing aligned between Android test helper and production renderer in `c3f4f8f`
 - Run iOS: `cd JASONETTE-iOS/JasonetteApp && swift test`
 - Build iOS: `swift build` (<1s)
@@ -72,7 +72,6 @@ Tab navigation rewrite is on `main` (PR #20, plan at `docs/plans/tab-navigation-
 ### Open Todos
 
 P2:
-- `todos/025` — footer tab-bar style/icon parity
 - `todos/026` — action-tab dispatch
 
 P3:
@@ -89,6 +88,9 @@ P3:
 - `todos/036` — non-tab image URL scheme policy (PR #24 follow-up)
 - `todos/037` — ViewModel documentURL redirect coverage
 - `todos/038` — footer-tab app-scheme baseURL coverage
+
+Completed this session:
+- `todos/025` — footer tab-bar style/icon parity: shell tab cells now consume inherited/inline tab style, show selected tint + indicator, render `system://` SF Symbols without `AsyncImage`, and keep network-image failure placeholders.
 
 Nice-to-have (P3):
 - `todos/031` — investigate ZStack nav-title collision (gemini r5/6/7/8 concern)
