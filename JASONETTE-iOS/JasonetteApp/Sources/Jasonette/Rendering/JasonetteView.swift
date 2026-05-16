@@ -18,6 +18,8 @@ private extension View {
 struct JasonetteView: View {
     @StateObject private var viewModel: JasonetteViewModel
     @Environment(\.jasonetteIsInsideTabShell) private var isInsideTabShell
+    @Environment(\.jasonetteCurrentTabID) private var currentTabID
+    @Environment(\.jasonetteRegisterTabActionHandler) private var registerTabActionHandler
 
     init(url: URL, onNavigate: ((NavigationRequest) -> Void)? = nil) {
         _viewModel = StateObject(wrappedValue: JasonetteViewModel(url: url, onNavigate: onNavigate))
@@ -65,6 +67,15 @@ struct JasonetteView: View {
             )
         }
         .environmentObject(viewModel.stateManager)
+        .onAppear { registerForTabActionsIfNeeded() }
+    }
+
+    private func registerForTabActionsIfNeeded() {
+        guard let currentTabID else { return }
+        let viewModel = viewModel
+        registerTabActionHandler(currentTabID) { [weak viewModel] action in
+            viewModel?.handleAction(action)
+        }
     }
 
     @ViewBuilder

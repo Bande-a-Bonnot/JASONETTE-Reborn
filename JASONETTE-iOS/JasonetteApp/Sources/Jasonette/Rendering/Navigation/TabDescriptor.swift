@@ -14,11 +14,9 @@ struct TabDescriptor: Sendable {
         case web(URL)
         /// External app open. Tap does NOT change selection.
         case app(URL)
-        // `.action` (fire a JSON action on tap, selection unchanged) will be
-        // added back when action dispatch is plumbed through — tracked in
-        // `todos/026-ready-p2-action-tab-dispatch.md`. Until then, action-only
-        // footer items are rejected at `TabDescriptor(from:)` construction and
-        // the shell has no unreachable no-op branch to ship by accident.
+        /// Fire a JSON action on tap. Selection does not change; the shell
+        /// forwards the action to the currently-selected tab's active VM.
+        case action(JasonAction)
 
         /// String form used for duplicate detection at bootstrap and for
         /// `@SceneStorage` restoration. Built from `standardized.absoluteString`
@@ -33,6 +31,7 @@ struct TabDescriptor: Sendable {
             case .document(let url): return "doc:\(url.standardized.absoluteString)"
             case .web(let url):      return "web:\(url.standardized.absoluteString)"
             case .app(let url):      return "app:\(url.standardized.absoluteString)"
+            case .action(let action): return "action:\(ObjectIdentifier(action))"
             }
         }
     }
@@ -44,7 +43,7 @@ struct TabDescriptor: Sendable {
     }
 
     /// The URL this tab matches for transition:"switch" routing. Nil for
-    /// non-selectable (action/web/app) tabs.
+    /// non-selectable (web/app/action) tabs.
     var selectableURL: URL? {
         if case .document(let url) = target { return url }
         return nil

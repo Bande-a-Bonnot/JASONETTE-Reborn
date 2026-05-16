@@ -136,14 +136,19 @@ final class TabNavigationCoordinatorTests: XCTestCase {
         XCTAssertEqual(url.absoluteString, "https://example.com/app/pages/help.html")
     }
 
-    /// Action-only tabs are rejected at descriptor construction until the
-    /// shell's action dispatcher is plumbed through (see todos/026). Otherwise
-    /// the tab would render in the bar and silently no-op on tap.
-    func testDescriptorFromComponentWithActionOnlyReturnsNil() {
+    func testDescriptorFromComponentWithActionOnlyBuildsActionTarget() {
         let c = JasonComponent()
+        c.text = "Refresh"
         let a = JasonAction(); a.type = "$reload"
         c.action = a
-        XCTAssertNil(TabDescriptor(from: c))
+        let d = TabDescriptor(from: c)
+        guard case .action(let action) = d?.target else {
+            return XCTFail("expected .action target, got \(String(describing: d?.target))")
+        }
+        XCTAssertTrue(action === a)
+        XCTAssertFalse(d?.isSelectable ?? true)
+        XCTAssertNil(d?.selectableURL)
+        XCTAssertEqual(d?.label.text, "Refresh")
     }
 
     func testDescriptorFromComponentWithNoTargetReturnsNil() {
@@ -235,6 +240,24 @@ final class TabNavigationCoordinatorTests: XCTestCase {
         XCTAssertEqual(shell.tabs.count, 2)
         XCTAssertEqual(bootstrapURL, entry)
         XCTAssertEqual(shell.tabs[0].descriptor.selectableURL, URL(string: "https://a"))
+    }
+
+    func testCoordinatorKeepsActionOnlyTabsAlongsideSelectableTabs() {
+        let entry = URL(string: "https://a")!
+        let c = JasonetteNavigationCoordinator(entryURL: entry)
+        c.bootstrapDidLoad(doc: makeDoc(tabs: [
+            actionItem(type: "$reload"),
+            tabItem(url: "https://a"),
+        ]))
+        guard case .tabs(let shell, _, _) = c.mode else {
+            return XCTFail("expected .tabs")
+        }
+        XCTAssertEqual(shell.tabs.count, 2)
+        XCTAssertEqual(shell.selectedTabID, shell.tabs[1].id)
+        guard case .action(let action) = shell.tabs[0].descriptor.target else {
+            return XCTFail("expected first tab to be action")
+        }
+        XCTAssertEqual(action.type, "$reload")
     }
 
     func testCoordinatorResolvesRelativeTabTargetsAgainstDocumentURL() {
@@ -380,6 +403,51 @@ final class TabNavigationCoordinatorTests: XCTestCase {
         XCTAssertEqual(shell.selectedTabID, shell.tabs[1].id)
     }
 
+    // MARK: Action tab dispatch registry
+
+    func testTabActionRegistryDispatchesToSelectedTabHandler() {
+        let registry = TabActionRegistry()
+        let selected = TabID()
+        let other = TabID()
+        let action = JasonAction(); action.type = "$reload"
+        var receivedType: String?
+
+        registry.register(selected) { receivedType = $0.type }
+        registry.register(other) { _ in receivedType = "wrong-tab" }
+
+        XCTAssertTrue(registry.dispatch(action, selectedTabID: selected))
+        XCTAssertEqual(receivedType, "$reload")
+    }
+
+    func testTabActionRegistryMissingSelectedHandlerIsNoop() {
+        let registry = TabActionRegistry()
+        let action = JasonAction(); action.type = "$unknown"
+        XCTAssertFalse(registry.dispatch(action, selectedTabID: TabID()))
+    }
+
+    func testTabActionRegistryDispatchesIntoSelectedViewModelStateScope() async {
+        let registry = TabActionRegistry()
+        let selected = TabID()
+        let other = TabID()
+        let selectedVM = JasonetteViewModel(document: makeDoc(tabs: []))
+        let otherVM = JasonetteViewModel(document: makeDoc(tabs: []))
+        let action = JasonAction(); action.type = "$set"; action.options = ["flag": AnyCodable("selected")]
+        let handled = expectation(description: "selected VM handled action")
+
+        registry.register(selected) { [selectedVM] action in
+            Task { @MainActor in
+                await selectedVM.actionDispatcher.execute(action)
+                handled.fulfill()
+            }
+        }
+        registry.register(other) { [otherVM] action in otherVM.handleAction(action) }
+
+        XCTAssertTrue(registry.dispatch(action, selectedTabID: selected))
+        await fulfillment(of: [handled], timeout: 1.0)
+        XCTAssertEqual(selectedVM.stateManager.local["flag"] as? String, "selected")
+        XCTAssertNil(otherVM.stateManager.local["flag"])
+    }
+
     // MARK: Helpers
 
     private func doc(_ url: String) -> TabDescriptor {
@@ -390,6 +458,12 @@ final class TabNavigationCoordinatorTests: XCTestCase {
     }
     private func tabItem(url: String) -> JasonComponent {
         let c = JasonComponent(); c.url = url; return c
+    }
+    private func actionItem(type: String) -> JasonComponent {
+        let c = JasonComponent()
+        let action = JasonAction(); action.type = type
+        c.action = action
+        return c
     }
     private func makeDoc(tabs: [JasonComponent]) -> JasonDocument {
         var body = JasonBody()
@@ -478,6 +552,14 @@ final class TabNavigationCoordinatorTests: XCTestCase {
         var href = JasonHref(); href.url = "https://example.com/w"; href.view = "web"
         webItem.href = href
         c.bootstrapDidLoad(doc: makeDoc(tabs: [webItem]))
+        guard case .single = c.mode else {
+            return XCTFail("expected .single when no document tab exists")
+        }
+    }
+
+    func testPromotionStaysInSingleWhenOnlyActionTabsExist() {
+        let c = JasonetteNavigationCoordinator(entryURL: URL(string: "https://example.com/entry")!)
+        c.bootstrapDidLoad(doc: makeDoc(tabs: [actionItem(type: "$reload")]))
         guard case .single = c.mode else {
             return XCTFail("expected .single when no document tab exists")
         }

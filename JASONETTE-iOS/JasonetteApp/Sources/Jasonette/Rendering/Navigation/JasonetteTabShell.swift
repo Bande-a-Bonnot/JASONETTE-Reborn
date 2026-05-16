@@ -27,6 +27,7 @@ struct JasonetteTabShell: View {
     /// the rest of the scene's lifetime — that's what preserves its VM,
     /// nav path, scroll position, and modal slot across later re-selections.
     @State private var mounted: Set<TabID> = []
+    @StateObject private var actionRegistry = TabActionRegistry()
 
     var body: some View {
         ZStack {
@@ -52,6 +53,9 @@ struct JasonetteTabShell: View {
         .environment(\.jasonetteIsInsideTabShell, true)
         .environment(\.jasonetteSwitchTab) { url in
             shell.switchToURLIfMatches(url)
+        }
+        .environment(\.jasonetteRegisterTabActionHandler) { tabID, handler in
+            actionRegistry.register(tabID, handler: handler)
         }
         #if os(iOS)
         .sheet(item: $safariURL) { item in
@@ -103,6 +107,7 @@ struct JasonetteTabShell: View {
                     preloadedDoc: shouldPreload ? bootstrapDoc : nil,
                     preloadedDocumentURL: shouldPreload ? bootstrapDocumentURL : nil
                 )
+                .environment(\.jasonetteCurrentTabID, tab.id)
             } else {
                 Color.clear
             }
@@ -125,6 +130,12 @@ struct JasonetteTabShell: View {
             #endif
         case .app(let url):
             openURL(url)
+        case .action(let action):
+            if !actionRegistry.dispatch(action, selectedTabID: shell.selectedTabID) {
+                #if DEBUG
+                print("[Jasonette] Action tab tapped before selected tab action handler registered")
+                #endif
+            }
         }
     }
 }

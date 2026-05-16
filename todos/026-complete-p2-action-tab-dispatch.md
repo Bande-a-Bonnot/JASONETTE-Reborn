@@ -1,5 +1,5 @@
 ---
-status: ready
+status: complete
 priority: p2
 issue_id: "026"
 tags: [ios, tabs, actions, code-review]
@@ -7,6 +7,8 @@ dependencies: []
 ---
 
 # Dispatch actions for action-only tab items
+
+Completed: 2026-05-16
 
 ## Problem Statement
 
@@ -59,12 +61,29 @@ tapped. CodeRabbit and Copilot both flagged it as a missing feature.
 
 ## Acceptance Criteria
 
-- [ ] Tab items with `action` (and no `href`/`url`) are constructed
+- [x] Tab items with `action` (and no `href`/`url`) are constructed
       and rendered
-- [ ] Tapping an action tab invokes the declared action
-- [ ] The active tab's VM state is correctly in scope when the action
+- [x] Tapping an action tab invokes the declared action
+- [x] The active tab's VM state is correctly in scope when the action
       reads `{{$jason}}` etc.
-- [ ] Unknown action types are non-fatal
+- [x] Unknown action types are non-fatal
+
+## Completion Notes
+
+- `TabDescriptor.Target.action(JasonAction)` is restored and action-only
+  footer-tab items now construct descriptors instead of being rejected.
+- `JasonetteTabShell` owns a shell-scoped `TabActionRegistry`; mounted
+  `JasonetteView` instances register their active VM action handler via
+  environment using the current tab ID.
+- Tapping an action tab forwards the action to the currently-selected tab's
+  active VM, so `$reload`, `$href`/`transition:"switch"`, `$set`, and unknown
+  actions follow the same `ActionDispatcher` behavior as in-document actions.
+- Tabs with only action/web/app targets still do not promote to shell mode,
+  because there is no selectable document content to mount.
+- Coverage added in `TabNavigationCoordinatorTests` for action-only descriptor
+  construction, action tabs alongside selectable tabs, no-selectable fallback,
+  selected-tab dispatch, missing-handler no-op, and selected VM state scope.
+  Full iOS suite: 436 tests passing.
 
 ## Notes
 

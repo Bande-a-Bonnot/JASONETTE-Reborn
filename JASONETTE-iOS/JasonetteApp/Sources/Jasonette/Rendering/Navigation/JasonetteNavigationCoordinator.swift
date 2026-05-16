@@ -163,11 +163,9 @@ extension TabDescriptor {
             style: inheritedStyle?.merging(item.style ?? JasonStyle()) ?? item.style
         )
 
-        // Action-only tabs are not yet dispatched from the shell — tapping
-        // them would be a silent no-op in release. Reject at construction
-        // until action dispatch is plumbed through (see todos/026).
-        if item.action != nil, item.href == nil, item.url == nil {
-            return nil
+        if let action = item.action, item.href == nil, item.url == nil {
+            self.init(target: .action(action), label: label)
+            return
         }
 
         let hrefView = item.href?.view
