@@ -57,6 +57,24 @@ final class TabShellState: ObservableObject {
         return true
     }
 
+    /// Shell-local fast path for action-only tabs whose action is `$href` to
+    /// another declared document tab. Without this interception, forwarding the
+    /// action into the selected tab's normal VM dispatcher would treat a plain
+    /// `$href` as `.push`, putting tab destinations on the selected tab's nav
+    /// stack. If the URL matches a tab, switch selection and report handled;
+    /// otherwise callers should fall back to normal action dispatch.
+    @discardableResult
+    func switchIfActionHrefTargetsTab(_ action: JasonAction, baseURL: URL?) -> Bool {
+        guard action.type == "$href" else { return false }
+        let options = action.options ?? [:]
+        guard options["view"]?.string != "web",
+              options["view"]?.string != "app",
+              let urlString = options["url"]?.string,
+              let url = JasonURL.resolve(urlString, against: baseURL, allowedSchemes: DocumentLoader.allowedSchemes)
+        else { return false }
+        return switchToURLIfMatches(url)
+    }
+
     /// SceneStorage restore path. If the stored canonical key still matches a
     /// currently-selectable tab, flip selection and return true. Returns
     /// false when the stored key is empty, unknown (tab bar changed between

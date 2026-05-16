@@ -8,7 +8,7 @@ Last updated: 2026-05-16
 
 ### Test Suite
 
-- iOS: 436 tests, 0 failures (verified 2026-05-16 after action-only footer tab dispatch; previous footer tab-bar style/icon parity and tab navigation rewrite are on `main`)
+- iOS: 439 tests, 0 failures (verified 2026-05-16 after action-tab `$href` shell switch-vs-push follow-up; previous footer tab-bar style/icon parity and tab navigation rewrite are on `main`)
 - Android CI: `pull_request` Android job ran/passed on PR #21, non-Android-change PR #22, and follow-up PR #23; Kotlin JSON primitive accessor compile failures fixed by squash `92e65dd`; oversized plain-integer JSON parsing aligned between Android test helper and production renderer in `c3f4f8f`
 - Run iOS: `cd JASONETTE-iOS/JasonetteApp && swift test`
 - Build iOS: `swift build` (<1s)
@@ -67,7 +67,7 @@ Map pins/region, secure textfield (`SecureField`), HTML component (`WKWebView`),
 
 Relative URL resolution now uses the final loaded document URL across shell-mounted footer tabs and the main renderer/action paths. `DocumentLoader.loadWithMetadata` captures the final URL; `TabDescriptor.init(from:baseURL:)`, `JasonetteViewModel.handleHref`, `$network.request`, body image/button components, footer input buttons, and the legacy `FooterTabItemView` icon path resolve authored relative references via `JasonURL.resolve` before navigation/network scheme allowlist checks. `$network.request` response shape preservation is fixed on `main` (PR #17): object, array, string, number, and null JSON response bodies are stored under `$response`.
 
-Tab navigation rewrite is on `main` (PR #20, plan at `docs/plans/tab-navigation-overhaul/plan.md`). Shell owns selection; each tab is an opaque `JasonetteNavigationView` mounted lazily on first selection and kept alive after. Action-only footer tabs now dispatch into the currently-selected tab's active VM through `TabActionRegistry` + environment registration. See solution doc `architecture-patterns/swiftui-tab-shell-opaque-scope-navigation.md`.
+Tab navigation rewrite is on `main` (PR #20, plan at `docs/plans/tab-navigation-overhaul/plan.md`). Shell owns selection; each tab is an opaque `JasonetteNavigationView` mounted lazily on first selection and kept alive after. Action-only footer tabs dispatch through `TabActionRegistry` + environment registration; `$href` action tabs that target an existing document tab are intercepted by the shell and switch selection instead of pushing onto the active tab's nav stack. See solution doc `architecture-patterns/swiftui-tab-shell-opaque-scope-navigation.md`.
 
 ### Open Todos
 
@@ -90,7 +90,7 @@ P3:
 
 Completed this session:
 - `todos/025` — footer tab-bar style/icon parity: shell tab cells now consume inherited/inline tab style, show selected tint + indicator, render `system://` SF Symbols without `AsyncImage`, and keep network-image failure placeholders.
-- `todos/026` — action-tab dispatch: action-only footer tabs now construct/render, and taps forward to the selected tab's active `JasonetteViewModel` action dispatcher; no-selectable action-only footers remain single mode.
+- `todos/026` — action-tab dispatch: action-only footer tabs now construct/render, taps forward to the selected tab's active `JasonetteViewModel` action dispatcher, and `$href` action tabs targeting existing tabs switch instead of push; no-selectable action-only footers remain single mode.
 
 Nice-to-have (P3):
 - `todos/031` — investigate ZStack nav-title collision (gemini r5/6/7/8 concern)

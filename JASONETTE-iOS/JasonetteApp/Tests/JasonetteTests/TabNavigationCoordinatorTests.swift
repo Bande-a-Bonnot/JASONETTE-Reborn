@@ -192,6 +192,44 @@ final class TabNavigationCoordinatorTests: XCTestCase {
         XCTAssertEqual(shell.selectedTabID, a.id)
     }
 
+    func testActionHrefToDeclaredTabSwitchesInsteadOfPushing() {
+        let a = TabEntry(descriptor: doc("https://example.com/a.json"))
+        let b = TabEntry(descriptor: doc("https://example.com/b.json"))
+        let shell = TabShellState(tabs: [a, b], initialSelection: a.id)
+        let action = JasonAction()
+        action.type = "$href"
+        action.options = ["url": AnyCodable("b.json")]
+
+        XCTAssertTrue(shell.switchIfActionHrefTargetsTab(action, baseURL: URL(string: "https://example.com/index.json")!))
+        XCTAssertEqual(shell.selectedTabID, b.id)
+    }
+
+    func testActionHrefToUnknownTargetFallsBackToNormalDispatch() {
+        let a = TabEntry(descriptor: doc("https://example.com/a.json"))
+        let shell = TabShellState(tabs: [a], initialSelection: a.id)
+        let action = JasonAction()
+        action.type = "$href"
+        action.options = ["url": AnyCodable("missing.json")]
+
+        XCTAssertFalse(shell.switchIfActionHrefTargetsTab(action, baseURL: URL(string: "https://example.com/index.json")!))
+        XCTAssertEqual(shell.selectedTabID, a.id)
+    }
+
+    func testActionHrefWithWebViewDoesNotSwitchEvenIfURLMatchesTab() {
+        let a = TabEntry(descriptor: doc("https://example.com/a.json"))
+        let b = TabEntry(descriptor: doc("https://example.com/b.json"))
+        let shell = TabShellState(tabs: [a, b], initialSelection: a.id)
+        let action = JasonAction()
+        action.type = "$href"
+        action.options = [
+            "url": AnyCodable("https://example.com/b.json"),
+            "view": AnyCodable("web"),
+        ]
+
+        XCTAssertFalse(shell.switchIfActionHrefTargetsTab(action, baseURL: URL(string: "https://example.com/index.json")!))
+        XCTAssertEqual(shell.selectedTabID, a.id)
+    }
+
     // MARK: Coordinator bootstrap promotion
 
     func testCoordinatorStartsInSingleMode() {

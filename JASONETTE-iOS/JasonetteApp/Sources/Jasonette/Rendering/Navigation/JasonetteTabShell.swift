@@ -131,6 +131,9 @@ struct JasonetteTabShell: View {
         case .app(let url):
             openURL(url)
         case .action(let action):
+            if shell.switchIfActionHrefTargetsTab(action, baseURL: bootstrapDocumentURL) {
+                return
+            }
             if !actionRegistry.dispatch(action, selectedTabID: shell.selectedTabID) {
                 #if DEBUG
                 print("[Jasonette] Action tab tapped before selected tab action handler registered")

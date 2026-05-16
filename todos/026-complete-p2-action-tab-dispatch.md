@@ -75,15 +75,16 @@ tapped. CodeRabbit and Copilot both flagged it as a missing feature.
 - `JasonetteTabShell` owns a shell-scoped `TabActionRegistry`; mounted
   `JasonetteView` instances register their active VM action handler via
   environment using the current tab ID.
-- Tapping an action tab forwards the action to the currently-selected tab's
-  active VM, so `$reload`, `$href`/`transition:"switch"`, `$set`, and unknown
-  actions follow the same `ActionDispatcher` behavior as in-document actions.
+- Tapping an action tab first shell-intercepts `$href` actions that target a
+  declared document tab and switches selection instead of pushing that tab URL
+  onto the selected tab's nav stack; non-matching `$href`s and other actions
+  forward to the currently-selected tab's active VM.
 - Tabs with only action/web/app targets still do not promote to shell mode,
   because there is no selectable document content to mount.
 - Coverage added in `TabNavigationCoordinatorTests` for action-only descriptor
   construction, action tabs alongside selectable tabs, no-selectable fallback,
-  selected-tab dispatch, missing-handler no-op, and selected VM state scope.
-  Full iOS suite: 436 tests passing.
+  selected-tab dispatch, missing-handler no-op, selected VM state scope, and
+  `$href` action-tab switch-vs-push behavior. Full iOS suite: 439 tests passing.
 
 ## Notes
 
