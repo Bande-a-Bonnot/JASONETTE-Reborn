@@ -71,7 +71,12 @@ Tab navigation rewrite is on `main` (PR #20, plan at `docs/plans/tab-navigation-
 
 ### Open Todos
 
-P2: none currently ready.
+P1:
+- `todos/039` — object-form `items` template directives render blank Jasonpedia lists
+
+P2:
+- `todos/040` — secure textfield renders/exposes plain text
+- `todos/041` — HTML component renders `[Unknown: html]`
 
 P3:
 - `todos/015` — sectionView code duplication (defer until 3rd section type)
@@ -87,11 +92,14 @@ P3:
 - `todos/036` — non-tab image URL scheme policy (PR #24 follow-up)
 - `todos/037` — ViewModel documentURL redirect coverage
 - `todos/038` — footer-tab app-scheme baseURL coverage
+- `todos/042` — icon-only footer tab accessibility/selected-state clarity
+- `todos/043` — debug launch URL override for simulator QA
+- `todos/044` — investigate device-specific simulator build hang during asset catalog processing
 
 Completed this session:
 - `todos/025` — footer tab-bar style/icon parity: shell tab cells now consume inherited/inline tab style, show selected tint + indicator, render `system://` SF Symbols without `AsyncImage`, and keep network-image failure placeholders.
 - `todos/026` — action-tab dispatch: action-only footer tabs now construct/render, taps forward to the selected tab's active `JasonetteViewModel` action dispatcher, and `$href` action tabs targeting existing tabs switch instead of push; no-selectable action-only footers remain single mode.
-- iOS simulator QA notes added at `docs/qa/2026-05-18-ios-simulator-complete-qa.md`. `agent-device` 0.14.9 works for Simulator driving (`npx --yes agent-device@latest ...`). Key findings: original Jasonette object-form `items` templates render blank lists, secure textfield exposes plain text, HTML component is unknown, icon-only footer tabs have poor accessibility/unclear selected state.
+- iOS simulator QA notes added at `docs/qa/2026-05-18-ios-simulator-complete-qa.md`; process notes added at `docs/qa/README.md`; compounded learnings added at `docs/solutions/best-practices/agent-device-ios-simulator-exploratory-qa.md`. `agent-device` 0.14.9 works for Simulator driving (`npx --yes agent-device@latest ...`). Key findings are tracked as todos/039-044.
 
 Nice-to-have (P3):
 - `todos/031` — investigate ZStack nav-title collision (gemini r5/6/7/8 concern)
@@ -130,7 +138,7 @@ Do not call normal CodeRabbit/Gemini/Codex review "adversarial". Foundry red/gre
 
 ---
 
-## Solution Docs (44 total, category dirs plus legacy root docs)
+## Solution Docs (45 total, category dirs plus legacy root docs)
 
 Search `docs/solutions/` by YAML frontmatter: `module`, `tags`, `problem_type`, `category`.
 
@@ -144,6 +152,7 @@ Key docs for this codebase:
 - `best-practices/url-identity-semantics-belong-at-the-url-layer.md` — URL normalization belongs at the URL layer, not at each call site
 - `best-practices/github-review-decision-stickiness-dismiss-stale-reviews.md` — `reviewDecision` only transitions on formal reviews; dismiss stale CHANGES_REQUESTED via API
 - `best-practices/loop-mode-pr-babysit-discipline.md` — Monitor + ScheduleWakeup discipline for long-running PR-babysit sessions
+- `best-practices/agent-device-ios-simulator-exploratory-qa.md` — `agent-device`/XCTest-runner workflow for agent-driven Simulator QA plus session learnings
 - `best-practices/deferred-feedback-todo-four-part-structure.md` — Context + Ask + Why-not-now + Locked-in tests
 - `workflow-issues/foundry-adversarial-red-green-information-barrier.md` — Foundry red/green = red tests from DoD, green implementation from How, PASS/FAIL-only mediation
 - `documentation-gaps/todo-completion-notes-ci-evidence.md` — handoff/todo CI claims need precise PR/run/event evidence
