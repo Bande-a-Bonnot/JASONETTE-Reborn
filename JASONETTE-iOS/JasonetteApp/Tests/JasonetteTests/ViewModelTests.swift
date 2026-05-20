@@ -325,6 +325,21 @@ final class ViewModelTests: XCTestCase {
         ])
     }
 
+    func testJasonpediaTextfieldSecureStyleSelectsSecureRendererPath() async throws {
+        let vm = JasonetteViewModel(document: try loadJasonpediaDocument("Jasonpedia/view/component/textfield/index.json"))
+        await vm.load()
+
+        XCTAssertEqual(vm.loadState, .loaded)
+        let items = try XCTUnwrap(vm.renderedRoot?.body?.sections?.first?.items)
+        XCTAssertGreaterThan(items.count, 1)
+        let secureField = try XCTUnwrap(items[1].components?.first)
+
+        XCTAssertEqual(secureField.type, "textfield")
+        XCTAssertEqual(secureField.name, "secure")
+        XCTAssertEqual(secureField.style?.secure?.string, "true")
+        XCTAssertEqual(TextFieldComponent.fieldKind(componentType: secureField.type, style: secureField.style), .secure)
+    }
+
     func testRenderFallsBackToRawDocumentWhenTemplateInvalid() async {
         // A document with templates that render to invalid JSON falls back gracefully
         let doc = makeDocument([

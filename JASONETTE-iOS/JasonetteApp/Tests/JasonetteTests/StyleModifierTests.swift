@@ -275,6 +275,33 @@ final class StyleModifierTests: XCTestCase {
         XCTAssertNil(style.align)
     }
 
+    // MARK: - Secure text entry decoding
+
+    func testSecureTrueStringDecodesAsSecureTextEntry() {
+        let style = decodeStyle(["secure": "true"])
+        XCTAssertEqual(style.secure?.string, "true")
+        XCTAssertTrue(style.isSecureTextEntry)
+    }
+
+    func testSecureFalseStringDecodesAsNonSecureTextEntry() {
+        let style = decodeStyle(["secure": "false"])
+        XCTAssertFalse(style.isSecureTextEntry)
+    }
+
+    func testSecureMergingInlineOverridesClass() {
+        let base = JasonStyle(secure: AnyCodable(false))
+        let overlay = JasonStyle(secure: AnyCodable("true"))
+        let merged = base.merging(overlay)
+        XCTAssertTrue(merged.isSecureTextEntry)
+    }
+
+    func testSecureMergingNilDoesNotOverride() {
+        let base = JasonStyle(secure: AnyCodable(true))
+        let overlay = JasonStyle()
+        let merged = base.merging(overlay)
+        XCTAssertTrue(merged.isSecureTextEntry)
+    }
+
     // MARK: - Regression: no new properties unchanged behavior
 
     func testNoNewPropertiesIdenticalBehavior() {

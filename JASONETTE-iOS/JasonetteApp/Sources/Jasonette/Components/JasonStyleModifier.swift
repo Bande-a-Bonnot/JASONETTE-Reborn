@@ -188,8 +188,23 @@ extension JasonStyle {
             left: other.left ?? self.left,
             bottom: other.bottom ?? self.bottom,
             right: other.right ?? self.right,
-            opacity: other.opacity ?? self.opacity
+            opacity: other.opacity ?? self.opacity,
+            secure: other.secure ?? self.secure
         )
+    }
+
+    var isSecureTextEntry: Bool {
+        guard let value = secure?.unwrapped else { return false }
+        if let bool = value as? Bool { return bool }
+        if let string = value as? String {
+            switch string.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
+            case "true", "yes", "1": return true
+            default: return false
+            }
+        }
+        if let int = value as? Int { return int != 0 }
+        if let double = value as? Double { return double != 0 }
+        return false
     }
 }
 

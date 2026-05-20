@@ -8,7 +8,7 @@ Last updated: 2026-05-20
 
 ### Test Suite
 
-- iOS: 444 tests, 0 failures (verified 2026-05-20 after object-form `{{#each}}` item-field compatibility fix; previous simulator QA after action-tab `$href` shell switch-vs-push follow-up was 2026-05-18)
+- iOS: 452 tests, 0 failures (verified 2026-05-20 after secure textfield renderer-path fix; previous object-form `{{#each}}` item-field compatibility fix brought suite to 444)
 - Android CI: `pull_request` Android job ran/passed on PR #21, non-Android-change PR #22, and follow-up PR #23; Kotlin JSON primitive accessor compile failures fixed by squash `92e65dd`; oversized plain-integer JSON parsing aligned between Android test helper and production renderer in `c3f4f8f`
 - Run iOS: `cd JASONETTE-iOS/JasonetteApp && swift test`
 - Build iOS: `swift build` (<1s)
@@ -75,7 +75,7 @@ P1:
 - `todos/039` — object-form `items` template directives render blank Jasonpedia lists (code fix + local Jasonpedia fixture tests added 2026-05-20; simulator screenshot confirmation still pending)
 
 P2:
-- `todos/040` — secure textfield renders/exposes plain text
+- `todos/040` — secure textfield renders/exposes plain text (code fix + structural tests added 2026-05-20; simulator screenshot/accessibility confirmation still pending)
 - `todos/041` — HTML component renders `[Unknown: html]`
 
 P3:
@@ -97,6 +97,7 @@ P3:
 - `todos/044` — investigate device-specific simulator build hang during asset catalog processing
 
 Completed this session:
+- `todos/040` implementation — `JasonStyle.secure` now decodes/merges and `TextFieldComponent` routes `style.secure` truthy values plus legacy `type: "secure"` through SwiftUI `SecureField` while preserving `StateManager` binding and initial-value behavior; added ComponentDispatch, StyleModifier, and Jasonpedia textfield fixture tests. Simulator screenshot/accessibility QA has not been rerun yet. Also wrote `~/jasonette-ios-simulator-qa-findings-2026-05-18.md` summarizing the QA methodology, tool commands, prompts, and findings.
 - `todos/039` implementation — `#each` now merges object item fields into the per-item template context so original Jasonette direct identifiers like `{{title}}`/`{{url}}` render while preserving `{{$jason}}`, `this`, `$index`, and `$root`; added TemplateEngine regression coverage for object-form `items`, nested components, non-array empty output, plus ViewModel tests against `Jasonpedia/template/index.json` and `Jasonpedia/action/network/index.json`. Simulator screenshot QA has not been rerun yet.
 - `todos/025` — footer tab-bar style/icon parity: shell tab cells now consume inherited/inline tab style, show selected tint + indicator, render `system://` SF Symbols without `AsyncImage`, and keep network-image failure placeholders.
 - `todos/026` — action-tab dispatch: action-only footer tabs now construct/render, taps forward to the selected tab's active `JasonetteViewModel` action dispatcher, and `$href` action tabs targeting existing tabs switch instead of push; no-selectable action-only footers remain single mode.

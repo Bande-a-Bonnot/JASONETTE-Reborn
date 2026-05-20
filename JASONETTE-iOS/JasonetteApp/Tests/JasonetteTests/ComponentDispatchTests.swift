@@ -54,6 +54,39 @@ final class ComponentDispatchTests: XCTestCase {
         XCTAssertEqual(component.placeholder, "Enter email")
         XCTAssertEqual(component.keyboard, "email")
         XCTAssertEqual(component.value?.string, "test@example.com")
+        XCTAssertEqual(TextFieldComponent.fieldKind(componentType: component.type, style: component.style), .plain)
+    }
+
+    func testTextFieldStyleSecureStringChoosesSecureFieldKind() {
+        let component = decodeComponent([
+            "type": "textfield",
+            "name": "password",
+            "placeholder": "Secure field",
+            "style": ["secure": "true"]
+        ])
+        XCTAssertEqual(component.style?.secure?.string, "true")
+        XCTAssertTrue(component.style?.isSecureTextEntry == true)
+        XCTAssertEqual(TextFieldComponent.fieldKind(componentType: component.type, style: component.style), .secure)
+    }
+
+    func testTextFieldStyleSecureBoolChoosesSecureFieldKind() {
+        let component = decodeComponent([
+            "type": "textfield",
+            "name": "password",
+            "style": ["secure": true]
+        ])
+        XCTAssertEqual(component.style?.secure?.bool, true)
+        XCTAssertEqual(TextFieldComponent.fieldKind(componentType: component.type, style: component.style), .secure)
+    }
+
+    func testSecureComponentTypeChoosesSecureFieldKind() {
+        let component = decodeComponent([
+            "type": "secure",
+            "name": "password",
+            "placeholder": "Enter password"
+        ])
+        XCTAssertEqual(component.type, "secure")
+        XCTAssertEqual(TextFieldComponent.fieldKind(componentType: component.type, style: component.style), .secure)
     }
 
     // MARK: - TextArea

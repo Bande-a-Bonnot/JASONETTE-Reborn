@@ -55,12 +55,13 @@ public struct ComponentView: View {
             ImageComponent(url: component.imageURL, style: component.style, documentURL: documentURL)
         case "button":
             ButtonComponent(text: component.text, url: component.url, documentURL: documentURL)
-        case "textfield":
+        case "textfield", "secure":
             TextFieldComponent(
                 name: component.name ?? "",
                 placeholder: component.placeholder ?? "",
                 keyboard: component.keyboard,
-                initialValue: component.value?.string
+                initialValue: component.value?.string,
+                kind: TextFieldComponent.fieldKind(componentType: component.type, style: component.style)
             )
         case "textarea":
             TextAreaComponent(
