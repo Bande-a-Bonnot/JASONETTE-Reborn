@@ -72,10 +72,10 @@ Tab navigation rewrite is on `main` (PR #20, plan at `docs/plans/tab-navigation-
 ### Open Todos
 
 P1:
-- `todos/039` — object-form `items` template directives render blank Jasonpedia lists (code fix + local Jasonpedia fixture tests added 2026-05-20; simulator screenshot confirmation still pending)
+- `todos/039` — object-form `items` template directives render blank Jasonpedia lists (code fix + local Jasonpedia fixture tests added 2026-05-20; simulator screenshots confirmed Template and `$network` lists render; see `docs/qa/2026-05-20-ios-simulator-post-fix-qa.md`)
 
 P2:
-- `todos/040` — secure textfield renders/exposes plain text (code fix + structural tests added 2026-05-20; simulator screenshot/accessibility confirmation still pending)
+- `todos/040` — secure textfield renders/exposes plain text (code fix + structural tests added 2026-05-20; fixture load screenshot captured, but typed-secret simulator accessibility confirmation still pending because `agent-device` runner timed out during asset-catalog processing)
 - `todos/041` — HTML component renders `[Unknown: html]`
 
 P3:
@@ -97,8 +97,8 @@ P3:
 - `todos/044` — investigate device-specific simulator build hang during asset catalog processing
 
 Completed this session:
-- `todos/040` implementation — `JasonStyle.secure` now decodes/merges and `TextFieldComponent` routes `style.secure` truthy values plus legacy `type: "secure"` through SwiftUI `SecureField` while preserving `StateManager` binding and initial-value behavior; added ComponentDispatch, StyleModifier, and Jasonpedia textfield fixture tests. Simulator screenshot/accessibility QA has not been rerun yet. Also wrote `~/jasonette-ios-simulator-qa-findings-2026-05-18.md` summarizing the QA methodology, tool commands, prompts, and findings.
-- `todos/039` implementation — `#each` now merges object item fields into the per-item template context so original Jasonette direct identifiers like `{{title}}`/`{{url}}` render while preserving `{{$jason}}`, `this`, `$index`, and `$root`; added TemplateEngine regression coverage for object-form `items`, nested components, non-array empty output, plus ViewModel tests against `Jasonpedia/template/index.json` and `Jasonpedia/action/network/index.json`. Simulator screenshot QA has not been rerun yet.
+- `todos/040` implementation — `JasonStyle.secure` now decodes/merges and `TextFieldComponent` routes `style.secure` truthy values plus legacy `type: "secure"` through SwiftUI `SecureField` while preserving `StateManager` binding and initial-value behavior; added ComponentDispatch, StyleModifier, and Jasonpedia textfield fixture tests. Simulator direct-fixture screenshot confirms the textfield page loads, but typed-secret accessibility confirmation remains pending because `agent-device` runner setup timed out during asset-catalog processing. Also wrote `~/jasonette-ios-simulator-qa-findings-2026-05-18.md` summarizing the QA methodology, tool commands, prompts, and findings.
+- `todos/039` implementation — `#each` now merges object item fields into the per-item template context so original Jasonette direct identifiers like `{{title}}`/`{{url}}` render while preserving `{{$jason}}`, `this`, `$index`, and `$root`; added TemplateEngine regression coverage for object-form `items`, nested components, non-array empty output, plus ViewModel tests against `Jasonpedia/template/index.json` and `Jasonpedia/action/network/index.json`. Simulator direct-fixture screenshots confirm the Template and `$network` blank-list regressions are gone; see `docs/qa/2026-05-20-ios-simulator-post-fix-qa.md`.
 - `todos/025` — footer tab-bar style/icon parity: shell tab cells now consume inherited/inline tab style, show selected tint + indicator, render `system://` SF Symbols without `AsyncImage`, and keep network-image failure placeholders.
 - `todos/026` — action-tab dispatch: action-only footer tabs now construct/render, taps forward to the selected tab's active `JasonetteViewModel` action dispatcher, and `$href` action tabs targeting existing tabs switch instead of push; no-selectable action-only footers remain single mode.
 - iOS simulator QA notes added at `docs/qa/2026-05-18-ios-simulator-complete-qa.md`; process notes added at `docs/qa/README.md`; compounded learnings added at `docs/solutions/best-practices/agent-device-ios-simulator-exploratory-qa.md`. `agent-device` 0.14.9 works for Simulator driving (`npx --yes agent-device@latest ...`). Key findings are tracked as todos/039-044.
