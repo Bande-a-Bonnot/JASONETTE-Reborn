@@ -1,6 +1,6 @@
 # Agent Handoff Document
 
-Last updated: 2026-05-16
+Last updated: 2026-05-20
 
 **Update this file before context compaction and at the end of significant sessions.**
 
@@ -8,7 +8,7 @@ Last updated: 2026-05-16
 
 ### Test Suite
 
-- iOS: 439 tests, 0 failures (verified 2026-05-18 during simulator QA after action-tab `$href` shell switch-vs-push follow-up; previous footer tab-bar style/icon parity and tab navigation rewrite are on `main`)
+- iOS: 444 tests, 0 failures (verified 2026-05-20 after object-form `{{#each}}` item-field compatibility fix; previous simulator QA after action-tab `$href` shell switch-vs-push follow-up was 2026-05-18)
 - Android CI: `pull_request` Android job ran/passed on PR #21, non-Android-change PR #22, and follow-up PR #23; Kotlin JSON primitive accessor compile failures fixed by squash `92e65dd`; oversized plain-integer JSON parsing aligned between Android test helper and production renderer in `c3f4f8f`
 - Run iOS: `cd JASONETTE-iOS/JasonetteApp && swift test`
 - Build iOS: `swift build` (<1s)
@@ -72,7 +72,7 @@ Tab navigation rewrite is on `main` (PR #20, plan at `docs/plans/tab-navigation-
 ### Open Todos
 
 P1:
-- `todos/039` — object-form `items` template directives render blank Jasonpedia lists
+- `todos/039` — object-form `items` template directives render blank Jasonpedia lists (code fix + local Jasonpedia fixture tests added 2026-05-20; simulator screenshot confirmation still pending)
 
 P2:
 - `todos/040` — secure textfield renders/exposes plain text
@@ -97,6 +97,7 @@ P3:
 - `todos/044` — investigate device-specific simulator build hang during asset catalog processing
 
 Completed this session:
+- `todos/039` implementation — `#each` now merges object item fields into the per-item template context so original Jasonette direct identifiers like `{{title}}`/`{{url}}` render while preserving `{{$jason}}`, `this`, `$index`, and `$root`; added TemplateEngine regression coverage for object-form `items`, nested components, non-array empty output, plus ViewModel tests against `Jasonpedia/template/index.json` and `Jasonpedia/action/network/index.json`. Simulator screenshot QA has not been rerun yet.
 - `todos/025` — footer tab-bar style/icon parity: shell tab cells now consume inherited/inline tab style, show selected tint + indicator, render `system://` SF Symbols without `AsyncImage`, and keep network-image failure placeholders.
 - `todos/026` — action-tab dispatch: action-only footer tabs now construct/render, taps forward to the selected tab's active `JasonetteViewModel` action dispatcher, and `$href` action tabs targeting existing tabs switch instead of push; no-selectable action-only footers remain single mode.
 - iOS simulator QA notes added at `docs/qa/2026-05-18-ios-simulator-complete-qa.md`; process notes added at `docs/qa/README.md`; compounded learnings added at `docs/solutions/best-practices/agent-device-ios-simulator-exploratory-qa.md`. `agent-device` 0.14.9 works for Simulator driving (`npx --yes agent-device@latest ...`). Key findings are tracked as todos/039-044.

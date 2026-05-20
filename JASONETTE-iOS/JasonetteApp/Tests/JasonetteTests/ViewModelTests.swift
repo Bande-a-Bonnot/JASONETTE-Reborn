@@ -11,6 +11,18 @@ final class ViewModelTests: XCTestCase {
         return try! JSONDecoder().decode(JasonDocument.self, from: data)
     }
 
+    private func loadJasonpediaDocument(_ relativePath: String) throws -> JasonDocument {
+        let testDir = URL(fileURLWithPath: #file).deletingLastPathComponent()
+        let repoRoot = testDir
+            .deletingLastPathComponent() // JasonetteTests/ -> Tests/
+            .deletingLastPathComponent() // Tests/ -> JasonetteApp/
+            .deletingLastPathComponent() // JasonetteApp/ -> JASONETTE-iOS/
+            .deletingLastPathComponent() // JASONETTE-iOS/ -> JASONETTE-Reborn/
+        let url = repoRoot.appendingPathComponent(relativePath)
+        let data = try Data(contentsOf: url)
+        return try JSONDecoder().decode(JasonDocument.self, from: data)
+    }
+
     private func simpleDocument(title: String = "Test", actions: [String: Any]? = nil) -> JasonDocument {
         var head: [String: Any] = ["title": title]
         if let actions { head["actions"] = actions }
@@ -270,6 +282,47 @@ final class ViewModelTests: XCTestCase {
         await vm.load()
         XCTAssertEqual(vm.loadState, .loaded)
         XCTAssertNotNil(vm.renderedRoot)
+    }
+
+    func testJasonpediaTemplateIndexObjectFormItemsRenderEntries() async throws {
+        let vm = JasonetteViewModel(document: try loadJasonpediaDocument("Jasonpedia/template/index.json"))
+        await vm.load()
+
+        XCTAssertEqual(vm.loadState, .loaded)
+        let sections = try XCTUnwrap(vm.renderedRoot?.body?.sections)
+        XCTAssertGreaterThan(sections.count, 2)
+        let jsonItems = try XCTUnwrap(sections[1].items)
+        let nonJSONItems = try XCTUnwrap(sections[2].items)
+
+        XCTAssertEqual(jsonItems.map { $0.components?.first?.text }, [
+            "Inline Data",
+            "Dynamic Data",
+            "#each",
+            "#if | #elseif | #else",
+            "Use Javascript expressions",
+            "Javascript function example",
+        ])
+        XCTAssertEqual(nonJSONItems.map { $0.components?.first?.text }, ["HTML", "RSS", "CSV"])
+        XCTAssertEqual(jsonItems.first?.href?.url, "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/template/inline.json")
+    }
+
+    func testJasonpediaNetworkIndexObjectFormItemsRenderEntries() async throws {
+        let vm = JasonetteViewModel(document: try loadJasonpediaDocument("Jasonpedia/action/network/index.json"))
+        await vm.load()
+
+        XCTAssertEqual(vm.loadState, .loaded)
+        let items = try XCTUnwrap(vm.renderedRoot?.body?.sections?.first?.items)
+
+        XCTAssertEqual(items.map { $0.components?.first?.text }, [
+            "imagejason",
+            "eliza",
+            "Microblog with user account",
+        ])
+        XCTAssertEqual(items.map { $0.href?.url }, [
+            "https://jsonplaceholder.typicode.com",
+            "https://jsonplaceholder.typicode.com",
+            "https://jsonplaceholder.typicode.com/posts",
+        ])
     }
 
     func testRenderFallsBackToRawDocumentWhenTemplateInvalid() async {

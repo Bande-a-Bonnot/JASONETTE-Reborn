@@ -96,6 +96,86 @@ final class TemplateEngineTests: XCTestCase {
         XCTAssertEqual(arr[1]["text"] as? String, "Bob")
     }
 
+    func testEachWithObjectItemsExposesFieldsAsDirectIdentifiers() {
+        let template: [[String: Any]] = [
+            [
+                "{{#each users}}": [
+                    "type": "label",
+                    "text": "{{name}}"
+                ]
+            ]
+        ]
+        let users: [[String: Any]] = [
+            ["name": "Alice"],
+            ["name": "Bob"]
+        ]
+        let result = TemplateEngine.render(template, context: ["users": users])
+        guard let arr = result as? [[String: Any]] else {
+            XCTFail("Expected array")
+            return
+        }
+        XCTAssertEqual(arr[0]["text"] as? String, "Alice")
+        XCTAssertEqual(arr[1]["text"] as? String, "Bob")
+    }
+
+    func testObjectFormItemsDirectiveRendersArrayAndNestedComponents() throws {
+        let template: [String: Any] = [
+            "sections": [
+                [
+                    "items": [
+                        "{{#each entries}}": [
+                            "type": "vertical",
+                            "href": ["url": "{{url}}"],
+                            "components": [
+                                ["type": "label", "text": "{{title}}"],
+                                ["type": "label", "text": "{{description}}"]
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ]
+        let entries: [[String: Any]] = [
+            ["title": "Inline Data", "description": "Render inline data", "url": "https://example.com/inline.json"],
+            ["title": "#each", "description": "Loop through arrays", "url": "https://example.com/each.json"]
+        ]
+
+        let result = TemplateEngine.render(template, context: ["entries": entries])
+        let data = try JSONSerialization.data(withJSONObject: result)
+        let body = try JSONDecoder().decode(JasonBody.self, from: data)
+
+        let items = try XCTUnwrap(body.sections?.first?.items)
+        XCTAssertEqual(items.count, 2)
+        XCTAssertEqual(items[0].type, "vertical")
+        XCTAssertEqual(items[0].href?.url, "https://example.com/inline.json")
+        XCTAssertEqual(items[0].components?[0].text, "Inline Data")
+        XCTAssertEqual(items[0].components?[1].text, "Render inline data")
+        XCTAssertEqual(items[1].href?.url, "https://example.com/each.json")
+        XCTAssertEqual(items[1].components?[0].text, "#each")
+        XCTAssertEqual(items[1].components?[1].text, "Loop through arrays")
+    }
+
+    func testObjectFormItemsDirectiveWithNonArrayDataProducesEmptyItems() throws {
+        let template: [String: Any] = [
+            "sections": [
+                [
+                    "items": [
+                        "{{#each missingEntries}}": [
+                            "type": "vertical",
+                            "components": [["type": "label", "text": "Should not render"]]
+                        ]
+                    ]
+                ]
+            ]
+        ]
+
+        let result = TemplateEngine.render(template, context: ["missingEntries": "not an array"])
+        let data = try JSONSerialization.data(withJSONObject: result)
+        let body = try JSONDecoder().decode(JasonBody.self, from: data)
+
+        XCTAssertEqual(body.sections?.first?.items?.count, 0)
+    }
+
     // MARK: - #if
 
     func testIfTrue() {

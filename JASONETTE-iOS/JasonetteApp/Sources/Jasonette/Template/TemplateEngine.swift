@@ -157,6 +157,11 @@ public enum TemplateEngine {
             var result: [Any] = []
             for (index, item) in truncated.enumerated() {
                 var itemContext = context
+                // Original Jasonette #each exposes object fields as direct identifiers
+                // (e.g. {{title}}), while also preserving {{$jason}}/this access.
+                if let object = item as? [String: Any] {
+                    itemContext.merge(object) { _, itemValue in itemValue }
+                }
                 itemContext["$jason"] = item
                 itemContext["$index"] = index
                 if let root = context["$jason"] {
