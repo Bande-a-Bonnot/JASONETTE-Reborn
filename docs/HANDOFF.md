@@ -1,6 +1,6 @@
 # Agent Handoff Document
 
-Last updated: 2026-05-20
+Last updated: 2026-05-21
 
 **Update this file before context compaction and at the end of significant sessions.**
 
@@ -61,7 +61,7 @@ See `docs/plans/2026-03-28-fix-ios-components-actions-audit-plan.md` for the ful
 
 ### Phase C — Component Fixes
 
-Map pins/region, secure textfield (`SecureField`), HTML component (`WKWebView`), animated GIF, keyboard dismiss on text inputs
+Map pins/region, HTML component (`WKWebView`), animated GIF, keyboard dismiss on text inputs. Secure textfield renderer path is implemented with `SecureField`; typed-secret accessibility confirmation is still pending because simulator automation timed out.
 
 ### Phase D — Data & Navigation
 
@@ -72,7 +72,7 @@ Tab navigation rewrite is on `main` (PR #20, plan at `docs/plans/tab-navigation-
 ### Open Todos
 
 P1:
-- `todos/039` — object-form `items` template directives render blank Jasonpedia lists (code fix + local Jasonpedia fixture tests added 2026-05-20; simulator screenshots confirmed Template and `$network` lists render; see `docs/qa/2026-05-20-ios-simulator-post-fix-qa.md`)
+- none currently tracked as open
 
 P2:
 - `todos/040` — secure textfield renders/exposes plain text (code fix + structural tests added 2026-05-20; fixture load screenshot captured, but typed-secret simulator accessibility confirmation still pending because `agent-device` runner timed out during asset-catalog processing)
@@ -92,7 +92,6 @@ P3:
 - `todos/036` — non-tab image URL scheme policy (PR #24 follow-up)
 - `todos/037` — ViewModel documentURL redirect coverage
 - `todos/038` — footer-tab app-scheme baseURL coverage
-- `todos/042` — icon-only footer tab accessibility/selected-state clarity (code fix + label tests added 2026-05-21; TestFlight visual confirmation pending)
 - `todos/043` — debug launch URL override for simulator QA
 - `todos/044` — investigate device-specific simulator build hang during asset catalog processing
 

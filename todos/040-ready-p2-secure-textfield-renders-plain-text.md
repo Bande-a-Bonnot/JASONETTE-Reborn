@@ -8,6 +8,18 @@ dependencies: []
 
 # Render secure textfields with secure-entry semantics
 
+## Current Status
+
+Code fix is on `main` in `570f84d Render secure textfields securely`:
+
+- `JasonStyle.secure` decodes/merges.
+- `type: "textfield"` with truthy `style.secure` and legacy `type: "secure"` route through SwiftUI `SecureField`.
+- ComponentDispatch, StyleModifier, and ViewModel fixture tests cover secure and non-secure renderer paths.
+- Simulator fixture-load screenshot was captured in `docs/qa/2026-05-20-ios-simulator-post-fix-qa.md`.
+
+Still open: typed-secret visual/accessibility confirmation is blocked by the
+`agent-device` simulator runner timeout tracked in `todos/044`.
+
 ## Problem Statement
 
 The `secure` textfield demo accepts text but displays and exposes the entered
@@ -37,8 +49,8 @@ and the value was visible on screen.
 - [ ] Secure textfield input is visually masked
 - [ ] Secure textfield is not exposed as a normal text field containing the raw
       secret value in accessibility snapshots
-- [ ] Non-secure textfields still render and bind normally
-- [ ] Tests cover secure and non-secure textfield paths
+- [x] Non-secure textfields still render and bind normally
+- [x] Tests cover secure and non-secure textfield paths
 
 ## Notes
 

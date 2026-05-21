@@ -1,5 +1,5 @@
 ---
-status: ready
+status: complete
 priority: p1
 issue_id: "039"
 tags: [ios, templates, compatibility, jasonpedia, qa]
@@ -7,6 +7,18 @@ dependencies: []
 ---
 
 # Support object-form template directives under array fields
+
+Completed: 2026-05-20
+
+## Resolution
+
+Implemented in `ee81808 Fix object-form each item context` and verified by `183e724 Document post-fix simulator QA`.
+
+- `TemplateEngine` expands object-form `items` directives into arrays.
+- `#each` item dictionaries expose fields as direct identifiers (`{{title}}`, `{{url}}`, etc.) while preserving `{{$jason}}`, `this`, `$index`, and `$root`.
+- Added TemplateEngine regression coverage for object-form `items`, nested components, and non-array empty output.
+- Added ViewModel fixture tests for `Jasonpedia/template/index.json` and `Jasonpedia/action/network/index.json`.
+- Simulator screenshots in `docs/qa/2026-05-20-ios-simulator-post-fix-qa.md` confirmed the Template and `$network` blank-list regressions are gone.
 
 ## Problem Statement
 
@@ -52,13 +64,13 @@ Jasonpedia demos.
 
 ## Acceptance Criteria
 
-- [ ] `Jasonpedia/template/index.json` shows visible/tappable entries such as
+- [x] `Jasonpedia/template/index.json` shows visible/tappable entries such as
       Inline Data, Dynamic Data, #each, and conditionals
-- [ ] `Jasonpedia/action/network/index.json` shows visible/tappable entries such
+- [x] `Jasonpedia/action/network/index.json` shows visible/tappable entries such
       as imagejason, eliza, and Microblog with user account
-- [ ] Unit tests cover object-form directive expansion under `items`
-- [ ] Existing template tests still pass
-- [ ] Simulator QA screenshots confirm the blank-list regression is gone
+- [x] Unit tests cover object-form directive expansion under `items`
+- [x] Existing template tests still pass
+- [x] Simulator QA screenshots confirm the blank-list regression is gone
 
 ## Notes
 
