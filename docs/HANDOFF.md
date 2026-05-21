@@ -8,7 +8,7 @@ Last updated: 2026-05-20
 
 ### Test Suite
 
-- iOS: 454 tests, 0 failures (verified 2026-05-21 after legacy inline footer-tab self-target no-op fix; previous secure textfield renderer-path fix brought suite to 452)
+- iOS: 456 tests, 0 failures (verified 2026-05-21 after legacy inline/footer-shell tab selected-state + accessibility fallback labels; previous inline footer-tab self-target no-op fix brought suite to 454)
 - Android CI: `pull_request` Android job ran/passed on PR #21, non-Android-change PR #22, and follow-up PR #23; Kotlin JSON primitive accessor compile failures fixed by squash `92e65dd`; oversized plain-integer JSON parsing aligned between Android test helper and production renderer in `c3f4f8f`
 - Run iOS: `cd JASONETTE-iOS/JasonetteApp && swift test`
 - Build iOS: `swift build` (<1s)
@@ -92,11 +92,12 @@ P3:
 - `todos/036` — non-tab image URL scheme policy (PR #24 follow-up)
 - `todos/037` — ViewModel documentURL redirect coverage
 - `todos/038` — footer-tab app-scheme baseURL coverage
-- `todos/042` — icon-only footer tab accessibility/selected-state clarity
+- `todos/042` — icon-only footer tab accessibility/selected-state clarity (code fix + label tests added 2026-05-21; TestFlight visual confirmation pending)
 - `todos/043` — debug launch URL override for simulator QA
 - `todos/044` — investigate device-specific simulator build hang during asset catalog processing
 
 Completed this session:
+- `todos/042` implementation — legacy inline footer tabs now maintain local selected index, show a selected capsule indicator for icon-only tabs, and expose non-empty accessibility labels with authored text first and per-position fallback labels for icon-only tabs; shell-mounted footer tabs also expose fallback labels and selected accessibility values. Added URLResolutionTests for label fallback behavior.
 - Build 52 follow-up — TestFlight still pushed duplicate views when tapping legacy inline `footer.tabs` items whose target is the current document (e.g. pushed Jasonpedia `core/href/tabs.json`). Root shell tabs and action-href tab switching were already fixed, but pushed/single-stack legacy footer tabs still used the old synthesized-href path. `FooterTabItemView` now no-ops current-document targets after relative resolution/standardization, preserving different-target navigation; added URLResolutionTests coverage.
 - `todos/040` implementation — `JasonStyle.secure` now decodes/merges and `TextFieldComponent` routes `style.secure` truthy values plus legacy `type: "secure"` through SwiftUI `SecureField` while preserving `StateManager` binding and initial-value behavior; added ComponentDispatch, StyleModifier, and Jasonpedia textfield fixture tests. Simulator direct-fixture screenshot confirms the textfield page loads, but typed-secret accessibility confirmation remains pending because `agent-device` runner setup timed out during asset-catalog processing. Also wrote `~/jasonette-ios-simulator-qa-findings-2026-05-18.md` summarizing the QA methodology, tool commands, prompts, and findings.
 - `todos/039` implementation — `#each` now merges object item fields into the per-item template context so original Jasonette direct identifiers like `{{title}}`/`{{url}}` render while preserving `{{$jason}}`, `this`, `$index`, and `$root`; added TemplateEngine regression coverage for object-form `items`, nested components, non-array empty output, plus ViewModel tests against `Jasonpedia/template/index.json` and `Jasonpedia/action/network/index.json`. Simulator direct-fixture screenshots confirm the Template and `$network` blank-list regressions are gone; see `docs/qa/2026-05-20-ios-simulator-post-fix-qa.md`.

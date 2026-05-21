@@ -11,16 +11,19 @@ struct FooterTabBar: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            ForEach(tabs) { tab in
+            ForEach(Array(tabs.enumerated()), id: \.element.id) { index, tab in
+                let isSelected = tab.id == selectedTabID
                 Button {
                     onTap(tab)
                 } label: {
                     FooterTabCell(
                         descriptor: tab.descriptor,
-                        isSelected: tab.id == selectedTabID
+                        isSelected: isSelected
                     )
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel(FooterTabCell.accessibilityLabel(for: tab.descriptor, fallback: "Tab \(index + 1)"))
+                .accessibilityValue(isSelected ? "Selected" : "")
                 .frame(maxWidth: .infinity)
             }
         }
@@ -85,6 +88,20 @@ private struct FooterTabCell: View {
         // mirrors the legacy typeless footer-tab renderer.
         .modifier(JasonStyleModifier(style: cellStyle, headStyles: [:], className: nil))
         .foregroundColor(tint)
+    }
+
+    static func accessibilityLabel(for descriptor: TabDescriptor, fallback: String) -> String {
+        if let text = descriptor.label.text?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty {
+            return text
+        }
+        if let systemName = descriptor.label.systemImageName, !systemName.isEmpty {
+            return systemName.replacingOccurrences(of: ".", with: " ")
+        }
+        if let iconName = descriptor.label.iconURL?.deletingPathExtension().lastPathComponent, !iconName.isEmpty {
+            return iconName.replacingOccurrences(of: "-", with: " ")
+                .replacingOccurrences(of: "_", with: " ")
+        }
+        return fallback
     }
 
     @ViewBuilder

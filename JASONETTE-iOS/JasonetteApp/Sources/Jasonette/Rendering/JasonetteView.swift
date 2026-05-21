@@ -244,39 +244,67 @@ struct JasonetteView: View {
         // any footer.tabs declared on pushed/secondary docs must be ignored.
         if let tabs = footer.tabs, let items = tabs.items, !isInsideTabShell {
             // Tab bar footer — tabs take precedence over input.
-            // spacing: 0 so per-item backgrounds/shadows align edge-to-edge.
-            HStack(spacing: 0) {
-                ForEach(Array(items.enumerated()), id: \.offset) { _, item in
-                    Group {
-                        if item.type == nil {
-                            FooterTabItemView(
-                                item: item,
-                                headStyles: headStyles,
-                                onHref: { viewModel.handleHref($0) },
-                                onAction: { viewModel.handleAction($0) },
-                                documentURL: viewModel.documentURL
-                            )
-                        } else {
-                            ComponentView(
-                                item,
-                                headStyles: headStyles,
-                                onHref: { viewModel.handleHref($0) },
-                                onAction: { viewModel.handleAction($0) },
-                                documentURL: viewModel.documentURL
-                            )
-                        }
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-            }
-            .padding(.vertical, 8)
-            .background(.background.shadow(.drop(radius: 1)))
+            LegacyFooterTabsView(
+                items: items,
+                headStyles: headStyles,
+                onHref: { viewModel.handleHref($0) },
+                onAction: { viewModel.handleAction($0) },
+                documentURL: viewModel.documentURL
+            )
         } else if let input = footer.input {
             // Input bar footer
             FooterInputView(
                 input: input,
                 onAction: { viewModel.handleAction($0) },
                 documentURL: viewModel.documentURL
+            )
+        }
+    }
+}
+
+// MARK: - Legacy Footer Tabs View
+
+@MainActor
+struct LegacyFooterTabsView: View {
+    let items: [JasonComponent]
+    let headStyles: [String: JasonStyle]
+    let onHref: (JasonHref) -> Void
+    let onAction: (JasonAction) -> Void
+    let documentURL: URL?
+
+    @State private var selectedIndex = 0
+
+    var body: some View {
+        HStack(spacing: 0) {
+            ForEach(Array(items.enumerated()), id: \.offset) { index, item in
+                footerTabItem(item, index: index)
+                    .frame(maxWidth: .infinity)
+            }
+        }
+        .padding(.vertical, 8)
+        .background(.background.shadow(.drop(radius: 1)))
+    }
+
+    @ViewBuilder
+    private func footerTabItem(_ item: JasonComponent, index: Int) -> some View {
+        if item.type == nil {
+            FooterTabItemView(
+                item: item,
+                headStyles: headStyles,
+                onHref: onHref,
+                onAction: onAction,
+                documentURL: documentURL,
+                isSelected: selectedIndex == index,
+                fallbackAccessibilityLabel: "Tab \(index + 1)",
+                onSelect: { selectedIndex = index }
+            )
+        } else {
+            ComponentView(
+                item,
+                headStyles: headStyles,
+                onHref: onHref,
+                onAction: onAction,
+                documentURL: documentURL
             )
         }
     }
@@ -373,6 +401,9 @@ struct FooterTabItemView: View {
     let onHref: ((JasonHref) -> Void)?
     let onAction: ((JasonAction) -> Void)?
     let documentURL: URL?
+    var isSelected: Bool = false
+    var fallbackAccessibilityLabel: String?
+    var onSelect: (() -> Void)?
 
     var body: some View {
         // Icon size resolves class-defined styles (via headStyles) merged with
@@ -407,6 +438,7 @@ struct FooterTabItemView: View {
             if let text = item.text, !text.isEmpty {
                 Text(text).font(.caption)
             }
+            selectedIndicator
         }
         .contentShape(Rectangle())
         // Apply the resolved style to the cell WITHOUT width/height: those
@@ -424,6 +456,7 @@ struct FooterTabItemView: View {
         // from the shorthand.
         if let href = item.href {
             Button {
+                onSelect?()
                 var h = href
                 if h.url == nil, let urlString = item.url, !urlString.isEmpty {
                     h.url = urlString
@@ -433,8 +466,11 @@ struct FooterTabItemView: View {
                 }
             } label: { content }
                 .buttonStyle(.plain)
+                .accessibilityLabel(accessibilityLabelText)
+                .accessibilityValue(isSelected ? "Selected" : "")
         } else if let urlString = item.url, !urlString.isEmpty {
             Button {
+                onSelect?()
                 var href = JasonHref()
                 href.url = urlString
                 if !resolvesToCurrentDocument(href) {
@@ -442,9 +478,16 @@ struct FooterTabItemView: View {
                 }
             } label: { content }
                 .buttonStyle(.plain)
+                .accessibilityLabel(accessibilityLabelText)
+                .accessibilityValue(isSelected ? "Selected" : "")
         } else if let action = item.action {
-            Button { onAction?(action) } label: { content }
+            Button {
+                onSelect?()
+                onAction?(action)
+            } label: { content }
                 .buttonStyle(.plain)
+                .accessibilityLabel(accessibilityLabelText)
+                .accessibilityValue(isSelected ? "Selected" : "")
         } else {
             content
         }
@@ -452,6 +495,43 @@ struct FooterTabItemView: View {
 
     var resolvedIconURL: URL? {
         item.image.flatMap { JasonURL.resolve($0, against: documentURL) }
+    }
+
+    var accessibilityLabelText: String {
+        if let text = item.text?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty {
+            return text
+        }
+        if let fallback = fallbackAccessibilityLabel?.trimmingCharacters(in: .whitespacesAndNewlines), !fallback.isEmpty {
+            return fallback
+        }
+        if let imageName = item.image.flatMap(Self.displayNameFromPath) {
+            return imageName
+        }
+        if let targetName = (item.href?.url ?? item.url).flatMap(Self.displayNameFromPath) {
+            return targetName
+        }
+        return "Tab"
+    }
+
+    @ViewBuilder
+    private var selectedIndicator: some View {
+        if isSelected {
+            Capsule()
+                .fill(Color.accentColor)
+                .frame(width: 22, height: 4)
+                .padding(.top, 2)
+        } else {
+            Color.clear
+                .frame(width: 22, height: 4)
+                .padding(.top, 2)
+        }
+    }
+
+    private static func displayNameFromPath(_ path: String) -> String? {
+        guard let last = URL(string: path)?.deletingPathExtension().lastPathComponent,
+              !last.isEmpty else { return nil }
+        return last.replacingOccurrences(of: "-", with: " ")
+            .replacingOccurrences(of: "_", with: " ")
     }
 
     func resolvesToCurrentDocument(_ href: JasonHref) -> Bool {

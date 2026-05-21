@@ -108,4 +108,39 @@ final class URLResolutionTests: XCTestCase {
 
         XCTAssertFalse(tabItem.resolvesToCurrentDocument(href))
     }
+
+    func testLegacyFooterTabItemAccessibilityLabelPrefersAuthoredText() {
+        let item = decodeComponent([
+            "image": "icons/home.png",
+            "url": "home.json",
+            "text": "Home"
+        ])
+        let tabItem = FooterTabItemView(
+            item: item,
+            headStyles: [:],
+            onHref: nil,
+            onAction: nil,
+            documentURL: baseURL,
+            fallbackAccessibilityLabel: "Tab 1"
+        )
+
+        XCTAssertEqual(tabItem.accessibilityLabelText, "Home")
+    }
+
+    func testLegacyFooterTabItemAccessibilityLabelUsesFallbackForIconOnlyTabs() {
+        let item = decodeComponent([
+            "image": "https://example.com/assets/0.png",
+            "url": "index.json"
+        ])
+        let tabItem = FooterTabItemView(
+            item: item,
+            headStyles: [:],
+            onHref: nil,
+            onAction: nil,
+            documentURL: baseURL,
+            fallbackAccessibilityLabel: "Tab 2"
+        )
+
+        XCTAssertEqual(tabItem.accessibilityLabelText, "Tab 2")
+    }
 }
