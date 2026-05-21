@@ -78,4 +78,34 @@ final class URLResolutionTests: XCTestCase {
         )
         XCTAssertEqual(tabItem.resolvedIconURL, URL(string: "https://example.com/app/icons/home.png")!)
     }
+
+    func testLegacyFooterTabItemDetectsCurrentDocumentTarget() {
+        let item = decodeComponent(["url": "index.json", "text": "Current"])
+        let tabItem = FooterTabItemView(
+            item: item,
+            headStyles: [:],
+            onHref: nil,
+            onAction: nil,
+            documentURL: baseURL
+        )
+        var href = JasonHref()
+        href.url = "index.json"
+
+        XCTAssertTrue(tabItem.resolvesToCurrentDocument(href))
+    }
+
+    func testLegacyFooterTabItemAllowsDifferentDocumentTarget() {
+        let item = decodeComponent(["url": "settings.json", "text": "Settings"])
+        let tabItem = FooterTabItemView(
+            item: item,
+            headStyles: [:],
+            onHref: nil,
+            onAction: nil,
+            documentURL: baseURL
+        )
+        var href = JasonHref()
+        href.url = "settings.json"
+
+        XCTAssertFalse(tabItem.resolvesToCurrentDocument(href))
+    }
 }

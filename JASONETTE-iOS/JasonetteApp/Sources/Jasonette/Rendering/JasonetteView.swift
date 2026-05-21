@@ -428,14 +428,18 @@ struct FooterTabItemView: View {
                 if h.url == nil, let urlString = item.url, !urlString.isEmpty {
                     h.url = urlString
                 }
-                onHref?(h)
+                if !resolvesToCurrentDocument(h) {
+                    onHref?(h)
+                }
             } label: { content }
                 .buttonStyle(.plain)
         } else if let urlString = item.url, !urlString.isEmpty {
             Button {
                 var href = JasonHref()
                 href.url = urlString
-                onHref?(href)
+                if !resolvesToCurrentDocument(href) {
+                    onHref?(href)
+                }
             } label: { content }
                 .buttonStyle(.plain)
         } else if let action = item.action {
@@ -448,6 +452,13 @@ struct FooterTabItemView: View {
 
     var resolvedIconURL: URL? {
         item.image.flatMap { JasonURL.resolve($0, against: documentURL) }
+    }
+
+    func resolvesToCurrentDocument(_ href: JasonHref) -> Bool {
+        guard let documentURL,
+              let urlString = href.url,
+              let targetURL = JasonURL.resolve(urlString, against: documentURL) else { return false }
+        return targetURL.standardized == documentURL.standardized
     }
 
     private func resolvedStyle() -> JasonStyle {
