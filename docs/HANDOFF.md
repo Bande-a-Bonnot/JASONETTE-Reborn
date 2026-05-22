@@ -8,7 +8,7 @@ Last updated: 2026-05-21
 
 ### Test Suite
 
-- iOS: 456 tests, 0 failures (verified 2026-05-21 after legacy inline/footer-shell tab selected-state + accessibility fallback labels; previous inline footer-tab self-target no-op fix brought suite to 454)
+- iOS: 462 tests, 0 failures (verified 2026-05-22 after HTML component implementation; previous footer-tab selected-state work brought suite to 456)
 - Android CI: `pull_request` Android job ran/passed on PR #21, non-Android-change PR #22, and follow-up PR #23; Kotlin JSON primitive accessor compile failures fixed by squash `92e65dd`; oversized plain-integer JSON parsing aligned between Android test helper and production renderer in `c3f4f8f`
 - Run iOS: `cd JASONETTE-iOS/JasonetteApp && swift test`
 - Build iOS: `swift build` (<1s)
@@ -27,9 +27,9 @@ Last updated: 2026-05-21
 
 ## What's Working (iOS Renderer)
 
-### Components (11)
+### Components (12)
 
-label, image, button, textfield, textarea, slider, switch, space, map (stub — no pins/region), vertical, horizontal
+label, image, button, textfield, textarea, slider, switch, space, html (`WKWebView`), map (stub — no pins/region), vertical, horizontal
 
 ### Actions (12 working / 4 stubs)
 
@@ -61,7 +61,7 @@ See `docs/plans/2026-03-28-fix-ios-components-actions-audit-plan.md` for the ful
 
 ### Phase C — Component Fixes
 
-Map pins/region, HTML component (`WKWebView`), animated GIF, keyboard dismiss on text inputs. Secure textfield renderer path is implemented with `SecureField`; typed-secret accessibility confirmation is still pending because simulator automation timed out.
+Map pins/region, animated GIF, keyboard dismiss on text inputs. HTML component renderer path is implemented with `WKWebView`; simulator visual confirmation is still pending. Secure textfield renderer path is implemented with `SecureField`; typed-secret accessibility confirmation is still pending because simulator automation timed out.
 
 ### Phase D — Data & Navigation
 
@@ -76,7 +76,7 @@ P1:
 
 P2:
 - `todos/040` — secure textfield renders/exposes plain text (code fix + structural tests added 2026-05-20; fixture load screenshot captured, but typed-secret simulator accessibility confirmation still pending because `agent-device` runner timed out during asset-catalog processing)
-- `todos/041` — HTML component renders `[Unknown: html]`
+- `todos/041` — HTML component renders `[Unknown: html]` (code fix + dispatch/wrapping/URL tests added 2026-05-22; simulator visual confirmation pending)
 
 P3:
 - `todos/015` — sectionView code duplication (defer until 3rd section type)
@@ -96,6 +96,7 @@ P3:
 - `todos/044` — investigate device-specific simulator build hang during asset catalog processing
 
 Completed this session:
+- `todos/041` implementation — added `HTMLComponent` backed by `WKWebView` for inline `text` + optional `css` and URL-backed `url` HTML; `JasonComponent` now decodes `css`; `ComponentView` dispatches `type: "html"`; relative URL-backed HTML resolves against `documentURL` with http/https allowlist; added ComponentDispatchTests for decoding, registry knowledge, HTML wrapping/CSS injection, relative URL resolution, and disallowed schemes plus a ViewModel fixture test for `Jasonpedia/view/component/html/index.json`. Full Swift suite: 462 tests, 0 failures. Simulator visual confirmation remains pending.
 - `todos/042` implementation — legacy inline footer tabs now maintain local selected index, show a selected capsule indicator for icon-only tabs, and expose non-empty accessibility labels with authored text first and per-position fallback labels for icon-only tabs; shell-mounted footer tabs also expose fallback labels and selected accessibility values. Added URLResolutionTests for label fallback behavior. User confirmed tabs are good in TestFlight once the fix was included.
 - Build 52 follow-up — TestFlight still pushed duplicate views when tapping legacy inline `footer.tabs` items whose target is the current document (e.g. pushed Jasonpedia `core/href/tabs.json`). Root shell tabs and action-href tab switching were already fixed, but pushed/single-stack legacy footer tabs still used the old synthesized-href path. `FooterTabItemView` now no-ops current-document targets after relative resolution/standardization, preserving different-target navigation; added URLResolutionTests coverage. User later confirmed the fixed tabs are good in TestFlight.
 - `todos/040` implementation — `JasonStyle.secure` now decodes/merges and `TextFieldComponent` routes `style.secure` truthy values plus legacy `type: "secure"` through SwiftUI `SecureField` while preserving `StateManager` binding and initial-value behavior; added ComponentDispatch, StyleModifier, and Jasonpedia textfield fixture tests. Simulator direct-fixture screenshot confirms the textfield page loads, but typed-secret accessibility confirmation remains pending because `agent-device` runner setup timed out during asset-catalog processing. Also wrote `~/jasonette-ios-simulator-qa-findings-2026-05-18.md` summarizing the QA methodology, tool commands, prompts, and findings.

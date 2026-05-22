@@ -340,6 +340,19 @@ final class ViewModelTests: XCTestCase {
         XCTAssertEqual(TextFieldComponent.fieldKind(componentType: secureField.type, style: secureField.style), .secure)
     }
 
+    func testJasonpediaHTMLComponentFixtureSelectsHTMLRendererPath() async throws {
+        let vm = JasonetteViewModel(document: try loadJasonpediaDocument("Jasonpedia/view/component/html/index.json"))
+        await vm.load()
+
+        XCTAssertEqual(vm.loadState, .loaded)
+        let htmlComponent = try XCTUnwrap(vm.renderedRoot?.body?.sections?.first?.items?.first)
+
+        XCTAssertEqual(htmlComponent.type, "html")
+        XCTAssertTrue(ComponentView.knownComponentTypes.contains("html"))
+        XCTAssertEqual(htmlComponent.css, "img{width: 100%;} p{font-family: Helvetica; font-size: 14px;}")
+        XCTAssertTrue(htmlComponent.text?.contains("Continue reading") == true)
+    }
+
     func testRenderFallsBackToRawDocumentWhenTemplateInvalid() async {
         // A document with templates that render to invalid JSON falls back gracefully
         let doc = makeDocument([

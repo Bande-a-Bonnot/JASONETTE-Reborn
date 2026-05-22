@@ -147,6 +147,57 @@ final class ComponentDispatchTests: XCTestCase {
         XCTAssertEqual(component.type, "map")
     }
 
+    // MARK: - HTML
+
+    func testHTMLComponentDecodesTextCSSAndURL() {
+        let component = decodeComponent([
+            "type": "html",
+            "text": "<p>Hello</p>",
+            "css": "p{color:red;}",
+            "url": "article.html"
+        ])
+        XCTAssertEqual(component.type, "html")
+        XCTAssertEqual(component.text, "<p>Hello</p>")
+        XCTAssertEqual(component.css, "p{color:red;}")
+        XCTAssertEqual(component.url, "article.html")
+    }
+
+    @MainActor
+    func testHTMLTypeIsKnownByComponentRegistry() {
+        let knownTypes = ComponentView.knownComponentTypes
+        XCTAssertTrue(knownTypes.contains("html"))
+    }
+
+    @MainActor
+    func testHTMLComponentWrapsFragmentWithCSS() {
+        let html = HTMLComponent.documentHTML(text: "<p>Hello</p>", css: "p{color:red;}")
+        XCTAssertTrue(html.contains("<body><p>Hello</p></body>"))
+        XCTAssertTrue(html.contains("p{color:red;}"))
+        XCTAssertTrue(html.contains("viewport"))
+    }
+
+    @MainActor
+    func testHTMLComponentResolvesRelativeURLAgainstDocumentURL() {
+        let component = HTMLComponent(
+            text: nil,
+            css: nil,
+            url: "article.html",
+            documentURL: URL(string: "https://example.com/docs/index.json")
+        )
+        XCTAssertEqual(component.resolvedURL?.absoluteString, "https://example.com/docs/article.html")
+    }
+
+    @MainActor
+    func testHTMLComponentRejectsDisallowedURLScheme() {
+        let component = HTMLComponent(
+            text: nil,
+            css: nil,
+            url: "javascript:alert(1)",
+            documentURL: URL(string: "https://example.com/docs/index.json")
+        )
+        XCTAssertNil(component.resolvedURL)
+    }
+
     // MARK: - Unknown type
 
     func testUnknownTypePreserved() {

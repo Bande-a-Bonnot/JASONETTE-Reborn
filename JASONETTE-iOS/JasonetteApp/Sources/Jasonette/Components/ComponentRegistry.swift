@@ -3,6 +3,11 @@ import SwiftUI
 /// Registry mapping Jasonette component type strings to SwiftUI views.
 @MainActor
 public struct ComponentView: View {
+    static let knownComponentTypes: Set<String> = [
+        "button", "horizontal", "html", "image", "label", "map", "secure",
+        "slider", "space", "switch", "textarea", "textfield", "vertical"
+    ]
+
     let component: JasonComponent
     let headStyles: [String: JasonStyle]
     let onHref: ((JasonHref) -> Void)?
@@ -79,6 +84,13 @@ public struct ComponentView: View {
             SwitchComponent(name: component.name ?? "", isOn: component.value?.bool ?? false)
         case "map":
             MapStubComponent()
+        case "html":
+            HTMLComponent(
+                text: component.text,
+                css: component.css,
+                url: component.url,
+                documentURL: documentURL
+            )
         case "vertical":
             LayoutView(
                 direction: .vertical,
