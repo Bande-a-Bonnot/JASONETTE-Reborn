@@ -58,6 +58,5 @@ state was not clearly visible in screenshots.
 This is a follow-up to completed `todos/025`; the style/icon parity work landed,
 but QA found accessibility and selected-state clarity still need improvement.
 
-Release validation note: TestFlight visual confirmation is still useful once a
-build includes `3433f0e`, but the implementation and regression tests are in
-`main`.
+Release validation: user confirmed the tabs are good in TestFlight after the
+build included `3433f0e`.
