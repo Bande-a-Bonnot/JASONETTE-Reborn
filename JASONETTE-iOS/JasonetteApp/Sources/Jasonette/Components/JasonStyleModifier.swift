@@ -189,7 +189,8 @@ extension JasonStyle {
             bottom: other.bottom ?? self.bottom,
             right: other.right ?? self.right,
             opacity: other.opacity ?? self.opacity,
-            secure: other.secure ?? self.secure
+            secure: other.secure ?? self.secure,
+            selected: other.selected ?? self.selected
         )
     }
 

@@ -1,4 +1,5 @@
 import XCTest
+import MapKit
 @testable import Jasonette
 
 final class ComponentDispatchTests: XCTestCase {
@@ -145,6 +146,88 @@ final class ComponentDispatchTests: XCTestCase {
     func testMapTypeIsMap() {
         let component = decodeComponent(["type": "map"])
         XCTAssertEqual(component.type, "map")
+    }
+
+    func testMapDecodesRegionAndPins() {
+        let component = decodeComponent([
+            "type": "map",
+            "region": [
+                "coord": "40.7197614,-73.9909211",
+                "width": "100",
+                "height": "200"
+            ],
+            "pins": [[
+                "title": "This is a pin",
+                "description": "It really is.",
+                "coord": "40.7197614,-73.9909211",
+                "style": ["selected": "true"]
+            ]]
+        ])
+
+        XCTAssertEqual(component.region?.coord, "40.7197614,-73.9909211")
+        XCTAssertEqual(component.region?.width?.string, "100")
+        XCTAssertEqual(component.region?.height?.string, "200")
+        XCTAssertEqual(component.pins?.count, 1)
+        XCTAssertEqual(component.pins?.first?.title, "This is a pin")
+        XCTAssertEqual(component.pins?.first?.description, "It really is.")
+        XCTAssertEqual(component.pins?.first?.coord, "40.7197614,-73.9909211")
+        XCTAssertTrue(component.pins?.first?.style?.isSelectedAnnotation == true)
+    }
+
+    @MainActor
+    func testMapTypeIsKnownByComponentRegistry() {
+        XCTAssertTrue(ComponentView.knownComponentTypes.contains("map"))
+    }
+
+    func testMapParsesValidCoordinatesOnly() {
+        let coordinate = try! XCTUnwrap(MapComponent.coordinate(from: "40.7197614, -73.9909211"))
+        XCTAssertEqual(coordinate.latitude, 40.7197614, accuracy: 0.0000001)
+        XCTAssertEqual(coordinate.longitude, -73.9909211, accuracy: 0.0000001)
+
+        XCTAssertNil(MapComponent.coordinate(from: "91,0"))
+        XCTAssertNil(MapComponent.coordinate(from: "40.7"))
+        XCTAssertNil(MapComponent.coordinate(from: "not-a-coordinate"))
+    }
+
+    func testMapBuildsCoordinateRegionFromAuthoredRegion() {
+        let component = decodeComponent([
+            "type": "map",
+            "region": [
+                "coord": "40.7197614,-73.9909211",
+                "width": "100",
+                "height": "200"
+            ]
+        ])
+
+        let region = MapComponent.coordinateRegion(for: component.region)
+        XCTAssertEqual(region.center.latitude, 40.7197614, accuracy: 0.0000001)
+        XCTAssertEqual(region.center.longitude, -73.9909211, accuracy: 0.0000001)
+        XCTAssertEqual(region.span.latitudeDelta, MKCoordinateRegion(center: region.center, latitudinalMeters: 200, longitudinalMeters: 100).span.latitudeDelta, accuracy: 0.0000001)
+        XCTAssertEqual(region.span.longitudeDelta, MKCoordinateRegion(center: region.center, latitudinalMeters: 200, longitudinalMeters: 100).span.longitudeDelta, accuracy: 0.0000001)
+    }
+
+    func testMapBuildsAnnotationsFromAuthoredPins() {
+        let component = decodeComponent([
+            "type": "map",
+            "pins": [[
+                "title": "Le Bain",
+                "description": "Best club in NYC",
+                "coord": "40.7409395,-74.0083886",
+                "style": ["selected": true]
+            ], [
+                "title": "Invalid",
+                "coord": "invalid"
+            ]]
+        ])
+
+        let annotations = MapComponent.annotations(from: component.pins)
+        XCTAssertEqual(annotations.count, 1)
+        XCTAssertEqual(annotations.first?.title, "Le Bain")
+        XCTAssertEqual(annotations.first?.subtitle, "Best club in NYC")
+        XCTAssertEqual(annotations.first?.coordinate.latitude ?? 0, 40.7409395, accuracy: 0.0000001)
+        XCTAssertEqual(annotations.first?.coordinate.longitude ?? 0, -74.0083886, accuracy: 0.0000001)
+        XCTAssertEqual(annotations.first?.isSelected, true)
+        XCTAssertEqual(annotations.first?.accessibilityLabel, "Le Bain, Best club in NYC")
     }
 
     // MARK: - HTML

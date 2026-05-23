@@ -1,6 +1,6 @@
 ---
 id: "019e53ff-7aed-7e1f-8848-2b1324a4531c"
-status: ready
+status: complete
 priority: p2
 issue_id: "045"
 tags: [ios, components, map, renderer, qa]
@@ -9,11 +9,24 @@ dependencies: []
 
 # Implement map component pins and region support
 
+Completed: 2026-05-23
+
+## Resolution
+
+Implemented MapKit-backed map rendering for the iOS renderer:
+
+- `JasonComponent` now decodes authored `region` and `pins` map fields.
+- `JasonStyle.selected` decodes/merges for map pin selected-callout semantics.
+- `MapComponent` parses `lat,lng` coordinates, honors authored region width/height as meters, renders map annotations, and shows a callout-like title/description bubble when `style.selected` is truthy.
+- `ComponentView` routes `type: "map"` through `MapComponent` instead of the prior placeholder/stub path.
+- ComponentDispatch, StyleModifier, and ViewModel fixture tests cover decoding, helper parsing, renderer registration, Jasonpedia fixture selection, and annotations.
+- Simulator QA evidence: `docs/qa/2026-05-23-ios-map-component-qa.md` and screenshots in `docs/qa/artifacts/2026-05-23-ios-map-component/`.
+
 ## Problem Statement
 
-The iOS renderer recognizes `type: "map"`, but it currently renders a stub. The
-handoff Phase C audit still lists map pins/region as an unimplemented component
-fix, so Jasonette map demos cannot show authored locations meaningfully.
+The iOS renderer recognized `type: "map"`, but it only rendered a stub. The
+handoff Phase C audit listed map pins/region as an unimplemented component
+fix, so Jasonette map demos could not show authored locations meaningfully.
 
 ## Evidence
 
@@ -32,11 +45,11 @@ fix, so Jasonette map demos cannot show authored locations meaningfully.
 
 ## Acceptance Criteria
 
-- [ ] `type: "map"` renders an actual map instead of only a stub placeholder
-- [ ] Authored region/center/zoom data is honored where present
-- [ ] Authored pins/annotations are visible where present
-- [ ] Tests cover map fixture decoding and renderer path selection
-- [ ] Simulator QA screenshot confirms a map fixture renders meaningfully
+- [x] `type: "map"` renders an actual map instead of only a stub placeholder
+- [x] Authored region/center/zoom data is honored where present
+- [x] Authored pins/annotations are visible where present
+- [x] Tests cover map fixture decoding and renderer path selection
+- [x] Simulator QA screenshot confirms a map fixture renders meaningfully
 
 ## Notes
 

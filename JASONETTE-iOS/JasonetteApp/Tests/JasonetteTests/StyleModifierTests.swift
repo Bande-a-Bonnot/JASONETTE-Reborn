@@ -302,6 +302,21 @@ final class StyleModifierTests: XCTestCase {
         XCTAssertTrue(merged.isSecureTextEntry)
     }
 
+    // MARK: - Map selected annotation decoding
+
+    func testSelectedTrueStringDecodesAsSelectedAnnotation() {
+        let style = decodeStyle(["selected": "true"])
+        XCTAssertEqual(style.selected?.string, "true")
+        XCTAssertTrue(style.isSelectedAnnotation)
+    }
+
+    func testSelectedMergingInlineOverridesClass() {
+        let base = JasonStyle(selected: AnyCodable(false))
+        let overlay = JasonStyle(selected: AnyCodable("true"))
+        let merged = base.merging(overlay)
+        XCTAssertTrue(merged.isSelectedAnnotation)
+    }
+
     // MARK: - Regression: no new properties unchanged behavior
 
     func testNoNewPropertiesIdenticalBehavior() {

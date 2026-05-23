@@ -8,7 +8,7 @@ Last updated: 2026-05-23
 
 ### Test Suite
 
-- iOS: 462 tests, 0 failures (verified 2026-05-22 after HTML component implementation; simulator HTML QA verified 2026-05-23)
+- iOS: 470 tests, 0 failures (verified 2026-05-23 after MapKit map component implementation; simulator map QA verified 2026-05-23)
 - Android CI: `pull_request` Android job ran/passed on PR #21, non-Android-change PR #22, and follow-up PR #23; Kotlin JSON primitive accessor compile failures fixed by squash `92e65dd`; oversized plain-integer JSON parsing aligned between Android test helper and production renderer in `c3f4f8f`
 - Run iOS: `cd JASONETTE-iOS/JasonetteApp && swift test`
 - Build iOS: `swift build` (<1s)
@@ -29,7 +29,7 @@ Last updated: 2026-05-23
 
 ### Components (12)
 
-label, image, button, textfield, textarea, slider, switch, space, html (`WKWebView`), map (stub — no pins/region), vertical, horizontal
+label, image, button, textfield, textarea, slider, switch, space, html (`WKWebView`), map (`MapKit` region + pins), vertical, horizontal
 
 ### Actions (12 working / 4 stubs)
 
@@ -61,7 +61,7 @@ See `docs/plans/2026-03-28-fix-ios-components-actions-audit-plan.md` for the ful
 
 ### Phase C — Component Fixes
 
-Map pins/region, animated GIF, keyboard dismiss on text inputs. HTML component renderer path is implemented with `WKWebView` and simulator-confirmed on `Jasonpedia/view/component/html/index.json`. Secure textfield renderer path is implemented with `SecureField` and user-confirmed correct in TestFlight/simulator.
+Animated GIF and keyboard dismiss on text inputs. HTML component renderer path is implemented with `WKWebView` and simulator-confirmed on `Jasonpedia/view/component/html/index.json`. Secure textfield renderer path is implemented with `SecureField` and user-confirmed correct in TestFlight/simulator. Map component renderer path is implemented with MapKit and simulator-confirmed on the Jasonpedia map fixture plus pin-focused QA fixture.
 
 ### Phase D — Data & Navigation
 
@@ -75,7 +75,7 @@ P1:
 - none currently tracked as open
 
 P2:
-- `todos/045` — map component pins/region support
+- none currently tracked as open
 
 P3:
 - `todos/015` — sectionView code duplication (defer until 3rd section type)
@@ -97,6 +97,7 @@ P3:
 - `todos/047` — keyboard dismissal behavior for text inputs
 
 Completed this session:
+- `todos/045` implementation + QA — replaced the prior map placeholder path with `MapComponent` backed by SwiftUI/MapKit; `JasonComponent` now decodes `region` and `pins`; `JasonStyle.selected` decodes/merges for selected pin callouts; authored `coord`, width/height meter spans, pin title/description, and selected callout semantics are honored. Added ComponentDispatchTests for map decoding, registry knowledge, coordinate parsing, region creation, and annotations; added StyleModifierTests for `selected`; added ViewModel fixture coverage for `Jasonpedia/view/component/map/index.json`. Full Swift suite: 470 tests, 0 failures. Simulator QA on 2026-05-23 confirmed the Jasonpedia map fixture renders native maps and a pin-focused QA fixture renders a red pin plus visible title/description callout; see `docs/qa/2026-05-23-ios-map-component-qa.md` and artifacts under `docs/qa/artifacts/2026-05-23-ios-map-component/`.
 - `todos/041` implementation + QA — added `HTMLComponent` backed by `WKWebView` for inline `text` + optional `css` and URL-backed `url` HTML; `JasonComponent` now decodes `css`; `ComponentView` dispatches `type: "html"`; relative URL-backed HTML resolves against `documentURL` with http/https allowlist; added ComponentDispatchTests for decoding, registry knowledge, HTML wrapping/CSS injection, relative URL resolution, and disallowed schemes plus a ViewModel fixture test for `Jasonpedia/view/component/html/index.json`. Full Swift suite: 462 tests, 0 failures. Simulator QA on 2026-05-23 confirmed the HTML fixture renders the article image, styled text, and links without `[Unknown: html]`; see `docs/qa/2026-05-23-ios-html-component-qa.md`.
 - `todos/042` implementation — legacy inline footer tabs now maintain local selected index, show a selected capsule indicator for icon-only tabs, and expose non-empty accessibility labels with authored text first and per-position fallback labels for icon-only tabs; shell-mounted footer tabs also expose fallback labels and selected accessibility values. Added URLResolutionTests for label fallback behavior. User confirmed tabs are good in TestFlight once the fix was included.
 - Build 52 follow-up — TestFlight still pushed duplicate views when tapping legacy inline `footer.tabs` items whose target is the current document (e.g. pushed Jasonpedia `core/href/tabs.json`). Root shell tabs and action-href tab switching were already fixed, but pushed/single-stack legacy footer tabs still used the old synthesized-href path. `FooterTabItemView` now no-ops current-document targets after relative resolution/standardization, preserving different-target navigation; added URLResolutionTests coverage. User later confirmed the fixed tabs are good in TestFlight.

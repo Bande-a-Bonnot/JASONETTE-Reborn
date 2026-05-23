@@ -83,7 +83,8 @@ public struct ComponentView: View {
         case "switch":
             SwitchComponent(name: component.name ?? "", isOn: component.value?.bool ?? false)
         case "map":
-            MapStubComponent()
+            let mapStyle = JasonStyle.resolve(for: component, headStyles: headStyles)
+            MapComponent(component: component, height: mapStyle.height?.cgFloat)
         case "html":
             HTMLComponent(
                 text: component.text,

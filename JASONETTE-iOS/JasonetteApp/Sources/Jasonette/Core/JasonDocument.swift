@@ -85,6 +85,8 @@ public final class JasonComponent: Codable, @unchecked Sendable {
     public var keyboard: String?
     public var badge: String?
     public var css: String?
+    public var region: JasonMapRegion?
+    public var pins: [JasonMapPin]?
 
     /// Returns the image URL, preferring `url` over `image` (footer input uses `image` key).
     public var imageURL: String? { url ?? image }
@@ -92,8 +94,21 @@ public final class JasonComponent: Codable, @unchecked Sendable {
     enum CodingKeys: String, CodingKey {
         case type, text, url, image, name, value, placeholder
         case `class`
-        case style, components, href, action, keyboard, badge, css
+        case style, components, href, action, keyboard, badge, css, region, pins
     }
+}
+
+public struct JasonMapRegion: Codable, Sendable {
+    public var coord: String?
+    public var width: AnyCodable?
+    public var height: AnyCodable?
+}
+
+public struct JasonMapPin: Codable, Sendable {
+    public var coord: String?
+    public var title: String?
+    public var description: String?
+    public var style: JasonStyle?
 }
 
 public struct JasonHref: Codable, Sendable {
@@ -153,9 +168,10 @@ public struct JasonStyle: Codable, Sendable {
     public var right: AnyCodable?
     public var opacity: AnyCodable?
     public var secure: AnyCodable?
+    public var selected: AnyCodable?
 
     enum CodingKeys: String, CodingKey {
-        case font, size, color, background, padding, width, height, align, spacing, opacity, secure
+        case font, size, color, background, padding, width, height, align, spacing, opacity, secure, selected
         case top, left, bottom, right
         case paddingLeft = "padding_left"
         case paddingRight = "padding_right"

@@ -353,6 +353,29 @@ final class ViewModelTests: XCTestCase {
         XCTAssertTrue(htmlComponent.text?.contains("Continue reading") == true)
     }
 
+    func testJasonpediaMapComponentFixtureSelectsMapRendererPath() async throws {
+        let vm = JasonetteViewModel(document: try loadJasonpediaDocument("Jasonpedia/view/component/map/index.json"))
+        await vm.load()
+
+        XCTAssertEqual(vm.loadState, .loaded)
+        let sections = try XCTUnwrap(vm.renderedRoot?.body?.sections)
+        let headerMap = try XCTUnwrap(sections.first?.header?.components?.last)
+        let regionMap = try XCTUnwrap(sections[1].items?.first)
+        let pinnedMap = try XCTUnwrap(sections[2].items?.first)
+
+        XCTAssertEqual(headerMap.type, "map")
+        XCTAssertEqual(regionMap.type, "map")
+        XCTAssertEqual(pinnedMap.type, "map")
+        XCTAssertTrue(ComponentView.knownComponentTypes.contains("map"))
+        XCTAssertEqual(regionMap.region?.coord, "40.7197614,-73.9909211")
+        XCTAssertEqual(regionMap.region?.width?.string, "200")
+        XCTAssertEqual(regionMap.region?.height?.string, "200")
+        XCTAssertEqual(pinnedMap.pins?.first?.title, "This is a pin")
+        XCTAssertEqual(pinnedMap.pins?.first?.description, "It really is.")
+        XCTAssertTrue(pinnedMap.pins?.first?.style?.isSelectedAnnotation == true)
+        XCTAssertEqual(MapComponent.annotations(from: pinnedMap.pins).count, 1)
+    }
+
     func testRenderFallsBackToRawDocumentWhenTemplateInvalid() async {
         // A document with templates that render to invalid JSON falls back gracefully
         let doc = makeDocument([
