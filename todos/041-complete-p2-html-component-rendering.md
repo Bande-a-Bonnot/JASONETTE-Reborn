@@ -1,5 +1,5 @@
 ---
-status: ready
+status: complete
 priority: p2
 issue_id: "041"
 tags: [ios, components, html, wkwebview, qa]
@@ -8,9 +8,11 @@ dependencies: []
 
 # Implement HTML component rendering
 
-## Current Status
+Completed: 2026-05-23
 
-Code fix is in progress on `main` candidate as of 2026-05-22:
+## Resolution
+
+Code fix landed on `main` in `0474833 Render HTML components with WebKit`:
 
 - Added `HTMLComponent` backed by `WKWebView`.
 - Supports inline `text` HTML with optional sibling `css` injection.
@@ -20,8 +22,7 @@ Code fix is in progress on `main` candidate as of 2026-05-22:
 - Added ComponentDispatchTests for decoding, registry knowledge, document wrapping/CSS injection, relative URL resolution, and rejected disallowed URL schemes.
 - Added a ViewModel fixture test for `Jasonpedia/view/component/html/index.json`.
 - `cd JASONETTE-iOS/JasonetteApp && swift test` passes: 462 tests, 0 failures.
-
-Still open: simulator visual QA for `Jasonpedia/view/component/html/index.json`.
+- Simulator visual QA confirmed the Jasonpedia HTML component demo renders image, styled article text, and links without `[Unknown: html]`; see `docs/qa/2026-05-23-ios-html-component-qa.md`.
 
 ## Problem Statement
 
@@ -48,7 +49,7 @@ The Jasonpedia HTML component demo renders literal placeholder text
 
 - [x] `type: "html"` is recognized by `ComponentRegistry`
 - [x] Jasonpedia HTML demo no longer renders `[Unknown: html]`
-- [ ] HTML content is visible in the simulator
+- [x] HTML content is visible in the simulator
 - [x] Tests cover at least the component dispatch/registration path
 
 ## Notes

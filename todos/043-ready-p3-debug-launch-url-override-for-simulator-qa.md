@@ -17,9 +17,12 @@ Jasonpedia fixtures or ad-hoc local QA documents such as action-only tab cases.
 ## Evidence
 
 - QA doc: `docs/qa/2026-05-18-ios-simulator-complete-qa.md`
+- QA doc: `docs/qa/2026-05-23-ios-html-component-qa.md`
 - Action-only footer tab behavior could not be manually validated end-to-end
   because no Jasonpedia fixture was found and changing the launch document would
   require code edits/rebuilds.
+- HTML component visual QA again required temporarily editing `App.swift`,
+  rebuilding, installing, and restoring the source file afterward.
 
 ## Recommended Action
 

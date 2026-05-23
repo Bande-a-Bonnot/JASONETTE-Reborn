@@ -18,6 +18,7 @@ were cleared on the command line.
 ## Evidence
 
 - QA doc: `docs/qa/2026-05-18-ios-simulator-complete-qa.md`
+- QA doc: `docs/qa/2026-05-23-ios-html-component-qa.md`
 - Failed/hung command:
 
 ```bash
@@ -67,3 +68,5 @@ xcodebuild \
 ## Notes
 
 This is currently a QA/dev-infra issue, not known to affect CI or TestFlight.
+The generic simulator build workaround succeeded again during the 2026-05-23
+HTML component QA pass.

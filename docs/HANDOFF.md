@@ -1,6 +1,6 @@
 # Agent Handoff Document
 
-Last updated: 2026-05-21
+Last updated: 2026-05-23
 
 **Update this file before context compaction and at the end of significant sessions.**
 
@@ -8,7 +8,7 @@ Last updated: 2026-05-21
 
 ### Test Suite
 
-- iOS: 462 tests, 0 failures (verified 2026-05-22 after HTML component implementation; previous footer-tab selected-state work brought suite to 456)
+- iOS: 462 tests, 0 failures (verified 2026-05-22 after HTML component implementation; simulator HTML QA verified 2026-05-23)
 - Android CI: `pull_request` Android job ran/passed on PR #21, non-Android-change PR #22, and follow-up PR #23; Kotlin JSON primitive accessor compile failures fixed by squash `92e65dd`; oversized plain-integer JSON parsing aligned between Android test helper and production renderer in `c3f4f8f`
 - Run iOS: `cd JASONETTE-iOS/JasonetteApp && swift test`
 - Build iOS: `swift build` (<1s)
@@ -61,7 +61,7 @@ See `docs/plans/2026-03-28-fix-ios-components-actions-audit-plan.md` for the ful
 
 ### Phase C — Component Fixes
 
-Map pins/region, animated GIF, keyboard dismiss on text inputs. HTML component renderer path is implemented with `WKWebView`; simulator visual confirmation is still pending. Secure textfield renderer path is implemented with `SecureField` and user-confirmed correct in TestFlight/simulator.
+Map pins/region, animated GIF, keyboard dismiss on text inputs. HTML component renderer path is implemented with `WKWebView` and simulator-confirmed on `Jasonpedia/view/component/html/index.json`. Secure textfield renderer path is implemented with `SecureField` and user-confirmed correct in TestFlight/simulator.
 
 ### Phase D — Data & Navigation
 
@@ -75,7 +75,7 @@ P1:
 - none currently tracked as open
 
 P2:
-- `todos/041` — HTML component renders `[Unknown: html]` (code fix + dispatch/wrapping/URL tests added 2026-05-22; simulator visual confirmation pending)
+- `todos/045` — map component pins/region support
 
 P3:
 - `todos/015` — sectionView code duplication (defer until 3rd section type)
@@ -93,16 +93,18 @@ P3:
 - `todos/038` — footer-tab app-scheme baseURL coverage
 - `todos/043` — debug launch URL override for simulator QA
 - `todos/044` — investigate device-specific simulator build hang during asset catalog processing
+- `todos/046` — animated GIF image rendering
+- `todos/047` — keyboard dismissal behavior for text inputs
 
 Completed this session:
-- `todos/041` implementation — added `HTMLComponent` backed by `WKWebView` for inline `text` + optional `css` and URL-backed `url` HTML; `JasonComponent` now decodes `css`; `ComponentView` dispatches `type: "html"`; relative URL-backed HTML resolves against `documentURL` with http/https allowlist; added ComponentDispatchTests for decoding, registry knowledge, HTML wrapping/CSS injection, relative URL resolution, and disallowed schemes plus a ViewModel fixture test for `Jasonpedia/view/component/html/index.json`. Full Swift suite: 462 tests, 0 failures. Simulator visual confirmation remains pending.
+- `todos/041` implementation + QA — added `HTMLComponent` backed by `WKWebView` for inline `text` + optional `css` and URL-backed `url` HTML; `JasonComponent` now decodes `css`; `ComponentView` dispatches `type: "html"`; relative URL-backed HTML resolves against `documentURL` with http/https allowlist; added ComponentDispatchTests for decoding, registry knowledge, HTML wrapping/CSS injection, relative URL resolution, and disallowed schemes plus a ViewModel fixture test for `Jasonpedia/view/component/html/index.json`. Full Swift suite: 462 tests, 0 failures. Simulator QA on 2026-05-23 confirmed the HTML fixture renders the article image, styled text, and links without `[Unknown: html]`; see `docs/qa/2026-05-23-ios-html-component-qa.md`.
 - `todos/042` implementation — legacy inline footer tabs now maintain local selected index, show a selected capsule indicator for icon-only tabs, and expose non-empty accessibility labels with authored text first and per-position fallback labels for icon-only tabs; shell-mounted footer tabs also expose fallback labels and selected accessibility values. Added URLResolutionTests for label fallback behavior. User confirmed tabs are good in TestFlight once the fix was included.
 - Build 52 follow-up — TestFlight still pushed duplicate views when tapping legacy inline `footer.tabs` items whose target is the current document (e.g. pushed Jasonpedia `core/href/tabs.json`). Root shell tabs and action-href tab switching were already fixed, but pushed/single-stack legacy footer tabs still used the old synthesized-href path. `FooterTabItemView` now no-ops current-document targets after relative resolution/standardization, preserving different-target navigation; added URLResolutionTests coverage. User later confirmed the fixed tabs are good in TestFlight.
 - `todos/040` implementation — `JasonStyle.secure` now decodes/merges and `TextFieldComponent` routes `style.secure` truthy values plus legacy `type: "secure"` through SwiftUI `SecureField` while preserving `StateManager` binding and initial-value behavior; added ComponentDispatch, StyleModifier, and Jasonpedia textfield fixture tests. Simulator direct-fixture screenshot confirms the textfield page loads, and user later confirmed typed secure textfield behavior is now correct in TestFlight/simulator. Also wrote `~/jasonette-ios-simulator-qa-findings-2026-05-18.md` summarizing the QA methodology, tool commands, prompts, and findings.
 - `todos/039` implementation — `#each` now merges object item fields into the per-item template context so original Jasonette direct identifiers like `{{title}}`/`{{url}}` render while preserving `{{$jason}}`, `this`, `$index`, and `$root`; added TemplateEngine regression coverage for object-form `items`, nested components, non-array empty output, plus ViewModel tests against `Jasonpedia/template/index.json` and `Jasonpedia/action/network/index.json`. Simulator direct-fixture screenshots confirm the Template and `$network` blank-list regressions are gone; see `docs/qa/2026-05-20-ios-simulator-post-fix-qa.md`.
 - `todos/025` — footer tab-bar style/icon parity: shell tab cells now consume inherited/inline tab style, show selected tint + indicator, render `system://` SF Symbols without `AsyncImage`, and keep network-image failure placeholders.
 - `todos/026` — action-tab dispatch: action-only footer tabs now construct/render, taps forward to the selected tab's active `JasonetteViewModel` action dispatcher, and `$href` action tabs targeting existing tabs switch instead of push; no-selectable action-only footers remain single mode.
-- iOS simulator QA notes added at `docs/qa/2026-05-18-ios-simulator-complete-qa.md`; process notes added at `docs/qa/README.md`; compounded learnings added at `docs/solutions/best-practices/agent-device-ios-simulator-exploratory-qa.md`. `agent-device` 0.14.9 works for Simulator driving (`npx --yes agent-device@latest ...`). Key findings are tracked as todos/039-044.
+- iOS simulator QA notes added at `docs/qa/2026-05-18-ios-simulator-complete-qa.md`; process notes added at `docs/qa/README.md`; compounded learnings added at `docs/solutions/best-practices/agent-device-ios-simulator-exploratory-qa.md`. `agent-device` 0.14.9 works for Simulator driving (`npx --yes agent-device@latest ...`). Key findings/follow-ups from this QA sequence are tracked as todos/039-047.
 
 Nice-to-have (P3):
 - `todos/031` — investigate ZStack nav-title collision (gemini r5/6/7/8 concern)
