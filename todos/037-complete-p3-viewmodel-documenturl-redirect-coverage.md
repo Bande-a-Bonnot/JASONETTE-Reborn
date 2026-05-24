@@ -1,5 +1,5 @@
 ---
-status: ready
+status: complete
 priority: p3
 issue_id: "037"
 tags: [ios, tests, urls, redirects, viewmodel]
@@ -35,11 +35,11 @@ internal/testable seam needed without changing public API.
 
 ## Acceptance Criteria
 
-- [ ] A normal non-preloaded `JasonetteViewModel(url:)` load updates
+- [x] A normal non-preloaded `JasonetteViewModel(url:)` load updates
       `documentURL` to the final loaded response URL.
-- [ ] Test fails if `JasonetteViewModel.load()` regresses to ignoring
+- [x] Test fails if `JasonetteViewModel.load()` regresses to ignoring
       `DocumentLoader.LoadedDocument.url`.
-- [ ] Existing iOS test suite still passes.
+- [x] Existing iOS test suite still passes (`cd JASONETTE-iOS/JasonetteApp && swift test`, 479 tests, 0 failures, 2026-05-24).
 
 ## Notes
 

@@ -66,6 +66,42 @@ final class ViewModelTests: XCTestCase {
         XCTAssertEqual(vm.documentURL, documentURL)
     }
 
+    func testURLLoadUpdatesDocumentURLToFinalResponseURL() async {
+        let requestURL = URL(string: "https://example.com/app/index.json")!
+        let finalURL = URL(string: "https://cdn.example.com/final/index.json")!
+        let json = """
+        {
+            "$jason": {
+                "head": {"title": "Redirected"},
+                "body": {"sections": [{"items": [{"type": "label", "text": "Loaded"}]}]}
+            }
+        }
+        """
+        StubURLProtocol.requestHandler = { _ in
+            let response = HTTPURLResponse(
+                url: finalURL,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: nil
+            )!
+            return (response, Data(json.utf8))
+        }
+        defer {
+            StubURLProtocol.requestHandler = nil
+            StubURLProtocol.redirectHandler = nil
+        }
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [StubURLProtocol.self]
+        let loader = DocumentLoader(session: URLSession(configuration: config))
+        let vm = JasonetteViewModel(url: requestURL, loader: loader)
+
+        await vm.load()
+
+        XCTAssertEqual(vm.loadState, .loaded)
+        XCTAssertEqual(vm.documentURL, finalURL)
+        XCTAssertEqual(vm.renderedRoot?.head?.title, "Redirected")
+    }
+
     // MARK: - Render fallback
 
     func testRenderFallsBackToRawDocumentWithoutTemplates() async {

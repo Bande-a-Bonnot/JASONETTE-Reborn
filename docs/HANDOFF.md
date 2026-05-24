@@ -8,7 +8,7 @@ Last updated: 2026-05-24
 
 ### Test Suite
 
-- iOS: 478 tests, 0 failures (verified 2026-05-24 after footer button failure placeholder and app-scheme tab descriptor coverage; simulator map QA verified 2026-05-23)
+- iOS: 479 tests, 0 failures (verified 2026-05-24 after ViewModel final-response documentURL coverage; simulator map QA verified 2026-05-23)
 - Android CI: `pull_request` Android job ran/passed on PR #21, non-Android-change PR #22, and follow-up PR #23; Kotlin JSON primitive accessor compile failures fixed by squash `92e65dd`; oversized plain-integer JSON parsing aligned between Android test helper and production renderer in `c3f4f8f`
 - Run iOS: `cd JASONETTE-iOS/JasonetteApp && swift test`
 - Build iOS: `swift build` (<1s)
@@ -85,13 +85,13 @@ P3:
 - `todos/027` — action-tab canonical-key content hash
 - `todos/029` — onChange iOS 17 modernization
 - `todos/033` — Android JSON decimal/exponent precision policy (Gemini PR #23 follow-up; plain integers fixed, decimal/exponent still use `Double` by current contract)
-- `todos/037` — ViewModel documentURL redirect coverage
 - `todos/043` — debug launch URL override for simulator QA
 - `todos/044` — investigate device-specific simulator build hang during asset catalog processing
 - `todos/046` — animated GIF image rendering
 - `todos/047` — keyboard dismissal behavior for text inputs
 
 Completed this session:
+- `todos/037` — added an internal/testable `DocumentLoader` injection seam to `JasonetteViewModel` URL initializers and a URLProtocol-backed ViewModel test proving normal non-seed URL loads set `documentURL` to the final response URL from `DocumentLoader.LoadedDocument.url`, then render the loaded document. Full Swift suite: 479 tests, 0 failures (2026-05-24).
 - `todos/022` — footer input button `AsyncImage` now renders a visible `photo` SF Symbol placeholder on `.failure` while keeping `.empty` as `Color.clear` for the small 24x24 loading state. Full Swift suite: 478 tests, 0 failures (2026-05-24).
 - `todos/038` — added `TabDescriptor(from:baseURL:)` coverage proving absolute non-hierarchical app URLs like `mailto:test@example.com` remain absolute when an HTTPS base URL is supplied. Existing app-scheme allowlist coverage remains intact. Full Swift suite: 478 tests, 0 failures (2026-05-24).
 - `todos/036` — non-tab image renderers now apply `DocumentLoader.allowedSchemes` (`http`/`https`) after relative URL resolution. This covers `ImageComponent`, `ButtonComponent`, footer input buttons, and legacy inline footer tab icons, rejecting `file:` and custom schemes consistently while preserving authored relative HTTP(S) images. Added URLResolutionTests for representative allowed/rejected cases. Full Swift suite: 477 tests, 0 failures (2026-05-24).

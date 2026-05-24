@@ -29,7 +29,7 @@ public final class JasonetteViewModel: ObservableObject {
     /// that, `load()` refetches from `url` — otherwise `$reload`, retry, and
     /// pull-to-refresh-without-`$pull` would forever re-render the stale seed.
     private var seedConsumed: Bool = false
-    private let loader = DocumentLoader()
+    private let loader: DocumentLoader
     private let decoder = JSONDecoder()
     private var loadTask: Task<Void, Never>?
     let stateManager = StateManager()
@@ -42,10 +42,11 @@ public final class JasonetteViewModel: ObservableObject {
     /// previews without navigation wiring.
     let onNavigate: (NavigationRequest) -> Void
 
-    init(url: URL, onNavigate: ((NavigationRequest) -> Void)? = nil) {
+    init(url: URL, onNavigate: ((NavigationRequest) -> Void)? = nil, loader: DocumentLoader = DocumentLoader()) {
         self.url = url
         self.documentURL = url
         self.document = nil
+        self.loader = loader
         self.actionDispatcher = ActionDispatcher(stateManager: stateManager, documentURL: url)
         self.onNavigate = onNavigate ?? { _ in }
         wireHandlers()
@@ -55,6 +56,7 @@ public final class JasonetteViewModel: ObservableObject {
         self.url = nil
         self.documentURL = nil
         self.document = document
+        self.loader = DocumentLoader()
         self.actionDispatcher = ActionDispatcher(stateManager: stateManager)
         self.onNavigate = onNavigate ?? { _ in }
         wireHandlers()
@@ -63,11 +65,18 @@ public final class JasonetteViewModel: ObservableObject {
     /// Seed the VM with a document already fetched by the bootstrap and the
     /// URL it came from. First `load()` renders the seed without a network
     /// round-trip; subsequent `load()`/`reload()` refetch from `url`.
-    init(url: URL, preloadedDoc: JasonDocument, documentURL: URL? = nil, onNavigate: ((NavigationRequest) -> Void)? = nil) {
+    init(
+        url: URL,
+        preloadedDoc: JasonDocument,
+        documentURL: URL? = nil,
+        onNavigate: ((NavigationRequest) -> Void)? = nil,
+        loader: DocumentLoader = DocumentLoader()
+    ) {
         let resolvedDocumentURL = documentURL ?? url
         self.url = url
         self.documentURL = resolvedDocumentURL
         self.document = preloadedDoc
+        self.loader = loader
         self.actionDispatcher = ActionDispatcher(stateManager: stateManager, documentURL: resolvedDocumentURL)
         self.onNavigate = onNavigate ?? { _ in }
         wireHandlers()
