@@ -1,5 +1,5 @@
 ---
-status: ready
+status: complete
 priority: p3
 issue_id: "018"
 tags: [code-quality, components, code-review]
@@ -24,8 +24,8 @@ Change `ButtonComponent(text: component.text, url: component.url)` to `ButtonCom
 
 ## Acceptance Criteria
 
-- [ ] ButtonComponent uses `component.imageURL` instead of `component.url`
-- [ ] Tests pass
+- [x] ButtonComponent uses `component.imageURL` instead of `component.url`
+- [x] Tests pass (`cd JASONETTE-iOS/JasonetteApp && swift test`, 473 tests, 0 failures, 2026-05-24)
 
 ## Notes
 

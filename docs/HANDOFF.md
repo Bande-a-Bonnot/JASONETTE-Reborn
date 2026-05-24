@@ -1,6 +1,6 @@
 # Agent Handoff Document
 
-Last updated: 2026-05-23
+Last updated: 2026-05-24
 
 **Update this file before context compaction and at the end of significant sessions.**
 
@@ -8,7 +8,7 @@ Last updated: 2026-05-23
 
 ### Test Suite
 
-- iOS: 470 tests, 0 failures (verified 2026-05-23 after MapKit map component implementation; simulator map QA verified 2026-05-23)
+- iOS: 473 tests, 0 failures (verified 2026-05-24 after ButtonComponent image fallback + background color flow-through tests; simulator map QA verified 2026-05-23)
 - Android CI: `pull_request` Android job ran/passed on PR #21, non-Android-change PR #22, and follow-up PR #23; Kotlin JSON primitive accessor compile failures fixed by squash `92e65dd`; oversized plain-integer JSON parsing aligned between Android test helper and production renderer in `c3f4f8f`
 - Run iOS: `cd JASONETTE-iOS/JasonetteApp && swift test`
 - Build iOS: `swift build` (<1s)
@@ -81,9 +81,7 @@ P3:
 - `todos/015` — sectionView code duplication (defer until 3rd section type)
 - `todos/016` — solution doc version inconsistency
 - `todos/017` — plan doc hygiene
-- `todos/018` — ButtonComponent imageURL consistency
 - `todos/020` — same-axis layer constraints
-- `todos/021` — rgba/hex8 background color tests
 - `todos/022` — footer button image failure placeholder
 - `todos/027` — action-tab canonical-key content hash
 - `todos/029` — onChange iOS 17 modernization
@@ -97,6 +95,8 @@ P3:
 - `todos/047` — keyboard dismissal behavior for text inputs
 
 Completed this session:
+- `todos/018` — `ComponentView` now constructs `ButtonComponent` through a `JasonComponent` initializer that uses `component.imageURL`, so authored `image` fields are honored for button image fallback while preserving `url` precedence. Added URLResolutionTests coverage for an image-only button. Full Swift suite: 473 tests, 0 failures (2026-05-24).
+- `todos/021` — added ViewModel flow-through tests for `rgba(10,20,30,0.5)` and `#112233cc` body backgrounds. Full Swift suite: 473 tests, 0 failures (2026-05-24).
 - `todos/045` implementation + QA — replaced the prior map placeholder path with `MapComponent` backed by SwiftUI/MapKit; `JasonComponent` now decodes `region` and `pins`; `JasonStyle.selected` decodes/merges for selected pin callouts; authored `coord`, width/height meter spans, pin title/description, and selected callout semantics are honored. Added ComponentDispatchTests for map decoding, registry knowledge, coordinate parsing, region creation, and annotations; added StyleModifierTests for `selected`; added ViewModel fixture coverage for `Jasonpedia/view/component/map/index.json`. Full Swift suite: 470 tests, 0 failures. Simulator QA on 2026-05-23 confirmed the Jasonpedia map fixture renders native maps and a pin-focused QA fixture renders a red pin plus visible title/description callout; see `docs/qa/2026-05-23-ios-map-component-qa.md` and artifacts under `docs/qa/artifacts/2026-05-23-ios-map-component/`.
 - `todos/041` implementation + QA — added `HTMLComponent` backed by `WKWebView` for inline `text` + optional `css` and URL-backed `url` HTML; `JasonComponent` now decodes `css`; `ComponentView` dispatches `type: "html"`; relative URL-backed HTML resolves against `documentURL` with http/https allowlist; added ComponentDispatchTests for decoding, registry knowledge, HTML wrapping/CSS injection, relative URL resolution, and disallowed schemes plus a ViewModel fixture test for `Jasonpedia/view/component/html/index.json`. Full Swift suite: 462 tests, 0 failures. Simulator QA on 2026-05-23 confirmed the HTML fixture renders the article image, styled text, and links without `[Unknown: html]`; see `docs/qa/2026-05-23-ios-html-component-qa.md`.
 - `todos/042` implementation — legacy inline footer tabs now maintain local selected index, show a selected capsule indicator for icon-only tabs, and expose non-empty accessibility labels with authored text first and per-position fallback labels for icon-only tabs; shell-mounted footer tabs also expose fallback labels and selected accessibility values. Added URLResolutionTests for label fallback behavior. User confirmed tabs are good in TestFlight once the fix was included.

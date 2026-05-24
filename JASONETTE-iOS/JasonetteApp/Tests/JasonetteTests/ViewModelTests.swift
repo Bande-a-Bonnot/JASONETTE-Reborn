@@ -432,6 +432,42 @@ final class ViewModelTests: XCTestCase {
         XCTAssertEqual(vm.renderedRoot?.body?.background?.string, "rgb(0,255,0)")
     }
 
+    func testBodyBackgroundRGBAColorFlowsThrough() async {
+        let doc = makeDocument([
+            "$jason": [
+                "head": ["title": "BG RGBA"],
+                "body": [
+                    "background": "rgba(10,20,30,0.5)",
+                    "sections": [
+                        ["items": [["type": "label", "text": "RGBA bg"]]]
+                    ]
+                ]
+            ]
+        ])
+        let vm = JasonetteViewModel(document: doc)
+        await vm.load()
+        XCTAssertEqual(vm.loadState, .loaded)
+        XCTAssertEqual(vm.renderedRoot?.body?.background?.string, "rgba(10,20,30,0.5)")
+    }
+
+    func testBodyBackgroundHex8ColorFlowsThrough() async {
+        let doc = makeDocument([
+            "$jason": [
+                "head": ["title": "BG Hex8"],
+                "body": [
+                    "background": "#112233cc",
+                    "sections": [
+                        ["items": [["type": "label", "text": "Hex8 bg"]]]
+                    ]
+                ]
+            ]
+        ])
+        let vm = JasonetteViewModel(document: doc)
+        await vm.load()
+        XCTAssertEqual(vm.loadState, .loaded)
+        XCTAssertEqual(vm.renderedRoot?.body?.background?.string, "#112233cc")
+    }
+
     func testBodyWithoutBackgroundRendersNormally() async {
         let doc = makeDocument([
             "$jason": [

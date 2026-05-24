@@ -1,5 +1,5 @@
 ---
-status: ready
+status: complete
 priority: p3
 issue_id: "021"
 tags: [testing, code-review]
@@ -27,8 +27,9 @@ Add two tests mirroring the existing pattern:
 
 ## Acceptance Criteria
 
-- [ ] rgba() background string flows through renderedRoot
-- [ ] 8-digit hex background string flows through renderedRoot
+- [x] rgba() background string flows through renderedRoot
+- [x] 8-digit hex background string flows through renderedRoot
+- [x] Tests pass (`cd JASONETTE-iOS/JasonetteApp && swift test`, 473 tests, 0 failures, 2026-05-24)
 
 ## Notes
 

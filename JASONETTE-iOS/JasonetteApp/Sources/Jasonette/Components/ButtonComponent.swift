@@ -5,6 +5,16 @@ struct ButtonComponent: View {
     let url: String?
     let documentURL: URL?
 
+    init(text: String?, url: String?, documentURL: URL?) {
+        self.text = text
+        self.url = url
+        self.documentURL = documentURL
+    }
+
+    init(component: JasonComponent, documentURL: URL?) {
+        self.init(text: component.text, url: component.imageURL, documentURL: documentURL)
+    }
+
     var resolvedURL: URL? {
         url.flatMap { JasonURL.resolve($0, against: documentURL) }
     }

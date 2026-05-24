@@ -49,6 +49,16 @@ final class URLResolutionTests: XCTestCase {
         XCTAssertEqual(button.resolvedURL, URL(string: "https://example.com/icons/open.png")!)
     }
 
+    func testButtonComponentUsesImageFallbackURL() {
+        let component = decodeComponent([
+            "type": "button",
+            "text": "Camera",
+            "image": "icons/camera.png"
+        ])
+        let button = ButtonComponent(component: component, documentURL: baseURL)
+        XCTAssertEqual(button.resolvedURL, URL(string: "https://example.com/app/icons/camera.png")!)
+    }
+
     func testFooterInputButtonResolvesRelativeImageURLAgainstDocumentURL() {
         let footer = decodeFooter([
             "input": [
