@@ -44,6 +44,11 @@ final class URLResolutionTests: XCTestCase {
         XCTAssertEqual(image.resolvedURL, URL(string: "https://example.com/app/images/logo.png")!)
     }
 
+    func testImageComponentRejectsUnsafeImageSchemes() {
+        XCTAssertNil(ImageComponent(url: "file:///tmp/logo.png", style: nil, documentURL: baseURL).resolvedURL)
+        XCTAssertNil(ImageComponent(url: "custom://logo", style: nil, documentURL: baseURL).resolvedURL)
+    }
+
     func testButtonComponentResolvesRootRelativeURLAgainstDocumentURL() {
         let button = ButtonComponent(text: "Open", url: "/icons/open.png", documentURL: baseURL)
         XCTAssertEqual(button.resolvedURL, URL(string: "https://example.com/icons/open.png")!)
@@ -57,6 +62,11 @@ final class URLResolutionTests: XCTestCase {
         ])
         let button = ButtonComponent(component: component, documentURL: baseURL)
         XCTAssertEqual(button.resolvedURL, URL(string: "https://example.com/app/icons/camera.png")!)
+    }
+
+    func testButtonComponentRejectsUnsafeImageSchemes() {
+        XCTAssertNil(ButtonComponent(text: nil, url: "file:///tmp/button.png", documentURL: baseURL).resolvedURL)
+        XCTAssertNil(ButtonComponent(text: nil, url: "custom://button", documentURL: baseURL).resolvedURL)
     }
 
     func testFooterInputButtonResolvesRelativeImageURLAgainstDocumentURL() {
@@ -73,6 +83,18 @@ final class URLResolutionTests: XCTestCase {
         )
     }
 
+    func testFooterInputButtonRejectsUnsafeImageSchemes() {
+        let footer = decodeFooter([
+            "input": [
+                "left": ["image": "file:///tmp/camera.png"],
+                "right": ["image": "custom://send"]
+            ]
+        ])
+        let inputView = FooterInputView(input: footer.input!, onAction: nil, documentURL: baseURL)
+        XCTAssertNil(inputView.resolvedImageURL(for: footer.input!.left!))
+        XCTAssertNil(inputView.resolvedImageURL(for: footer.input!.right!))
+    }
+
     func testLegacyFooterTabItemResolvesRelativeIconURLAgainstDocumentURL() {
         let item = decodeComponent([
             "image": "icons/home.png",
@@ -87,6 +109,20 @@ final class URLResolutionTests: XCTestCase {
             documentURL: baseURL
         )
         XCTAssertEqual(tabItem.resolvedIconURL, URL(string: "https://example.com/app/icons/home.png")!)
+    }
+
+    func testLegacyFooterTabItemRejectsUnsafeIconSchemes() {
+        for image in ["file:///tmp/home.png", "custom://home"] {
+            let item = decodeComponent(["image": image, "url": "home.json"])
+            let tabItem = FooterTabItemView(
+                item: item,
+                headStyles: [:],
+                onHref: nil,
+                onAction: nil,
+                documentURL: baseURL
+            )
+            XCTAssertNil(tabItem.resolvedIconURL)
+        }
     }
 
     func testLegacyFooterTabItemDetectsCurrentDocumentTarget() {

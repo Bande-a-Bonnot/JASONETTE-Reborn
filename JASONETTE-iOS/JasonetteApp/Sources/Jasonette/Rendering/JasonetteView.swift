@@ -382,7 +382,7 @@ struct FooterInputView: View {
     }
 
     func resolvedImageURL(for component: JasonComponent) -> URL? {
-        component.imageURL.flatMap { JasonURL.resolve($0, against: documentURL) }
+        component.imageURL.flatMap { JasonURL.resolve($0, against: documentURL, allowedSchemes: DocumentLoader.allowedSchemes) }
     }
 }
 
@@ -494,7 +494,7 @@ struct FooterTabItemView: View {
     }
 
     var resolvedIconURL: URL? {
-        item.image.flatMap { JasonURL.resolve($0, against: documentURL) }
+        item.image.flatMap { JasonURL.resolve($0, against: documentURL, allowedSchemes: DocumentLoader.allowedSchemes) }
     }
 
     var accessibilityLabelText: String {

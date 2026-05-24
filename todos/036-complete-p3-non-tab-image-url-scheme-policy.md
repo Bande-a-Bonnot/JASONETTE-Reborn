@@ -1,5 +1,5 @@
 ---
-status: ready
+status: complete
 priority: p3
 issue_id: "036"
 tags: [ios, urls, images, security, code-review]
@@ -26,9 +26,10 @@ still parse authored URL strings independently and may preserve absolute
 
 ## Acceptance Criteria
 
-- [ ] Non-tab image URL scheme behavior is documented in code/tests
-- [ ] Disallowed schemes are rejected or explicitly preserved by policy
-- [ ] Tests cover `https`, `file`, and one custom scheme for representative image renderers
+- [x] Non-tab image URL scheme behavior is documented in code/tests
+- [x] Disallowed schemes are rejected for image renderers by applying `DocumentLoader.allowedSchemes` after relative resolution
+- [x] Tests cover allowed HTTP(S) relative URLs plus `file` and `custom` scheme rejection for representative image renderers
+- [x] Tests pass (`cd JASONETTE-iOS/JasonetteApp && swift test`, 477 tests, 0 failures, 2026-05-24)
 
 ## Notes
 

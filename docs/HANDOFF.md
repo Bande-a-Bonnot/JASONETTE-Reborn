@@ -8,7 +8,7 @@ Last updated: 2026-05-24
 
 ### Test Suite
 
-- iOS: 473 tests, 0 failures (verified 2026-05-24 after ButtonComponent image fallback + background color flow-through tests; simulator map QA verified 2026-05-23)
+- iOS: 477 tests, 0 failures (verified 2026-05-24 after non-tab image URL scheme policy, ButtonComponent image fallback, and background color flow-through tests; simulator map QA verified 2026-05-23)
 - Android CI: `pull_request` Android job ran/passed on PR #21, non-Android-change PR #22, and follow-up PR #23; Kotlin JSON primitive accessor compile failures fixed by squash `92e65dd`; oversized plain-integer JSON parsing aligned between Android test helper and production renderer in `c3f4f8f`
 - Run iOS: `cd JASONETTE-iOS/JasonetteApp && swift test`
 - Build iOS: `swift build` (<1s)
@@ -86,7 +86,6 @@ P3:
 - `todos/027` — action-tab canonical-key content hash
 - `todos/029` — onChange iOS 17 modernization
 - `todos/033` — Android JSON decimal/exponent precision policy (Gemini PR #23 follow-up; plain integers fixed, decimal/exponent still use `Double` by current contract)
-- `todos/036` — non-tab image URL scheme policy (PR #24 follow-up)
 - `todos/037` — ViewModel documentURL redirect coverage
 - `todos/038` — footer-tab app-scheme baseURL coverage
 - `todos/043` — debug launch URL override for simulator QA
@@ -95,6 +94,7 @@ P3:
 - `todos/047` — keyboard dismissal behavior for text inputs
 
 Completed this session:
+- `todos/036` — non-tab image renderers now apply `DocumentLoader.allowedSchemes` (`http`/`https`) after relative URL resolution. This covers `ImageComponent`, `ButtonComponent`, footer input buttons, and legacy inline footer tab icons, rejecting `file:` and custom schemes consistently while preserving authored relative HTTP(S) images. Added URLResolutionTests for representative allowed/rejected cases. Full Swift suite: 477 tests, 0 failures (2026-05-24).
 - `todos/018` — `ComponentView` now constructs `ButtonComponent` through a `JasonComponent` initializer that uses `component.imageURL`, so authored `image` fields are honored for button image fallback while preserving `url` precedence. Added URLResolutionTests coverage for an image-only button. Full Swift suite: 473 tests, 0 failures (2026-05-24).
 - `todos/021` — added ViewModel flow-through tests for `rgba(10,20,30,0.5)` and `#112233cc` body backgrounds. Full Swift suite: 473 tests, 0 failures (2026-05-24).
 - `todos/045` implementation + QA — replaced the prior map placeholder path with `MapComponent` backed by SwiftUI/MapKit; `JasonComponent` now decodes `region` and `pins`; `JasonStyle.selected` decodes/merges for selected pin callouts; authored `coord`, width/height meter spans, pin title/description, and selected callout semantics are honored. Added ComponentDispatchTests for map decoding, registry knowledge, coordinate parsing, region creation, and annotations; added StyleModifierTests for `selected`; added ViewModel fixture coverage for `Jasonpedia/view/component/map/index.json`. Full Swift suite: 470 tests, 0 failures. Simulator QA on 2026-05-23 confirmed the Jasonpedia map fixture renders native maps and a pin-focused QA fixture renders a red pin plus visible title/description callout; see `docs/qa/2026-05-23-ios-map-component-qa.md` and artifacts under `docs/qa/artifacts/2026-05-23-ios-map-component/`.

@@ -16,7 +16,7 @@ struct ButtonComponent: View {
     }
 
     var resolvedURL: URL? {
-        url.flatMap { JasonURL.resolve($0, against: documentURL) }
+        url.flatMap { JasonURL.resolve($0, against: documentURL, allowedSchemes: DocumentLoader.allowedSchemes) }
     }
 
     var body: some View {
