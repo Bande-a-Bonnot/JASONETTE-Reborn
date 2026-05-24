@@ -136,6 +136,15 @@ final class TabNavigationCoordinatorTests: XCTestCase {
         XCTAssertEqual(url.absoluteString, "https://example.com/app/pages/help.html")
     }
 
+    func testDescriptorPreservesAbsoluteAppSchemeURLWithBaseURL() {
+        let c = JasonComponent()
+        var href = JasonHref(); href.url = "mailto:test@example.com"; href.view = "app"
+        c.href = href
+        let d = TabDescriptor(from: c, baseURL: URL(string: "https://example.com/app/index.json")!)
+        guard case .app(let url) = d?.target else { return XCTFail("expected .app target") }
+        XCTAssertEqual(url.absoluteString, "mailto:test@example.com")
+    }
+
     func testDescriptorFromComponentWithActionOnlyBuildsActionTarget() {
         let c = JasonComponent()
         c.text = "Refresh"

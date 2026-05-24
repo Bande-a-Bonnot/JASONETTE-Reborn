@@ -1,5 +1,5 @@
 ---
-status: ready
+status: complete
 priority: p3
 issue_id: "038"
 tags: [ios, tests, urls, tabs]
@@ -31,10 +31,10 @@ Add a `TabNavigationCoordinatorTests` / descriptor test that:
 
 ## Acceptance Criteria
 
-- [ ] `TabDescriptor(from:baseURL:)` preserves absolute non-hierarchical app URLs.
-- [ ] App-scheme allowlist behavior remains unchanged (`mailto`, `tel`, `sms`,
+- [x] `TabDescriptor(from:baseURL:)` preserves absolute non-hierarchical app URLs.
+- [x] App-scheme allowlist behavior remains unchanged (`mailto`, `tel`, `sms`,
       `http`, `https` accepted; unsafe schemes rejected).
-- [ ] Existing iOS test suite still passes.
+- [x] Existing iOS test suite still passes (`cd JASONETTE-iOS/JasonetteApp && swift test`, 478 tests, 0 failures, 2026-05-24).
 
 ## Notes
 

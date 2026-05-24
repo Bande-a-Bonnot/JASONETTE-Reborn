@@ -362,6 +362,9 @@ struct FooterInputView: View {
                     switch phase {
                     case .success(let image):
                         image.resizable().scaledToFit()
+                    case .failure:
+                        Image(systemName: "photo")
+                            .foregroundColor(.secondary)
                     default:
                         Color.clear
                     }

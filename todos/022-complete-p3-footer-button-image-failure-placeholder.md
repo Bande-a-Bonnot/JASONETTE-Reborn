@@ -1,5 +1,5 @@
 ---
-status: ready
+status: complete
 priority: p3
 issue_id: "022"
 tags: [ux, components, code-review]
@@ -30,8 +30,9 @@ case .failure:
 
 ## Acceptance Criteria
 
-- [ ] Failed footer button images show a visible placeholder icon
-- [ ] Loading state can remain Color.clear (too small for spinner)
+- [x] Failed footer button images show a visible placeholder icon
+- [x] Loading state can remain Color.clear (too small for spinner)
+- [x] Tests pass (`cd JASONETTE-iOS/JasonetteApp && swift test`, 478 tests, 0 failures, 2026-05-24)
 
 ## Notes
 
