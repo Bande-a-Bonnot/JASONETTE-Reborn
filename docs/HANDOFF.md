@@ -8,7 +8,7 @@ Last updated: 2026-05-25
 
 ### Test Suite
 
-- iOS: 488 tests, 0 failures (verified 2026-05-25 after debug launch URL override implementation; `swift build` succeeded)
+- iOS: 492 tests, 0 failures (verified 2026-05-25 after action-tab stable canonical key implementation; `swift build` succeeded)
 - Android CI: `pull_request` Android job ran/passed on PR #21, non-Android-change PR #22, and follow-up PR #23; Kotlin JSON primitive accessor compile failures fixed by squash `92e65dd`; oversized plain-integer JSON parsing aligned between Android test helper and production renderer in `c3f4f8f`
 - Run iOS: `cd JASONETTE-iOS/JasonetteApp && swift test`
 - Build iOS: `swift build` (<1s)
@@ -82,12 +82,12 @@ P3:
 - `todos/016` — solution doc version inconsistency
 - `todos/017` — plan doc hygiene
 - `todos/020` — same-axis layer constraints
-- `todos/027` — action-tab canonical-key content hash
 - `todos/029` — onChange iOS 17 modernization
 - `todos/033` — Android JSON decimal/exponent precision policy (Gemini PR #23 follow-up; plain integers fixed, decimal/exponent still use `Double` by current contract)
 - `todos/044` — investigate device-specific simulator build hang during asset catalog processing
 
 Completed this session:
+- `todos/027` — added `JasonAction.stableHash` using sorted-key JSON encoding plus SHA-256 via CryptoKit, and changed `.action` tab canonical keys from `ObjectIdentifier(action)` to the content hash. Added TabNavigationCoordinator tests proving stable keys across independent decodes, different content changes keys, nested `success`/`error` branches participate, and duplicate action-only tabs dedupe during bootstrap. Action-only tabs remain intentionally non-selectable, so SceneStorage selected-tab restore remains document-tab-only. Verification: `swift test --filter TabNavigationCoordinatorTests`; full `swift test` — 492 tests, 0 failures; `swift build`.
 - `todos/043` — added `JasonetteLaunchConfiguration` and updated the iOS app entrypoint so Debug builds can override the root document URL via `-JasonetteEntryURL`, `-JasonetteEntryURL=...`, or `JASONETTE_ENTRY_URL`; Release/TestFlight behavior remains the production Jasonpedia demo URL. Added `LaunchConfigurationTests`, local tabs/action-tabs simulator fixtures under `docs/qa/fixtures/ios-simulator-tabs/`, and exact `simctl`/`agent-device` usage in `docs/qa/README.md`. Verification: `jq empty docs/qa/fixtures/ios-simulator-tabs/*.json`; `swift test --filter LaunchConfigurationTests`; full `swift test` — 488 tests, 0 failures; `swift build`.
 - `todos/047` — added shared iOS keyboard dismissal helpers: textfields and secure fields use Done/submit dismissal plus keyboard toolbar, textareas get a keyboard Done toolbar, footer input gets Done/submit dismissal, ScrollView uses interactive keyboard dismissal, and the document surface dismisses via responder-chain outside taps. Secure textfield routing and footer input binding remain unchanged. Full Swift suite: 483 tests, 0 failures; iOS simulator build succeeded (2026-05-25). Best-effort QA documented at `docs/qa/2026-05-25-ios-gif-keyboard-best-effort-qa.md`.
 - `todos/046` — added `AnimatedGIFImage`, an iOS-only UIKit/ImageIO-backed `UIImageView` wrapper for `.gif` image URLs, while preserving static images on the existing `AsyncImage` path. Relative GIF URLs resolve against `documentURL` with existing http/https image policy. Added URLResolutionTests for GIF detection, query-string handling, relative GIF path selection, and static image path retention. Full Swift suite: 483 tests, 0 failures; iOS simulator build succeeded (2026-05-25). Best-effort QA documented at `docs/qa/2026-05-25-ios-gif-keyboard-best-effort-qa.md`.

@@ -160,6 +160,53 @@ final class TabNavigationCoordinatorTests: XCTestCase {
         XCTAssertEqual(d?.label.text, "Refresh")
     }
 
+    func testActionCanonicalKeyIsStableAcrossIndependentDecodes() throws {
+        let first = try decodeAction(#"{"type":"$set","options":{"flag":true,"count":1}}"#)
+        let second = try decodeAction(#"{"options":{"count":1,"flag":true},"type":"$set"}"#)
+        let firstDescriptor = TabDescriptor(target: .action(first), label: label())
+        let secondDescriptor = TabDescriptor(target: .action(second), label: label())
+
+        XCTAssertEqual(first.stableHash, second.stableHash)
+        XCTAssertEqual(firstDescriptor.target.canonicalKey, secondDescriptor.target.canonicalKey)
+    }
+
+    func testActionCanonicalKeyChangesWhenActionContentChanges() throws {
+        let first = try decodeAction(#"{"type":"$set","options":{"flag":true}}"#)
+        let second = try decodeAction(#"{"type":"$set","options":{"flag":false}}"#)
+        let third = try decodeAction(#"{"type":"$reload"}"#)
+
+        XCTAssertNotEqual(first.stableHash, second.stableHash)
+        XCTAssertNotEqual(first.stableHash, third.stableHash)
+    }
+
+    func testActionCanonicalKeyIncludesNestedSuccessAndErrorBranches() throws {
+        let first = try decodeAction(#"{"type":"$network.request","success":{"type":"$render"},"error":{"type":"$util.alert","options":{"title":"Nope"}}}"#)
+        let second = try decodeAction(#"{"type":"$network.request","success":{"type":"$render"},"error":{"type":"$util.alert","options":{"title":"Different"}}}"#)
+
+        XCTAssertNotEqual(first.stableHash, second.stableHash)
+    }
+
+    func testCoordinatorDedupesDuplicateActionTabsByContent() throws {
+        let entry = URL(string: "https://a")!
+        let first = actionItem(action: try decodeAction(#"{"type":"$reload"}"#))
+        let duplicate = actionItem(action: try decodeAction(#"{"type":"$reload"}"#))
+        let different = actionItem(action: try decodeAction(#"{"type":"$util.alert","options":{"title":"Hi"}}"#))
+        let c = JasonetteNavigationCoordinator(entryURL: entry)
+
+        c.bootstrapDidLoad(doc: makeDoc(tabs: [
+            first,
+            duplicate,
+            different,
+            tabItem(url: "https://a"),
+        ]))
+
+        guard case .tabs(let shell, _, _) = c.mode else {
+            return XCTFail("expected .tabs")
+        }
+        XCTAssertEqual(shell.tabs.count, 3)
+        XCTAssertEqual(shell.tabs.map(\.descriptor.target.canonicalKey).count, Set(shell.tabs.map(\.descriptor.target.canonicalKey)).count)
+    }
+
     func testDescriptorFromComponentWithNoTargetReturnsNil() {
         let c = JasonComponent(); c.text = "nothing"
         XCTAssertNil(TabDescriptor(from: c))
@@ -507,10 +554,16 @@ final class TabNavigationCoordinatorTests: XCTestCase {
         let c = JasonComponent(); c.url = url; return c
     }
     private func actionItem(type: String) -> JasonComponent {
-        let c = JasonComponent()
         let action = JasonAction(); action.type = type
+        return actionItem(action: action)
+    }
+    private func actionItem(action: JasonAction) -> JasonComponent {
+        let c = JasonComponent()
         c.action = action
         return c
+    }
+    private func decodeAction(_ json: String) throws -> JasonAction {
+        try JSONDecoder().decode(JasonAction.self, from: Data(json.utf8))
     }
     private func makeDoc(tabs: [JasonComponent]) -> JasonDocument {
         var body = JasonBody()

@@ -31,7 +31,7 @@ struct TabDescriptor: Sendable {
             case .document(let url): return "doc:\(url.standardized.absoluteString)"
             case .web(let url):      return "web:\(url.standardized.absoluteString)"
             case .app(let url):      return "app:\(url.standardized.absoluteString)"
-            case .action(let action): return "action:\(ObjectIdentifier(action))"
+            case .action(let action): return "action:\(action.stableHash)"
             }
         }
     }

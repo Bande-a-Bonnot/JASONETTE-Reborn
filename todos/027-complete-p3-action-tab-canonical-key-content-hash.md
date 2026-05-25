@@ -1,5 +1,5 @@
 ---
-status: ready
+status: complete
 priority: p3
 issue_id: "027"
 tags: [ios, tabs, dedupe, code-review]
@@ -70,15 +70,38 @@ Tests:
 
 ## Acceptance Criteria
 
-- [ ] `.action` canonical keys are content-derived, not identity-based
-- [ ] Identical action JSON ⇒ identical key across decode cycles
-- [ ] Dedupe during bootstrap drops duplicate action items (parity
+- [x] `.action` canonical keys are content-derived, not identity-based
+- [x] Identical action JSON ⇒ identical key across decode cycles
+- [x] Dedupe during bootstrap drops duplicate action items (parity
       with URL-tab dedupe)
-- [ ] `@SceneStorage` restore re-selects the correct action tab after
-      a fresh launch
+- [x] `@SceneStorage` restore applicability documented: action-only tabs are
+      intentionally non-selectable, so selected-tab restoration still only
+      restores document tabs; action canonical keys are nevertheless stable if
+      used for persistence/dedupe.
 
 ## Notes
 
 Source: CodeRabbit nitpick on PR #20 (2026-04-19).
 Low priority until action tabs actually reach the shell (gated by
 todos/026).
+
+## Completion Notes
+
+Completed on 2026-05-25.
+
+- Added `JasonAction.stableHash`, using sorted-key JSON encoding plus SHA-256
+  via CryptoKit.
+- Swapped `.action` tab canonical keys from `ObjectIdentifier(action)` to
+  `action.stableHash`.
+- Added TabNavigationCoordinator coverage for stable keys across independent
+  decodes, changed content producing changed keys, nested `success` / `error`
+  branch participation, and duplicate action-tab dedupe during bootstrap.
+- Note: action-only tabs remain intentionally non-selectable, so
+  `@SceneStorage` selected-tab restore continues to apply to document tabs, not
+  action tabs.
+
+Verification:
+
+- `cd JASONETTE-iOS/JasonetteApp && swift test --filter TabNavigationCoordinatorTests`
+- `cd JASONETTE-iOS/JasonetteApp && swift test` — 492 tests, 0 failures
+- `cd JASONETTE-iOS/JasonetteApp && swift build`
