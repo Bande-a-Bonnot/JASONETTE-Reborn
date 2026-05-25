@@ -52,6 +52,65 @@ npx --yes agent-device@latest screenshot docs/qa/artifacts/YYYY-MM-DD-ios-simula
 npx --yes agent-device@latest close --session jasonetteqa --platform ios
 ```
 
+### Debug entry URL override
+
+Debug iOS builds accept an HTTP(S) root document override without editing
+`Sources/JasonetteApp-iOS/App.swift`. Release/TestFlight builds ignore the
+override and keep the production Jasonpedia demo URL.
+
+Launch-argument form:
+
+```bash
+ENTRY_URL="https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/view/component/html/index.json"
+xcrun simctl launch --terminate-running-process booted com.bande-a-bonnot.jasonette \
+  -JasonetteEntryURL "$ENTRY_URL"
+```
+
+Environment-variable form (`simctl` injects child-process environment via the
+`SIMCTL_CHILD_` prefix):
+
+```bash
+ENTRY_URL="https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/view/component/html/index.json"
+SIMCTL_CHILD_JASONETTE_ENTRY_URL="$ENTRY_URL" \
+  xcrun simctl launch --terminate-running-process booted com.bande-a-bonnot.jasonette
+```
+
+To drive the launched app with `agent-device`, attach without `--relaunch` so
+the already-running process keeps its override:
+
+```bash
+npx --yes agent-device@latest open com.bande-a-bonnot.jasonette \
+  --session jasonetteqa \
+  --platform ios \
+  --device "iPhone 17 Pro"
+```
+
+### Local tab/action-tab fixture strategy
+
+A small local fixture lives in `docs/qa/fixtures/ios-simulator-tabs/`. Serve it
+over localhost so it still uses the renderer's normal HTTP document-loading
+path:
+
+```bash
+python3 -m http.server 8765 --directory docs/qa/fixtures/ios-simulator-tabs
+```
+
+In another shell, launch the Debug app directly into the fixture:
+
+```bash
+ENTRY_URL="http://127.0.0.1:8765/index.json"
+xcrun simctl launch --terminate-running-process booted com.bande-a-bonnot.jasonette \
+  -JasonetteEntryURL "$ENTRY_URL"
+```
+
+QA flow:
+
+1. Confirm the app opens on “Home tab fixture”.
+2. Tap the “Detail” document tab and confirm “Detail tab fixture”.
+3. Return to “Home”, tap “Go Detail”, and confirm it switches to the existing
+   Detail tab instead of pushing a duplicate view.
+4. Tap “Alert” and confirm the selected tab handles the `$util.alert` action.
+
 ### Operational notes from 2026-05-18/19
 
 - The first `snapshot` can take a long time or time out while the XCTest runner

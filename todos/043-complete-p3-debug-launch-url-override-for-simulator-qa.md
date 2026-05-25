@@ -1,5 +1,5 @@
 ---
-status: ready
+status: complete
 priority: p3
 issue_id: "043"
 tags: [ios, qa, simulator, developer-experience]
@@ -35,13 +35,36 @@ Jasonpedia fixtures or ad-hoc local QA documents such as action-only tab cases.
 
 ## Acceptance Criteria
 
-- [ ] Debug simulator runs can override the root Jasonette URL without source
+- [x] Debug simulator runs can override the root Jasonette URL without source
       edits
-- [ ] Release/TestFlight builds still use the production demo URL
-- [ ] QA docs show the exact command to launch with an override
-- [ ] Action-only tab and tabs fixtures can be tested directly in simulator QA
+- [x] Release/TestFlight builds still use the production demo URL
+- [x] QA docs show the exact command to launch with an override
+- [x] Action-only tab and tabs fixtures can be tested directly in simulator QA
 
 ## Notes
 
 This is a developer-experience enabler for repeatable exploratory and regression
 QA, not a user-facing feature.
+
+## Completion Notes
+
+Completed on 2026-05-25.
+
+- Added `JasonetteLaunchConfiguration` with debug-only entry URL overrides via
+  `-JasonetteEntryURL`, `-JasonetteEntryURL=...`, and `JASONETTE_ENTRY_URL`.
+- Kept release behavior locked to the production Jasonpedia demo URL by default.
+- Updated the iOS app entrypoint to use the shared launch configuration.
+- Added `LaunchConfigurationTests` covering environment override, launch
+  argument precedence, equals-form parsing, release-mode ignoring, and non-HTTP
+  scheme rejection.
+- Added local simulator QA fixtures under
+  `docs/qa/fixtures/ios-simulator-tabs/` for document tabs, action `$href` tab
+  switching, and action forwarding.
+- Documented exact `simctl` and `agent-device` usage in `docs/qa/README.md`.
+
+Verification:
+
+- `jq empty docs/qa/fixtures/ios-simulator-tabs/*.json`
+- `cd JASONETTE-iOS/JasonetteApp && swift test --filter LaunchConfigurationTests`
+- `cd JASONETTE-iOS/JasonetteApp && swift test` — 488 tests, 0 failures
+- `cd JASONETTE-iOS/JasonetteApp && swift build`

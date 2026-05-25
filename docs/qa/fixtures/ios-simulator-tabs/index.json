@@ -1,0 +1,77 @@
+{
+  "$jason": {
+    "head": {
+      "title": "QA Tabs Home"
+    },
+    "body": {
+      "style": {
+        "background": "#f8fafc"
+      },
+      "sections": [
+        {
+          "items": [
+            {
+              "type": "label",
+              "text": "Home tab fixture",
+              "style": {
+                "size": "24",
+                "font": "HelveticaNeue-Bold",
+                "padding": "16"
+              }
+            },
+            {
+              "type": "label",
+              "text": "Use the Detail tab to switch documents, the Go Detail action tab to switch via $href, and the Alert action tab to verify action forwarding.",
+              "style": {
+                "padding": "16",
+                "color": "#334155"
+              }
+            }
+          ]
+        }
+      ],
+      "footer": {
+        "tabs": {
+          "style": {
+            "background": "#ffffff",
+            "color": "#111827",
+            "padding": "6"
+          },
+          "items": [
+            {
+              "text": "Home",
+              "image": "system://house",
+              "url": "index.json"
+            },
+            {
+              "text": "Detail",
+              "image": "system://star",
+              "url": "detail.json"
+            },
+            {
+              "text": "Go Detail",
+              "image": "system://arrow.right.circle",
+              "action": {
+                "type": "$href",
+                "options": {
+                  "url": "detail.json"
+                }
+              }
+            },
+            {
+              "text": "Alert",
+              "image": "system://bell",
+              "action": {
+                "type": "$util.alert",
+                "options": {
+                  "title": "Action tab",
+                  "description": "The selected tab handled this footer action."
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

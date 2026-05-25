@@ -1,0 +1,35 @@
+{
+  "$jason": {
+    "head": {
+      "title": "QA Tabs Detail"
+    },
+    "body": {
+      "style": {
+        "background": "#eff6ff"
+      },
+      "sections": [
+        {
+          "items": [
+            {
+              "type": "label",
+              "text": "Detail tab fixture",
+              "style": {
+                "size": "24",
+                "font": "HelveticaNeue-Bold",
+                "padding": "16"
+              }
+            },
+            {
+              "type": "label",
+              "text": "If you reached this page through the Go Detail action tab, the shell intercepted the $href and switched to the existing Detail tab instead of pushing a duplicate view.",
+              "style": {
+                "padding": "16",
+                "color": "#1e40af"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
