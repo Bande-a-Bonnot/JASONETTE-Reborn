@@ -49,6 +49,25 @@ final class URLResolutionTests: XCTestCase {
         XCTAssertNil(ImageComponent(url: "custom://logo", style: nil, documentURL: baseURL).resolvedURL)
     }
 
+    func testImageComponentSelectsAnimatedGIFRendererForRelativeGIFURL() {
+        let image = ImageComponent(url: "images/spinner.gif", style: nil, documentURL: baseURL)
+        XCTAssertEqual(image.resolvedURL, URL(string: "https://example.com/app/images/spinner.gif")!)
+        XCTAssertTrue(image.usesAnimatedGIFRenderer)
+    }
+
+    func testImageComponentKeepsStaticImagesOnAsyncPath() {
+        let image = ImageComponent(url: "images/logo.png", style: nil, documentURL: baseURL)
+        XCTAssertFalse(image.usesAnimatedGIFRenderer)
+    }
+
+    func testGIFDetectionIgnoresQueryString() {
+        XCTAssertTrue(URL(string: "https://example.com/image.gif?cache=1")!.isGIFImageURL)
+    }
+
+    func testGIFDetectionRejectsNonGIFExtension() {
+        XCTAssertFalse(URL(string: "https://example.com/image.png")!.isGIFImageURL)
+    }
+
     func testButtonComponentResolvesRootRelativeURLAgainstDocumentURL() {
         let button = ButtonComponent(text: "Open", url: "/icons/open.png", documentURL: baseURL)
         XCTAssertEqual(button.resolvedURL, URL(string: "https://example.com/icons/open.png")!)

@@ -10,6 +10,7 @@ struct TextAreaComponent: View {
         let binding = stateManager.binding(forKey: name, default: "")
         ZStack(alignment: .topLeading) {
             TextEditor(text: binding)
+                .keyboardDoneToolbar()
                 .frame(minHeight: 80)
                 .accessibilityIdentifier(name)
 

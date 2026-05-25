@@ -20,6 +20,8 @@ struct TextFieldComponent: View {
 
     var body: some View {
         textField
+            .dismissKeyboardOnSubmit()
+            .keyboardDoneToolbar()
             .textFieldStyle(.roundedBorder)
             .accessibilityIdentifier(name)
             .onAppear {

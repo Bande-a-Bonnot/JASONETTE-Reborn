@@ -98,6 +98,7 @@ struct JasonetteView: View {
                         }
                     }
                 }
+                .dismissKeyboardOnScroll()
                 .refreshable { await viewModel.handlePull() }
 
                 // Footer
@@ -113,6 +114,7 @@ struct JasonetteView: View {
                 }
             }
         }
+        .dismissKeyboardOnTap()
         .navigationTitle(head?.title ?? "")
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
@@ -337,9 +339,13 @@ struct FooterInputView: View {
             // Only bind to state if name is non-empty
             if name.isEmpty {
                 TextField(placeholder, text: .constant(""))
+                    .dismissKeyboardOnSubmit()
+                    .keyboardDoneToolbar()
                     .textFieldStyle(.roundedBorder)
             } else {
                 TextField(placeholder, text: stateManager.binding(forKey: name, default: ""))
+                    .dismissKeyboardOnSubmit()
+                    .keyboardDoneToolbar()
                     .textFieldStyle(.roundedBorder)
                     .accessibilityIdentifier(name)
             }

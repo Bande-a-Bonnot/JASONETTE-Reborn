@@ -1,6 +1,6 @@
 # Agent Handoff Document
 
-Last updated: 2026-05-24
+Last updated: 2026-05-25
 
 **Update this file before context compaction and at the end of significant sessions.**
 
@@ -8,7 +8,7 @@ Last updated: 2026-05-24
 
 ### Test Suite
 
-- iOS: 479 tests, 0 failures (verified 2026-05-24 after ViewModel final-response documentURL coverage; simulator map QA verified 2026-05-23)
+- iOS: 483 tests, 0 failures (verified 2026-05-25 after animated GIF renderer path selection + keyboard dismissal implementation; iOS simulator build for `Jasonette-iOS` succeeded on iPhone 17 Pro / iOS 26.2)
 - Android CI: `pull_request` Android job ran/passed on PR #21, non-Android-change PR #22, and follow-up PR #23; Kotlin JSON primitive accessor compile failures fixed by squash `92e65dd`; oversized plain-integer JSON parsing aligned between Android test helper and production renderer in `c3f4f8f`
 - Run iOS: `cd JASONETTE-iOS/JasonetteApp && swift test`
 - Build iOS: `swift build` (<1s)
@@ -61,7 +61,7 @@ See `docs/plans/2026-03-28-fix-ios-components-actions-audit-plan.md` for the ful
 
 ### Phase C — Component Fixes
 
-Animated GIF and keyboard dismiss on text inputs. HTML component renderer path is implemented with `WKWebView` and simulator-confirmed on `Jasonpedia/view/component/html/index.json`. Secure textfield renderer path is implemented with `SecureField` and user-confirmed correct in TestFlight/simulator. Map component renderer path is implemented with MapKit and simulator-confirmed on the Jasonpedia map fixture plus pin-focused QA fixture.
+HTML component renderer path is implemented with `WKWebView` and simulator-confirmed on `Jasonpedia/view/component/html/index.json`. Secure textfield renderer path is implemented with `SecureField` and user-confirmed correct in TestFlight/simulator. Map component renderer path is implemented with MapKit and simulator-confirmed on the Jasonpedia map fixture plus pin-focused QA fixture. Animated GIF image URLs now route to a UIKit-backed `UIImageView` renderer on iOS while static images stay on `AsyncImage`; keyboard dismissal now covers textfield submit/done, secure textfield submit/done, textarea keyboard toolbar done, footer input submit/done, interactive scroll dismiss, and outside-tap responder-chain dismissal. GIF + keyboard direct fixture visual QA is best-effort pending `todos/043` direct launch URL override; see `docs/qa/2026-05-25-ios-gif-keyboard-best-effort-qa.md`.
 
 ### Phase D — Data & Navigation
 
@@ -87,10 +87,10 @@ P3:
 - `todos/033` — Android JSON decimal/exponent precision policy (Gemini PR #23 follow-up; plain integers fixed, decimal/exponent still use `Double` by current contract)
 - `todos/043` — debug launch URL override for simulator QA
 - `todos/044` — investigate device-specific simulator build hang during asset catalog processing
-- `todos/046` — animated GIF image rendering
-- `todos/047` — keyboard dismissal behavior for text inputs
 
 Completed this session:
+- `todos/047` — added shared iOS keyboard dismissal helpers: textfields and secure fields use Done/submit dismissal plus keyboard toolbar, textareas get a keyboard Done toolbar, footer input gets Done/submit dismissal, ScrollView uses interactive keyboard dismissal, and the document surface dismisses via responder-chain outside taps. Secure textfield routing and footer input binding remain unchanged. Full Swift suite: 483 tests, 0 failures; iOS simulator build succeeded (2026-05-25). Best-effort QA documented at `docs/qa/2026-05-25-ios-gif-keyboard-best-effort-qa.md`.
+- `todos/046` — added `AnimatedGIFImage`, an iOS-only UIKit/ImageIO-backed `UIImageView` wrapper for `.gif` image URLs, while preserving static images on the existing `AsyncImage` path. Relative GIF URLs resolve against `documentURL` with existing http/https image policy. Added URLResolutionTests for GIF detection, query-string handling, relative GIF path selection, and static image path retention. Full Swift suite: 483 tests, 0 failures; iOS simulator build succeeded (2026-05-25). Best-effort QA documented at `docs/qa/2026-05-25-ios-gif-keyboard-best-effort-qa.md`.
 - `todos/037` — added an internal/testable `DocumentLoader` injection seam to `JasonetteViewModel` URL initializers and a URLProtocol-backed ViewModel test proving normal non-seed URL loads set `documentURL` to the final response URL from `DocumentLoader.LoadedDocument.url`, then render the loaded document. Full Swift suite: 479 tests, 0 failures (2026-05-24).
 - `todos/022` — footer input button `AsyncImage` now renders a visible `photo` SF Symbol placeholder on `.failure` while keeping `.empty` as `Color.clear` for the small 24x24 loading state. Full Swift suite: 478 tests, 0 failures (2026-05-24).
 - `todos/038` — added `TabDescriptor(from:baseURL:)` coverage proving absolute non-hierarchical app URLs like `mailto:test@example.com` remain absolute when an HTTPS base URL is supplied. Existing app-scheme allowlist coverage remains intact. Full Swift suite: 478 tests, 0 failures (2026-05-24).

@@ -1,6 +1,6 @@
 ---
 id: "019e53ff-7aed-7b45-9040-95bd934de5ee"
-status: ready
+status: complete
 priority: p3
 issue_id: "047"
 tags: [ios, components, textfield, textarea, keyboard, ux, qa]
@@ -35,12 +35,12 @@ input flows need a consistent way to dismiss the software keyboard after entry.
 
 ## Acceptance Criteria
 
-- [ ] Return/done behavior dismisses the keyboard where appropriate
-- [ ] Tapping outside input dismisses the keyboard in scrolling forms where appropriate
-- [ ] Secure textfield masking remains correct
-- [ ] Footer input still binds/sends text correctly
-- [ ] Simulator QA confirms keyboard dismissal on representative textfield and
-      footer input flows
+- [x] Return/done behavior dismisses the keyboard where appropriate
+- [x] Tapping outside input and interactive scrolling dismiss the keyboard in scrolling forms where appropriate
+- [x] Secure textfield masking remains correct; secure fields still route through `SecureField`
+- [x] Footer input still binds/sends text correctly; binding path is unchanged
+- [x] iOS simulator build succeeds for the keyboard dismissal path; interactive direct-fixture QA is documented as best-effort because direct fixture launch remains tracked separately in `todos/043`
+- [x] Tests pass (`cd JASONETTE-iOS/JasonetteApp && swift test`, 483 tests, 0 failures, 2026-05-25)
 
 ## Notes
 

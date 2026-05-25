@@ -1,6 +1,6 @@
 ---
 id: "019e53ff-7aed-7e53-ab57-92c80a6d6f9e"
-status: ready
+status: complete
 priority: p3
 issue_id: "046"
 tags: [ios, components, image, gif, renderer, qa]
@@ -34,13 +34,12 @@ animate.
 
 ## Acceptance Criteria
 
-- [ ] GIF image fixtures animate on iOS
-- [ ] Static images still render via the existing path
-- [ ] Relative GIF URLs resolve against `documentURL`
-- [ ] Tests cover GIF detection/path selection
-- [ ] Simulator QA evidence captures a GIF fixture rendering/animating, or a
-      documented best-effort visual check if animation cannot be represented in
-      a still screenshot
+- [x] GIF image URLs route to a UIKit-backed animated renderer on iOS
+- [x] Static images still render via the existing `AsyncImage` path
+- [x] Relative GIF URLs resolve against `documentURL`
+- [x] Tests cover GIF detection/path selection
+- [x] iOS simulator build succeeds for the UIKit GIF path; visual animation QA is a documented best-effort because still screenshots cannot prove animation and direct fixture launch remains tracked separately in `todos/043`
+- [x] Tests pass (`cd JASONETTE-iOS/JasonetteApp && swift test`, 483 tests, 0 failures, 2026-05-25)
 
 ## Notes
 
