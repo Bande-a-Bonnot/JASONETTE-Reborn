@@ -1,5 +1,5 @@
 ---
-status: ready
+status: complete
 priority: p3
 issue_id: "033"
 tags: [android, kotlin, json, tests, precision, code-review]
@@ -48,11 +48,11 @@ fix: PR #23 closes the regression where integer-looking values larger than
 
 ## Acceptance Criteria
 
-- [ ] Decimal/exponent JSON number policy is explicitly documented
-- [ ] Android test helper and production converter use the same policy
-- [ ] Cross-platform expectations are checked before changing existing behavior
-- [ ] Regression tests cover at least one high-precision decimal and one exponent
-      value, or document why `Double` precision is accepted
+- [x] Decimal/exponent JSON number policy is explicitly documented
+- [x] Android test helper and production converter use the same policy
+- [x] Cross-platform expectations are checked before changing existing behavior
+- [x] Regression tests cover at least one high-precision decimal and one exponent
+      value, and document why `Double` precision is accepted
 
 ## Notes
 
@@ -61,3 +61,33 @@ restoring Android CI, preserving oversized plain integers, and aligning the
 production converter with that integer policy. Changing decimal/exponent
 semantics may affect existing fixtures and renderer behavior and deserves its
 own review.
+
+## Completion Notes
+
+Completed on 2026-05-26.
+
+Policy decision: keep the current decimal/exponent contract as `Double` on
+Android for now. Exact decimal/exponent preservation is intentionally not added
+because existing Android template expression helpers operate on `Double`, shared
+expression fixtures expect `Double` decimal results, and iOS `AnyCodable` also
+decodes decimal/exponent-shaped JSON numbers as `Double` today. Preserving those
+values as strings on Android alone would introduce cross-platform drift.
+
+Changes:
+
+- Added `JsonValueConverter` in Android core to centralize the shared JSON
+  bridge used by production rendering and tests.
+- Documented the Android number policy in `JsonValueConverter` and in
+  `docs/solutions/build-errors/android-json-decimal-exponent-number-policy.md`.
+- Updated `JasonetteViewModel` to use `JsonValueConverter` for head data,
+  templates, and rendered-template serialization.
+- Updated `CrossPlatformTest` to use the same converter instead of maintaining a
+  duplicate fixture parser.
+- Added `JsonValueConverterTest` coverage for plain integer escalation
+  (`Int` → `Long` → exact `String`), high-precision decimal values as `Double`,
+  exponent values as `Double`, and `Long` round-tripping.
+
+Verification:
+
+- Attempted `cd JASONETTE-Android/JasonetteApp && ./gradlew :app:testDebugUnitTest --tests 'com.jasonette.JsonValueConverterTest'`; blocked locally because no Java runtime is installed (`Unable to locate a Java Runtime`).
+- `npm run lint:md` — 0 errors.

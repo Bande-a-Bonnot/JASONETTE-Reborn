@@ -1,13 +1,10 @@
 package com.jasonette
 
 import com.jasonette.core.DocumentLoader
+import com.jasonette.core.JsonValueConverter
 import com.jasonette.template.TemplateEngine
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonNull
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
 import org.junit.Assert.*
 import org.junit.Test
 import java.io.File
@@ -44,21 +41,7 @@ class CrossPlatformTest {
     }
 
     private fun jsonElementToAny(element: JsonElement): Any? =
-        when (element) {
-            is JsonPrimitive -> {
-                val content = element.content
-                if (element.isString) content
-                else if (content == "true") true
-                else if (content == "false") false
-                else if (content == "null") null
-                else if (content.contains('.') || content.contains('e', ignoreCase = true)) content.toDoubleOrNull() ?: content
-                else content.toIntOrNull() ?: content.toLongOrNull() ?: content
-            }
-            is JsonArray ->
-                element.map { jsonElementToAny(it) }
-            is JsonObject ->
-                element.toMap().mapValues { (_, v) -> jsonElementToAny(v) }
-        }
+        JsonValueConverter.jsonElementToAny(element)
 
     @Test
     fun testOversizedIntegerFixtureValuePreservesPrecision() {
@@ -204,18 +187,5 @@ class CrossPlatformTest {
     // -- Helpers --
 
     private fun anyToJsonElement(value: Any?): JsonElement =
-        when (value) {
-            null -> JsonNull
-            is Boolean -> JsonPrimitive(value)
-            is Int -> JsonPrimitive(value)
-            is Long -> JsonPrimitive(value)
-            is Double -> JsonPrimitive(value)
-            is Float -> JsonPrimitive(value)
-            is String -> JsonPrimitive(value)
-            is List<*> -> JsonArray(value.map { anyToJsonElement(it) })
-            is Map<*, *> -> JsonObject(
-                value.entries.associate { (k, v) -> k.toString() to anyToJsonElement(v) }
-            )
-            else -> JsonPrimitive(value.toString())
-        }
+        JsonValueConverter.anyToJsonElement(value)
 }

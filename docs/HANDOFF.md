@@ -1,6 +1,6 @@
 # Agent Handoff Document
 
-Last updated: 2026-05-25
+Last updated: 2026-05-26
 
 **Update this file before context compaction and at the end of significant sessions.**
 
@@ -9,7 +9,7 @@ Last updated: 2026-05-25
 ### Test Suite
 
 - iOS: 496 tests, 0 failures (verified 2026-05-26 after same-axis layer constraint handling; `swift build` succeeded)
-- Android CI: `pull_request` Android job ran/passed on PR #21, non-Android-change PR #22, and follow-up PR #23; Kotlin JSON primitive accessor compile failures fixed by squash `92e65dd`; oversized plain-integer JSON parsing aligned between Android test helper and production renderer in `c3f4f8f`
+- Android CI: `pull_request` Android job ran/passed on PR #21, non-Android-change PR #22, and follow-up PR #23; Kotlin JSON primitive accessor compile failures fixed by squash `92e65dd`; oversized plain-integer JSON parsing aligned between Android test helper and production renderer in `c3f4f8f`; decimal/exponent policy is now explicitly documented as `Double` and centralized in Android `JsonValueConverter` (local Gradle verification blocked by missing Java runtime on 2026-05-26)
 - Run iOS: `cd JASONETTE-iOS/JasonetteApp && swift test`
 - Build iOS: `swift build` (<1s)
 
@@ -44,7 +44,7 @@ JSON → JasonDocument (Codable) → TemplateEngine → JasonetteViewModel → J
 ```
 
 - **Templates**: Dynamic named templates via `$render` with `options.template`. Default "body".
-- **Layers**: ZStack overlays above ScrollView. Positioned via top/left/bottom/right + alignment + padding.
+- **Layers**: ZStack overlays above ScrollView. Positioned via top/left/bottom/right + alignment + padding; `left`+`right` and `top`+`bottom` stretch between same-axis insets.
 - **Body background**: Color string parsed via `Color(css:)`, applied with `.ignoresSafeArea()`.
 - **Footer**: tabs (HStack) or input (dedicated `FooterInputView`), mutually exclusive.
 - **Style chain**: applyFont → applyColors → applySpacing → applyBorder → applySize → applyOpacity → applyAlignment
@@ -82,10 +82,10 @@ P3:
 - `todos/016` — solution doc version inconsistency
 - `todos/017` — plan doc hygiene
 - `todos/029` — onChange iOS 17 modernization
-- `todos/033` — Android JSON decimal/exponent precision policy (Gemini PR #23 follow-up; plain integers fixed, decimal/exponent still use `Double` by current contract)
 - `todos/044` — investigate device-specific simulator build hang during asset catalog processing
 
 Completed this session:
+- `todos/033` — centralized Android JSON conversion in `JsonValueConverter`, documented the decimal/exponent policy as intentionally `Double` for now, and updated both production `JasonetteViewModel` and `CrossPlatformTest` to use the same converter. Added `JsonValueConverterTest` coverage for `Int`→`Long`→exact `String` plain integers, high-precision decimals as `Double`, exponent values as `Double`, and `Long` round-tripping. Added solution doc `docs/solutions/build-errors/android-json-decimal-exponent-number-policy.md`. Local Gradle verification was attempted but blocked because no Java runtime is installed (`Unable to locate a Java Runtime`); `npm run lint:md` passed.
 - `todos/020` — added `LayerPositioning` to derive layer insets, same-axis stretch flags, and alignment from `JasonStyle`, then updated `JasonetteView` layer rendering to stretch horizontally for `left`+`right` and vertically for `top`+`bottom` while preserving single-edge natural-size positioning. Added `LayerPositioningTests` for both stretch axes, single-edge no-stretch, and unpositioned no-stretch. Verification: `swift test --filter LayerPositioningTests`; full `swift test` — 496 tests, 0 failures; `swift build`; `npm run lint:md` — 0 errors.
 - `todos/027` — added `JasonAction.stableHash` using sorted-key JSON encoding plus SHA-256 via CryptoKit, and changed `.action` tab canonical keys from `ObjectIdentifier(action)` to the content hash. Added TabNavigationCoordinator tests proving stable keys across independent decodes, different content changes keys, nested `success`/`error` branches participate, and duplicate action-only tabs dedupe during bootstrap. Action-only tabs remain intentionally non-selectable, so SceneStorage selected-tab restore remains document-tab-only. Verification: `swift test --filter TabNavigationCoordinatorTests`; full `swift test` — 492 tests, 0 failures; `swift build`.
 - `todos/043` — added `JasonetteLaunchConfiguration` and updated the iOS app entrypoint so Debug builds can override the root document URL via `-JasonetteEntryURL`, `-JasonetteEntryURL=...`, or `JASONETTE_ENTRY_URL`; Release/TestFlight behavior remains the production Jasonpedia demo URL. Added `LaunchConfigurationTests`, local tabs/action-tabs simulator fixtures under `docs/qa/fixtures/ios-simulator-tabs/`, and exact `simctl`/`agent-device` usage in `docs/qa/README.md`. Verification: `jq empty docs/qa/fixtures/ios-simulator-tabs/*.json`; `swift test --filter LaunchConfigurationTests`; full `swift test` — 488 tests, 0 failures; `swift build`.
@@ -144,7 +144,7 @@ Do not call normal CodeRabbit/Gemini/Codex review "adversarial". Foundry red/gre
 
 ---
 
-## Solution Docs (45 total, category dirs plus legacy root docs)
+## Solution Docs (46 total, category dirs plus legacy root docs)
 
 Search `docs/solutions/` by YAML frontmatter: `module`, `tags`, `problem_type`, `category`.
 
@@ -167,6 +167,7 @@ Key docs for this codebase:
 - `architecture-patterns/swiftui-tab-shell-opaque-scope-navigation.md` — shell owns selection, each tab owns its own nav; lazy mount + SceneStorage canonical-key restore
 - `runtime-errors/anycodable-nsjsonserialization-crash.md` — always `.unwrapped` before JSONSerialization
 - `build-errors/kotlinx-json-numeric-accessors-android-test-compile.md` — Android Kotlin JSON accessor imports + aligned test/production plain-integer parsing
+- `build-errors/android-json-decimal-exponent-number-policy.md` — Android decimal/exponent JSON numbers are explicitly `Double` by current cross-platform policy; exact plain integers still preserved
 
 ---
 

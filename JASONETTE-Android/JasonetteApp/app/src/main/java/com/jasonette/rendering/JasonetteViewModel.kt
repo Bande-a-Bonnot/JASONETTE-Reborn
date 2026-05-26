@@ -75,12 +75,12 @@ class JasonetteViewModel(
         val context = data + stateManager.local
 
         if (head?.templates?.body != null) {
-            val templateValue = jsonElementToAny(head.templates.body)
+            val templateValue = JsonValueConverter.jsonElementToAny(head.templates.body)
             val rendered = TemplateEngine.render(templateValue, context)
             try {
                 val jsonStr = json.encodeToString(
                     kotlinx.serialization.json.JsonElement.serializer(),
-                    anyToJsonElement(rendered)
+                    JsonValueConverter.anyToJsonElement(rendered)
                 )
                 val root = json.decodeFromString<JasonRoot>(jsonStr)
                 _uiState.value = UiState.Loaded(root.copy(head = head))
@@ -101,44 +101,6 @@ class JasonetteViewModel(
     // Helpers
 
     private fun jsonObjectToMap(obj: JsonObject): Map<String, Any?> {
-        return obj.entries.associate { (key, value) -> key to jsonElementToAny(value) }
-    }
-
-    private fun jsonElementToAny(element: kotlinx.serialization.json.JsonElement?): Any? {
-        if (element == null) return null
-        return when (element) {
-            is kotlinx.serialization.json.JsonPrimitive -> {
-                val content = element.content
-                if (element.isString) content
-                else if (content == "true") true
-                else if (content == "false") false
-                else if (content == "null") null
-                else if (content.contains('.') || content.contains('e', ignoreCase = true)) {
-                    content.toDoubleOrNull() ?: content
-                } else {
-                    content.toIntOrNull() ?: content.toLongOrNull() ?: content
-                }
-            }
-            is kotlinx.serialization.json.JsonArray -> element.map { jsonElementToAny(it) }
-            is kotlinx.serialization.json.JsonObject -> element.entries.associate {
-                it.key to jsonElementToAny(it.value)
-            }
-        }
-    }
-
-    private fun anyToJsonElement(value: Any?): kotlinx.serialization.json.JsonElement {
-        return when (value) {
-            null -> kotlinx.serialization.json.JsonNull
-            is String -> kotlinx.serialization.json.JsonPrimitive(value)
-            is Int -> kotlinx.serialization.json.JsonPrimitive(value)
-            is Long -> kotlinx.serialization.json.JsonPrimitive(value)
-            is Double -> kotlinx.serialization.json.JsonPrimitive(value)
-            is Boolean -> kotlinx.serialization.json.JsonPrimitive(value)
-            is List<*> -> kotlinx.serialization.json.JsonArray(value.map { anyToJsonElement(it) })
-            is Map<*, *> -> kotlinx.serialization.json.JsonObject(
-                value.entries.associate { it.key.toString() to anyToJsonElement(it.value) }
-            )
-            else -> kotlinx.serialization.json.JsonPrimitive(value.toString())
-        }
+        return obj.entries.associate { (key, value) -> key to JsonValueConverter.jsonElementToAny(value) }
     }
 }
