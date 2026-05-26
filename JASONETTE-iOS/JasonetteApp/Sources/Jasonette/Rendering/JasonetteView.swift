@@ -13,6 +13,25 @@ private extension View {
     }
 }
 
+private struct LayerPositioningModifier: ViewModifier {
+    let positioning: LayerPositioning
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        let padded = content.padding(positioning.insets)
+
+        if positioning.stretchesHorizontally && positioning.stretchesVertically {
+            padded.frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else if positioning.stretchesHorizontally {
+            padded.frame(maxWidth: .infinity)
+        } else if positioning.stretchesVertically {
+            padded.frame(maxHeight: .infinity)
+        } else {
+            padded
+        }
+    }
+}
+
 /// Main view that renders a complete Jasonette document.
 @MainActor
 struct JasonetteView: View {
@@ -146,13 +165,9 @@ struct JasonetteView: View {
     @ViewBuilder
     private func layerView(_ component: JasonComponent, headStyles: [String: JasonStyle]) -> some View {
         let style = resolveLayerStyle(component, headStyles: headStyles)
-        let hasTop = style.top?.cgFloat != nil
-        let hasBottom = style.bottom?.cgFloat != nil
-        let hasLeft = style.left?.cgFloat != nil
-        let hasRight = style.right?.cgFloat != nil
-        let alignment = layerAlignment(hasTop: hasTop, hasBottom: hasBottom, hasLeft: hasLeft, hasRight: hasRight)
+        let positioning = LayerPositioning(style: style)
 
-        ZStack(alignment: alignment) {
+        ZStack(alignment: positioning.alignment) {
             Color.clear
                 .allowsHitTesting(false)
             ComponentView(
@@ -162,34 +177,13 @@ struct JasonetteView: View {
                 onAction: { viewModel.handleAction($0) },
                 documentURL: viewModel.documentURL
             )
-            .ifLet(style.top?.cgFloat) { view, value in
-                view.padding(.top, value)
-            }
-            .ifLet(style.bottom?.cgFloat) { view, value in
-                view.padding(.bottom, value)
-            }
-            .ifLet(style.left?.cgFloat) { view, value in
-                view.padding(.leading, value)
-            }
-            .ifLet(style.right?.cgFloat) { view, value in
-                view.padding(.trailing, value)
-            }
+            .modifier(LayerPositioningModifier(positioning: positioning))
         }
         .allowsHitTesting(true)
     }
 
     private func resolveLayerStyle(_ component: JasonComponent, headStyles: [String: JasonStyle]) -> JasonStyle {
         JasonStyle.resolve(for: component, headStyles: headStyles)
-    }
-
-    /// Determine the ZStack alignment based on which positioning properties are set.
-    private func layerAlignment(hasTop: Bool, hasBottom: Bool, hasLeft: Bool, hasRight: Bool) -> Alignment {
-        if !hasTop && !hasBottom && !hasLeft && !hasRight {
-            return .center
-        }
-        let vertical: VerticalAlignment = hasBottom ? .bottom : .top
-        let horizontal: HorizontalAlignment = hasRight && !hasLeft ? .trailing : .leading
-        return Alignment(horizontal: horizontal, vertical: vertical)
     }
 
     @ViewBuilder
