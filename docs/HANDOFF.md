@@ -83,6 +83,7 @@ P3:
 - `todos/017` — plan doc hygiene
 - `todos/029` — onChange iOS 17 modernization
 - `todos/044` — investigate device-specific simulator build hang during asset catalog processing
+- `todos/048` — Android Java runtime for local CI/CD verification (local Gradle verification currently blocked by missing Java runtime)
 
 Completed this session:
 - `todos/033` — centralized Android JSON conversion in `JsonValueConverter`, documented the decimal/exponent policy as intentionally `Double` for now, and updated both production `JasonetteViewModel` and `CrossPlatformTest` to use the same converter. Added `JsonValueConverterTest` coverage for `Int`→`Long`→exact `String` plain integers, high-precision decimals as `Double`, exponent values as `Double`, and `Long` round-tripping. Added solution doc `docs/solutions/build-errors/android-json-decimal-exponent-number-policy.md`. Local Gradle verification was attempted but blocked because no Java runtime is installed (`Unable to locate a Java Runtime`); `npm run lint:md` passed.
