@@ -1,16 +1,18 @@
 ---
 title: "Fix $render multiple templates producing empty view"
 type: fix
+status: completed
 date: 2026-03-19
-deepened: 2026-03-19
+completed: 2026-03-19
 ---
 
 # Fix $render Multiple Templates
 
-## Enhancement Summary
+## Completion Summary
 
-**Deepened on:** 2026-03-19
-**Sections enhanced:** 4 phases + edge cases
+Implemented in merged PR #12 as a single-pass fix plan covering four phases,
+edge cases, and the associated regression tests.
+
 **Research agents used:** learnings-researcher (anycodable, codable, swiftui), architecture-strategist, pattern-recognition, code-simplicity
 
 ### Key Improvements

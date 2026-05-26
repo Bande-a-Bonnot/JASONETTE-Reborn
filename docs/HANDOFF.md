@@ -79,13 +79,13 @@ P2:
 
 P3:
 - `todos/015` — sectionView code duplication (defer until 3rd section type)
-- `todos/016` — solution doc version inconsistency
-- `todos/017` — plan doc hygiene
 - `todos/029` — onChange iOS 17 modernization
 - `todos/044` — investigate device-specific simulator build hang during asset catalog processing
 - `todos/048` — Android Java runtime for local CI/CD verification (local Gradle verification currently blocked by missing Java runtime)
 
 Completed this session:
+- `todos/017` — updated `docs/plans/2026-03-19-fix-render-multiple-templates-plan.md` with `status: completed`, a completion date, and an accurate PR #12 completion summary replacing the confusing same-day deepening note. Marked the todo complete.
+- `todos/016` — clarified `docs/solutions/integration-issues/xcode-cloud-accent-character-team-name-crash.md` so the `MARKETING_VERSION: "0.1.0"` Tuist setting and generated `CFBundleShortVersionString=1.0` Info.plist hardcoding are explicitly distinguished. Marked the todo complete.
 - `todos/033` — centralized Android JSON conversion in `JsonValueConverter`, documented the decimal/exponent policy as intentionally `Double` for now, and updated both production `JasonetteViewModel` and `CrossPlatformTest` to use the same converter. Added `JsonValueConverterTest` coverage for `Int`→`Long`→exact `String` plain integers, high-precision decimals as `Double`, exponent values as `Double`, and `Long` round-tripping. Added solution doc `docs/solutions/build-errors/android-json-decimal-exponent-number-policy.md`. Local Gradle verification was attempted but blocked because no Java runtime is installed (`Unable to locate a Java Runtime`); `npm run lint:md` passed.
 - `todos/020` — added `LayerPositioning` to derive layer insets, same-axis stretch flags, and alignment from `JasonStyle`, then updated `JasonetteView` layer rendering to stretch horizontally for `left`+`right` and vertically for `top`+`bottom` while preserving single-edge natural-size positioning. Added `LayerPositioningTests` for both stretch axes, single-edge no-stretch, and unpositioned no-stretch. Verification: `swift test --filter LayerPositioningTests`; full `swift test` — 496 tests, 0 failures; `swift build`; `npm run lint:md` — 0 errors.
 - `todos/027` — added `JasonAction.stableHash` using sorted-key JSON encoding plus SHA-256 via CryptoKit, and changed `.action` tab canonical keys from `ObjectIdentifier(action)` to the content hash. Added TabNavigationCoordinator tests proving stable keys across independent decodes, different content changes keys, nested `success`/`error` branches participate, and duplicate action-only tabs dedupe during bootstrap. Action-only tabs remain intentionally non-selectable, so SceneStorage selected-tab restore remains document-tab-only. Verification: `swift test --filter TabNavigationCoordinatorTests`; full `swift test` — 492 tests, 0 failures; `swift build`.

@@ -1,5 +1,5 @@
 ---
-status: ready
+status: complete
 priority: p3
 issue_id: "016"
 tags: [docs, solution-doc, code-review]
@@ -7,6 +7,15 @@ dependencies: []
 ---
 
 # Version Number Inconsistency in Accent Character Solution Doc
+
+Completed: 2026-05-26
+
+## Resolution
+
+Clarified that the `MARKETING_VERSION: "0.1.0"` Tuist setting and the
+hardcoded generated `CFBundleShortVersionString=1.0` Info.plist value were two
+different version sources. The solution doc now explicitly distinguishes the
+build setting from the generated Info.plist output.
 
 ## Problem Statement
 
@@ -24,7 +33,7 @@ Clarify the comment to distinguish between the Info.plist hardcoded value (1.0) 
 
 ## Acceptance Criteria
 
-- [ ] Version references in the solution doc are consistent or clearly distinguished
+- [x] Version references in the solution doc are consistent or clearly distinguished
 
 ## Notes
 

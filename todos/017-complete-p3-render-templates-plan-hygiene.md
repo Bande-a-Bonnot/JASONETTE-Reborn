@@ -1,5 +1,5 @@
 ---
-status: ready
+status: complete
 priority: p3
 issue_id: "017"
 tags: [docs, plan, code-review]
@@ -7,6 +7,14 @@ dependencies: []
 ---
 
 # Plan Doc Hygiene: render-multiple-templates-plan.md
+
+Completed: 2026-05-26
+
+## Resolution
+
+Updated the render-multiple-templates plan frontmatter with `status: completed`
+and a completion date. Replaced the confusing same-day enhancement summary with
+a completion summary noting that the plan shipped in merged PR #12.
 
 ## Problem Statement
 
@@ -24,8 +32,8 @@ The `docs/plans/2026-03-19-fix-render-multiple-templates-plan.md` has several mi
 
 ## Acceptance Criteria
 
-- [ ] Plan frontmatter reflects completion status
-- [ ] Enhancement summary is accurate
+- [x] Plan frontmatter reflects completion status
+- [x] Enhancement summary is accurate
 
 ## Notes
 

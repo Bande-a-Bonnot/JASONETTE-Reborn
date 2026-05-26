@@ -66,7 +66,8 @@ settings: .settings(base: [
     "MARKETING_VERSION": "0.1.0",
     "CURRENT_PROJECT_VERSION": "1",
 ]),
-// Info.plist had hardcoded CFBundleVersion=1, CFBundleShortVersionString=1.0
+// Generated Info.plist still hardcoded CFBundleVersion=1 and
+// CFBundleShortVersionString=1.0 despite the MARKETING_VERSION setting above.
 
 // After:
 settings: .settings(base: [
