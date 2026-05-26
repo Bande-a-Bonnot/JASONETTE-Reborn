@@ -9,7 +9,7 @@ Last updated: 2026-05-26
 ### Test Suite
 
 - iOS: 496 tests, 0 failures (verified 2026-05-26 after same-axis layer constraint handling; `swift build` succeeded)
-- Android CI: `pull_request` Android job ran/passed on PR #21, non-Android-change PR #22, and follow-up PR #23; Kotlin JSON primitive accessor compile failures fixed by squash `92e65dd`; oversized plain-integer JSON parsing aligned between Android test helper and production renderer in `c3f4f8f`; decimal/exponent policy is now explicitly documented as `Double` and centralized in Android `JsonValueConverter` (local Gradle verification blocked by missing Java runtime on 2026-05-26)
+- Android CI: `pull_request` Android job ran/passed on PR #21, non-Android-change PR #22, and follow-up PR #23; Kotlin JSON primitive accessor compile failures fixed by squash `92e65dd`; oversized plain-integer JSON parsing aligned between Android test helper and production renderer in `c3f4f8f`; decimal/exponent policy is now explicitly documented as `Double` and centralized in Android `JsonValueConverter` (local Gradle verification blocked by missing Java runtime on 2026-05-26; limitation and CI fallback documented in `JASONETTE-Android/JasonetteApp/README.md`)
 - Run iOS: `cd JASONETTE-iOS/JasonetteApp && swift test`
 - Build iOS: `swift build` (<1s)
 
@@ -81,9 +81,9 @@ P3:
 - `todos/015` — sectionView code duplication (defer until 3rd section type)
 - `todos/029` — onChange iOS 17 modernization
 - `todos/044` — investigate device-specific simulator build hang during asset catalog processing
-- `todos/048` — Android Java runtime for local CI/CD verification (local Gradle verification currently blocked by missing Java runtime)
 
 Completed this session:
+- `todos/048` — documented Android Java 17 local verification requirements and the current no-Java local-agent limitation in `JASONETTE-Android/JasonetteApp/README.md`; recorded CI run/job evidence where the `android` job provisioned Java 17 and ran `./gradlew assembleDebug` plus `./gradlew test` successfully for the JSON conversion changes. Marked the todo complete.
 - `todos/017` — updated `docs/plans/2026-03-19-fix-render-multiple-templates-plan.md` with `status: completed`, a completion date, and an accurate PR #12 completion summary replacing the confusing same-day deepening note. Marked the todo complete.
 - `todos/016` — clarified `docs/solutions/integration-issues/xcode-cloud-accent-character-team-name-crash.md` so the `MARKETING_VERSION: "0.1.0"` Tuist setting and generated `CFBundleShortVersionString=1.0` Info.plist hardcoding are explicitly distinguished. Marked the todo complete.
 - `todos/033` — centralized Android JSON conversion in `JsonValueConverter`, documented the decimal/exponent policy as intentionally `Double` for now, and updated both production `JasonetteViewModel` and `CrossPlatformTest` to use the same converter. Added `JsonValueConverterTest` coverage for `Int`→`Long`→exact `String` plain integers, high-precision decimals as `Double`, exponent values as `Double`, and `Long` round-tripping. Added solution doc `docs/solutions/build-errors/android-json-decimal-exponent-number-policy.md`. Local Gradle verification was attempted but blocked because no Java runtime is installed (`Unable to locate a Java Runtime`); `npm run lint:md` passed.
