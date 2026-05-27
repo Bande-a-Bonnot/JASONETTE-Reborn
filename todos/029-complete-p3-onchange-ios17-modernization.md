@@ -1,5 +1,5 @@
 ---
-status: ready
+status: complete
 priority: p3
 issue_id: "029"
 tags: [ios, api-drift, nit]
@@ -7,6 +7,29 @@ dependencies: []
 ---
 
 # Modernize `onChange(of:perform:)` once iOS 17 is the floor
+
+Completed: 2026-05-27
+
+## Resolution
+
+Raised the active Swift/Tuist iOS deployment target to iOS 26 and updated the
+only `JasonetteTabShell` `onChange(of:)` call site to the modern two-parameter
+closure form. Because the shared Swift package also builds macOS and tvOS app
+targets, their floors were raised to the first platform versions where the same
+modern SwiftUI API is available: macOS 14 and tvOS 17. Documentation that stated
+current iOS 16+ support was updated to iOS 26+.
+
+Verification:
+
+- `swift package dump-package` confirms iOS 26.0, macOS 14.0, tvOS 17.0, and
+  visionOS 1.0 platforms.
+- `swift test --filter TabNavigationCoordinatorTests` passed: 71 tests, 0
+  failures.
+- Full `swift test` passed: 496 tests, 0 failures.
+- `swift build` passed.
+- `npm run lint:md` passed with 0 errors.
+- `rg` found no legacy single-parameter `onChange(of:)` or iOS 16 active target
+  references in the current Swift/Tuist app docs.
 
 ## Problem Statement
 
@@ -42,9 +65,9 @@ and remove any lingering single-param closures elsewhere
 
 ## Acceptance Criteria
 
-- [ ] `Package.swift` minimum iOS target is `.v17` or higher
-- [ ] No `onChange(of:perform:)` call sites remain
-- [ ] Xcode build emits no "deprecated in iOS 17" warnings for
+- [x] `Package.swift` minimum iOS target is `.v17` or higher
+- [x] No `onChange(of:perform:)` call sites remain
+- [x] Xcode build emits no "deprecated in iOS 17" warnings for
       `onChange`
 
 ## Notes

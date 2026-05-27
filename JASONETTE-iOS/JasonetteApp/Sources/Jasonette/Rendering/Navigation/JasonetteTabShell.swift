@@ -78,7 +78,7 @@ struct JasonetteTabShell: View {
             storedKey = shell.selectedCanonicalKey
             mounted.insert(shell.selectedTabID)
         }
-        .onChange(of: shell.selectedTabID) { newID in
+        .onChange(of: shell.selectedTabID) { _, newID in
             storedKey = shell.selectedCanonicalKey
             mounted.insert(newID)
         }

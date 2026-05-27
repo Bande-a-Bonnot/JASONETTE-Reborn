@@ -24,7 +24,7 @@ let project = Project(
             destinations: [.iPhone, .iPad],
             product: .app,
             bundleId: "com.bande-a-bonnot.jasonette",
-            deploymentTargets: .iOS("16.0"),
+            deploymentTargets: .iOS("26.0"),
             infoPlist: .extendingDefault(with: [
                 "UILaunchScreen": ["UIColorName": "", "UIImageName": ""],
                 "CFBundleDisplayName": "Jasonette",
@@ -44,7 +44,7 @@ let project = Project(
             destinations: [.mac],
             product: .app,
             bundleId: "com.bande-a-bonnot.jasonette.macos",
-            deploymentTargets: .macOS("13.0"),
+            deploymentTargets: .macOS("14.0"),
             infoPlist: .extendingDefault(with: [
                 "CFBundleDisplayName": "Jasonette",
                 "CFBundleShortVersionString": "$(MARKETING_VERSION)",
@@ -62,7 +62,7 @@ let project = Project(
             destinations: [.appleTv],
             product: .app,
             bundleId: "com.bande-a-bonnot.jasonette.tvos",
-            deploymentTargets: .tvOS("16.0"),
+            deploymentTargets: .tvOS("17.0"),
             infoPlist: .extendingDefault(with: [
                 "CFBundleDisplayName": "Jasonette",
                 "CFBundleShortVersionString": "$(MARKETING_VERSION)",

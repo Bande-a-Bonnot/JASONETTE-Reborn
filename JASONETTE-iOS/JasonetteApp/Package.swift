@@ -4,7 +4,7 @@ import PackageDescription
 
 let package = Package(
     name: "JasonetteApp",
-    platforms: [.iOS(.v16), .macOS(.v13), .tvOS(.v16), .visionOS(.v1)],
+    platforms: [.iOS("26.0"), .macOS(.v14), .tvOS(.v17), .visionOS(.v1)],
     products: [
         .library(name: "Jasonette", targets: ["Jasonette"]),
         .library(name: "JasonetteApp-iOS", targets: ["JasonetteApp-iOS"]),

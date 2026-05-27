@@ -38,7 +38,7 @@ npm run lint:md        # Lint markdown files
 
 **Web renderer:** See `Jasonette-Web/README.md` (requires Node.js 20+).
 
-**iOS:** Requires Xcode 16+, Swift 6, iOS 16+ target. Open `JASONETTE-iOS/` in Xcode.
+**iOS:** Requires Xcode 26+, Swift 6, iOS 26+ target. Open `JASONETTE-iOS/` in Xcode.
 
 **Android:** Requires Android Studio, Kotlin, minSdk 26. Open `JASONETTE-Android/` in Android Studio.
 

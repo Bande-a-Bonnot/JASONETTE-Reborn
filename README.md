@@ -55,7 +55,7 @@ JASONETTE-Reborn/          # This repo — spec, schema, conformance tests
 │   ├── schema/             # JSON Schema (Draft 2020-12)
 │   └── conformance/        # Cross-platform test fixtures
 ├── packages/               # npm workspace packages
-├── JASONETTE-iOS/          # iOS app (Swift, iOS 16+)
+├── JASONETTE-iOS/          # iOS app (Swift, iOS 26+)
 ├── JASONETTE-Android/      # Android app (Kotlin, minSdk 26)
 ├── Jasonette-Web/          # Web renderer (TypeScript + Vite)
 ├── Jasonpedia/             # 100+ example $jason documents
