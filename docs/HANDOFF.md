@@ -1,6 +1,6 @@
 # Agent Handoff Document
 
-Last updated: 2026-05-27
+Last updated: 2026-05-28
 
 **Update this file before context compaction and at the end of significant sessions.**
 
@@ -8,7 +8,7 @@ Last updated: 2026-05-27
 
 ### Test Suite
 
-- iOS: 496 tests, 0 failures (verified 2026-05-27 after iOS 26/onChange modernization; `swift build` succeeded)
+- iOS: 496 tests, 0 failures (verified 2026-05-27 after iOS 26/onChange modernization; `swift build` succeeded); device-specific iPhone 17 Pro simulator `xcodebuild` verified 2026-05-28 after `tuist generate`, AccentColor asset addition, and no asset-setting override
 - Android CI: `pull_request` Android job ran/passed on PR #21, non-Android-change PR #22, and follow-up PR #23; Kotlin JSON primitive accessor compile failures fixed by squash `92e65dd`; oversized plain-integer JSON parsing aligned between Android test helper and production renderer in `c3f4f8f`; decimal/exponent policy is now explicitly documented as `Double` and centralized in Android `JsonValueConverter` (local Gradle verification blocked by missing Java runtime on 2026-05-26; limitation and CI fallback documented in `JASONETTE-Android/JasonetteApp/README.md`)
 - Run iOS: `cd JASONETTE-iOS/JasonetteApp && swift test`
 - Build iOS: `swift build` (<1s)
@@ -80,9 +80,9 @@ P2:
 
 P3:
 - `todos/015` — sectionView code duplication (defer until 3rd section type)
-- `todos/044` — investigate device-specific simulator build hang during asset catalog processing
 
 Completed this session:
+- `todos/044` — investigated the prior device-specific iPhone 17 Pro simulator build hang. Regenerated the local Tuist project (`mise exec -- tuist generate --no-open`), added the missing `AccentColor.colorset` referenced by generated asset catalog settings, and verified both direct device-specific and generic simulator `xcodebuild` commands succeed without clearing app-icon/accent-color settings; install/launch also succeeded. Updated `docs/qa/README.md`, added `docs/qa/2026-05-28-ios-device-specific-build-qa.md`, and marked the todo complete.
 - `todos/029` — raised active Swift/Tuist app floors to iOS 26.0, macOS 14.0, and tvOS 17.0 (visionOS remains 1.0); updated `JasonetteTabShell` to the modern two-parameter `onChange(of:)` closure; refreshed current README/contributing docs from iOS 16+ to iOS 26+. Verification: `swift package dump-package`; `rg` found no legacy single-parameter `onChange` or active iOS 16 target references; `swift test --filter TabNavigationCoordinatorTests` (71 tests); full `swift test` (496 tests); `swift build`; `npm run lint:md`.
 - `todos/048` — documented Android Java 17 local verification requirements and the current no-Java local-agent limitation in `JASONETTE-Android/JasonetteApp/README.md`; recorded CI run/job evidence where the `android` job provisioned Java 17 and ran `./gradlew assembleDebug` plus `./gradlew test` successfully for the JSON conversion changes. Marked the todo complete.
 - `todos/017` — updated `docs/plans/2026-03-19-fix-render-multiple-templates-plan.md` with `status: completed`, a completion date, and an accurate PR #12 completion summary replacing the confusing same-day deepening note. Marked the todo complete.

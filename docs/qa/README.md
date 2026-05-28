@@ -2,6 +2,62 @@
 
 This directory stores exploratory QA passes and supporting evidence.
 
+## iOS Simulator Build / Install
+
+From the active Tuist app root, generate the ignored local Xcode project before
+using `xcodebuild` so `Project.swift` changes are reflected in the build graph:
+
+```bash
+cd JASONETTE-iOS/JasonetteApp
+mise exec -- tuist generate --no-open
+```
+
+Preferred device-specific simulator build for the booted iPhone 17 Pro QA
+simulator:
+
+```bash
+xcodebuild \
+  -project Jasonette.xcodeproj \
+  -scheme Jasonette-iOS \
+  -configuration Debug \
+  -destination 'id=61EA0147-56E4-4399-8D51-F98A93B708A6' \
+  -derivedDataPath DerivedDataQA \
+  CODE_SIGNING_ALLOWED=NO \
+  build
+```
+
+Install and launch:
+
+```bash
+xcrun simctl install 61EA0147-56E4-4399-8D51-F98A93B708A6 \
+  DerivedDataQA/Build/Products/Debug-iphonesimulator/Jasonette_iOS.app
+
+xcrun simctl launch --terminate-running-process \
+  61EA0147-56E4-4399-8D51-F98A93B708A6 \
+  com.bande-a-bonnot.jasonette
+```
+
+A generic simulator build is also valid when no specific booted device is
+needed:
+
+```bash
+xcodebuild \
+  -project Jasonette.xcodeproj \
+  -scheme Jasonette-iOS \
+  -configuration Debug \
+  -sdk iphonesimulator \
+  -destination 'generic/platform=iOS Simulator' \
+  -derivedDataPath DerivedDataQA \
+  CODE_SIGNING_ALLOWED=NO \
+  build
+```
+
+As of 2026-05-28, the old asset-catalog workaround that cleared
+`ASSETCATALOG_COMPILER_APPICON_NAME` and
+`ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME` is no longer required. The
+missing `AccentColor` asset has been added, and the device-specific build has
+been re-verified on iPhone 17 Pro / iOS 26.2.
+
 ## iOS Simulator QA with `agent-device`
 
 Use `agent-device` for agent-driven simulator QA. Raw `simctl` is excellent for

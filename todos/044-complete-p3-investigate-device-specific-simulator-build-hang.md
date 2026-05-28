@@ -1,5 +1,5 @@
 ---
-status: ready
+status: complete
 priority: p3
 issue_id: "044"
 tags: [ios, build, simulator, xcode, qa]
@@ -7,6 +7,29 @@ dependencies: []
 ---
 
 # Investigate device-specific simulator build hang during asset catalog processing
+
+Completed: 2026-05-28
+
+## Resolution
+
+The original iPhone 17 Pro device-specific simulator build hang was not
+reproducible on 2026-05-28 with the current toolchain and a freshly generated
+Tuist project. Both the device-specific build and generic simulator build
+completed successfully without clearing asset-catalog build settings.
+
+While investigating, two dev-infra hygiene issues were addressed:
+
+1. Added the missing `AccentColor.colorset` because the generated Xcode project
+   references `ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor`.
+   This removed the asset-catalog warning about a missing accent color.
+2. Updated `docs/qa/README.md` so simulator QA starts with
+   `mise exec -- tuist generate --no-open`, then uses the direct
+   device-specific simulator build/install/launch commands. The old workaround
+   that cleared app-icon/accent-color settings is documented as no longer
+   required.
+
+Detailed evidence is in
+`docs/qa/2026-05-28-ios-device-specific-build-qa.md`.
 
 ## Problem Statement
 
@@ -60,10 +83,10 @@ xcodebuild \
 
 ## Acceptance Criteria
 
-- [ ] Device-specific simulator build either succeeds reliably or has a
+- [x] Device-specific simulator build either succeeds reliably or has a
       documented known-good workaround
-- [ ] If a project setting is at fault, it is fixed
-- [ ] QA docs reflect the recommended build/install path
+- [x] If a project setting is at fault, it is fixed
+- [x] QA docs reflect the recommended build/install path
 
 ## Notes
 
