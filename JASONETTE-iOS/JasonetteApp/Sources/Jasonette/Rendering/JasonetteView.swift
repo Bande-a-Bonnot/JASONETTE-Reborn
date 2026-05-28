@@ -32,6 +32,32 @@ private struct LayerPositioningModifier: ViewModifier {
     }
 }
 
+private enum SectionComponentPadding {
+    case none
+    case header
+    case verticalItem
+}
+
+private struct SectionComponentPaddingModifier: ViewModifier {
+    let padding: SectionComponentPadding
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        switch padding {
+        case .none:
+            content
+        case .header:
+            content
+                .padding(.horizontal)
+                .padding(.vertical, 4)
+        case .verticalItem:
+            content
+                .padding(.horizontal)
+                .padding(.vertical, 2)
+        }
+    }
+}
+
 /// Main view that renders a complete Jasonette document.
 @MainActor
 struct JasonetteView: View {
@@ -190,47 +216,47 @@ struct JasonetteView: View {
     private func sectionView(_ section: JasonSection, headStyles: [String: JasonStyle]) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             if let header = section.header {
-                ComponentView(
-                    header,
-                    headStyles: headStyles,
-                    onHref: { viewModel.handleHref($0) },
-                    onAction: { viewModel.handleAction($0) },
-                    documentURL: viewModel.documentURL
-                )
-                .padding(.horizontal)
-                .padding(.vertical, 4)
+                sectionComponentView(header, headStyles: headStyles, padding: .header)
             }
 
             if let items = section.items {
                 if section.type == "horizontal" {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 0) {
-                            ForEach(Array(items.enumerated()), id: \.offset) { _, item in
-                                ComponentView(
-                                    item,
-                                    headStyles: headStyles,
-                                    onHref: { viewModel.handleHref($0) },
-                                    onAction: { viewModel.handleAction($0) },
-                                    documentURL: viewModel.documentURL
-                                )
-                            }
+                            sectionItemsView(items, headStyles: headStyles, padding: .none)
                         }
                     }
                 } else {
-                    ForEach(Array(items.enumerated()), id: \.offset) { _, item in
-                        ComponentView(
-                            item,
-                            headStyles: headStyles,
-                            onHref: { viewModel.handleHref($0) },
-                            onAction: { viewModel.handleAction($0) },
-                            documentURL: viewModel.documentURL
-                        )
-                        .padding(.horizontal)
-                        .padding(.vertical, 2)
-                    }
+                    sectionItemsView(items, headStyles: headStyles, padding: .verticalItem)
                 }
             }
         }
+    }
+
+    @ViewBuilder
+    private func sectionItemsView(
+        _ items: [JasonComponent],
+        headStyles: [String: JasonStyle],
+        padding: SectionComponentPadding
+    ) -> some View {
+        ForEach(Array(items.enumerated()), id: \.offset) { _, item in
+            sectionComponentView(item, headStyles: headStyles, padding: padding)
+        }
+    }
+
+    private func sectionComponentView(
+        _ component: JasonComponent,
+        headStyles: [String: JasonStyle],
+        padding: SectionComponentPadding
+    ) -> some View {
+        ComponentView(
+            component,
+            headStyles: headStyles,
+            onHref: { viewModel.handleHref($0) },
+            onAction: { viewModel.handleAction($0) },
+            documentURL: viewModel.documentURL
+        )
+        .modifier(SectionComponentPaddingModifier(padding: padding))
     }
 
     @ViewBuilder

@@ -79,9 +79,10 @@ P2:
 - none currently tracked as open
 
 P3:
-- `todos/015` — sectionView code duplication (defer until 3rd section type)
+- none currently tracked as open
 
 Completed this session:
+- `todos/015` — removed `sectionView` horizontal/vertical item-rendering duplication by extracting shared `sectionItemsView`/`sectionComponentView` helpers and a section padding modifier while preserving header, vertical-item, and horizontal-item padding semantics. Verification: full `swift test` — 496 tests, 0 failures; `swift build`.
 - `todos/044` — investigated the prior device-specific iPhone 17 Pro simulator build hang. Regenerated the local Tuist project (`mise exec -- tuist generate --no-open`), added the missing `AccentColor.colorset` referenced by generated asset catalog settings, and verified both direct device-specific and generic simulator `xcodebuild` commands succeed without clearing app-icon/accent-color settings; install/launch also succeeded. Updated `docs/qa/README.md`, added `docs/qa/2026-05-28-ios-device-specific-build-qa.md`, and marked the todo complete.
 - `todos/029` — raised active Swift/Tuist app floors to iOS 26.0, macOS 14.0, and tvOS 17.0 (visionOS remains 1.0); updated `JasonetteTabShell` to the modern two-parameter `onChange(of:)` closure; refreshed current README/contributing docs from iOS 16+ to iOS 26+. Verification: `swift package dump-package`; `rg` found no legacy single-parameter `onChange` or active iOS 16 target references; `swift test --filter TabNavigationCoordinatorTests` (71 tests); full `swift test` (496 tests); `swift build`; `npm run lint:md`.
 - `todos/048` — documented Android Java 17 local verification requirements and the current no-Java local-agent limitation in `JASONETTE-Android/JasonetteApp/README.md`; recorded CI run/job evidence where the `android` job provisioned Java 17 and ran `./gradlew assembleDebug` plus `./gradlew test` successfully for the JSON conversion changes. Marked the todo complete.
