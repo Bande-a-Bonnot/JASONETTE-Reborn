@@ -8,7 +8,7 @@ Last updated: 2026-05-28
 
 ### Test Suite
 
-- iOS: 496 tests, 0 failures (verified 2026-05-27 after iOS 26/onChange modernization; `swift build` succeeded); device-specific iPhone 17 Pro simulator `xcodebuild` verified 2026-05-28 after `tuist generate`, AccentColor asset addition, and no asset-setting override
+- iOS: 498 tests, 0 failures (verified 2026-05-29 after selected-last tab ZStack ordering; `swift build` succeeded); device-specific iPhone 17 Pro simulator `xcodebuild` verified 2026-05-29 after `tuist generate` and tab chrome QA fixture work
 - Android CI: `pull_request` Android job ran/passed on PR #21, non-Android-change PR #22, and follow-up PR #23; Kotlin JSON primitive accessor compile failures fixed by squash `92e65dd`; oversized plain-integer JSON parsing aligned between Android test helper and production renderer in `c3f4f8f`; decimal/exponent policy is now explicitly documented as `Double` and centralized in Android `JsonValueConverter` (local Gradle verification blocked by missing Java runtime on 2026-05-26; limitation and CI fallback documented in `JASONETTE-Android/JasonetteApp/README.md`)
 - Run iOS: `cd JASONETTE-iOS/JasonetteApp && swift test`
 - Build iOS: `swift build` (<1s)
@@ -82,6 +82,7 @@ P3:
 - none currently tracked as open
 
 Completed this session:
+- `todos/031` — hardened tab navigation chrome propagation by rendering the selected document tab last in `JasonetteTabShell`'s ZStack without mutating authored tab-bar order. Added `TabContentStackOrder` tests, local `chrome-*` simulator fixtures, and `docs/qa/2026-05-29-ios-tab-chrome-zstack-qa.md`; agent-device QA confirmed Home/Detail/Third titles and toolbar buttons remain visually correct after tab switches and a pushed child page. Verification: `jq empty docs/qa/fixtures/ios-simulator-tabs/chrome-*.json`; `swift test --filter TabNavigationCoordinatorTests` (73 tests); full `swift test` — 498 tests, 0 failures; `swift build`; `mise exec -- tuist generate --no-open`; device-specific iPhone 17 Pro simulator `xcodebuild` build; `agent-device` QA screenshots.
 - `todos/015` — removed `sectionView` horizontal/vertical item-rendering duplication by extracting shared `sectionItemsView`/`sectionComponentView` helpers and a section padding modifier while preserving header, vertical-item, and horizontal-item padding semantics. Verification: full `swift test` — 496 tests, 0 failures; `swift build`.
 - `todos/044` — investigated the prior device-specific iPhone 17 Pro simulator build hang. Regenerated the local Tuist project (`mise exec -- tuist generate --no-open`), added the missing `AccentColor.colorset` referenced by generated asset catalog settings, and verified both direct device-specific and generic simulator `xcodebuild` commands succeed without clearing app-icon/accent-color settings; install/launch also succeeded. Updated `docs/qa/README.md`, added `docs/qa/2026-05-28-ios-device-specific-build-qa.md`, and marked the todo complete.
 - `todos/029` — raised active Swift/Tuist app floors to iOS 26.0, macOS 14.0, and tvOS 17.0 (visionOS remains 1.0); updated `JasonetteTabShell` to the modern two-parameter `onChange(of:)` closure; refreshed current README/contributing docs from iOS 16+ to iOS 26+. Verification: `swift package dump-package`; `rg` found no legacy single-parameter `onChange` or active iOS 16 target references; `swift test --filter TabNavigationCoordinatorTests` (71 tests); full `swift test` (496 tests); `swift build`; `npm run lint:md`.
@@ -111,7 +112,6 @@ Completed this session:
 - iOS simulator QA notes added at `docs/qa/2026-05-18-ios-simulator-complete-qa.md`; process notes added at `docs/qa/README.md`; compounded learnings added at `docs/solutions/best-practices/agent-device-ios-simulator-exploratory-qa.md`. `agent-device` 0.14.9 works for Simulator driving (`npx --yes agent-device@latest ...`). Key findings/follow-ups from this QA sequence are tracked as todos/039-047.
 
 Nice-to-have (P3):
-- `todos/031` — investigate ZStack nav-title collision (gemini r5/6/7/8 concern)
 - `todos/032` — codebase-wide URL normalization utility (supersedes `.standardized` per-site)
 
 ---

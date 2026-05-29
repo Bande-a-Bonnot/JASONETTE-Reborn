@@ -1,0 +1,39 @@
+{
+  "$jason": {
+    "head": {
+      "title": "Detail Pushed"
+    },
+    "body": {
+      "header": {
+        "menu": {
+          "text": "Child Menu",
+          "action": {
+            "type": "$util.alert",
+            "options": {
+              "title": "Detail pushed menu",
+              "description": "The pushed detail page owns the toolbar."
+            }
+          }
+        },
+        "style": {
+          "background": "#bfdbfe"
+        }
+      },
+      "sections": [
+        {
+          "items": [
+            {
+              "type": "label",
+              "text": "Detail pushed child page",
+              "style": {
+                "size": "24",
+                "font": "HelveticaNeue-Bold",
+                "padding": "16"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

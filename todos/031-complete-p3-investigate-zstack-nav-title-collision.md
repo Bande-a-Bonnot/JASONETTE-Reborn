@@ -1,7 +1,7 @@
 ---
 id: 031
 priority: P3
-status: ready
+status: complete
 category: nice-to-have
 related_pr: "#20"
 related_comments:
@@ -48,8 +48,29 @@ the selected tab is always last in the ZStack.
 - Changing `TabShellState`'s stored order. `selectableTabs` is the authored
   order for the bar; only the view's ZStack rendering order should flip.
 
+## Resolution
+
+Completed on 2026-05-29 by rendering the selected document tab last in
+`JasonetteTabShell`'s ZStack. This keeps the selected tab's `NavigationStack`
+last for SwiftUI navigation title/toolbar propagation without mutating the
+authored footer tab order stored in `TabShellState`.
+
+Added unit coverage for the selected-last ordering helper and performed iOS
+Simulator QA with a local three-tab chrome fixture. No visual navigation title
+or toolbar override was observed after switching across mounted tabs or after
+returning from a tab with a pushed child page. See
+`docs/qa/2026-05-29-ios-tab-chrome-zstack-qa.md`.
+
+Verification:
+
+- `jq empty docs/qa/fixtures/ios-simulator-tabs/chrome-*.json`
+- `cd JASONETTE-iOS/JasonetteApp && swift test --filter TabNavigationCoordinatorTests` — 73 tests, 0 failures
+- `cd JASONETTE-iOS/JasonetteApp && swift test` — 498 tests, 0 failures
+- `cd JASONETTE-iOS/JasonetteApp && swift build`
+- `cd JASONETTE-iOS/JasonetteApp && mise exec -- tuist generate --no-open`
+- device-specific `xcodebuild` Debug simulator build for iPhone 17 Pro / iOS 26.2
+- `agent-device` exploratory QA with screenshots under `docs/qa/artifacts/2026-05-29-ios-tab-chrome/`
+
 ## Notes
 
-This is a P3 "nice to have" because no real-world symptom has been reported
-yet. Priority jumps to P2 if a customer-facing title/toolbar regression
-surfaces.
+This was a P3 "nice to have" because no real-world symptom had been reported.

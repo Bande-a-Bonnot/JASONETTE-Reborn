@@ -624,6 +624,33 @@ final class TabNavigationCoordinatorTests: XCTestCase {
         XCTAssertEqual(shell.selectedCanonicalKey, b.target.canonicalKey)
     }
 
+    // MARK: Tab shell presentation order
+
+    func testTabContentStackOrderMovesSelectedTabLastWithoutMutatingAuthoredOrder() {
+        let tabs = [
+            TabEntry(descriptor: doc("https://example.com/a.json")),
+            TabEntry(descriptor: doc("https://example.com/b.json")),
+            TabEntry(descriptor: doc("https://example.com/c.json")),
+        ]
+
+        let ordered = TabContentStackOrder.selectedLast(from: tabs, selectedID: tabs[1].id)
+
+        XCTAssertEqual(ordered.map(\.id), [tabs[0].id, tabs[2].id, tabs[1].id])
+        XCTAssertEqual(tabs.map(\.id), [tabs[0].id, tabs[1].id, tabs[2].id],
+                       "ZStack ordering must not mutate the authored tab-bar order")
+    }
+
+    func testTabContentStackOrderKeepsAuthoredOrderWhenSelectedTabIsMissing() {
+        let tabs = [
+            TabEntry(descriptor: doc("https://example.com/a.json")),
+            TabEntry(descriptor: doc("https://example.com/b.json")),
+        ]
+
+        let ordered = TabContentStackOrder.selectedLast(from: tabs, selectedID: TabID())
+
+        XCTAssertEqual(ordered.map(\.id), tabs.map(\.id))
+    }
+
     // MARK: Codex review round 2 regressions
 
     /// BLOCKER 2: footer with a non-document tab first (e.g. [web, document])

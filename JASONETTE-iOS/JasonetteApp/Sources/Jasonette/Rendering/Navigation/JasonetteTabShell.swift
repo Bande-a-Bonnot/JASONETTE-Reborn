@@ -1,5 +1,17 @@
 import SwiftUI
 
+struct TabContentStackOrder {
+    static func selectedLast(from tabs: [TabEntry], selectedID: TabID) -> [TabEntry] {
+        guard let selectedIndex = tabs.firstIndex(where: { $0.id == selectedID }) else {
+            return tabs
+        }
+        var orderedTabs = tabs
+        let selected = orderedTabs.remove(at: selectedIndex)
+        orderedTabs.append(selected)
+        return orderedTabs
+    }
+}
+
 /// Hosts N tab scopes. Each scope is an opaque `JasonetteNavigationView` —
 /// the shell does not know or care how it navigates internally. Tab switches
 /// are shell-local (toggle opacity, flip `selectedTabID`); navigation within
@@ -34,8 +46,13 @@ struct JasonetteTabShell: View {
             // Only document tabs produce content; web/app/action tabs live in
             // the bar and are handled on tap, never rendered in the stack.
             // `selectableTabs` is precomputed on `TabShellState`, not filtered
-            // per render.
-            ForEach(shell.selectableTabs) { tab in
+            // per render. Keep the selected NavigationStack last in the
+            // ZStack so hidden sibling stacks cannot win SwiftUI navigation
+            // title/toolbar propagation over the visible tab.
+            ForEach(TabContentStackOrder.selectedLast(
+                from: shell.selectableTabs,
+                selectedID: shell.selectedTabID
+            )) { tab in
                 let selected = tab.id == shell.selectedTabID
                 content(for: tab)
                     .opacity(selected ? 1 : 0)

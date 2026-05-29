@@ -1,0 +1,39 @@
+{
+  "$jason": {
+    "head": {
+      "title": "Home Pushed"
+    },
+    "body": {
+      "header": {
+        "menu": {
+          "text": "Pushed Menu",
+          "action": {
+            "type": "$util.alert",
+            "options": {
+              "title": "Home pushed menu",
+              "description": "The pushed home page owns the toolbar."
+            }
+          }
+        },
+        "style": {
+          "background": "#fde68a"
+        }
+      },
+      "sections": [
+        {
+          "items": [
+            {
+              "type": "label",
+              "text": "Home pushed detail page",
+              "style": {
+                "size": "24",
+                "font": "HelveticaNeue-Bold",
+                "padding": "16"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

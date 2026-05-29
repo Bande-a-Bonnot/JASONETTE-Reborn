@@ -1,0 +1,50 @@
+{
+  "$jason": {
+    "head": {
+      "title": "Chrome Detail"
+    },
+    "body": {
+      "header": {
+        "menu": {
+          "text": "Detail Menu",
+          "action": {
+            "type": "$util.alert",
+            "options": {
+              "title": "Detail menu",
+              "description": "Detail tab toolbar action is active."
+            }
+          }
+        },
+        "style": {
+          "background": "#dbeafe"
+        }
+      },
+      "sections": [
+        {
+          "items": [
+            {
+              "type": "label",
+              "text": "Chrome detail tab fixture",
+              "style": {
+                "size": "24",
+                "font": "HelveticaNeue-Bold",
+                "padding": "16"
+              }
+            },
+            {
+              "type": "label",
+              "text": "Push Detail Child",
+              "href": {
+                "url": "chrome-detail-child.json"
+              },
+              "style": {
+                "padding": "16",
+                "color": "#1d4ed8"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

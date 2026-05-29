@@ -1,0 +1,47 @@
+{
+  "$jason": {
+    "head": {
+      "title": "Chrome Third"
+    },
+    "body": {
+      "header": {
+        "menu": {
+          "text": "Third Menu",
+          "action": {
+            "type": "$util.alert",
+            "options": {
+              "title": "Third menu",
+              "description": "Third tab toolbar action is active."
+            }
+          }
+        },
+        "style": {
+          "background": "#dcfce7"
+        }
+      },
+      "sections": [
+        {
+          "items": [
+            {
+              "type": "label",
+              "text": "Chrome third tab fixture",
+              "style": {
+                "size": "24",
+                "font": "HelveticaNeue-Bold",
+                "padding": "16"
+              }
+            },
+            {
+              "type": "label",
+              "text": "Third tab confirms a mounted hidden tab after switching across all tabs.",
+              "style": {
+                "padding": "16",
+                "color": "#166534"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

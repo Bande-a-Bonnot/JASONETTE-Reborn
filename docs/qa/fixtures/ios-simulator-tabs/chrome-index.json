@@ -1,0 +1,71 @@
+{
+  "$jason": {
+    "head": {
+      "title": "Chrome Home"
+    },
+    "body": {
+      "header": {
+        "menu": {
+          "text": "Home Menu",
+          "action": {
+            "type": "$util.alert",
+            "options": {
+              "title": "Home menu",
+              "description": "Home tab toolbar action is active."
+            }
+          }
+        },
+        "style": {
+          "background": "#fef3c7"
+        }
+      },
+      "sections": [
+        {
+          "items": [
+            {
+              "type": "label",
+              "text": "Chrome home tab fixture",
+              "style": {
+                "size": "24",
+                "font": "HelveticaNeue-Bold",
+                "padding": "16"
+              }
+            },
+            {
+              "type": "label",
+              "text": "Push Home Detail",
+              "href": {
+                "url": "chrome-home-detail.json"
+              },
+              "style": {
+                "padding": "16",
+                "color": "#92400e"
+              }
+            }
+          ]
+        }
+      ],
+      "footer": {
+        "tabs": {
+          "items": [
+            {
+              "text": "Home",
+              "image": "system://house",
+              "url": "chrome-index.json"
+            },
+            {
+              "text": "Detail",
+              "image": "system://star",
+              "url": "chrome-detail.json"
+            },
+            {
+              "text": "Third",
+              "image": "system://circle.grid.3x3",
+              "url": "chrome-third.json"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

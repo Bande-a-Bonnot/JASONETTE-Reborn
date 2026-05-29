@@ -167,6 +167,11 @@ QA flow:
    Detail tab instead of pushing a duplicate view.
 4. Tap “Alert” and confirm the selected tab handles the `$util.alert` action.
 
+The same directory also includes `chrome-index.json` plus related `chrome-*`
+files for tab navigation-chrome QA. Use
+`http://127.0.0.1:8765/chrome-index.json` as the entry URL to exercise three
+mounted document tabs, per-tab toolbar buttons, and pushed child pages.
+
 ### Operational notes from 2026-05-18/19
 
 - The first `snapshot` can take a long time or time out while the XCTest runner
