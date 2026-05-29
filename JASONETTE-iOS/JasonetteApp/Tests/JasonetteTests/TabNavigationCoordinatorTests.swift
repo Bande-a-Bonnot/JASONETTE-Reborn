@@ -451,7 +451,7 @@ final class TabNavigationCoordinatorTests: XCTestCase {
         }
         XCTAssertEqual(shell.selectedTabID, shell.tabs[0].id)
         XCTAssertEqual(bootstrapURL, entry)
-        XCTAssertNotEqual(shell.tabs[0].descriptor.selectableURL?.standardized, bootstrapURL.standardized)
+        XCTAssertNotEqual(shell.tabs[0].descriptor.selectableURL?.jasonetteCanonical, bootstrapURL.jasonetteCanonical)
     }
 
     func testCoordinatorDedupesByCanonicalTarget() {
@@ -809,59 +809,54 @@ final class TabNavigationCoordinatorTests: XCTestCase {
         XCTAssertNil(TabDescriptor(from: bad))
     }
 
-    // MARK: URL normalization (`.standardized`) across comparison surfaces
+    // MARK: Jasonette URL canonicalization across comparison surfaces
 
-    /// Two tab URLs that differ only in `.`/`..` path segments must dedupe
-    /// against each other. `.standardized` resolves the segments before the
-    /// `canonicalKey` comparison.
-    func testCoordinatorDedupesByStandardizedPath() {
+    /// Two tab URLs that differ only cosmetically must dedupe against each
+    /// other through `TabDescriptor.Target.canonicalKey`.
+    func testCoordinatorDedupesByJasonetteCanonicalURL() {
         let c = JasonetteNavigationCoordinator(entryURL: URL(string: "https://a")!)
         c.bootstrapDidLoad(doc: makeDoc(tabs: [
-            tabItem(url: "https://host.com/a"),
-            tabItem(url: "https://host.com/x/../a"),  // standardizes to /a
+            tabItem(url: "https://Host.com:443/x/../home/?b=2&a=1"),
+            tabItem(url: "https://host.com/home?a=1&b=2"),
         ]))
         guard case .tabs(let shell, _, _) = c.mode else {
             return XCTFail("expected .tabs")
         }
         XCTAssertEqual(shell.tabs.count, 1,
-                       "`/x/../a` must dedupe against `/a` via standardization")
+                       "canonical URL differences must dedupe to a single tab")
     }
 
-    /// The bootstrap-entry-URL → tab match uses `.standardized`, so an entry
-    /// URL with `.`/`..` still resolves to its declared tab.
-    func testCoordinatorPromotionMatchesStandardizedEntryURL() {
-        let entry = URL(string: "https://host.com/x/../home")!
+    /// The bootstrap-entry-URL → tab match uses the same canonical URL layer,
+    /// so cosmetic URL differences still select the declared tab.
+    func testCoordinatorPromotionMatchesJasonetteCanonicalEntryURL() {
+        let entry = URL(string: "https://HOST.com:443/x/../home/?b=2&a=1")!
         let c = JasonetteNavigationCoordinator(entryURL: entry)
         c.bootstrapDidLoad(doc: makeDoc(tabs: [
             tabItem(url: "https://host.com/other"),
-            tabItem(url: "https://host.com/home"),
+            tabItem(url: "https://host.com/home?a=1&b=2"),
         ]))
         guard case .tabs(let shell, _, _) = c.mode else { return XCTFail("expected .tabs") }
         XCTAssertEqual(shell.selectedTabID, shell.tabs[1].id,
-                       "entry URL with `.`/`..` must match the standardized tab URL")
+                       "entry URL must match its canonical tab URL")
     }
 
     /// `transition: "switch"` must match declared tabs through the same
-    /// normalization as dedup and selection.
-    func testSwitchToURLIfMatchesHonorsStandardization() {
-        let a = TabEntry(descriptor: doc("https://host.com/home"))
+    /// canonical URL normalization as dedup and selection.
+    func testSwitchToURLIfMatchesHonorsJasonetteCanonicalURL() {
+        let a = TabEntry(descriptor: doc("https://host.com/home?a=1&b=2"))
         let shell = TabShellState(tabs: [a], initialSelection: a.id)
-        XCTAssertTrue(shell.switchToURLIfMatches(URL(string: "https://host.com/x/../home")!),
-                      "switch href with `.`/`..` must hit the standardized tab target")
+        XCTAssertTrue(shell.switchToURLIfMatches(URL(string: "https://HOST.com:443/x/../home/?b=2&a=1")!),
+                      "switch href must hit the canonical tab target")
     }
 
-    /// Trailing slashes are NOT absorbed by `.standardized`. Both dedup
-    /// and selection still treat `/home` and `/home/` as distinct. This
-    /// test locks that behavior in so a future "normalize trailing slashes"
-    /// refactor has to update tests deliberately.
-    func testTrailingSlashIsNotAbsorbedByStandardization() {
+    func testTrailingSlashIsAbsorbedByJasonetteCanonicalURL() {
         let c = JasonetteNavigationCoordinator(entryURL: URL(string: "https://a")!)
         c.bootstrapDidLoad(doc: makeDoc(tabs: [
             tabItem(url: "https://host.com/home"),
             tabItem(url: "https://host.com/home/"),
         ]))
         guard case .tabs(let shell, _, _) = c.mode else { return XCTFail("expected .tabs") }
-        XCTAssertEqual(shell.tabs.count, 2,
-                       "trailing slash divergence is deliberately not normalized")
+        XCTAssertEqual(shell.tabs.count, 1,
+                       "trailing slash divergence is normalized by Jasonette canonical URLs")
     }
 }

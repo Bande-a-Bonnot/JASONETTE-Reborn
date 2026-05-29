@@ -39,6 +39,29 @@ final class URLResolutionTests: XCTestCase {
         )
     }
 
+    func testJasonetteCanonicalNormalizesUserVisibleHTTPDifferences() {
+        let url = URL(string: "HTTPS://Example.COM:443/app/../home/?b=2&a=1")!
+
+        XCTAssertEqual(url.jasonetteCanonical.absoluteString, "https://example.com/home?a=1&b=2")
+    }
+
+    func testJasonetteCanonicalDropsHTTPDefaultPortOnlyForMatchingScheme() {
+        XCTAssertEqual(
+            URL(string: "http://example.com:80/home")!.jasonetteCanonical.absoluteString,
+            "http://example.com/home"
+        )
+        XCTAssertEqual(
+            URL(string: "https://example.com:80/home")!.jasonetteCanonical.absoluteString,
+            "https://example.com:80/home"
+        )
+    }
+
+    func testJasonetteCanonicalPreservesNonDefaultQueryAndFragment() {
+        let url = URL(string: "https://example.com:8443/home/?b=2&a=1#section")!
+
+        XCTAssertEqual(url.jasonetteCanonical.absoluteString, "https://example.com:8443/home?a=1&b=2#section")
+    }
+
     func testImageComponentResolvesRelativeURLAgainstDocumentURL() {
         let image = ImageComponent(url: "images/logo.png", style: nil, documentURL: baseURL)
         XCTAssertEqual(image.resolvedURL, URL(string: "https://example.com/app/images/logo.png")!)
@@ -155,6 +178,22 @@ final class URLResolutionTests: XCTestCase {
         )
         var href = JasonHref()
         href.url = "index.json"
+
+        XCTAssertTrue(tabItem.resolvesToCurrentDocument(href))
+    }
+
+    func testLegacyFooterTabItemDetectsCurrentDocumentTargetWithCanonicalURL() {
+        let documentURL = URL(string: "https://Example.com:443/app/index.json?a=1&b=2")!
+        let item = decodeComponent(["url": "index.json", "text": "Current"])
+        let tabItem = FooterTabItemView(
+            item: item,
+            headStyles: [:],
+            onHref: nil,
+            onAction: nil,
+            documentURL: documentURL
+        )
+        var href = JasonHref()
+        href.url = "https://example.com/app/index.json/?b=2&a=1"
 
         XCTAssertTrue(tabItem.resolvesToCurrentDocument(href))
     }

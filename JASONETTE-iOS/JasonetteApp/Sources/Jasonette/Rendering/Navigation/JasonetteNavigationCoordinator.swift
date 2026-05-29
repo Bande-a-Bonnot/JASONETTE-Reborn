@@ -56,20 +56,20 @@ final class JasonetteNavigationCoordinator: ObservableObject {
 
         // Initial selection must land on a document tab — `.web` and `.app`
         // render nothing, so selecting one would boot into a blank shell.
-        // Match by `.standardized` to absorb `.`/`..` path differences so
-        // this stays in lockstep with `TabDescriptor.Target.canonicalKey`
+        // Match by `jasonetteCanonical` so this stays in lockstep with
+        // `TabDescriptor.Target.canonicalKey`, `TabShellState.switchToURLIfMatches`,
         // and `JasonetteTabShell`'s preload-doc hand-off.
         let selectable = entries.filter { $0.descriptor.isSelectable }
-        let bootstrapStd = bootstrapURL.standardized
-        let entryStd = entryURL.standardized
+        let bootstrapCanonical = bootstrapURL.jasonetteCanonical
+        let entryCanonical = entryURL.jasonetteCanonical
         func matches(_ url: URL?, _ candidate: URL) -> Bool {
-            url?.standardized == candidate.standardized
+            url?.jasonetteCanonical == candidate.jasonetteCanonical
         }
         func matchesBootstrapAlias(_ url: URL?) -> Bool {
-            matches(url, bootstrapStd) || matches(url, entryStd)
+            matches(url, bootstrapCanonical) || matches(url, entryCanonical)
         }
-        guard let initial = selectable.first(where: { matches($0.descriptor.selectableURL, bootstrapStd) })
-                ?? selectable.first(where: { matches($0.descriptor.selectableURL, entryStd) })
+        guard let initial = selectable.first(where: { matches($0.descriptor.selectableURL, bootstrapCanonical) })
+                ?? selectable.first(where: { matches($0.descriptor.selectableURL, entryCanonical) })
                 ?? selectable.first
         else {
             #if DEBUG

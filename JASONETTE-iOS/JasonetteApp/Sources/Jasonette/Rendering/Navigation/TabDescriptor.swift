@@ -19,18 +19,15 @@ struct TabDescriptor: Sendable {
         case action(JasonAction)
 
         /// String form used for duplicate detection at bootstrap and for
-        /// `@SceneStorage` restoration. Built from `standardized.absoluteString`
-        /// so `https://host/a/../b` dedupes against `https://host/b`. Trailing
-        /// slashes and host casing are NOT normalized — `URL.standardized`
-        /// only resolves `.` / `..` path segments. Authors declaring two
-        /// cosmetically-different tab URLs (e.g. `/home` vs `/home/`) will
-        /// get two distinct tabs; that matches how `URL` equality already
-        /// behaves everywhere else in Jasonette.
+        /// `@SceneStorage` restoration. Built from `jasonetteCanonical` so
+        /// equality-style comparisons consistently absorb cosmetic URL
+        /// differences such as `.` / `..` path segments, host casing,
+        /// trailing slashes, default ports, and query item order.
         var canonicalKey: String {
             switch self {
-            case .document(let url): return "doc:\(url.standardized.absoluteString)"
-            case .web(let url):      return "web:\(url.standardized.absoluteString)"
-            case .app(let url):      return "app:\(url.standardized.absoluteString)"
+            case .document(let url): return "doc:\(url.jasonetteCanonical.absoluteString)"
+            case .web(let url):      return "web:\(url.jasonetteCanonical.absoluteString)"
+            case .app(let url):      return "app:\(url.jasonetteCanonical.absoluteString)"
             case .action(let action): return "action:\(action.stableHash)"
             }
         }

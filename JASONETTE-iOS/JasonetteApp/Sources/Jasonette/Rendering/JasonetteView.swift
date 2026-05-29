@@ -567,7 +567,7 @@ struct FooterTabItemView: View {
         guard let documentURL,
               let urlString = href.url,
               let targetURL = JasonURL.resolve(urlString, against: documentURL) else { return false }
-        return targetURL.standardized == documentURL.standardized
+        return targetURL.jasonetteCanonical == documentURL.jasonetteCanonical
     }
 
     private func resolvedStyle() -> JasonStyle {

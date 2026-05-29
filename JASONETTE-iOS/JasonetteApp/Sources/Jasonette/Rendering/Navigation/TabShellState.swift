@@ -42,15 +42,14 @@ final class TabShellState: ObservableObject {
     /// select it and return true. Returns false for no match — caller should
     /// fall through to `.push`.
     ///
-    /// Comparison uses `.standardized` on both sides so `transition: "switch"`
-    /// hrefs that differ only in `.`/`..` path segments still resolve to the
-    /// same tab the coordinator picked at bootstrap. Trailing slashes and
-    /// host casing are deliberately not normalized — that matches the
-    /// `canonicalKey` invariant.
+    /// Comparison uses `jasonetteCanonical` on both sides so
+    /// `transition: "switch"` hrefs that differ only cosmetically still resolve
+    /// to the same tab the coordinator picked at bootstrap and the same
+    /// `canonicalKey` invariant used for dedupe and restore.
     @discardableResult
     func switchToURLIfMatches(_ url: URL) -> Bool {
-        let target = url.standardized
-        guard let hit = tabs.first(where: { $0.descriptor.selectableURL?.standardized == target }) else {
+        let target = url.jasonetteCanonical
+        guard let hit = tabs.first(where: { $0.descriptor.selectableURL?.jasonetteCanonical == target }) else {
             return false
         }
         selectedTabID = hit.id

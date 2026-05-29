@@ -8,7 +8,7 @@ Last updated: 2026-05-28
 
 ### Test Suite
 
-- iOS: 498 tests, 0 failures (verified 2026-05-29 after selected-last tab ZStack ordering; `swift build` succeeded); device-specific iPhone 17 Pro simulator `xcodebuild` verified 2026-05-29 after `tuist generate` and tab chrome QA fixture work
+- iOS: 502 tests, 0 failures (verified 2026-05-29 after URL canonicalization; `swift build` succeeded); device-specific iPhone 17 Pro simulator `xcodebuild` verified 2026-05-29 after `tuist generate` and tab chrome QA fixture work
 - Android CI: `pull_request` Android job ran/passed on PR #21, non-Android-change PR #22, and follow-up PR #23; Kotlin JSON primitive accessor compile failures fixed by squash `92e65dd`; oversized plain-integer JSON parsing aligned between Android test helper and production renderer in `c3f4f8f`; decimal/exponent policy is now explicitly documented as `Double` and centralized in Android `JsonValueConverter` (local Gradle verification blocked by missing Java runtime on 2026-05-26; limitation and CI fallback documented in `JASONETTE-Android/JasonetteApp/README.md`)
 - Run iOS: `cd JASONETTE-iOS/JasonetteApp && swift test`
 - Build iOS: `swift build` (<1s)
@@ -82,6 +82,7 @@ P3:
 - none currently tracked as open
 
 Completed this session:
+- `todos/032` — added shared `URL.jasonetteCanonical` URL identity semantics (lowercased scheme/host, standardized path segments, trailing slash removal, default HTTP/HTTPS port dropping, sorted query items) and migrated equality-style navigation comparisons to it: tab canonical keys, switch-to-tab matching, bootstrap tab selection/preload hand-off, and legacy inline footer current-document no-op detection. Updated the old trailing-slash guardrail to assert collapse and added URL canonicalization/current-document coverage. Verification: `swift test --filter URLResolutionTests` (24 tests); `swift test --filter TabNavigationCoordinatorTests` (73 tests); full `swift test` — 502 tests, 0 failures; `swift build`.
 - `todos/031` — hardened tab navigation chrome propagation by rendering the selected document tab last in `JasonetteTabShell`'s ZStack without mutating authored tab-bar order. Added `TabContentStackOrder` tests, local `chrome-*` simulator fixtures, and `docs/qa/2026-05-29-ios-tab-chrome-zstack-qa.md`; agent-device QA confirmed Home/Detail/Third titles and toolbar buttons remain visually correct after tab switches and a pushed child page. Verification: `jq empty docs/qa/fixtures/ios-simulator-tabs/chrome-*.json`; `swift test --filter TabNavigationCoordinatorTests` (73 tests); full `swift test` — 498 tests, 0 failures; `swift build`; `mise exec -- tuist generate --no-open`; device-specific iPhone 17 Pro simulator `xcodebuild` build; `agent-device` QA screenshots.
 - `todos/015` — removed `sectionView` horizontal/vertical item-rendering duplication by extracting shared `sectionItemsView`/`sectionComponentView` helpers and a section padding modifier while preserving header, vertical-item, and horizontal-item padding semantics. Verification: full `swift test` — 496 tests, 0 failures; `swift build`.
 - `todos/044` — investigated the prior device-specific iPhone 17 Pro simulator build hang. Regenerated the local Tuist project (`mise exec -- tuist generate --no-open`), added the missing `AccentColor.colorset` referenced by generated asset catalog settings, and verified both direct device-specific and generic simulator `xcodebuild` commands succeed without clearing app-icon/accent-color settings; install/launch also succeeded. Updated `docs/qa/README.md`, added `docs/qa/2026-05-28-ios-device-specific-build-qa.md`, and marked the todo complete.
@@ -112,7 +113,7 @@ Completed this session:
 - iOS simulator QA notes added at `docs/qa/2026-05-18-ios-simulator-complete-qa.md`; process notes added at `docs/qa/README.md`; compounded learnings added at `docs/solutions/best-practices/agent-device-ios-simulator-exploratory-qa.md`. `agent-device` 0.14.9 works for Simulator driving (`npx --yes agent-device@latest ...`). Key findings/follow-ups from this QA sequence are tracked as todos/039-047.
 
 Nice-to-have (P3):
-- `todos/032` — codebase-wide URL normalization utility (supersedes `.standardized` per-site)
+- none currently tracked as open
 
 ---
 

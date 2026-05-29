@@ -112,13 +112,10 @@ struct JasonetteTabShell: View {
             if mounted.contains(tab.id) {
                 // Preloaded-doc hand-off is a fetch optimization, not a
                 // correctness invariant — on miss, `JasonetteView` just
-                // re-fetches from `url`. `.standardized` resolves `.`/`..`
-                // path segments so `/a/../b` matches `/b`, which keeps this
-                // in lockstep with `TabDescriptor.Target.canonicalKey` and
-                // `TabShellState.switchToURLIfMatches`. Trailing slashes,
-                // host casing, and query-order divergence still miss; cost
-                // is one extra fetch, not a broken shell.
-                let shouldPreload = url.standardized == bootstrapURL.standardized
+                // re-fetches from `url`. `jasonetteCanonical` keeps this in
+                // lockstep with `TabDescriptor.Target.canonicalKey` and
+                // `TabShellState.switchToURLIfMatches`.
+                let shouldPreload = url.jasonetteCanonical == bootstrapURL.jasonetteCanonical
                 JasonetteNavigationView(
                     url: url,
                     preloadedDoc: shouldPreload ? bootstrapDoc : nil,
