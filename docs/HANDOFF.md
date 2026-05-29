@@ -1,6 +1,6 @@
 # Agent Handoff Document
 
-Last updated: 2026-05-28
+Last updated: 2026-05-29
 
 **Update this file before context compaction and at the end of significant sessions.**
 
@@ -82,6 +82,7 @@ P3:
 - none currently tracked as open
 
 Completed this session:
+- Open QA pass — root `npm test` was failing/hanging because the legacy `Jasonette-Web` workspace had a placeholder failing test script, `@jasonette/web` jsdom tests hung under Vitest's default thread pool on the current Node runtime, and CLI tests depended on ad-hoc `npx tsx`. Fixed by making the legacy workspace test script a passing no-op, pinning the web renderer Vitest pool to forks, adding `tsx` as a web-renderer dev dependency, and invoking CLI tests through `node --import tsx` with argument arrays. Verification: `npm test` now passes (legacy no-op + template-engine 140 tests + web renderer 58 tests); `npm run test --workspace=@jasonette/web`; `npm run typecheck --workspace=@jasonette/web`; `npm run lint:md`; `npm run spec:validate`; JSON fixture `jq empty` pass; iOS `swift test` still passes 502 tests and `swift build` passes. Android local verification remains blocked by missing Java runtime.
 - `todos/032` — added shared `URL.jasonetteCanonical` URL identity semantics (lowercased scheme/host, standardized path segments, trailing slash removal, default HTTP/HTTPS port dropping, sorted query items) and migrated equality-style navigation comparisons to it: tab canonical keys, switch-to-tab matching, bootstrap tab selection/preload hand-off, and legacy inline footer current-document no-op detection. Updated the old trailing-slash guardrail to assert collapse and added URL canonicalization/current-document coverage. Verification: `swift test --filter URLResolutionTests` (24 tests); `swift test --filter TabNavigationCoordinatorTests` (73 tests); full `swift test` — 502 tests, 0 failures; `swift build`.
 - `todos/031` — hardened tab navigation chrome propagation by rendering the selected document tab last in `JasonetteTabShell`'s ZStack without mutating authored tab-bar order. Added `TabContentStackOrder` tests, local `chrome-*` simulator fixtures, and `docs/qa/2026-05-29-ios-tab-chrome-zstack-qa.md`; agent-device QA confirmed Home/Detail/Third titles and toolbar buttons remain visually correct after tab switches and a pushed child page. Verification: `jq empty docs/qa/fixtures/ios-simulator-tabs/chrome-*.json`; `swift test --filter TabNavigationCoordinatorTests` (73 tests); full `swift test` — 498 tests, 0 failures; `swift build`; `mise exec -- tuist generate --no-open`; device-specific iPhone 17 Pro simulator `xcodebuild` build; `agent-device` QA screenshots.
 - `todos/015` — removed `sectionView` horizontal/vertical item-rendering duplication by extracting shared `sectionItemsView`/`sectionComponentView` helpers and a section padding modifier while preserving header, vertical-item, and horizontal-item padding semantics. Verification: full `swift test` — 496 tests, 0 failures; `swift build`.
