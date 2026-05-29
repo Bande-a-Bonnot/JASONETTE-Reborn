@@ -11,7 +11,7 @@ struct TextAreaComponent: View {
         ZStack(alignment: .topLeading) {
             TextEditor(text: binding)
                 .keyboardDoneToolbar()
-                .frame(minHeight: 80)
+                .frame(minWidth: 240, minHeight: 80)
                 .accessibilityIdentifier(name)
 
             if binding.wrappedValue.isEmpty {

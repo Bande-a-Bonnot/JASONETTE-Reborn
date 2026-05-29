@@ -121,6 +121,7 @@ public struct JasonHref: Codable, Sendable {
 
 public final class JasonAction: Codable, @unchecked Sendable {
     public var type: String?
+    public var trigger: String?
     public var options: [String: AnyCodable]?
     public var success: JasonAction?
     public var error: JasonAction?

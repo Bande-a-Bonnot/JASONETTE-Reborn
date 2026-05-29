@@ -100,6 +100,9 @@ public final class JasonetteViewModel: ObservableObject {
             }
             if let doc = self.document { self.render(doc) }
         }
+        actionDispatcher.setActionResolver { [weak self] name in
+            self?.document?.jason.head?.actions?[name]
+        }
     }
 
     func loadIfNeeded() async {

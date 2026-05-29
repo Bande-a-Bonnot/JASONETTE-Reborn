@@ -49,6 +49,23 @@ final class ActionDispatcherTests: XCTestCase {
         // Should not crash
     }
 
+    // MARK: - Named action trigger
+
+    func testTriggerExecutesNamedAction() async {
+        let namedAction = decodeAction([
+            "type": "$set",
+            "options": ["sent": true]
+        ])
+        dispatcher.setActionResolver { name in
+            name == "send" ? namedAction : nil
+        }
+
+        let trigger = decodeAction(["trigger": "send"])
+        await dispatcher.execute(trigger)
+
+        XCTAssertEqual(stateManager.get()["sent"] as? Bool, true)
+    }
+
     // MARK: - $cache.set
 
     func testCacheSetPersistsToCache() async {
@@ -177,6 +194,23 @@ final class ActionDispatcherTests: XCTestCase {
         await fulfillment(of: [expectation], timeout: 1.0)
         XCTAssertEqual(receivedTitle, "Hello")
         XCTAssertEqual(receivedDescription, "World")
+    }
+
+    func testUtilAlertTemplatesLocalGetValues() async {
+        stateManager.set(["message": "hello"])
+        let expectation = expectation(description: "alert called")
+        var receivedDescription: String?
+        dispatcher.setAlertHandler { _, description in
+            receivedDescription = description
+            expectation.fulfill()
+        }
+        let action = decodeAction([
+            "type": "$util.alert",
+            "options": ["title": "Message", "description": "{{$get.message}}"]
+        ])
+        await dispatcher.execute(action)
+        await fulfillment(of: [expectation], timeout: 1.0)
+        XCTAssertEqual(receivedDescription, "hello")
     }
 
     // MARK: - $util.toast / $util.banner

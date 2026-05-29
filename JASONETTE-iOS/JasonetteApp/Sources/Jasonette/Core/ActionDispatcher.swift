@@ -8,6 +8,7 @@ public final class ActionDispatcher: ObservableObject {
     private var reloadHandler: (() -> Void)?
     private var alertHandler: ((String, String?) -> Void)?
     private var renderHandler: ((String?) -> Void)?
+    private var actionResolver: ((String) -> JasonAction?)?
     private var timers: [String: Timer] = [:]
     private var executingTimers: Set<String> = []
 
@@ -43,6 +44,10 @@ public final class ActionDispatcher: ObservableObject {
         self.renderHandler = handler
     }
 
+    public func setActionResolver(_ handler: @escaping (String) -> JasonAction?) {
+        self.actionResolver = handler
+    }
+
     /// Invalidate all active timers. Call from view's onDisappear.
     public func invalidateAllTimers() {
         for timer in timers.values { timer.invalidate() }
@@ -67,6 +72,12 @@ public final class ActionDispatcher: ObservableObject {
     }
 
     private func dispatch(_ action: JasonAction, baseURL: URL?) async throws {
+        if let trigger = action.trigger {
+            guard let namedAction = actionResolver?(trigger) else { return }
+            await execute(namedAction, baseURL: baseURL)
+            return
+        }
+
         guard let type = action.type else { return }
         let options = action.options ?? [:]
 
@@ -125,8 +136,8 @@ public final class ActionDispatcher: ObservableObject {
 
         // Util
         case "$util.alert":
-            let title = options["title"]?.string ?? ""
-            let description = options["description"]?.string
+            let title = renderedString(options["title"]) ?? ""
+            let description = renderedString(options["description"])
             alertHandler?(title, description)
 
         case "$util.toast", "$util.banner":
@@ -144,6 +155,12 @@ public final class ActionDispatcher: ObservableObject {
         default:
             print("[Jasonette] Unknown action: \(type)")
         }
+    }
+
+    private func renderedString(_ value: AnyCodable?) -> String? {
+        guard let string = value?.string else { return nil }
+        let context = stateManager.local.merging(["$get": stateManager.local, "$cache": stateManager.cache]) { _, new in new }
+        return TemplateEngine.render(string, context: context) as? String ?? string
     }
 
     // MARK: - Timer
