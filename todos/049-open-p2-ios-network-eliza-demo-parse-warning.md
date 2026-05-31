@@ -35,9 +35,45 @@ left the app in the same warning state.
 4. If renderer-side, add a focused `ActionDispatcher`/`DocumentLoader` regression test for the response shape.
 5. Re-run direct-fixture iOS Simulator QA for the Eliza flow.
 
+## Progress — 2026-05-30
+
+Root cause: fixture/server drift. The `eliza` list row navigated directly to
+`https://jsonplaceholder.typicode.com`, which currently serves an HTML landing
+page (`content-type: text/html; charset=UTF-8`) instead of a Jasonette JSON
+document. iOS then correctly failed to decode that navigation target as a
+`JasonDocument`, producing the generic format warning.
+
+Fix implemented in working tree:
+
+- Added `Jasonpedia/action/network/eliza.json`, a valid Jasonette document with
+  a `$load` `$network.request` to
+  `https://jsonplaceholder.typicode.com/comments?postId=1`.
+- Updated `Jasonpedia/action/network/index.json` so the `eliza` row navigates to
+  the local `eliza.json` fixture instead of the HTML endpoint.
+- Added a `$network.request` error branch that renders a demo-specific
+  `network_error` fallback message.
+- Added iOS fixture coverage in `ViewModelTests` for the index route, maintained
+  endpoint, rendered `$response` items, and fallback error message.
+- Captured endpoint evidence in
+  `docs/qa/artifacts/2026-05-30-ios-network-eliza-fixture/endpoint-checks.txt`.
+- QA note: `docs/qa/2026-05-30-ios-network-eliza-fixture-qa.md`.
+
+Verification:
+
+- `jq empty Jasonpedia/action/network/index.json Jasonpedia/action/network/eliza.json`
+- `cd JASONETTE-iOS/JasonetteApp && swift test --filter ViewModelTests/testJasonpediaNetwork` — 4 tests passed
+- `cd JASONETTE-iOS/JasonetteApp && swift test` — 507 tests passed
+- `cd JASONETTE-iOS/JasonetteApp && swift build` — passed
+- `npm run spec:validate` — 80 passed, 5 excluded
+- `npm run lint:md` — 0 errors
+
+Simulator direct-entry QA remains open: an iPhone 17 Pro boot attempt timed out
+at `xcrun simctl bootstatus ... -b` after 300 seconds while waiting on
+BackBoard, so no app screenshot was captured in this pass.
+
 ## Acceptance Criteria
 
-- [ ] Root cause is documented in this todo or a linked QA/solution note
-- [ ] Eliza/network demo either loads successfully or fails with an intentional, useful message
-- [ ] Relevant iOS unit tests cover any renderer-side fix
+- [x] Root cause is documented in this todo or a linked QA/solution note
+- [x] Eliza/network demo either loads successfully or fails with an intentional, useful message
+- [x] Relevant iOS unit tests cover any renderer-side fix
 - [ ] Simulator QA evidence is captured under `docs/qa/artifacts/`

@@ -23,6 +23,13 @@ final class ViewModelTests: XCTestCase {
         return try JSONDecoder().decode(JasonDocument.self, from: data)
     }
 
+    private func renderBodyTemplate(_ doc: JasonDocument, context: [String: Any]) throws -> JasonBody {
+        let template = try XCTUnwrap(doc.jason.head?.templates?["body"]?.unwrapped)
+        let rendered = TemplateEngine.render(template, context: context)
+        let data = try JSONSerialization.data(withJSONObject: rendered)
+        return try JSONDecoder().decode(JasonBody.self, from: data)
+    }
+
     private func simpleDocument(title: String = "Test", actions: [String: Any]? = nil) -> JasonDocument {
         var head: [String: Any] = ["title": title]
         if let actions { head["actions"] = actions }
@@ -356,9 +363,51 @@ final class ViewModelTests: XCTestCase {
         ])
         XCTAssertEqual(items.map { $0.href?.url }, [
             "https://jsonplaceholder.typicode.com",
-            "https://jsonplaceholder.typicode.com",
+            "eliza.json",
             "https://jsonplaceholder.typicode.com/posts",
         ])
+    }
+
+    func testJasonpediaNetworkElizaFixtureUsesLocalDocumentAndMaintainedEndpoint() throws {
+        let doc = try loadJasonpediaDocument("Jasonpedia/action/network/eliza.json")
+        let loadAction = try XCTUnwrap(doc.jason.head?.actions?["$load"])
+
+        XCTAssertEqual(doc.jason.head?.title, "$network Eliza demo")
+        XCTAssertEqual(loadAction.type, "$network.request")
+        XCTAssertEqual(loadAction.options?["url"]?.string, "https://jsonplaceholder.typicode.com/comments?postId=1")
+        XCTAssertEqual(loadAction.success?.type, "$set")
+        XCTAssertEqual(loadAction.error?.type, "$set")
+        XCTAssertEqual(
+            loadAction.error?.options?["network_error"]?.string,
+            "The maintained network demo endpoint could not be reached. Check your connection and try again."
+        )
+    }
+
+    func testJasonpediaNetworkElizaFixtureRendersNetworkResponseItems() throws {
+        let doc = try loadJasonpediaDocument("Jasonpedia/action/network/eliza.json")
+        let body = try renderBodyTemplate(doc, context: [
+            "$response": [[
+                "name": "reply from maintained endpoint",
+                "email": "eliza@example.com",
+                "body": "Hello from the network response.",
+            ]],
+        ])
+        let item = try XCTUnwrap(body.sections?.first?.items?.first)
+
+        XCTAssertEqual(item.components?[0].text, "reply from maintained endpoint")
+        XCTAssertEqual(item.components?[1].text, "eliza@example.com")
+        XCTAssertEqual(item.components?[2].text, "Hello from the network response.")
+    }
+
+    func testJasonpediaNetworkElizaFixtureRendersHelpfulFallback() throws {
+        let doc = try loadJasonpediaDocument("Jasonpedia/action/network/eliza.json")
+        let body = try renderBodyTemplate(doc, context: [
+            "network_error": "The demo endpoint is down. Try again later.",
+        ])
+        let item = try XCTUnwrap(body.sections?.first?.items?.first)
+
+        XCTAssertEqual(item.components?[0].text, "Network demo unavailable")
+        XCTAssertEqual(item.components?[1].text, "The demo endpoint is down. Try again later.")
     }
 
     func testJasonpediaTextfieldSecureStyleSelectsSecureRendererPath() async throws {

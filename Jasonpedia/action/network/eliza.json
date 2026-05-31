@@ -1,0 +1,124 @@
+{
+  "$jason": {
+    "head": {
+      "title": "$network Eliza demo",
+      "actions": {
+        "$load": {
+          "type": "$network.request",
+          "options": {
+            "url": "https://jsonplaceholder.typicode.com/comments?postId=1"
+          },
+          "success": {
+            "type": "$set",
+            "options": {
+              "network_status": "loaded"
+            }
+          },
+          "error": {
+            "type": "$set",
+            "options": {
+              "network_status": "error",
+              "network_error": "The maintained network demo endpoint could not be reached. Check your connection and try again."
+            }
+          }
+        }
+      },
+      "templates": {
+        "body": {
+          "header": {
+            "title": "$network Eliza demo",
+            "menu": {
+              "text": "View JSON",
+              "href": {
+                "url": "https://github.com/Bande-a-Bonnot/JASONETTE-Reborn/blob/main/Jasonpedia/action/network/eliza.json",
+                "view": "web"
+              }
+            }
+          },
+          "sections": [
+            {
+              "header": {
+                "type": "label",
+                "text": "The original Eliza chatbot server used by this Jasonpedia entry is no longer available. This maintained replacement still demonstrates $network.request by fetching JSONPlaceholder comments and rendering the JSON response. If the endpoint is unavailable, the page renders a demo-specific message instead of a generic parse warning.",
+                "style": {
+                  "background": "#f5f5f5",
+                  "padding": "20",
+                  "size": "13"
+                }
+              },
+              "items": [
+                {
+                  "{{#if network_error}}": {
+                    "type": "vertical",
+                    "style": {
+                      "padding": "16",
+                      "spacing": "6",
+                      "background": "#fff4e5",
+                      "border_width": "1",
+                      "border_color": "#f5a623"
+                    },
+                    "components": [
+                      {
+                        "type": "label",
+                        "text": "Network demo unavailable",
+                        "style": {
+                          "size": "16",
+                          "font": "HelveticaNeue-CondensedBold",
+                          "color": "#8a4b00"
+                        }
+                      },
+                      {
+                        "type": "label",
+                        "text": "{{network_error}}",
+                        "style": {
+                          "size": "13",
+                          "color": "#8a4b00"
+                        }
+                      }
+                    ]
+                  }
+                },
+                {
+                  "{{#each $response}}": {
+                    "type": "vertical",
+                    "style": {
+                      "padding": "16",
+                      "spacing": "6",
+                      "border_width": "1",
+                      "border_color": "#e0e0e0"
+                    },
+                    "components": [
+                      {
+                        "type": "label",
+                        "text": "{{name}}",
+                        "style": {
+                          "size": "15",
+                          "font": "HelveticaNeue-CondensedBold"
+                        }
+                      },
+                      {
+                        "type": "label",
+                        "text": "{{email}}",
+                        "style": {
+                          "size": "12",
+                          "color": "#666666"
+                        }
+                      },
+                      {
+                        "type": "label",
+                        "text": "{{body}}",
+                        "style": {
+                          "size": "13"
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  }
+}

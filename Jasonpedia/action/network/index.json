@@ -23,9 +23,9 @@
           "title": "imagejason",
           "description": "takes photo using $media.camera, and uploads it to the server via $network.upload"
         }, {
-          "url": "https://jsonplaceholder.typicode.com",
+          "url": "eliza.json",
           "title": "eliza",
-          "description": "make a $network.request to node.js express based chatbot server. Returns auto-generated output based on the input"
+          "description": "make a $network.request to a maintained JSON endpoint and render a useful fallback if the legacy chatbot server is unavailable"
         }, {
           "url": "https://jsonplaceholder.typicode.com/posts",
           "title": "Microblog with user account",

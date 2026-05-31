@@ -1,0 +1,20 @@
+# Network Eliza fixture endpoint checks
+
+## Legacy `https://jsonplaceholder.typicode.com` target
+
+```
+content-type: text/html; charset=UTF-8
+body-prefix: <!DOCTYPE html><html lang="en">
+```
+
+## Maintained `https://jsonplaceholder.typicode.com/comments?postId=1` target
+
+```
+HTTP/2 200 
+content-type: application/json; charset=utf-8
+server: cloudflare
+json-shape: list
+list-count: 5
+first-keys: body, email, id, name, postId
+first-name: id labore ex et quam laborum
+```
