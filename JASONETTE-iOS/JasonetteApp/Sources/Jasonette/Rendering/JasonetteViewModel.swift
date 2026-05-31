@@ -17,7 +17,7 @@ public final class JasonetteViewModel: ObservableObject {
     private var activeTemplateName: String = "body"
 
     struct AlertConfig: Identifiable {
-        let id = UUID()
+        let id = UUIDv7.generate()
         let title: String
         let description: String?
     }

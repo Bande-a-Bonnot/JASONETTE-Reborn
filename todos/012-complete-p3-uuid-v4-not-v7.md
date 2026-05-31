@@ -1,5 +1,5 @@
 ---
-status: pending
+status: complete
 priority: p3
 issue_id: "012"
 tags: [code-review, conventions, uuids]
@@ -39,4 +39,5 @@ Replace with the project's UUIDv7 generator (however it's implemented — check 
 
 ## Work Log
 
+- 2026-05-31: Completed. Added a regression test proving `AlertConfig.id` has UUIDv7 version bits and RFC 4122 variant bits, then changed `JasonetteViewModel.AlertConfig` to use `UUIDv7.generate()` instead of `UUID()`.
 - 2026-03-12: Identified by pattern-recognition-specialist agent during code review

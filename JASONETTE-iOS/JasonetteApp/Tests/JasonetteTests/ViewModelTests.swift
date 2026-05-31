@@ -109,6 +109,15 @@ final class ViewModelTests: XCTestCase {
         XCTAssertEqual(vm.renderedRoot?.head?.title, "Redirected")
     }
 
+    // MARK: - ID policy
+
+    func testAlertConfigUsesUUIDv7() {
+        let alert = JasonetteViewModel.AlertConfig(title: "Title", description: nil)
+
+        XCTAssertEqual(alert.id.uuid.6 & 0xF0, 0x70)
+        XCTAssertEqual(alert.id.uuid.8 & 0xC0, 0x80)
+    }
+
     // MARK: - Render fallback
 
     func testRenderFallsBackToRawDocumentWithoutTemplates() async {
