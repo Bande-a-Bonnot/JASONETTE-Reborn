@@ -1,6 +1,6 @@
 ---
 id: "019e7612-d0c7-7d9f-94d2-99f211073f55"
-status: open
+status: complete
 priority: p2
 issue_id: "049"
 tags: [ios, actions, network, qa, jasonpedia]
@@ -67,13 +67,17 @@ Verification:
 - `npm run spec:validate` — 80 passed, 5 excluded
 - `npm run lint:md` — 0 errors
 
-Simulator direct-entry QA remains open: an iPhone 17 Pro boot attempt timed out
-at `xcrun simctl bootstatus ... -b` after 300 seconds while waiting on
-BackBoard, so no app screenshot was captured in this pass.
+Simulator direct-entry QA completed on 2026-05-31 after the iPhone 17 Pro
+simulator recovered. Memory pressure was checked first (`memory_pressure`
+reported 34% system-wide memory free). The local fixture was served from
+`http://127.0.0.1:8766/action/network/eliza.json`, launched through the Debug
+entry URL override, and captured with `simctl io screenshot`. The screenshot
+shows `$network Eliza demo` rendering fetched JSONPlaceholder rows without the
+prior generic parse warning.
 
 ## Acceptance Criteria
 
 - [x] Root cause is documented in this todo or a linked QA/solution note
 - [x] Eliza/network demo either loads successfully or fails with an intentional, useful message
 - [x] Relevant iOS unit tests cover any renderer-side fix
-- [ ] Simulator QA evidence is captured under `docs/qa/artifacts/`
+- [x] Simulator QA evidence is captured under `docs/qa/artifacts/`

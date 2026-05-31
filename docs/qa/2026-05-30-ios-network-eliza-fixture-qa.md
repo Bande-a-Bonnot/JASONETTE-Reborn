@@ -42,20 +42,33 @@ npm run spec:validate
 npm run lint:md
 ```
 
-## Simulator note
+## Simulator QA
 
-A device-specific iPhone 17 Pro simulator QA attempt was started, but
-`xcrun simctl bootstatus 61EA0147-56E4-4399-8D51-F98A93B708A6 -b` did not
-progress past `Waiting on BackBoard` before the 300-second command timeout. No
-app-level screenshot was captured in this pass. The fixture behavior is covered
-by focused iOS unit tests plus JSON/schema validation; re-run direct-entry
-Simulator QA after CoreSimulator is healthy or after the fixture is deployed to
-GitHub Pages.
+A first device-specific iPhone 17 Pro simulator QA attempt timed out on
+2026-05-30 while `xcrun simctl bootstatus ... -b` waited on BackBoard. A retry
+on 2026-05-31 succeeded after checking memory pressure: `memory_pressure`
+reported 34% system-wide memory free, and the iPhone 17 Pro simulator was
+already booted.
 
-Suggested direct-entry URL after deploy:
+Direct-entry Simulator QA used the local Jasonpedia fixture over HTTP:
 
 ```bash
-ENTRY_URL="https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/action/network/eliza.json"
-xcrun simctl launch --terminate-running-process booted com.bande-a-bonnot.jasonette \
+python3 -m http.server 8766 --directory Jasonpedia
+ENTRY_URL="http://127.0.0.1:8766/action/network/eliza.json"
+xcrun simctl launch --terminate-running-process \
+  61EA0147-56E4-4399-8D51-F98A93B708A6 \
+  com.bande-a-bonnot.jasonette \
   -JasonetteEntryURL "$ENTRY_URL"
+xcrun simctl io \
+  61EA0147-56E4-4399-8D51-F98A93B708A6 \
+  screenshot docs/qa/artifacts/2026-05-30-ios-network-eliza-fixture/eliza-direct-entry.png
 ```
+
+Result: the app rendered `$network Eliza demo`, explanatory copy, and fetched
+JSONPlaceholder comment rows. It did not show the prior generic parse warning.
+Screenshot evidence:
+`docs/qa/artifacts/2026-05-30-ios-network-eliza-fixture/eliza-direct-entry.png`.
+
+Note: `agent-device` attached to the app, but accessibility snapshots timed out
+twice while starting/using the XCTest runner. Visual confirmation was captured
+with `simctl io screenshot` instead.
