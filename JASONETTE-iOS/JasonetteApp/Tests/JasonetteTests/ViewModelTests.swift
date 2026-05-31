@@ -425,6 +425,24 @@ final class ViewModelTests: XCTestCase {
         XCTAssertEqual(TextFieldComponent.fieldKind(componentType: secureField.type, style: secureField.style), .secure)
     }
 
+    func testJasonpediaTextareaFixtureUsesDefaultEmptyAffordance() async throws {
+        let vm = JasonetteViewModel(document: try loadJasonpediaDocument("Jasonpedia/view/component/textarea/index.json"))
+        await vm.load()
+
+        XCTAssertEqual(vm.loadState, .loaded)
+        let row = try XCTUnwrap(vm.renderedRoot?.body?.sections?.first?.items?.first)
+        let textarea = try XCTUnwrap(row.components?.first)
+
+        XCTAssertEqual(textarea.type, "textarea")
+        XCTAssertEqual(textarea.name, "blank")
+        XCTAssertNil(textarea.placeholder)
+        XCTAssertEqual(TextAreaComponent.visiblePlaceholder(textarea.placeholder ?? ""), "Enter text")
+        XCTAssertEqual(
+            TextAreaComponent.accessibilityLabel(name: textarea.name ?? "", placeholder: textarea.placeholder ?? ""),
+            "blank text area"
+        )
+    }
+
     func testJasonpediaHTMLComponentFixtureSelectsHTMLRendererPath() async throws {
         let vm = JasonetteViewModel(document: try loadJasonpediaDocument("Jasonpedia/view/component/html/index.json"))
         await vm.load()

@@ -103,6 +103,24 @@ final class ComponentDispatchTests: XCTestCase {
         XCTAssertEqual(component.placeholder, "Tell us about yourself")
     }
 
+    func testTextAreaUsesFallbackVisiblePlaceholderWhenAuthoredPlaceholderIsEmpty() {
+        XCTAssertEqual(TextAreaComponent.visiblePlaceholder(""), "Enter text")
+        XCTAssertEqual(TextAreaComponent.visiblePlaceholder("  \n"), "Enter text")
+    }
+
+    func testTextAreaPreservesAuthoredVisiblePlaceholder() {
+        XCTAssertEqual(TextAreaComponent.visiblePlaceholder("Tell us about yourself"), "Tell us about yourself")
+    }
+
+    func testTextAreaAccessibilityLabelUsesAuthoredPlaceholderOrNamedFallback() {
+        XCTAssertEqual(
+            TextAreaComponent.accessibilityLabel(name: "bio", placeholder: "Tell us about yourself"),
+            "Tell us about yourself"
+        )
+        XCTAssertEqual(TextAreaComponent.accessibilityLabel(name: "blank", placeholder: ""), "blank text area")
+        XCTAssertEqual(TextAreaComponent.accessibilityLabel(name: "", placeholder: ""), "Enter text")
+    }
+
     // MARK: - Slider
 
     func testSliderHasNameAndDoubleValue() {

@@ -29,7 +29,8 @@ public struct ComponentView: View {
     }
 
     public var body: some View {
-        let content = componentContent
+        let resolvedStyle = JasonStyle.resolve(for: component, headStyles: headStyles)
+        let content = componentContent(resolvedStyle: resolvedStyle)
             .modifier(JasonStyleModifier(style: component.style, headStyles: headStyles, className: component.class))
 
         if let href = component.href {
@@ -52,7 +53,7 @@ public struct ComponentView: View {
     }
 
     @ViewBuilder
-    private var componentContent: some View {
+    private func componentContent(resolvedStyle: JasonStyle) -> some View {
         switch component.type {
         case "label":
             LabelComponent(text: component.text ?? "")
@@ -71,7 +72,8 @@ public struct ComponentView: View {
         case "textarea":
             TextAreaComponent(
                 name: component.name ?? "",
-                placeholder: component.placeholder ?? ""
+                placeholder: component.placeholder ?? "",
+                style: resolvedStyle
             )
         case "slider":
             SliderComponent(
