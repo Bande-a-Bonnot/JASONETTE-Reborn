@@ -1,5 +1,91 @@
 import AVFoundation
+import CoreLocation
 import Foundation
+
+@MainActor
+protocol GeolocationProviding: AnyObject {
+    func currentCoordinate() async throws -> String
+}
+
+@MainActor
+private final class CoreLocationGeolocationProvider: NSObject, GeolocationProviding, CLLocationManagerDelegate {
+    private let manager = CLLocationManager()
+    private var continuation: CheckedContinuation<String, Error>?
+
+    override init() {
+        super.init()
+        manager.delegate = self
+        manager.desiredAccuracy = kCLLocationAccuracyHundredMeters
+    }
+
+    func currentCoordinate() async throws -> String {
+        guard CLLocationManager.locationServicesEnabled() else {
+            throw ActionDispatcher.ActionError.locationUnavailable
+        }
+        guard continuation == nil else {
+            throw ActionDispatcher.ActionError.locationRequestInProgress
+        }
+
+        switch manager.authorizationStatus {
+        case .notDetermined:
+            return try await withCheckedThrowingContinuation { continuation in
+                self.continuation = continuation
+                manager.requestWhenInUseAuthorization()
+            }
+        case .authorizedAlways, .authorizedWhenInUse:
+            return try await requestCurrentLocation()
+        case .denied, .restricted:
+            throw ActionDispatcher.ActionError.locationDenied
+        @unknown default:
+            throw ActionDispatcher.ActionError.locationDenied
+        }
+    }
+
+    private func requestCurrentLocation() async throws -> String {
+        try await withCheckedThrowingContinuation { continuation in
+            self.continuation = continuation
+            manager.requestLocation()
+        }
+    }
+
+    nonisolated func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        Task { @MainActor in
+            switch manager.authorizationStatus {
+            case .authorizedAlways, .authorizedWhenInUse:
+                manager.requestLocation()
+            case .denied, .restricted:
+                complete(with: .failure(ActionDispatcher.ActionError.locationDenied))
+            case .notDetermined:
+                break
+            @unknown default:
+                complete(with: .failure(ActionDispatcher.ActionError.locationDenied))
+            }
+        }
+    }
+
+    nonisolated func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        guard let location = locations.last else {
+            Task { @MainActor in self.complete(with: .failure(ActionDispatcher.ActionError.locationUnavailable)) }
+            return
+        }
+        let coord = location.coordinate
+        let value = "\(coord.latitude),\(coord.longitude)"
+        Task { @MainActor in self.complete(with: .success(value)) }
+    }
+
+    nonisolated func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        Task { @MainActor in self.complete(with: .failure(error)) }
+    }
+
+    private func complete(with result: Result<String, Error>) {
+        guard let continuation else { return }
+        self.continuation = nil
+        switch result {
+        case .success(let coordinate): continuation.resume(returning: coordinate)
+        case .failure(let error): continuation.resume(throwing: error)
+        }
+    }
+}
 
 /// Executes Jasonette actions with success/error chaining.
 @MainActor
@@ -11,6 +97,7 @@ public final class ActionDispatcher: ObservableObject {
     private var renderHandler: ((String?) -> Void)?
     private var actionResolver: ((String) -> JasonAction?)?
     private var audioPlayHandler: ((URL) -> Void)?
+    private var geolocationProvider: GeolocationProviding = CoreLocationGeolocationProvider()
     private var audioPlayer: AVPlayer?
     private var timers: [String: Timer] = [:]
     private var executingTimers: Set<String> = []
@@ -53,6 +140,10 @@ public final class ActionDispatcher: ObservableObject {
 
     func setAudioPlayHandler(_ handler: @escaping (URL) -> Void) {
         self.audioPlayHandler = handler
+    }
+
+    func setGeolocationProvider(_ provider: GeolocationProviding) {
+        self.geolocationProvider = provider
     }
 
     /// Invalidate all active timers. Call from view's onDisappear.
@@ -207,7 +298,8 @@ public final class ActionDispatcher: ObservableObject {
             return await execute(namedAction, baseURL: baseURL, payload: lambdaPayload) ?? lambdaPayload
 
         case "$geo.get":
-            let coordinate: [String: Any] = ["coord": "37.33233141,-122.0312186"]
+            let coord = try await geolocationProvider.currentCoordinate()
+            let coordinate: [String: Any] = ["coord": coord]
             stateManager.set(coordinate)
             return coordinate
 
@@ -436,5 +528,8 @@ public final class ActionDispatcher: ObservableObject {
         case invalidURL
         case blockedURL
         case httpError(Int)
+        case locationUnavailable
+        case locationDenied
+        case locationRequestInProgress
     }
 }

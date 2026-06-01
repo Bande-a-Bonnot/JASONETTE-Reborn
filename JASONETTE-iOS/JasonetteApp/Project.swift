@@ -31,6 +31,7 @@ let project = Project(
                 "CFBundleShortVersionString": "$(MARKETING_VERSION)",
                 "CFBundleVersion": "$(CURRENT_PROJECT_VERSION)",
                 "ITSAppUsesNonExemptEncryption": false,
+                "NSLocationWhenInUseUsageDescription": "Jasonette documents can request your location to render geo demos and location-aware screens.",
             ]),
             sources: [],
             resources: ["Resources/iOS/**"],

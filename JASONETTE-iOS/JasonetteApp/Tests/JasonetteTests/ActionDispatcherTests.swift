@@ -29,6 +29,20 @@ final class ActionDispatcherTests: XCTestCase {
         return try! JSONDecoder().decode(JasonAction.self, from: data)
     }
 
+    private final class StubGeolocationProvider: GeolocationProviding {
+        var result: Result<String, Error>
+        private(set) var requestCount = 0
+
+        init(result: Result<String, Error>) {
+            self.result = result
+        }
+
+        func currentCoordinate() async throws -> String {
+            requestCount += 1
+            return try result.get()
+        }
+    }
+
     // MARK: - $set
 
     func testSetUpdatesLocalState() async {
@@ -329,6 +343,33 @@ final class ActionDispatcherTests: XCTestCase {
         XCTAssertEqual(action.rawOptions?.string, "{{$jason}}")
         XCTAssertEqual(action.success?.type, "$set")
         XCTAssertEqual(action.successActions?.map(\.type), ["$set", "$render"])
+    }
+
+    // MARK: - $geo.get
+
+    func testGeoGetRequestsCoordinateAndStoresPayload() async {
+        let provider = StubGeolocationProvider(result: .success("12.34,56.78"))
+        dispatcher.setGeolocationProvider(provider)
+        let action = decodeAction(["type": "$geo.get"])
+
+        await dispatcher.execute(action)
+
+        XCTAssertEqual(provider.requestCount, 1)
+        XCTAssertEqual(stateManager.get()["coord"] as? String, "12.34,56.78")
+    }
+
+    func testGeoGetDenialRunsErrorBranch() async {
+        let provider = StubGeolocationProvider(result: .failure(ActionDispatcher.ActionError.locationDenied))
+        dispatcher.setGeolocationProvider(provider)
+        let action = decodeAction([
+            "type": "$geo.get",
+            "error": ["type": "$set", "options": ["geo_denied": true]]
+        ])
+
+        await dispatcher.execute(action)
+
+        XCTAssertEqual(provider.requestCount, 1)
+        XCTAssertEqual(stateManager.get()["geo_denied"] as? Bool, true)
     }
 
     // MARK: - $audio.play
