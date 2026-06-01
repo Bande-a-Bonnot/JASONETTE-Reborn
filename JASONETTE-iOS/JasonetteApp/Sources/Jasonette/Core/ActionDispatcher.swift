@@ -1,3 +1,4 @@
+import AVFoundation
 import Foundation
 
 /// Executes Jasonette actions with success/error chaining.
@@ -9,6 +10,8 @@ public final class ActionDispatcher: ObservableObject {
     private var alertHandler: ((String, String?) -> Void)?
     private var renderHandler: ((String?) -> Void)?
     private var actionResolver: ((String) -> JasonAction?)?
+    private var audioPlayHandler: ((URL) -> Void)?
+    private var audioPlayer: AVPlayer?
     private var timers: [String: Timer] = [:]
     private var executingTimers: Set<String> = []
 
@@ -48,10 +51,16 @@ public final class ActionDispatcher: ObservableObject {
         self.actionResolver = handler
     }
 
+    func setAudioPlayHandler(_ handler: @escaping (URL) -> Void) {
+        self.audioPlayHandler = handler
+    }
+
     /// Invalidate all active timers. Call from view's onDisappear.
     public func invalidateAllTimers() {
         for timer in timers.values { timer.invalidate() }
         timers.removeAll()
+        audioPlayer?.pause()
+        audioPlayer = nil
     }
 
     public func execute(_ action: JasonAction) async {
@@ -84,7 +93,8 @@ public final class ActionDispatcher: ObservableObject {
         switch type {
         // State
         case "$set":
-            let values = options.compactMapValues { $0.value }
+            let context = actionContext()
+            let values = options.mapValues { TemplateEngine.render($0.unwrapped, context: context) }
             stateManager.set(values)
 
         case "$get":
@@ -143,6 +153,10 @@ public final class ActionDispatcher: ObservableObject {
         case "$util.toast", "$util.banner":
             break
 
+        // Media
+        case "$audio.play":
+            try playAudio(options, baseURL: baseURL)
+
         // Timer
         case "$timer.start":
             startTimer(options, successAction: action.success, baseURL: baseURL)
@@ -159,8 +173,38 @@ public final class ActionDispatcher: ObservableObject {
 
     private func renderedString(_ value: AnyCodable?) -> String? {
         guard let string = value?.string else { return nil }
-        let context = stateManager.local.merging(["$get": stateManager.local, "$cache": stateManager.cache]) { _, new in new }
-        return TemplateEngine.render(string, context: context) as? String ?? string
+        return TemplateEngine.render(string, context: actionContext()) as? String ?? string
+    }
+
+    private func actionContext() -> [String: Any] {
+        var context = stateManager.local
+        context["$get"] = stateManager.local
+        context["$cache"] = stateManager.cache
+        return context
+    }
+
+    // MARK: - Audio
+
+    private func playAudio(_ options: [String: AnyCodable], baseURL: URL?) throws {
+        guard let urlStr = options["url"]?.string,
+              let url = JasonURL.resolve(urlStr, against: baseURL) else {
+            throw ActionError.invalidURL
+        }
+        guard let scheme = url.scheme?.lowercased(),
+              DocumentLoader.allowedSchemes.contains(scheme) else {
+            throw ActionError.blockedURL
+        }
+
+        if let audioPlayHandler {
+            audioPlayHandler(url)
+            return
+        }
+        #if os(iOS) || os(tvOS) || os(visionOS)
+        try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
+        try? AVAudioSession.sharedInstance().setActive(true)
+        #endif
+        audioPlayer = AVPlayer(url: url)
+        audioPlayer?.play()
     }
 
     // MARK: - Timer

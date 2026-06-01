@@ -13,6 +13,10 @@ public enum ExpressionEvaluator {
         let trimmed = expression.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return nil }
 
+        if let legacyResult = evaluateLegacyMutationExpression(trimmed, context: context) {
+            return legacyResult
+        }
+
         if let cached = _nodeCache[trimmed] {
             return resolve(cached, context: context)
         }
@@ -28,6 +32,69 @@ public enum ExpressionEvaluator {
         } catch {
             return nil
         }
+    }
+
+    // MARK: - Legacy expression compatibility
+
+    /// Supports the small legacy Jasonette mutation idiom still present in
+    /// Jasonpedia fixtures, e.g.:
+    /// `var new_style = $get.style; new_style['move']='true'; return new_style;`
+    ///
+    /// The modern expression parser intentionally does not execute arbitrary
+    /// JavaScript, so this recognizes only copy-one-$get-dictionary, set-one-key,
+    /// return-the-copy. That keeps the dynamic layer demo working without adding
+    /// a JS runtime or allowing arbitrary code execution.
+    private static func evaluateLegacyMutationExpression(_ expression: String, context: [String: Any]) -> Any? {
+        let statements = expression
+            .split(separator: ";", omittingEmptySubsequences: true)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+        guard statements.count == 3,
+              statements[0].hasPrefix("var ")
+        else { return nil }
+
+        let declaration = String(statements[0].dropFirst(4))
+        let declarationParts = declaration.split(separator: "=", maxSplits: 1).map {
+            $0.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        guard declarationParts.count == 2 else { return nil }
+        let variableName = declarationParts[0]
+        let source = declarationParts[1]
+        guard source.hasPrefix("$get.") else { return nil }
+        let sourceKey = String(source.dropFirst(5))
+
+        guard let assignment = parseLegacyAssignment(statements[1], variableName: variableName),
+              statements[2] == "return \(variableName)",
+              let getContext = context["$get"] as? [String: Any],
+              var base = getContext[sourceKey] as? [String: Any]
+        else { return nil }
+
+        base[assignment.key] = assignment.value
+        return base
+    }
+
+    private static func parseLegacyAssignment(_ statement: String, variableName: String) -> (key: String, value: String)? {
+        guard statement.hasPrefix(variableName) else { return nil }
+        let remainder = statement.dropFirst(variableName.count).trimmingCharacters(in: .whitespacesAndNewlines)
+        guard remainder.hasPrefix("[") else { return nil }
+
+        let quoteStartIndex = remainder.index(after: remainder.startIndex)
+        guard quoteStartIndex < remainder.endIndex,
+              remainder[quoteStartIndex] == "'" || remainder[quoteStartIndex] == "\""
+        else { return nil }
+        let quote = remainder[quoteStartIndex]
+        guard let quoteEndIndex = remainder[remainder.index(after: quoteStartIndex)...].firstIndex(of: quote) else { return nil }
+        let key = String(remainder[remainder.index(after: quoteStartIndex)..<quoteEndIndex])
+
+        guard let equalsIndex = remainder.firstIndex(of: "=") else { return nil }
+        let rawValue = remainder[remainder.index(after: equalsIndex)...]
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard rawValue.count >= 2,
+              let first = rawValue.first,
+              let last = rawValue.last,
+              (first == "'" || first == "\""),
+              first == last
+        else { return nil }
+        return (key, String(rawValue.dropFirst().dropLast()))
     }
 
     // MARK: - AST Node Types

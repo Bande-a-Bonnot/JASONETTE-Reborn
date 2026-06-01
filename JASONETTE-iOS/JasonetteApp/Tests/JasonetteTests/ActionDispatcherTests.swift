@@ -41,6 +41,36 @@ final class ActionDispatcherTests: XCTestCase {
         XCTAssertEqual(stateManager.get()["age"] as? Int, 30)
     }
 
+    func testSetTemplatesOptionsAgainstGetContext() async {
+        stateManager.set(["message": "Hello"])
+        let action = decodeAction([
+            "type": "$set",
+            "options": ["echo": "{{$get.message}}"]
+        ])
+
+        await dispatcher.execute(action)
+
+        XCTAssertEqual(stateManager.get()["echo"] as? String, "Hello")
+    }
+
+    func testSetSupportsLegacyStyleMutationExpression() async {
+        stateManager.set([
+            "style": ["width": "86", "height": "175"]
+        ])
+        let action = decodeAction([
+            "type": "$set",
+            "options": [
+                "style": "{{var new_style = $get.style; new_style['move']='true'; return new_style;}}"
+            ]
+        ])
+
+        await dispatcher.execute(action)
+
+        let style = stateManager.get()["style"] as? [String: Any]
+        XCTAssertEqual(style?["width"] as? String, "86")
+        XCTAssertEqual(style?["move"] as? String, "true")
+    }
+
     // MARK: - $get
 
     func testGetIsNoOp() async {
@@ -223,6 +253,42 @@ final class ActionDispatcherTests: XCTestCase {
     func testUtilBannerIsNoOp() async {
         let action = decodeAction(["type": "$util.banner"])
         await dispatcher.execute(action)
+    }
+
+    // MARK: - $audio.play
+
+    func testAudioPlayResolvesURLAndCallsHandler() async {
+        let expectation = expectation(description: "audio handler called")
+        var playedURL: URL?
+        dispatcher.setDocumentURL(URL(string: "https://example.com/sounds/index.json"))
+        dispatcher.setAudioPlayHandler { url in
+            playedURL = url
+            expectation.fulfill()
+        }
+        let action = decodeAction([
+            "type": "$audio.play",
+            "options": ["url": "1up.mp3"]
+        ])
+
+        await dispatcher.execute(action)
+
+        await fulfillment(of: [expectation], timeout: 1.0)
+        XCTAssertEqual(playedURL, URL(string: "https://example.com/sounds/1up.mp3"))
+    }
+
+    func testAudioPlayRejectsDisallowedSchemeAndRunsError() async {
+        let action = decodeAction([
+            "type": "$audio.play",
+            "options": ["url": "file:///tmp/1up.mp3"],
+            "error": [
+                "type": "$set",
+                "options": ["blocked_audio": true]
+            ]
+        ])
+
+        await dispatcher.execute(action)
+
+        XCTAssertEqual(stateManager.get()["blocked_audio"] as? Bool, true)
     }
 
     // MARK: - $timer.start

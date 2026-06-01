@@ -8,7 +8,7 @@ Last updated: 2026-05-31
 
 ### Test Suite
 
-- iOS: 512 tests, 0 failures (verified 2026-05-31 after AlertConfig UUIDv7 fix; `swift build` succeeded); generic iOS Simulator `xcodebuild` verified 2026-05-31; direct-entry iPhone 17 Pro simulator QA for network Eliza and textarea fixtures succeeded 2026-05-31, though `agent-device` attach/snapshot timed out
+- iOS: 519 tests, 0 failures (verified 2026-06-01 after Jasonpedia layer/audio fixes; `swift build` succeeded); generic iOS Simulator `xcodebuild` verified 2026-05-31; direct-entry iPhone 17 Pro simulator QA for network Eliza and textarea fixtures succeeded 2026-05-31, though `agent-device` attach/snapshot timed out
 - Android CI: `pull_request` Android job ran/passed on PR #21, non-Android-change PR #22, and follow-up PR #23; Kotlin JSON primitive accessor compile failures fixed by squash `92e65dd`; oversized plain-integer JSON parsing aligned between Android test helper and production renderer in `c3f4f8f`; decimal/exponent policy is now explicitly documented as `Double` and centralized in Android `JsonValueConverter` (local Gradle verification blocked by missing Java runtime on 2026-05-26; limitation and CI fallback documented in `JASONETTE-Android/JasonetteApp/README.md`)
 - Run iOS: `cd JASONETTE-iOS/JasonetteApp && swift test`
 - Build iOS: `swift build` (<1s)
@@ -32,11 +32,11 @@ Last updated: 2026-05-31
 
 label, image, button, textfield, textarea, slider, switch, space, html (`WKWebView`), map (`MapKit` region + pins), vertical, horizontal
 
-### Actions (12 working / 4 stubs)
+### Actions (13 working / 4 stubs)
 
 | Working | Stubs (no-op) |
 |---------|---------------|
-| `$set`, `$cache.set`, `$cache.reset`, `$render`, `$reload`, `$href`, `$back`, `$close`, `$network.request`, `$util.alert`, `$timer.start`, `$timer.stop` | `$get`, `$cache.get`, `$util.toast`, `$util.banner` |
+| `$set`, `$cache.set`, `$cache.reset`, `$render`, `$reload`, `$href`, `$back`, `$close`, `$network.request`, `$util.alert`, `$timer.start`, `$timer.stop`, `$audio.play` | `$get`, `$cache.get`, `$util.toast`, `$util.banner` |
 
 ### Rendering Pipeline
 
@@ -46,7 +46,7 @@ JSON → JasonDocument (Codable) → TemplateEngine → JasonetteViewModel → J
 
 - **Templates**: Dynamic named templates via `$render` with `options.template`. Default "body".
 - **Layers**: ZStack overlays above ScrollView. Positioned via top/left/bottom/right + alignment + padding; `left`+`right` and `top`+`bottom` stretch between same-axis insets.
-- **Body background**: Color string parsed via `Color(css:)`, applied with `.ignoresSafeArea()`.
+- **Body background**: `body.background` or `body.style.background` color strings parsed via `Color(css:)`; http(s) background image URLs render behind the body; backgrounds use `.ignoresSafeArea()`.
 - **Footer**: tabs (HStack) or input (dedicated `FooterInputView`), mutually exclusive.
 - **Style chain**: applyFont → applyColors → applySpacing → applyBorder → applySize → applyOpacity → applyAlignment
 
@@ -58,7 +58,7 @@ See `docs/plans/2026-03-28-fix-ios-components-actions-audit-plan.md` for the ful
 
 ### Phase B — Missing Actions
 
-`$util.toast/banner`, `$snapshot`, `$util.share`, `$audio.play`, `$geo.get`, `$media.camera`
+`$util.toast/banner`, `$snapshot`, `$util.share`, `$geo.get`, `$media.camera`
 
 ### Phase C — Component Fixes
 
@@ -82,6 +82,7 @@ P3:
 - none currently tracked as open
 
 Completed this session:
+- `todos/051` — fixed the reported Jasonpedia regressions: `$audio.play` now resolves/validates URLs and plays via retained `AVPlayer` (with an injectable test seam), so the Static Layers `1UP` button and Mario image button can make sound; ViewModel template context now exposes `$get`/`$cache`; `$set` options are templated; a narrow legacy style-mutation expression compatibility path keeps Dynamic Layers named actions working; `body.style.background` decodes/renders color or http(s) image backgrounds; and `move`/`resize`/`rotate` style flags enable drag/pinch/rotation gestures on layers. Added ActionDispatcher, ViewModel/Jasonpedia fixture, and style merge tests. Verification: red targeted tests first; targeted tests after implementation; full `swift test` (519 tests); `swift build`; `jq empty` for the affected fixtures; `npm run lint:md`. Marked todo complete.
 - `todos/012` — replaced `JasonetteViewModel.AlertConfig.id`'s UUIDv4 generation with `UUIDv7.generate()` to satisfy the repo-wide UUIDv7 ID convention. Added `ViewModelTests/testAlertConfigUsesUUIDv7` to assert UUIDv7 version bits and RFC 4122 variant bits. Verification: red targeted test before implementation; targeted test after implementation; full `swift test` (512 tests); `swift build`; `npm run lint:md`. Marked todo complete.
 - `todos/050` — improved empty textarea affordance by adding renderer-level fallback placeholder text (`Enter text`), rounded default border/fill, retained minimum sizing, and explicit TextEditor accessibility labels using authored placeholder or name-based fallback. Added `ComponentDispatchTests` for fallback placeholder/accessibility helpers and a ViewModel Jasonpedia textarea fixture test. Direct-entry iPhone 17 Pro screenshot QA shows the empty fixture now renders a clear bordered textarea with placeholder; `agent-device` timed out when attaching, so fresh tap/type automation was not captured, but the existing TextEditor binding + Done toolbar path remains intact. Evidence: `docs/qa/2026-05-31-ios-textarea-affordance-qa.md` and `docs/qa/artifacts/2026-05-31-ios-textarea-affordance/textarea-empty-affordance.png`. Verification: targeted textarea tests (5 total); full `swift test` (511 tests); `swift build`; generic iOS Simulator `xcodebuild`; `npm run lint:md`. Marked todo complete.
 - `todos/049` — root-caused Jasonpedia Action → `$network` → Eliza warning as fixture/server drift: `https://jsonplaceholder.typicode.com` serves HTML, not a Jasonette document. Added `Jasonpedia/action/network/eliza.json`, updated the network index row to `eliza.json`, added a `$network.request` to `https://jsonplaceholder.typicode.com/comments?postId=1`, and included a demo-specific error fallback. Added ViewModel fixture tests for index routing, endpoint/action shape, `$response` rendering, and fallback rendering. Evidence: `docs/qa/2026-05-30-ios-network-eliza-fixture-qa.md`, endpoint evidence, and direct-entry Simulator screenshot `docs/qa/artifacts/2026-05-30-ios-network-eliza-fixture/eliza-direct-entry.png`. Verification: `jq empty` for network fixtures; `swift test --filter ViewModelTests/testJasonpediaNetwork` (4 tests); full `swift test` (507 tests); `swift build`; `npm run spec:validate`; `npm run lint:md`; direct iPhone 17 Pro Simulator launch/screenshot after checking memory pressure (34% free). Marked todo complete.

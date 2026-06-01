@@ -32,6 +32,66 @@ private struct LayerPositioningModifier: ViewModifier {
     }
 }
 
+private struct DynamicLayerInteractionModifier: ViewModifier {
+    let style: JasonStyle
+    @State private var dragOffset: CGSize = .zero
+    @State private var committedDragOffset: CGSize = .zero
+    @State private var scale: CGFloat = 1
+    @State private var committedScale: CGFloat = 1
+    @State private var rotation: Angle = .zero
+    @State private var committedRotation: Angle = .zero
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        let transformed = content
+            .scaleEffect(scale)
+            .rotationEffect(rotation)
+            .offset(dragOffset)
+
+        if style.isMoveEnabled || style.isResizeEnabled || style.isRotateEnabled {
+            transformed
+                .gesture(
+                    DragGesture()
+                        .onChanged { value in
+                            guard style.isMoveEnabled else { return }
+                            dragOffset = CGSize(
+                                width: committedDragOffset.width + value.translation.width,
+                                height: committedDragOffset.height + value.translation.height
+                            )
+                        }
+                        .onEnded { _ in
+                            guard style.isMoveEnabled else { return }
+                            committedDragOffset = dragOffset
+                        }
+                )
+                .simultaneousGesture(
+                    MagnificationGesture()
+                        .onChanged { value in
+                            guard style.isResizeEnabled else { return }
+                            scale = committedScale * value
+                        }
+                        .onEnded { _ in
+                            guard style.isResizeEnabled else { return }
+                            committedScale = scale
+                        }
+                )
+                .simultaneousGesture(
+                    RotationGesture()
+                        .onChanged { value in
+                            guard style.isRotateEnabled else { return }
+                            rotation = committedRotation + value
+                        }
+                        .onEnded { _ in
+                            guard style.isRotateEnabled else { return }
+                            committedRotation = rotation
+                        }
+                )
+        } else {
+            transformed
+        }
+    }
+}
+
 private enum SectionComponentPadding {
     case none
     case header
@@ -132,6 +192,8 @@ struct JasonetteView: View {
         let headerStyle = body?.header?.style
 
         ZStack(alignment: .topLeading) {
+            bodyBackgroundView(body)
+
             VStack(spacing: 0) {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 0) {
@@ -182,9 +244,6 @@ struct JasonetteView: View {
                 }
             }
         }
-        .ifLet(body?.background?.string.flatMap { Color(css: $0) }) { view, color in
-            view.background(color.ignoresSafeArea())
-        }
         .onDisappear { viewModel.actionDispatcher.invalidateAllTimers() }
     }
 
@@ -204,8 +263,42 @@ struct JasonetteView: View {
                 documentURL: viewModel.documentURL
             )
             .modifier(LayerPositioningModifier(positioning: positioning))
+            .modifier(DynamicLayerInteractionModifier(style: style))
         }
         .allowsHitTesting(true)
+    }
+
+    @ViewBuilder
+    private func bodyBackgroundView(_ body: JasonBody?) -> some View {
+        if let background = bodyBackgroundString(body) {
+            if let color = Color(css: background) {
+                color
+                    .ignoresSafeArea()
+                    .allowsHitTesting(false)
+            } else if let url = JasonURL.resolve(
+                background,
+                against: viewModel.documentURL,
+                allowedSchemes: DocumentLoader.allowedSchemes
+            ) {
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .scaledToFill()
+                    default:
+                        Color.clear
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .ignoresSafeArea()
+                .allowsHitTesting(false)
+            }
+        }
+    }
+
+    private func bodyBackgroundString(_ body: JasonBody?) -> String? {
+        body?.background?.string ?? body?.style?.background
     }
 
     private func resolveLayerStyle(_ component: JasonComponent, headStyles: [String: JasonStyle]) -> JasonStyle {

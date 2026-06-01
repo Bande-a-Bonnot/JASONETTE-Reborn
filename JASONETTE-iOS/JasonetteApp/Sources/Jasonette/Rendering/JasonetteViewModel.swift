@@ -156,7 +156,9 @@ public final class JasonetteViewModel: ObservableObject {
     private func render(_ doc: JasonDocument) {
         let head = doc.jason.head
         let data = head?.data?.compactMapValues { $0.unwrapped } ?? [:]
-        let context = data.merging(stateManager.local) { _, new in new }
+        var context = data.merging(stateManager.local) { _, new in new }
+        context["$get"] = stateManager.local
+        context["$cache"] = stateManager.cache
 
         if let template = head?.templates?[activeTemplateName] {
             let rendered = TemplateEngine.render(template.unwrapped, context: context)

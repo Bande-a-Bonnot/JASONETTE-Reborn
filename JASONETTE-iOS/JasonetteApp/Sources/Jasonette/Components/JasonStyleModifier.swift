@@ -190,12 +190,23 @@ extension JasonStyle {
             right: other.right ?? self.right,
             opacity: other.opacity ?? self.opacity,
             secure: other.secure ?? self.secure,
-            selected: other.selected ?? self.selected
+            selected: other.selected ?? self.selected,
+            move: other.move ?? self.move,
+            resize: other.resize ?? self.resize,
+            rotate: other.rotate ?? self.rotate
         )
     }
 
+    var isMoveEnabled: Bool { boolValue(move) }
+    var isResizeEnabled: Bool { boolValue(resize) }
+    var isRotateEnabled: Bool { boolValue(rotate) }
+
     var isSecureTextEntry: Bool {
-        guard let value = secure?.unwrapped else { return false }
+        boolValue(secure)
+    }
+
+    private func boolValue(_ codable: AnyCodable?) -> Bool {
+        guard let value = codable?.unwrapped else { return false }
         if let bool = value as? Bool { return bool }
         if let string = value as? String {
             switch string.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {

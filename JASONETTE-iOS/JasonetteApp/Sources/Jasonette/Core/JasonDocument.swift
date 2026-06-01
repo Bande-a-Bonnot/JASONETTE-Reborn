@@ -50,6 +50,7 @@ public struct JasonTemplates: Codable, Sendable {
 
 public struct JasonBody: Codable, Sendable {
     public var background: AnyCodable?
+    public var style: JasonStyle?
     public var header: JasonHeader?
     public var sections: [JasonSection]?
     public var layers: [JasonComponent]?
@@ -170,9 +171,13 @@ public struct JasonStyle: Codable, Sendable {
     public var opacity: AnyCodable?
     public var secure: AnyCodable?
     public var selected: AnyCodable?
+    public var move: AnyCodable?
+    public var resize: AnyCodable?
+    public var rotate: AnyCodable?
 
     enum CodingKeys: String, CodingKey {
         case font, size, color, background, padding, width, height, align, spacing, opacity, secure, selected
+        case move, resize, rotate
         case top, left, bottom, right
         case paddingLeft = "padding_left"
         case paddingRight = "padding_right"

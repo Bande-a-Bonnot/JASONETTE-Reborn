@@ -79,6 +79,16 @@ final class StyleModifierTests: XCTestCase {
         XCTAssertEqual(merged.font, "bold")
     }
 
+    func testDynamicLayerInteractionFlagsDecodeAndMerge() {
+        let base = JasonStyle(move: AnyCodable("true"))
+        let overlay = JasonStyle(resize: AnyCodable(true), rotate: AnyCodable(1))
+        let merged = base.merging(overlay)
+
+        XCTAssertTrue(merged.isMoveEnabled)
+        XCTAssertTrue(merged.isResizeEnabled)
+        XCTAssertTrue(merged.isRotateEnabled)
+    }
+
     // MARK: - withoutSize
 
     func testWithoutSizeClearsWidthAndHeight() {

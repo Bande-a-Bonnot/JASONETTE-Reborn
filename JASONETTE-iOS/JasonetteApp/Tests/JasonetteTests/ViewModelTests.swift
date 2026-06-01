@@ -488,6 +488,35 @@ final class ViewModelTests: XCTestCase {
         XCTAssertEqual(MapComponent.annotations(from: pinnedMap.pins).count, 1)
     }
 
+    func testJasonpediaDynamicLayersFixtureRendersInitialMarioLayer() async throws {
+        let vm = JasonetteViewModel(document: try loadJasonpediaDocument("Jasonpedia/view/layer/dynamic.json"))
+        await vm.load()
+
+        XCTAssertEqual(vm.loadState, .loaded)
+        let body = try XCTUnwrap(vm.renderedRoot?.body)
+        let layers = try XCTUnwrap(body.layers)
+        let mario = try XCTUnwrap(layers.last)
+
+        XCTAssertEqual(layers.count, 5)
+        XCTAssertEqual(body.style?.background, "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/assets/mariobackground.jpg")
+        XCTAssertEqual(mario.type, "image")
+        XCTAssertEqual(mario.style?.width?.string, "86")
+        XCTAssertEqual(mario.style?.height?.string, "175")
+        XCTAssertEqual(mario.style?.bottom?.string, "70")
+    }
+
+    func testJasonpediaDynamicLayersTriggerKeepsMarioStyleRenderable() async throws {
+        let vm = JasonetteViewModel(document: try loadJasonpediaDocument("Jasonpedia/view/layer/dynamic.json"))
+        await vm.load()
+        let draggableAction = try XCTUnwrap(vm.renderedRoot?.body?.layers?[1].action)
+
+        await vm.actionDispatcher.execute(draggableAction)
+
+        let mario = try XCTUnwrap(vm.renderedRoot?.body?.layers?.last)
+        XCTAssertEqual(mario.style?.width?.string, "86")
+        XCTAssertTrue(mario.style?.isMoveEnabled == true)
+    }
+
     func testRenderFallsBackToRawDocumentWhenTemplateInvalid() async {
         // A document with templates that render to invalid JSON falls back gracefully
         let doc = makeDocument([
