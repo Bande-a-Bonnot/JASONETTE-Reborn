@@ -36,3 +36,8 @@ The Jasonpedia static layer `1UP` button and Mario image button demo used `$audi
 - `cd JASONETTE-iOS/JasonetteApp && swift build`.
 - `jq empty Jasonpedia/view/layer/dynamic.json Jasonpedia/view/layer/static.json Jasonpedia/view/component/button/3.json`.
 - `npm run lint:md`.
+
+## Git Evidence
+
+- Implementation commit: `0c9fb07 fix(ios): repair Jasonpedia layer audio demos`.
+- Pushed to `origin/main` on 2026-06-01.
