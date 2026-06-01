@@ -11,6 +11,9 @@ protocol GeolocationProviding: AnyObject {
 private final class CoreLocationGeolocationProvider: NSObject, GeolocationProviding, CLLocationManagerDelegate {
     private let manager = CLLocationManager()
     private var continuation: CheckedContinuation<String, Error>?
+    #if os(iOS) || os(tvOS) || os(visionOS)
+    private var serviceSession: CLServiceSession?
+    #endif
 
     override init() {
         super.init()
@@ -26,19 +29,44 @@ private final class CoreLocationGeolocationProvider: NSObject, GeolocationProvid
             throw ActionDispatcher.ActionError.locationRequestInProgress
         }
 
+        let usingServiceSession = startWhenInUseServiceSessionIfAvailable()
         switch manager.authorizationStatus {
         case .notDetermined:
             return try await withCheckedThrowingContinuation { continuation in
                 self.continuation = continuation
-                manager.requestWhenInUseAuthorization()
+                if !usingServiceSession {
+                    manager.requestWhenInUseAuthorization()
+                }
             }
         case .authorizedAlways, .authorizedWhenInUse:
             return try await requestCurrentLocation()
         case .denied, .restricted:
+            stopServiceSession()
             throw ActionDispatcher.ActionError.locationDenied
         @unknown default:
+            stopServiceSession()
             throw ActionDispatcher.ActionError.locationDenied
         }
+    }
+
+    @discardableResult
+    private func startWhenInUseServiceSessionIfAvailable() -> Bool {
+        #if os(iOS) || os(tvOS) || os(visionOS)
+        if #available(iOS 18.0, tvOS 18.0, visionOS 2.0, *) {
+            serviceSession = CLServiceSession(authorization: .whenInUse)
+            return true
+        }
+        #endif
+        return false
+    }
+
+    private func stopServiceSession() {
+        #if os(iOS) || os(tvOS) || os(visionOS)
+        if #available(iOS 18.0, tvOS 18.0, visionOS 2.0, *) {
+            serviceSession?.invalidate()
+            serviceSession = nil
+        }
+        #endif
     }
 
     private func requestCurrentLocation() async throws -> String {
@@ -80,6 +108,7 @@ private final class CoreLocationGeolocationProvider: NSObject, GeolocationProvid
     private func complete(with result: Result<String, Error>) {
         guard let continuation else { return }
         self.continuation = nil
+        stopServiceSession()
         switch result {
         case .success(let coordinate): continuation.resume(returning: coordinate)
         case .failure(let error): continuation.resume(throwing: error)
