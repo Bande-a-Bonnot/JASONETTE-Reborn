@@ -116,6 +116,49 @@ private final class CoreLocationGeolocationProvider: NSObject, GeolocationProvid
     }
 }
 
+struct MediaCaptureRequest: Equatable {
+    enum Source: Equatable {
+        case camera
+        case photoLibrary
+    }
+
+    enum MediaType: Equatable {
+        case image
+        case video
+    }
+
+    let source: Source
+    let mediaType: MediaType
+    let allowsEditing: Bool
+}
+
+struct ShareRequest: Equatable {
+    var items: [ShareItem]
+}
+
+struct ShareItem: Equatable {
+    enum Kind: Equatable {
+        case text
+        case url
+        case imageData
+        case fileURL
+    }
+
+    let kind: Kind
+    var text: String?
+    var url: URL?
+    var data: Data?
+    var contentType: String?
+
+    init(kind: Kind, text: String? = nil, url: URL? = nil, data: Data? = nil, contentType: String? = nil) {
+        self.kind = kind
+        self.text = text
+        self.url = url
+        self.data = data
+        self.contentType = contentType
+    }
+}
+
 /// Executes Jasonette actions with success/error chaining.
 @MainActor
 public final class ActionDispatcher: ObservableObject {
@@ -126,6 +169,8 @@ public final class ActionDispatcher: ObservableObject {
     private var renderHandler: ((String?) -> Void)?
     private var actionResolver: ((String) -> JasonAction?)?
     private var audioPlayHandler: ((URL) -> Void)?
+    private var mediaCaptureHandler: ((MediaCaptureRequest) async throws -> [String: Any])?
+    private var shareHandler: ((ShareRequest) async throws -> Void)?
     private var geolocationProvider: GeolocationProviding = CoreLocationGeolocationProvider()
     private var audioPlayer: AVPlayer?
     private var timers: [String: Timer] = [:]
@@ -169,6 +214,14 @@ public final class ActionDispatcher: ObservableObject {
 
     func setAudioPlayHandler(_ handler: @escaping (URL) -> Void) {
         self.audioPlayHandler = handler
+    }
+
+    func setMediaCaptureHandler(_ handler: @escaping (MediaCaptureRequest) async throws -> [String: Any]) {
+        self.mediaCaptureHandler = handler
+    }
+
+    func setShareHandler(_ handler: @escaping (ShareRequest) async throws -> Void) {
+        self.shareHandler = handler
     }
 
     func setGeolocationProvider(_ provider: GeolocationProviding) {
@@ -332,7 +385,17 @@ public final class ActionDispatcher: ObservableObject {
             stateManager.set(coordinate)
             return coordinate
 
-        case "$media.play", "$media.picker", "$media.camera", "$util.share", "$util.addressbook", "$vision.scan":
+        case "$media.camera":
+            return try await captureMedia(request: mediaCaptureRequest(from: options, source: .camera))
+
+        case "$media.picker":
+            return try await captureMedia(request: mediaCaptureRequest(from: options, source: .photoLibrary))
+
+        case "$util.share":
+            try await share(shareRequest(from: options, payload: payload))
+            return payload
+
+        case "$media.play", "$util.addressbook", "$vision.scan":
             alertHandler?("Not implemented yet", "\(type) is recognized, but this iOS renderer does not implement the native UI yet.")
             return payload
 
@@ -435,6 +498,116 @@ public final class ActionDispatcher: ObservableObject {
         default:
             return AnyCodable(value)
         }
+    }
+
+    // MARK: - Media
+
+    private func mediaCaptureRequest(from options: [String: AnyCodable], source: MediaCaptureRequest.Source) -> MediaCaptureRequest {
+        MediaCaptureRequest(
+            source: source,
+            mediaType: options["type"]?.string?.lowercased() == "video" ? .video : .image,
+            allowsEditing: truthy(options["edit"]) || truthy(options["editing"])
+        )
+    }
+
+    private func captureMedia(request: MediaCaptureRequest) async throws -> Any? {
+        guard let mediaCaptureHandler else {
+            alertHandler?("Camera unavailable", "This platform cannot present the native media capture UI.")
+            throw ActionError.mediaCaptureUnavailable
+        }
+
+        do {
+            let result = try await mediaCaptureHandler(request)
+            stateManager.set(result)
+            stateManager.set(["$jason": result])
+            return result
+        } catch ActionError.mediaCaptureCancelled {
+            throw ActionError.mediaCaptureCancelled
+        } catch {
+            alertHandler?(request.source == .camera ? "Camera unavailable" : "Media picker unavailable", error.localizedDescription)
+            throw error
+        }
+    }
+
+    private func shareRequest(from options: [String: AnyCodable], payload: Any?) -> ShareRequest {
+        var items: [ShareItem] = []
+
+        if let array = options["items"]?.array {
+            for item in array {
+                if let parsed = shareItem(from: item) {
+                    items.append(parsed)
+                }
+            }
+        }
+
+        if let text = options["text"]?.string, !text.isEmpty {
+            items.append(ShareItem(kind: .text, text: text))
+        }
+        if let urlString = options["url"]?.string, let url = URL(string: urlString) {
+            items.append(ShareItem(kind: .url, url: url))
+        }
+        if let dataString = options["data"]?.string, let data = Self.base64Data(from: dataString) {
+            items.append(ShareItem(kind: .imageData, data: data, contentType: "image/jpeg"))
+        }
+
+        if items.isEmpty, let payloadString = payload as? String, !payloadString.isEmpty {
+            items.append(ShareItem(kind: .text, text: payloadString))
+        }
+
+        return ShareRequest(items: items)
+    }
+
+    private func shareItem(from item: AnyCodable) -> ShareItem? {
+        if let string = item.string, !string.isEmpty {
+            return ShareItem(kind: .text, text: string)
+        }
+        guard let dictionary = item.dictionary else { return nil }
+        let type = dictionary["type"]?.string?.lowercased()
+
+        if type == "image", let dataString = dictionary["data"]?.string, let data = Self.base64Data(from: dataString) {
+            return ShareItem(kind: .imageData, data: data, contentType: dictionary["content_type"]?.string ?? "image/jpeg")
+        }
+        if type == "video", let fileURLString = dictionary["file_url"]?.string, let url = URL(string: fileURLString) {
+            return ShareItem(kind: .fileURL, url: url)
+        }
+        if let urlString = dictionary["url"]?.string, let url = URL(string: urlString) {
+            return ShareItem(kind: .url, url: url)
+        }
+        if let text = dictionary["text"]?.string ?? dictionary["title"]?.string, !text.isEmpty {
+            return ShareItem(kind: .text, text: text)
+        }
+        return nil
+    }
+
+    private func share(_ request: ShareRequest) async throws {
+        guard !request.items.isEmpty else {
+            throw ActionError.emptyShareItems
+        }
+        guard let shareHandler else {
+            alertHandler?("Share unavailable", "This platform cannot present the native share sheet.")
+            throw ActionError.shareUnavailable
+        }
+        try await shareHandler(request)
+    }
+
+    private func truthy(_ value: AnyCodable?) -> Bool {
+        guard let value else { return false }
+        if let bool = value.bool { return bool }
+        if let int = value.int { return int != 0 }
+        if let string = value.string?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
+            return ["true", "yes", "1"].contains(string)
+        }
+        return false
+    }
+
+    private static func base64Data(from value: String) -> Data? {
+        let base64: String
+        if let comma = value.firstIndex(of: ","), value[..<comma].contains("base64") {
+            base64 = String(value[value.index(after: comma)...])
+        } else {
+            base64 = value
+        }
+        return Data(base64Encoded: base64)
     }
 
     // MARK: - Audio
@@ -560,5 +733,39 @@ public final class ActionDispatcher: ObservableObject {
         case locationUnavailable
         case locationDenied
         case locationRequestInProgress
+        case mediaCaptureUnavailable
+        case mediaCapturePermissionDenied
+        case mediaCaptureCancelled
+        case shareUnavailable
+        case emptyShareItems
+    }
+}
+
+extension ActionDispatcher.ActionError: LocalizedError {
+    var errorDescription: String? {
+        switch self {
+        case .invalidURL:
+            return "The URL is invalid."
+        case .blockedURL:
+            return "The URL uses a blocked scheme."
+        case .httpError(let status):
+            return "The request failed with HTTP status \(status)."
+        case .locationUnavailable:
+            return "Location services are unavailable."
+        case .locationDenied:
+            return "Location permission was denied."
+        case .locationRequestInProgress:
+            return "A location request is already in progress."
+        case .mediaCaptureUnavailable:
+            return "Media capture is unavailable on this device."
+        case .mediaCapturePermissionDenied:
+            return "Camera permission was denied. Enable camera access in Settings to use this Jasonette action."
+        case .mediaCaptureCancelled:
+            return "Media capture was cancelled."
+        case .shareUnavailable:
+            return "Sharing is unavailable on this device."
+        case .emptyShareItems:
+            return "No shareable items were supplied."
+        }
     }
 }

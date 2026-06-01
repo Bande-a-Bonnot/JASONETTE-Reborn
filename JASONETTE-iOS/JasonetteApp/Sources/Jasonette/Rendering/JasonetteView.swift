@@ -121,7 +121,13 @@ private struct SectionComponentPaddingModifier: ViewModifier {
 /// Main view that renders a complete Jasonette document.
 @MainActor
 struct JasonetteView: View {
-    @StateObject private var viewModel: JasonetteViewModel
+    @StateObject var viewModel: JasonetteViewModel
+    #if os(iOS)
+    @State var mediaCapturePresentation: MediaCapturePresentation?
+    @State var mediaCaptureContinuation: CheckedContinuation<[String: Any], Error>?
+    @State var sharePresentation: SharePresentation?
+    @State var shareContinuation: CheckedContinuation<Void, Error>?
+    #endif
     @Environment(\.jasonetteIsInsideTabShell) private var isInsideTabShell
     @Environment(\.jasonetteCurrentTabID) private var currentTabID
     @Environment(\.jasonetteRegisterTabActionHandler) private var registerTabActionHandler
@@ -171,8 +177,21 @@ struct JasonetteView: View {
                 dismissButton: .default(Text("OK"))
             )
         }
+        #if os(iOS)
+        .sheet(item: $mediaCapturePresentation, onDismiss: mediaCaptureDismissed) { presentation in
+            MediaCapturePicker(presentation: presentation, onComplete: completeMediaCapture)
+        }
+        .sheet(item: $sharePresentation, onDismiss: shareDismissed) { presentation in
+            ShareSheet(presentation: presentation, onComplete: completeShare)
+        }
+        #endif
         .environmentObject(viewModel.stateManager)
-        .onAppear { registerForTabActionsIfNeeded() }
+        .onAppear {
+            registerForTabActionsIfNeeded()
+            #if os(iOS)
+            installNativeActionHandlers()
+            #endif
+        }
     }
 
     private func registerForTabActionsIfNeeded() {

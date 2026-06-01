@@ -43,6 +43,28 @@ final class ActionDispatcherTests: XCTestCase {
         }
     }
 
+    private final class StubMediaCaptureProvider {
+        var result: Result<[String: Any], Error>
+        private(set) var requests: [MediaCaptureRequest] = []
+
+        init(result: Result<[String: Any], Error>) {
+            self.result = result
+        }
+
+        func capture(_ request: MediaCaptureRequest) async throws -> [String: Any] {
+            requests.append(request)
+            return try result.get()
+        }
+    }
+
+    private final class StubShareProvider {
+        private(set) var requests: [ShareRequest] = []
+
+        func share(_ request: ShareRequest) async throws {
+            requests.append(request)
+        }
+    }
+
     // MARK: - $set
 
     func testSetUpdatesLocalState() async {
@@ -370,6 +392,116 @@ final class ActionDispatcherTests: XCTestCase {
 
         XCTAssertEqual(provider.requestCount, 1)
         XCTAssertEqual(stateManager.get()["geo_denied"] as? Bool, true)
+    }
+
+    // MARK: - $media.camera / $util.share
+
+    func testMediaCameraRequestsPhotoCaptureAndStoresPayload() async {
+        let provider = StubMediaCaptureProvider(result: .success([
+            "data": "base64-photo",
+            "media_type": "image",
+            "content_type": "image/jpeg"
+        ]))
+        dispatcher.setMediaCaptureHandler(provider.capture)
+        let action = decodeAction([
+            "type": "$media.camera",
+            "options": ["edit": "true"]
+        ])
+
+        await dispatcher.execute(action)
+
+        XCTAssertEqual(provider.requests, [MediaCaptureRequest(source: .camera, mediaType: .image, allowsEditing: true)])
+        XCTAssertEqual(stateManager.get()["data"] as? String, "base64-photo")
+        XCTAssertEqual(stateManager.get()["media_type"] as? String, "image")
+    }
+
+    func testMediaCameraVideoRequestsVideoCapture() async {
+        let provider = StubMediaCaptureProvider(result: .success([
+            "file_url": "file:///tmp/capture.mov",
+            "media_type": "video"
+        ]))
+        dispatcher.setMediaCaptureHandler(provider.capture)
+        let action = decodeAction([
+            "type": "$media.camera",
+            "options": ["type": "video"]
+        ])
+
+        await dispatcher.execute(action)
+
+        XCTAssertEqual(provider.requests, [MediaCaptureRequest(source: .camera, mediaType: .video, allowsEditing: false)])
+        XCTAssertEqual(stateManager.get()["file_url"] as? String, "file:///tmp/capture.mov")
+    }
+
+    func testMediaCameraPassesCapturePayloadToSuccessAction() async {
+        let provider = StubMediaCaptureProvider(result: .success(["data": "base64-photo"]))
+        dispatcher.setMediaCaptureHandler(provider.capture)
+        let expectation = expectation(description: "success alert used camera payload")
+        var receivedDescription: String?
+        dispatcher.setAlertHandler { _, description in
+            receivedDescription = description
+            expectation.fulfill()
+        }
+        let action = decodeAction([
+            "type": "$media.camera",
+            "success": [
+                "type": "$util.alert",
+                "options": ["title": "Photo", "description": "{{$jason.data}}"]
+            ]
+        ])
+
+        await dispatcher.execute(action)
+
+        await fulfillment(of: [expectation], timeout: 1.0)
+        XCTAssertEqual(receivedDescription, "base64-photo")
+    }
+
+    func testMediaCameraPermissionDenialRunsErrorBranch() async {
+        let provider = StubMediaCaptureProvider(result: .failure(ActionDispatcher.ActionError.mediaCapturePermissionDenied))
+        dispatcher.setMediaCaptureHandler(provider.capture)
+        let action = decodeAction([
+            "type": "$media.camera",
+            "error": ["type": "$set", "options": ["camera_denied": true]]
+        ])
+
+        await dispatcher.execute(action)
+
+        XCTAssertEqual(stateManager.get()["camera_denied"] as? Bool, true)
+    }
+
+    func testMediaPickerUsesPhotoLibrarySource() async {
+        let provider = StubMediaCaptureProvider(result: .success(["data": "picked-photo"]))
+        dispatcher.setMediaCaptureHandler(provider.capture)
+        let action = decodeAction(["type": "$media.picker"])
+
+        await dispatcher.execute(action)
+
+        XCTAssertEqual(provider.requests, [MediaCaptureRequest(source: .photoLibrary, mediaType: .image, allowsEditing: false)])
+    }
+
+    func testUtilShareParsesTextURLImageDataAndFileURLItems() async {
+        let provider = StubShareProvider()
+        dispatcher.setShareHandler(provider.share)
+        let action = decodeAction([
+            "type": "$util.share",
+            "options": [
+                "items": [
+                    ["type": "text", "text": "hello"],
+                    ["type": "url", "url": "https://example.com"],
+                    ["type": "image", "data": "aGVsbG8="],
+                    ["type": "video", "file_url": "file:///tmp/capture.mov"]
+                ]
+            ]
+        ])
+
+        await dispatcher.execute(action)
+
+        XCTAssertEqual(provider.requests.count, 1)
+        XCTAssertEqual(provider.requests.first?.items.count, 4)
+        XCTAssertEqual(provider.requests.first?.items[0].kind, .text)
+        XCTAssertEqual(provider.requests.first?.items[0].text, "hello")
+        XCTAssertEqual(provider.requests.first?.items[1].url, URL(string: "https://example.com")!)
+        XCTAssertEqual(provider.requests.first?.items[2].data, Data("hello".utf8))
+        XCTAssertEqual(provider.requests.first?.items[3].url, URL(string: "file:///tmp/capture.mov")!)
     }
 
     // MARK: - $audio.play
