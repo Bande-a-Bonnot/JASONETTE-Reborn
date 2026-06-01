@@ -124,10 +124,68 @@ public final class JasonAction: Codable, @unchecked Sendable {
     public var type: String?
     public var trigger: String?
     public var options: [String: AnyCodable]?
+    public var rawOptions: AnyCodable?
     public var success: JasonAction?
     public var error: JasonAction?
+    public var successActions: [JasonAction]?
+    public var errorActions: [JasonAction]?
+
+    enum CodingKeys: String, CodingKey {
+        case type, trigger, options, success, error
+    }
 
     public init() {}
+
+    public required init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        type = try container.decodeIfPresent(String.self, forKey: .type)
+        trigger = try container.decodeIfPresent(String.self, forKey: .trigger)
+        rawOptions = try container.decodeIfPresent(AnyCodable.self, forKey: .options)
+        options = rawOptions?.dictionary
+        successActions = try Self.decodeActionList(from: container, forKey: .success)
+        success = successActions?.first
+        errorActions = try Self.decodeActionList(from: container, forKey: .error)
+        error = errorActions?.first
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(type, forKey: .type)
+        try container.encodeIfPresent(trigger, forKey: .trigger)
+        if let rawOptions {
+            try container.encode(rawOptions, forKey: .options)
+        } else {
+            try container.encodeIfPresent(options, forKey: .options)
+        }
+        try Self.encodeActionList(successActions ?? success.map { [$0] }, to: &container, forKey: .success)
+        try Self.encodeActionList(errorActions ?? error.map { [$0] }, to: &container, forKey: .error)
+    }
+
+    private static func decodeActionList(
+        from container: KeyedDecodingContainer<CodingKeys>,
+        forKey key: CodingKeys
+    ) throws -> [JasonAction]? {
+        if let action = try? container.decode(JasonAction.self, forKey: key) {
+            return [action]
+        }
+        if let actions = try? container.decode([JasonAction].self, forKey: key) {
+            return actions
+        }
+        return nil
+    }
+
+    private static func encodeActionList(
+        _ actions: [JasonAction]?,
+        to container: inout KeyedEncodingContainer<CodingKeys>,
+        forKey key: CodingKeys
+    ) throws {
+        guard let actions, !actions.isEmpty else { return }
+        if actions.count == 1 {
+            try container.encode(actions[0], forKey: key)
+        } else {
+            try container.encode(actions, forKey: key)
+        }
+    }
 }
 
 public struct JasonFooter: Codable, Sendable {

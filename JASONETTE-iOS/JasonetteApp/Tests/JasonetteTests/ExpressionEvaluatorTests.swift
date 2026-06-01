@@ -6,6 +6,13 @@ final class ExpressionEvaluatorTests: XCTestCase {
         ExpressionEvaluator.evaluate(expr, context: context)
     }
 
+    func testRandomColorHelperReturnsHexColor() {
+        let value = eval("randomcolor()") as? String
+
+        XCTAssertEqual(value?.count, 7)
+        XCTAssertTrue(value?.hasPrefix("#") == true)
+    }
+
     // MARK: - isTruthy
 
     func testIsTruthyNil() {

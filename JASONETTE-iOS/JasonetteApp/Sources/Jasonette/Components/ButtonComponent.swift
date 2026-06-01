@@ -1,6 +1,10 @@
 import SwiftUI
 
 struct ButtonComponent: View {
+    static let minimumHitSize: CGFloat = 44
+    static let defaultHorizontalPadding: CGFloat = 14
+    static let defaultVerticalPadding: CGFloat = 10
+
     let text: String?
     let url: String?
     let documentURL: URL?
@@ -27,10 +31,13 @@ struct ButtonComponent: View {
                     image
                         .resizable()
                         .aspectRatio(contentMode: .fit)
+                        .frame(minWidth: Self.minimumHitSize, minHeight: Self.minimumHitSize)
+                        .contentShape(Rectangle())
                 case .failure:
                     fallbackLabel
                 default:
                     ProgressView()
+                        .frame(minWidth: Self.minimumHitSize, minHeight: Self.minimumHitSize)
                 }
             }
         } else {
@@ -41,5 +48,9 @@ struct ButtonComponent: View {
     @ViewBuilder
     private var fallbackLabel: some View {
         Text(text ?? "Button")
+            .padding(.horizontal, Self.defaultHorizontalPadding)
+            .padding(.vertical, Self.defaultVerticalPadding)
+            .frame(minWidth: Self.minimumHitSize, minHeight: Self.minimumHitSize)
+            .contentShape(Rectangle())
     }
 }

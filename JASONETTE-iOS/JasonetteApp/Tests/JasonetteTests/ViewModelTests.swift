@@ -419,6 +419,32 @@ final class ViewModelTests: XCTestCase {
         XCTAssertEqual(item.components?[1].text, "The demo endpoint is down. Try again later.")
     }
 
+    func testJasonpediaLambdaFixtureLoadsDespiteLegacyActionShapes() async throws {
+        let vm = JasonetteViewModel(document: try loadJasonpediaDocument("Jasonpedia/action/lambda/index.json"))
+        await vm.load()
+
+        XCTAssertEqual(vm.loadState, .loaded)
+        let sections = try XCTUnwrap(vm.renderedRoot?.body?.sections)
+        XCTAssertGreaterThanOrEqual(sections.count, 4)
+        let rawLambdaItems = try XCTUnwrap(sections[2].items)
+        let triggerItems = try XCTUnwrap(sections[3].items)
+
+        XCTAssertEqual(rawLambdaItems.count, 6)
+        XCTAssertEqual(triggerItems.count, 6)
+        XCTAssertEqual(rawLambdaItems.first?.action?.type, "$util.banner")
+        XCTAssertEqual(triggerItems[1].action?.trigger, "banner")
+        XCTAssertEqual(triggerItems[5].action?.successActions?.count, 2)
+    }
+
+    func testJasonpediaTimerMarioUsesOptionsActionForTicks() throws {
+        let doc = try loadJasonpediaDocument("Jasonpedia/action/timer/mario.json")
+        let timer = try XCTUnwrap(doc.jason.head?.actions?["$load"]?.success)
+        let tickAction = try XCTUnwrap(timer.options?["action"]?.dictionary)
+
+        XCTAssertEqual(timer.type, "$timer.start")
+        XCTAssertEqual(tickAction["trigger"]?.string, "tick")
+    }
+
     func testJasonpediaTextfieldSecureStyleSelectsSecureRendererPath() async throws {
         let vm = JasonetteViewModel(document: try loadJasonpediaDocument("Jasonpedia/view/component/textfield/index.json"))
         await vm.load()

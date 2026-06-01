@@ -40,6 +40,12 @@ final class ComponentDispatchTests: XCTestCase {
         XCTAssertEqual(component.url, "https://example.com/icon.png")
     }
 
+    func testButtonComponentUsesComfortableDefaultTapTarget() {
+        XCTAssertEqual(ButtonComponent.minimumHitSize, 44)
+        XCTAssertGreaterThanOrEqual(ButtonComponent.defaultHorizontalPadding, 14)
+        XCTAssertGreaterThanOrEqual(ButtonComponent.defaultVerticalPadding, 10)
+    }
+
     // MARK: - TextField
 
     func testTextFieldHasNamePlaceholderKeyboardValue() {

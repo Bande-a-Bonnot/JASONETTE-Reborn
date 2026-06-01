@@ -139,6 +139,20 @@ final class ActionDispatcherTests: XCTestCase {
         XCTAssertNil(receivedTemplate)
     }
 
+    func testRenderDataBecomesJasonTemplatePayload() async {
+        let expectation = expectation(description: "render handler called")
+        dispatcher.setRenderHandler { _ in expectation.fulfill() }
+        let action = decodeAction([
+            "type": "$render",
+            "options": ["data": ["color": "#123456"]]
+        ])
+
+        await dispatcher.execute(action)
+
+        await fulfillment(of: [expectation], timeout: 1.0)
+        XCTAssertEqual((stateManager.get()["$jason"] as? [String: Any])?["color"] as? String, "#123456")
+    }
+
     // MARK: - $reload
 
     func testReloadCallsReloadHandler() async {
@@ -245,14 +259,76 @@ final class ActionDispatcherTests: XCTestCase {
 
     // MARK: - $util.toast / $util.banner
 
-    func testUtilToastIsNoOp() async {
-        let action = decodeAction(["type": "$util.toast"])
+    func testUtilToastDisplaysAlertFallback() async {
+        let expectation = expectation(description: "toast fallback shown")
+        var receivedTitle: String?
+        dispatcher.setAlertHandler { title, _ in
+            receivedTitle = title
+            expectation.fulfill()
+        }
+        let action = decodeAction([
+            "type": "$util.toast",
+            "options": ["text": "Saved"]
+        ])
+
         await dispatcher.execute(action)
+
+        await fulfillment(of: [expectation], timeout: 1.0)
+        XCTAssertEqual(receivedTitle, "Saved")
     }
 
-    func testUtilBannerIsNoOp() async {
-        let action = decodeAction(["type": "$util.banner"])
+    func testUtilBannerDisplaysAlertFallback() async {
+        let expectation = expectation(description: "banner fallback shown")
+        var receivedTitle: String?
+        var receivedDescription: String?
+        dispatcher.setAlertHandler { title, description in
+            receivedTitle = title
+            receivedDescription = description
+            expectation.fulfill()
+        }
+        let action = decodeAction([
+            "type": "$util.banner",
+            "options": ["title": "Hello", "description": "World"]
+        ])
+
         await dispatcher.execute(action)
+
+        await fulfillment(of: [expectation], timeout: 1.0)
+        XCTAssertEqual(receivedTitle, "Hello")
+        XCTAssertEqual(receivedDescription, "World")
+    }
+
+    func testTriggerPassesOptionsAsJasonPayloadToNamedAction() async {
+        let expectation = expectation(description: "named banner rendered payload")
+        var receivedTitle: String?
+        dispatcher.setAlertHandler { title, _ in
+            receivedTitle = title
+            expectation.fulfill()
+        }
+        let namedAction = decodeAction([
+            "type": "$util.banner",
+            "options": ["title": "{{$jason.title}}"]
+        ])
+        dispatcher.setActionResolver { name in name == "banner" ? namedAction : nil }
+        let action = decodeAction([
+            "trigger": "banner",
+            "options": ["title": "Triggered"]
+        ])
+
+        await dispatcher.execute(action)
+
+        await fulfillment(of: [expectation], timeout: 1.0)
+        XCTAssertEqual(receivedTitle, "Triggered")
+    }
+
+    func testJasonActionDecodesStringOptionsAndArrayContinuations() throws {
+        let data = Data(#"{"type":"$util.banner","options":"{{$jason}}","success":[{"type":"$set","options":{"a":1}},{"type":"$render"}]}"#.utf8)
+        let action = try JSONDecoder().decode(JasonAction.self, from: data)
+
+        XCTAssertNil(action.options)
+        XCTAssertEqual(action.rawOptions?.string, "{{$jason}}")
+        XCTAssertEqual(action.success?.type, "$set")
+        XCTAssertEqual(action.successActions?.map(\.type), ["$set", "$render"])
     }
 
     // MARK: - $audio.play
@@ -292,6 +368,27 @@ final class ActionDispatcherTests: XCTestCase {
     }
 
     // MARK: - $timer.start
+
+    func testTimerStartFiresOptionsAction() async {
+        let action = decodeAction([
+            "type": "$timer.start",
+            "options": [
+                "name": "options-action",
+                "interval": 0.1,
+                "repeats": false,
+                "action": ["type": "$set", "options": ["tick": true]]
+            ]
+        ])
+
+        await dispatcher.execute(action)
+
+        let expectation = expectation(description: "timer options action fired")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            XCTAssertEqual(self.stateManager.get()["tick"] as? Bool, true)
+            expectation.fulfill()
+        }
+        await fulfillment(of: [expectation], timeout: 1.0)
+    }
 
     func testTimerStartFiresSuccessAction() async {
         let expectation = expectation(description: "timer fired")
@@ -632,6 +729,30 @@ final class ActionDispatcherTests: XCTestCase {
         await dispatcher.execute(action)
 
         XCTAssertEqual(receivedHrefs.first?.url, "https://example.com/app/detail.json")
+    }
+
+    func testNetworkRequestPassesResponseAsJasonPayloadToSuccessAction() async {
+        stubJSON("{\"message\": \"from network\"}")
+        let dispatcher = makeStubbedDispatcher()
+        let expectation = expectation(description: "success alert used network payload")
+        var receivedDescription: String?
+        dispatcher.setAlertHandler { _, description in
+            receivedDescription = description
+            expectation.fulfill()
+        }
+        let action = decodeAction([
+            "type": "$network.request",
+            "options": ["url": "https://example.com/payload"],
+            "success": [
+                "type": "$util.alert",
+                "options": ["title": "Network", "description": "{{$jason.message}}"]
+            ]
+        ])
+
+        await dispatcher.execute(action)
+
+        await fulfillment(of: [expectation], timeout: 1.0)
+        XCTAssertEqual(receivedDescription, "from network")
     }
 
     func testNetworkRequestStoresDictResponse() async {

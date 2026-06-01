@@ -37,14 +37,14 @@ public struct ComponentView: View {
             Button {
                 onHref?(href)
             } label: {
-                content
+                content.contentShape(Rectangle())
             }
             .buttonStyle(.plain)
         } else if let action = component.action {
             Button {
                 onAction?(action)
             } label: {
-                content
+                content.contentShape(Rectangle())
             }
             .buttonStyle(.plain)
         } else {

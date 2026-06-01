@@ -131,6 +131,9 @@ public enum ExpressionEvaluator {
         "String": { args in args.first.map { "\($0)" } },
         "Number": { args in args.first.flatMap { toDouble($0) } },
         "Array.isArray": { args in args.first is [Any] },
+        "randomcolor": { _ in
+            String(format: "#%06X", Int.random(in: 0...0xFFFFFF))
+        },
         "JSON.stringify": { args in
             guard let val = args.first else { return nil }
             guard JSONSerialization.isValidJSONObject(val) else { return "\(val)" }
