@@ -137,6 +137,9 @@ extension JasonetteView {
         viewModel.actionDispatcher.setShareHandler { request in
             try await presentShareSheet(request)
         }
+        viewModel.actionDispatcher.setSnapshotHandler {
+            try captureWindowSnapshot()
+        }
     }
 
     func requestMediaCapture(_ request: MediaCaptureRequest) async throws -> [String: Any] {
@@ -208,6 +211,26 @@ extension JasonetteView {
             shareContinuation = continuation
             sharePresentation = SharePresentation(request: request)
         }
+    }
+
+    func captureWindowSnapshot() throws -> SnapshotResult {
+        guard let windowScene = UIApplication.shared.connectedScenes
+            .compactMap({ $0 as? UIWindowScene })
+            .first(where: { $0.activationState == .foregroundActive }),
+              let window = windowScene.windows.first(where: { $0.isKeyWindow }) ?? windowScene.windows.first else {
+            throw ActionDispatcher.ActionError.snapshotUnavailable
+        }
+
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = window.screen.scale
+        format.opaque = false
+        let image = UIGraphicsImageRenderer(bounds: window.bounds, format: format).image { _ in
+            window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
+        }
+        guard let data = image.pngData() else {
+            throw ActionDispatcher.ActionError.snapshotUnavailable
+        }
+        return SnapshotResult(data: data, contentType: "image/png")
     }
 
     func shareDismissed() {

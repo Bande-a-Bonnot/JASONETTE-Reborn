@@ -159,6 +159,11 @@ struct ShareItem: Equatable {
     }
 }
 
+struct SnapshotResult: Equatable {
+    let data: Data
+    let contentType: String
+}
+
 /// Executes Jasonette actions with success/error chaining.
 @MainActor
 public final class ActionDispatcher: ObservableObject {
@@ -171,6 +176,7 @@ public final class ActionDispatcher: ObservableObject {
     private var audioPlayHandler: ((URL) -> Void)?
     private var mediaCaptureHandler: ((MediaCaptureRequest) async throws -> [String: Any])?
     private var shareHandler: ((ShareRequest) async throws -> Void)?
+    private var snapshotHandler: (() async throws -> SnapshotResult)?
     private var geolocationProvider: GeolocationProviding = CoreLocationGeolocationProvider()
     private var audioPlayer: AVPlayer?
     private var timers: [String: Timer] = [:]
@@ -222,6 +228,10 @@ public final class ActionDispatcher: ObservableObject {
 
     func setShareHandler(_ handler: @escaping (ShareRequest) async throws -> Void) {
         self.shareHandler = handler
+    }
+
+    func setSnapshotHandler(_ handler: @escaping () async throws -> SnapshotResult) {
+        self.snapshotHandler = handler
     }
 
     func setGeolocationProvider(_ provider: GeolocationProviding) {
@@ -394,6 +404,9 @@ public final class ActionDispatcher: ObservableObject {
         case "$util.share":
             try await share(shareRequest(from: options, payload: payload))
             return payload
+
+        case "$snapshot":
+            return try await snapshot()
 
         case "$media.play", "$util.addressbook", "$vision.scan":
             alertHandler?("Not implemented yet", "\(type) is recognized, but this iOS renderer does not implement the native UI yet.")
@@ -590,6 +603,22 @@ public final class ActionDispatcher: ObservableObject {
         try await shareHandler(request)
     }
 
+    private func snapshot() async throws -> Any? {
+        guard let snapshotHandler else {
+            alertHandler?("Snapshot unavailable", "This platform cannot capture the current screen.")
+            throw ActionError.snapshotUnavailable
+        }
+        let result = try await snapshotHandler()
+        let payload: [String: Any] = [
+            "data": result.data.base64EncodedString(),
+            "media_type": "image",
+            "content_type": result.contentType
+        ]
+        stateManager.set(payload)
+        stateManager.set(["$jason": payload])
+        return payload
+    }
+
     private func truthy(_ value: AnyCodable?) -> Bool {
         guard let value else { return false }
         if let bool = value.bool { return bool }
@@ -738,6 +767,7 @@ public final class ActionDispatcher: ObservableObject {
         case mediaCaptureCancelled
         case shareUnavailable
         case emptyShareItems
+        case snapshotUnavailable
     }
 }
 
@@ -766,6 +796,8 @@ extension ActionDispatcher.ActionError: LocalizedError {
             return "Sharing is unavailable on this device."
         case .emptyShareItems:
             return "No shareable items were supplied."
+        case .snapshotUnavailable:
+            return "Snapshot capture is unavailable."
         }
     }
 }

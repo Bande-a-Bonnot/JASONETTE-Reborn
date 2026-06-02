@@ -65,6 +65,20 @@ final class ActionDispatcherTests: XCTestCase {
         }
     }
 
+    private final class StubSnapshotProvider {
+        var result: Result<SnapshotResult, Error>
+        private(set) var requestCount = 0
+
+        init(result: Result<SnapshotResult, Error>) {
+            self.result = result
+        }
+
+        func snapshot() async throws -> SnapshotResult {
+            requestCount += 1
+            return try result.get()
+        }
+    }
+
     // MARK: - $set
 
     func testSetUpdatesLocalState() async {
@@ -502,6 +516,60 @@ final class ActionDispatcherTests: XCTestCase {
         XCTAssertEqual(provider.requests.first?.items[1].url, URL(string: "https://example.com")!)
         XCTAssertEqual(provider.requests.first?.items[2].data, Data("hello".utf8))
         XCTAssertEqual(provider.requests.first?.items[3].url, URL(string: "file:///tmp/capture.mov")!)
+    }
+
+    // MARK: - $snapshot
+
+    func testSnapshotCapturesPNGPayloadAndStoresJasonData() async {
+        let imageData = Data([0x89, 0x50, 0x4E, 0x47])
+        let provider = StubSnapshotProvider(result: .success(SnapshotResult(data: imageData, contentType: "image/png")))
+        dispatcher.setSnapshotHandler(provider.snapshot)
+        let action = decodeAction(["type": "$snapshot"])
+
+        await dispatcher.execute(action)
+
+        XCTAssertEqual(provider.requestCount, 1)
+        XCTAssertEqual(stateManager.get()["data"] as? String, imageData.base64EncodedString())
+        XCTAssertEqual(stateManager.get()["media_type"] as? String, "image")
+        XCTAssertEqual(stateManager.get()["content_type"] as? String, "image/png")
+        let jason = stateManager.get()["$jason"] as? [String: Any]
+        XCTAssertEqual(jason?["data"] as? String, imageData.base64EncodedString())
+    }
+
+    func testSnapshotPayloadFlowsIntoShareSuccessAction() async {
+        let imageData = Data("screen".utf8)
+        let snapshotProvider = StubSnapshotProvider(result: .success(SnapshotResult(data: imageData, contentType: "image/png")))
+        let shareProvider = StubShareProvider()
+        dispatcher.setSnapshotHandler(snapshotProvider.snapshot)
+        dispatcher.setShareHandler(shareProvider.share)
+        let action = decodeAction([
+            "type": "$snapshot",
+            "success": [
+                "type": "$util.share",
+                "options": [
+                    "items": [["type": "image", "data": "{{$jason.data}}"]]
+                ]
+            ]
+        ])
+
+        await dispatcher.execute(action)
+
+        XCTAssertEqual(shareProvider.requests.count, 1)
+        XCTAssertEqual(shareProvider.requests.first?.items.first?.kind, .imageData)
+        XCTAssertEqual(shareProvider.requests.first?.items.first?.data, imageData)
+    }
+
+    func testSnapshotFailureRunsErrorBranch() async {
+        let provider = StubSnapshotProvider(result: .failure(ActionDispatcher.ActionError.snapshotUnavailable))
+        dispatcher.setSnapshotHandler(provider.snapshot)
+        let action = decodeAction([
+            "type": "$snapshot",
+            "error": ["type": "$set", "options": ["snapshot_failed": true]]
+        ])
+
+        await dispatcher.execute(action)
+
+        XCTAssertEqual(stateManager.get()["snapshot_failed"] as? Bool, true)
     }
 
     // MARK: - $audio.play
