@@ -57,6 +57,20 @@ final class ActionDispatcherTests: XCTestCase {
         }
     }
 
+    private final class StubMediaPlaybackProvider {
+        var result: Result<Void, Error>
+        private(set) var requests: [MediaPlaybackRequest] = []
+
+        init(result: Result<Void, Error> = .success(())) {
+            self.result = result
+        }
+
+        func play(_ request: MediaPlaybackRequest) async throws {
+            requests.append(request)
+            try result.get()
+        }
+    }
+
     private final class StubShareProvider {
         private(set) var requests: [ShareRequest] = []
 
@@ -570,6 +584,52 @@ final class ActionDispatcherTests: XCTestCase {
         await dispatcher.execute(action)
 
         XCTAssertEqual(stateManager.get()["snapshot_failed"] as? Bool, true)
+    }
+
+    // MARK: - $media.play
+
+    func testMediaPlayResolvesURLAndCallsHandler() async {
+        let provider = StubMediaPlaybackProvider()
+        dispatcher.setDocumentURL(URL(string: "https://example.com/video/index.json"))
+        dispatcher.setMediaPlaybackHandler(provider.play)
+        let action = decodeAction([
+            "type": "$media.play",
+            "options": ["url": "clips/demo.mp4"]
+        ])
+
+        await dispatcher.execute(action)
+
+        XCTAssertEqual(provider.requests, [MediaPlaybackRequest(url: URL(string: "https://example.com/video/clips/demo.mp4")!)])
+    }
+
+    func testMediaPlayRejectsDisallowedSchemeAndRunsError() async {
+        let provider = StubMediaPlaybackProvider()
+        dispatcher.setMediaPlaybackHandler(provider.play)
+        let action = decodeAction([
+            "type": "$media.play",
+            "options": ["url": "file:///tmp/demo.mp4"],
+            "error": ["type": "$set", "options": ["blocked_video": true]]
+        ])
+
+        await dispatcher.execute(action)
+
+        XCTAssertTrue(provider.requests.isEmpty)
+        XCTAssertEqual(stateManager.get()["blocked_video"] as? Bool, true)
+    }
+
+    func testMediaPlayFailureRunsErrorBranch() async {
+        let provider = StubMediaPlaybackProvider(result: .failure(ActionDispatcher.ActionError.mediaPlaybackUnavailable))
+        dispatcher.setMediaPlaybackHandler(provider.play)
+        let action = decodeAction([
+            "type": "$media.play",
+            "options": ["url": "https://example.com/demo.mp4"],
+            "error": ["type": "$set", "options": ["video_failed": true]]
+        ])
+
+        await dispatcher.execute(action)
+
+        XCTAssertEqual(provider.requests, [MediaPlaybackRequest(url: URL(string: "https://example.com/demo.mp4")!)])
+        XCTAssertEqual(stateManager.get()["video_failed"] as? Bool, true)
     }
 
     // MARK: - $audio.play

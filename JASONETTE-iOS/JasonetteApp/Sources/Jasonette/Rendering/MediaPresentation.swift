@@ -1,5 +1,6 @@
 #if os(iOS)
 import AVFoundation
+import AVKit
 import SwiftUI
 import UIKit
 import UniformTypeIdentifiers
@@ -10,9 +11,27 @@ struct MediaCapturePresentation: Identifiable {
     let sourceType: UIImagePickerController.SourceType
 }
 
+struct MediaPlaybackPresentation: Identifiable {
+    let id = UUIDv7.generate()
+    let request: MediaPlaybackRequest
+}
+
 struct SharePresentation: Identifiable {
     let id = UUIDv7.generate()
     let request: ShareRequest
+}
+
+struct MediaPlaybackPlayer: UIViewControllerRepresentable {
+    let presentation: MediaPlaybackPresentation
+
+    func makeUIViewController(context: Context) -> AVPlayerViewController {
+        let controller = AVPlayerViewController()
+        controller.player = AVPlayer(url: presentation.request.url)
+        controller.player?.play()
+        return controller
+    }
+
+    func updateUIViewController(_ uiViewController: AVPlayerViewController, context: Context) {}
 }
 
 struct MediaCapturePicker: UIViewControllerRepresentable {
@@ -134,6 +153,9 @@ extension JasonetteView {
         viewModel.actionDispatcher.setMediaCaptureHandler { request in
             try await requestMediaCapture(request)
         }
+        viewModel.actionDispatcher.setMediaPlaybackHandler { request in
+            try await presentMediaPlayback(request)
+        }
         viewModel.actionDispatcher.setShareHandler { request in
             try await presentShareSheet(request)
         }
@@ -204,6 +226,19 @@ extension JasonetteView {
         case .failure(let error):
             continuation.resume(throwing: error)
         }
+    }
+
+    func presentMediaPlayback(_ request: MediaPlaybackRequest) async throws {
+        try await withCheckedThrowingContinuation { continuation in
+            mediaPlaybackContinuation = continuation
+            mediaPlaybackPresentation = MediaPlaybackPresentation(request: request)
+        }
+    }
+
+    func mediaPlaybackDismissed() {
+        guard let continuation = mediaPlaybackContinuation else { return }
+        mediaPlaybackContinuation = nil
+        continuation.resume()
     }
 
     func presentShareSheet(_ request: ShareRequest) async throws {

@@ -125,6 +125,8 @@ struct JasonetteView: View {
     #if os(iOS)
     @State var mediaCapturePresentation: MediaCapturePresentation?
     @State var mediaCaptureContinuation: CheckedContinuation<[String: Any], Error>?
+    @State var mediaPlaybackPresentation: MediaPlaybackPresentation?
+    @State var mediaPlaybackContinuation: CheckedContinuation<Void, Error>?
     @State var sharePresentation: SharePresentation?
     @State var shareContinuation: CheckedContinuation<Void, Error>?
     #endif
@@ -180,6 +182,9 @@ struct JasonetteView: View {
         #if os(iOS)
         .sheet(item: $mediaCapturePresentation, onDismiss: mediaCaptureDismissed) { presentation in
             MediaCapturePicker(presentation: presentation, onComplete: completeMediaCapture)
+        }
+        .sheet(item: $mediaPlaybackPresentation, onDismiss: mediaPlaybackDismissed) { presentation in
+            MediaPlaybackPlayer(presentation: presentation)
         }
         .sheet(item: $sharePresentation, onDismiss: shareDismissed) { presentation in
             ShareSheet(presentation: presentation, onComplete: completeShare)

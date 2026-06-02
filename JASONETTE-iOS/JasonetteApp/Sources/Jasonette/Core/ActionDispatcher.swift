@@ -132,6 +132,10 @@ struct MediaCaptureRequest: Equatable {
     let allowsEditing: Bool
 }
 
+struct MediaPlaybackRequest: Equatable {
+    let url: URL
+}
+
 struct ShareRequest: Equatable {
     var items: [ShareItem]
 }
@@ -175,6 +179,7 @@ public final class ActionDispatcher: ObservableObject {
     private var actionResolver: ((String) -> JasonAction?)?
     private var audioPlayHandler: ((URL) -> Void)?
     private var mediaCaptureHandler: ((MediaCaptureRequest) async throws -> [String: Any])?
+    private var mediaPlaybackHandler: ((MediaPlaybackRequest) async throws -> Void)?
     private var shareHandler: ((ShareRequest) async throws -> Void)?
     private var snapshotHandler: (() async throws -> SnapshotResult)?
     private var geolocationProvider: GeolocationProviding = CoreLocationGeolocationProvider()
@@ -224,6 +229,10 @@ public final class ActionDispatcher: ObservableObject {
 
     func setMediaCaptureHandler(_ handler: @escaping (MediaCaptureRequest) async throws -> [String: Any]) {
         self.mediaCaptureHandler = handler
+    }
+
+    func setMediaPlaybackHandler(_ handler: @escaping (MediaPlaybackRequest) async throws -> Void) {
+        self.mediaPlaybackHandler = handler
     }
 
     func setShareHandler(_ handler: @escaping (ShareRequest) async throws -> Void) {
@@ -408,7 +417,11 @@ public final class ActionDispatcher: ObservableObject {
         case "$snapshot":
             return try await snapshot()
 
-        case "$media.play", "$util.addressbook", "$vision.scan":
+        case "$media.play":
+            try await playMedia(mediaPlaybackRequest(from: options, baseURL: baseURL))
+            return payload
+
+        case "$util.addressbook", "$vision.scan":
             alertHandler?("Not implemented yet", "\(type) is recognized, but this iOS renderer does not implement the native UI yet.")
             return payload
 
@@ -538,6 +551,31 @@ public final class ActionDispatcher: ObservableObject {
             throw ActionError.mediaCaptureCancelled
         } catch {
             alertHandler?(request.source == .camera ? "Camera unavailable" : "Media picker unavailable", error.localizedDescription)
+            throw error
+        }
+    }
+
+    private func mediaPlaybackRequest(from options: [String: AnyCodable], baseURL: URL?) throws -> MediaPlaybackRequest {
+        guard let urlString = options["url"]?.string,
+              let url = JasonURL.resolve(urlString, against: baseURL) else {
+            throw ActionError.invalidURL
+        }
+        guard let scheme = url.scheme?.lowercased(),
+              DocumentLoader.allowedSchemes.contains(scheme) else {
+            throw ActionError.blockedURL
+        }
+        return MediaPlaybackRequest(url: url)
+    }
+
+    private func playMedia(_ request: MediaPlaybackRequest) async throws {
+        guard let mediaPlaybackHandler else {
+            alertHandler?("Video unavailable", "This platform cannot present the native media playback UI.")
+            throw ActionError.mediaPlaybackUnavailable
+        }
+        do {
+            try await mediaPlaybackHandler(request)
+        } catch {
+            alertHandler?("Video unavailable", error.localizedDescription)
             throw error
         }
     }
@@ -765,6 +803,7 @@ public final class ActionDispatcher: ObservableObject {
         case mediaCaptureUnavailable
         case mediaCapturePermissionDenied
         case mediaCaptureCancelled
+        case mediaPlaybackUnavailable
         case shareUnavailable
         case emptyShareItems
         case snapshotUnavailable
@@ -792,6 +831,8 @@ extension ActionDispatcher.ActionError: LocalizedError {
             return "Camera permission was denied. Enable camera access in Settings to use this Jasonette action."
         case .mediaCaptureCancelled:
             return "Media capture was cancelled."
+        case .mediaPlaybackUnavailable:
+            return "Media playback is unavailable on this device."
         case .shareUnavailable:
             return "Sharing is unavailable on this device."
         case .emptyShareItems:
