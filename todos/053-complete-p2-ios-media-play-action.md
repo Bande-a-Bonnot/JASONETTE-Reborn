@@ -41,6 +41,8 @@ The iOS handoff Phase B action gap still listed `$media.play` as a recognized fa
 - `cd JASONETTE-iOS/JasonetteApp && swift test` — 542 tests, 0 failures.
 - `cd JASONETTE-iOS/JasonetteApp && swift build` — passed.
 - `npm run lint:md` — 0 errors.
+- Git evidence: committed as `df1661d feat(ios): play media videos natively` and pushed to `origin/main` on 2026-06-02.
+- CI evidence: GitHub Actions `CI` run `26845022780` for `df1661d` completed successfully; Pages deployment run `26845017495` completed successfully.
 
 ## Notes
 
