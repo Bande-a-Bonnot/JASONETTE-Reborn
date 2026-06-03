@@ -42,6 +42,7 @@ The iOS handoff still listed `$util.addressbook` as a recognized fallback alert 
 - `cd JASONETTE-iOS/JasonetteApp && swift build` — passed.
 - `cd JASONETTE-iOS/JasonetteApp && xcodebuild -workspace Jasonette.xcworkspace -scheme Jasonette-iOS -destination 'generic/platform=iOS Simulator' build` — succeeded.
 - `npm run lint:md` — 0 errors.
+- Git evidence: committed as `06c94ed feat(ios): implement addressbook action` and pushed to `origin/main` on 2026-06-03.
 
 ## Notes
 
