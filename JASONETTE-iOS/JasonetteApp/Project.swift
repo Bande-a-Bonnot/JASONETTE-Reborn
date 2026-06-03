@@ -35,6 +35,7 @@ let project = Project(
                 "NSCameraUsageDescription": "Jasonette documents can request camera access so you can capture photos or videos for media actions.",
                 "NSPhotoLibraryUsageDescription": "Jasonette documents can open your photo library when selecting media or when the camera is unavailable in Simulator.",
                 "NSMicrophoneUsageDescription": "Jasonette documents can request microphone access when recording videos with the camera.",
+                "NSContactsUsageDescription": "Jasonette documents can request contacts access to render address book demos and contact-aware screens.",
             ]),
             sources: [],
             resources: ["Resources/iOS/**"],

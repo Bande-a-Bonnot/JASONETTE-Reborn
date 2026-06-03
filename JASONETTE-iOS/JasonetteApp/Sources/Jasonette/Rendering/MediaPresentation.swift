@@ -1,6 +1,7 @@
 #if os(iOS)
 import AVFoundation
 import AVKit
+import Contacts
 import SwiftUI
 import UIKit
 import UniformTypeIdentifiers
@@ -162,6 +163,9 @@ extension JasonetteView {
         viewModel.actionDispatcher.setSnapshotHandler {
             try captureWindowSnapshot()
         }
+        viewModel.actionDispatcher.setAddressBookHandler {
+            try await requestAddressBook()
+        }
     }
 
     func requestMediaCapture(_ request: MediaCaptureRequest) async throws -> [String: Any] {
@@ -266,6 +270,76 @@ extension JasonetteView {
             throw ActionDispatcher.ActionError.snapshotUnavailable
         }
         return SnapshotResult(data: data, contentType: "image/png")
+    }
+
+    func requestAddressBook() async throws -> [[String: Any]] {
+        let store = CNContactStore()
+        switch CNContactStore.authorizationStatus(for: .contacts) {
+        case .authorized:
+            break
+        case .limited:
+            break
+        case .notDetermined:
+            guard try await requestContactsAccess(store) else {
+                throw ActionDispatcher.ActionError.addressBookPermissionDenied
+            }
+        case .denied, .restricted:
+            throw ActionDispatcher.ActionError.addressBookPermissionDenied
+        @unknown default:
+            throw ActionDispatcher.ActionError.addressBookPermissionDenied
+        }
+
+        let keys: [CNKeyDescriptor] = [
+            CNContactGivenNameKey as CNKeyDescriptor,
+            CNContactFamilyNameKey as CNKeyDescriptor,
+            CNContactOrganizationNameKey as CNKeyDescriptor,
+            CNContactPhoneNumbersKey as CNKeyDescriptor,
+            CNContactEmailAddressesKey as CNKeyDescriptor
+        ]
+        let request = CNContactFetchRequest(keysToFetch: keys)
+        request.sortOrder = .givenName
+
+        var contacts: [[String: Any]] = []
+        try store.enumerateContacts(with: request) { contact, _ in
+            guard !contact.phoneNumbers.isEmpty else { return }
+            contacts.append(addressBookPayload(for: contact))
+        }
+        return contacts
+    }
+
+    private func requestContactsAccess(_ store: CNContactStore) async throws -> Bool {
+        try await withCheckedThrowingContinuation { continuation in
+            store.requestAccess(for: .contacts) { granted, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                } else {
+                    continuation.resume(returning: granted)
+                }
+            }
+        }
+    }
+
+    private func addressBookPayload(for contact: CNContact) -> [String: Any] {
+        [
+            "name": contactDisplayName(contact),
+            "phone": contact.phoneNumbers.map { labeledValue in
+                [
+                    "type": labeledValue.label.map(CNLabeledValue<CNPhoneNumber>.localizedString(forLabel:)) ?? "",
+                    "text": labeledValue.value.stringValue
+                ]
+            },
+            "email": contact.emailAddresses.map { String($0.value) }
+        ]
+    }
+
+    private func contactDisplayName(_ contact: CNContact) -> String {
+        if let formatted = CNContactFormatter.string(from: contact, style: .fullName), !formatted.isEmpty {
+            return formatted
+        }
+        if !contact.organizationName.isEmpty {
+            return contact.organizationName
+        }
+        return "Untitled"
     }
 
     func shareDismissed() {

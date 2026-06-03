@@ -182,6 +182,7 @@ public final class ActionDispatcher: ObservableObject {
     private var mediaPlaybackHandler: ((MediaPlaybackRequest) async throws -> Void)?
     private var shareHandler: ((ShareRequest) async throws -> Void)?
     private var snapshotHandler: (() async throws -> SnapshotResult)?
+    private var addressBookHandler: (() async throws -> [[String: Any]])?
     private var geolocationProvider: GeolocationProviding = CoreLocationGeolocationProvider()
     private var audioPlayer: AVPlayer?
     private var timers: [String: Timer] = [:]
@@ -241,6 +242,10 @@ public final class ActionDispatcher: ObservableObject {
 
     func setSnapshotHandler(_ handler: @escaping () async throws -> SnapshotResult) {
         self.snapshotHandler = handler
+    }
+
+    func setAddressBookHandler(_ handler: @escaping () async throws -> [[String: Any]]) {
+        self.addressBookHandler = handler
     }
 
     func setGeolocationProvider(_ provider: GeolocationProviding) {
@@ -421,7 +426,10 @@ public final class ActionDispatcher: ObservableObject {
             try await playMedia(mediaPlaybackRequest(from: options, baseURL: baseURL))
             return payload
 
-        case "$util.addressbook", "$vision.scan":
+        case "$util.addressbook":
+            return try await addressBook()
+
+        case "$vision.scan":
             alertHandler?("Not implemented yet", "\(type) is recognized, but this iOS renderer does not implement the native UI yet.")
             return payload
 
@@ -657,6 +665,22 @@ public final class ActionDispatcher: ObservableObject {
         return payload
     }
 
+    private func addressBook() async throws -> Any? {
+        guard let addressBookHandler else {
+            alertHandler?("Contacts unavailable", "This platform cannot access the native address book.")
+            throw ActionError.addressBookUnavailable
+        }
+
+        do {
+            let contacts = try await addressBookHandler()
+            stateManager.set(["$jason": contacts])
+            return contacts
+        } catch {
+            alertHandler?("Contacts unavailable", error.localizedDescription)
+            throw error
+        }
+    }
+
     private func truthy(_ value: AnyCodable?) -> Bool {
         guard let value else { return false }
         if let bool = value.bool { return bool }
@@ -807,6 +831,8 @@ public final class ActionDispatcher: ObservableObject {
         case shareUnavailable
         case emptyShareItems
         case snapshotUnavailable
+        case addressBookUnavailable
+        case addressBookPermissionDenied
     }
 }
 
@@ -839,6 +865,10 @@ extension ActionDispatcher.ActionError: LocalizedError {
             return "No shareable items were supplied."
         case .snapshotUnavailable:
             return "Snapshot capture is unavailable."
+        case .addressBookUnavailable:
+            return "Address book access is unavailable on this device."
+        case .addressBookPermissionDenied:
+            return "Contacts permission was denied. Enable contacts access in Settings to use this Jasonette action."
         }
     }
 }

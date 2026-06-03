@@ -93,6 +93,20 @@ final class ActionDispatcherTests: XCTestCase {
         }
     }
 
+    private final class StubAddressBookProvider {
+        var result: Result<[[String: Any]], Error>
+        private(set) var requestCount = 0
+
+        init(result: Result<[[String: Any]], Error>) {
+            self.result = result
+        }
+
+        func contacts() async throws -> [[String: Any]] {
+            requestCount += 1
+            return try result.get()
+        }
+    }
+
     // MARK: - $set
 
     func testSetUpdatesLocalState() async {
@@ -530,6 +544,58 @@ final class ActionDispatcherTests: XCTestCase {
         XCTAssertEqual(provider.requests.first?.items[1].url, URL(string: "https://example.com")!)
         XCTAssertEqual(provider.requests.first?.items[2].data, Data("hello".utf8))
         XCTAssertEqual(provider.requests.first?.items[3].url, URL(string: "file:///tmp/capture.mov")!)
+    }
+
+    // MARK: - $util.addressbook
+
+    func testAddressBookStoresContactsAsJasonPayload() async {
+        let contacts: [[String: Any]] = [
+            [
+                "name": "Alice Appleseed",
+                "phone": [["type": "mobile", "text": "555-0100"]],
+                "email": ["alice@example.com"]
+            ]
+        ]
+        let provider = StubAddressBookProvider(result: .success(contacts))
+        dispatcher.setAddressBookHandler(provider.contacts)
+        let action = decodeAction(["type": "$util.addressbook"])
+
+        await dispatcher.execute(action)
+
+        XCTAssertEqual(provider.requestCount, 1)
+        let jason = stateManager.get()["$jason"] as? [[String: Any]]
+        XCTAssertEqual(jason?.first?["name"] as? String, "Alice Appleseed")
+        XCTAssertEqual((jason?.first?["email"] as? [String])?.first, "alice@example.com")
+    }
+
+    func testAddressBookPayloadFlowsIntoRenderSuccessAction() async {
+        let contacts: [[String: Any]] = [["name": "Bob", "phone": [], "email": []]]
+        let provider = StubAddressBookProvider(result: .success(contacts))
+        dispatcher.setAddressBookHandler(provider.contacts)
+        let expectation = expectation(description: "render handler called")
+        dispatcher.setRenderHandler { _ in expectation.fulfill() }
+        let action = decodeAction([
+            "type": "$util.addressbook",
+            "success": ["type": "$render"]
+        ])
+
+        await dispatcher.execute(action)
+
+        await fulfillment(of: [expectation], timeout: 1.0)
+        XCTAssertEqual((stateManager.get()["$jason"] as? [[String: Any]])?.first?["name"] as? String, "Bob")
+    }
+
+    func testAddressBookFailureRunsErrorBranch() async {
+        let provider = StubAddressBookProvider(result: .failure(ActionDispatcher.ActionError.addressBookPermissionDenied))
+        dispatcher.setAddressBookHandler(provider.contacts)
+        let action = decodeAction([
+            "type": "$util.addressbook",
+            "error": ["type": "$set", "options": ["addressbook_failed": true]]
+        ])
+
+        await dispatcher.execute(action)
+
+        XCTAssertEqual(stateManager.get()["addressbook_failed"] as? Bool, true)
     }
 
     // MARK: - $snapshot
