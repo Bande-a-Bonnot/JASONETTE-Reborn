@@ -1,0 +1,7 @@
+BEGIN:VCARD
+VERSION:3.0
+N:Reborn;QA;;;
+FN:QA Reborn
+TEL;TYPE=CELL:+1-555-0101
+EMAIL:qa@example.com
+END:VCARD

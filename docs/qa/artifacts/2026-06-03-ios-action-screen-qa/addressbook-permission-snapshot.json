@@ -1,0 +1,98 @@
+{
+  "success": true,
+  "data": {
+    "nodes": [
+      {
+        "type": "Application",
+        "rect": {
+          "height": 874,
+          "y": 0,
+          "width": 402,
+          "x": 0
+        },
+        "enabled": true,
+        "depth": 0,
+        "label": "Jasonette",
+        "hittable": true,
+        "index": 0,
+        "ref": "e1"
+      },
+      {
+        "hittable": true,
+        "depth": 1,
+        "index": 1,
+        "parentIndex": 0,
+        "rect": {
+          "y": 0,
+          "width": 402,
+          "height": 874,
+          "x": 0
+        },
+        "enabled": true,
+        "type": "Window",
+        "ref": "e2"
+      },
+      {
+        "rect": {
+          "width": 402,
+          "x": 0,
+          "height": 874,
+          "y": 0
+        },
+        "parentIndex": 1,
+        "index": 2,
+        "label": "Addressbook demo",
+        "hittable": true,
+        "enabled": true,
+        "type": "Other",
+        "depth": 2,
+        "ref": "e3"
+      },
+      {
+        "identifier": "Addressbook demo",
+        "depth": 3,
+        "parentIndex": 2,
+        "enabled": true,
+        "hittable": false,
+        "rect": {
+          "y": 62,
+          "width": 402,
+          "height": 54,
+          "x": 0
+        },
+        "index": 3,
+        "label": "Addressbook demo",
+        "type": "NavigationBar",
+        "ref": "e4"
+      },
+      {
+        "rect": {
+          "y": 116,
+          "width": 402,
+          "height": 696,
+          "x": 0
+        },
+        "type": "ScrollView",
+        "depth": 4,
+        "enabled": true,
+        "parentIndex": 2,
+        "index": 4,
+        "label": "Vertical scroll bar, 1 page",
+        "hittable": false,
+        "hiddenContentBelow": true,
+        "ref": "e5"
+      }
+    ],
+    "truncated": false,
+    "appName": "com.bande-a-bonnot.jasonette",
+    "appBundleId": "com.bande-a-bonnot.jasonette",
+    "visibility": {
+      "partial": true,
+      "visibleNodeCount": 5,
+      "totalNodeCount": 5,
+      "reasons": [
+        "scroll-hidden-below"
+      ]
+    }
+  }
+}

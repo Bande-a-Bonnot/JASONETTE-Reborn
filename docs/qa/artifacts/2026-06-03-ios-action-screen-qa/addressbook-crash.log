@@ -1,0 +1,41 @@
+*** Terminating app due to uncaught exception 'CNPropertyNotFetchedException', reason: 'A property was not requested when contact was fetched.'
+*** First throw call stack:
+(
+	0   CoreFoundation                      0x00000001804f71d0 __exceptionPreprocess + 172
+	1   libobjc.A.dylib                     0x000000018009c094 objc_exception_throw + 72
+	2   CoreFoundation                      0x00000001804f70e0 -[NSException initWithCoder:] + 0
+	3   Contacts                            0x000000018d110be0 -[CNContact middleName] + 148
+	4   Contacts                            0x000000018d15e0b4 +[CN(CNInternationalSupport) joinNonEmptyContactProperties:onContact:withDelimiter:] + 204
+	5   Contacts                            0x000000018d15d93c +[CN(CNInternationalSupport) localizedNameDelimiterForContact:] + 76
+	6   Contacts                            0x000000018d1ce348 -[CNContactFormatter fullNameForContact:attributes:style:] + 208
+	7   Contacts                            0x000000018d0d4168 -[CNContactFormatter stringFromContact:attributes:] + 212
+	8   Contacts                            0x000000018d0d2f14 +[CNContactFormatter stringFromContact:style:] + 64
+	9   Jasonette_iOS.debug.dylib           0x0000000104b35d70 $s9Jasonette0A4ViewV18contactDisplayName33_BC1039F0ECCEB52A83A696058FDBEA28LLySSSo9CNContactCF + 72
+	10  Jasonette_iOS.debug.dylib           0x0000000104b35730 $s9Jasonette0A4ViewV18addressBookPayload33_BC1039F0ECCEB52A83A696058FDBEA28LL3forSDySSypGSo9CNContactC_tF + 156
+	11  Jasonette_iOS.debug.dylib           0x0000000104b3564c $s9Jasonette0A4ViewV18requestAddressBookSaySDySSypGGyYaKFySo9CNContactC_Spy10ObjectiveC8ObjCBoolVGtXEfU_ + 228
+	12  Jasonette_iOS.debug.dylib           0x0000000104b359b8 $sSo9CNContactCSpy10ObjectiveC8ObjCBoolVGIggy_AbFIeggy_TR + 20
+	13  Jasonette_iOS.debug.dylib           0x0000000104b35a0c $sSo9CNContactCSpy10ObjectiveC8ObjCBoolVGIeggy_AbFIyByy_TR + 72
+	14  Contacts                            0x000000018d0b4d0c __74-[CNContactStore pool_enumerateContactsWithFetchRequest:error:usingBlock:]_block_invoke_2 + 120
+	15  Contacts                            0x000000018d0b4c28 __74-[CNContactStore pool_enumerateContactsWithFetchRequest:error:usingBlock:]_block_invoke + 220
+	16  Contacts                            0x000000018d05e2b4 __90-[CNAggregateContactStore enumerateContactsAndMatchInfoWithFetchRequest:error:usingBlock:]_block_invoke_4 + 128
+	17  CoreFoundation                      0x000000018045a5f4 __NSARRAY_IS_CALLING_OUT_TO_A_BLOCK__ + 16
+	18  CoreFoundation                      0x00000001803d8ed8 -[__NSFrozenArrayM enumerateObjectsWithOptions:usingBlock:] + 272
+	19  Contacts                            0x000000018d05dc90 -[CNAggregateContactStore enumerateContactsAndMatchInfoWithFetchRequest:error:usingBlock:] + 836
+	20  Contacts                            0x000000018d0b4a58 -[CNContactStore pool_enumerateContactsWithFetchRequest:error:usingBlock:] + 240
+	21  Contacts                            0x000000018d0b47a4 -[CNContactStore enumerateContactsWithFetchRequest:error:usingBlock:] + 648
+	22  Jasonette_iOS.debug.dylib           0x0000000104b32d98 $s9Jasonette0A4ViewV18requestAddressBookSaySDySSypGGyYaKFTY0_ + 1688
+	23  Jasonette_iOS.debug.dylib           0x0000000104b32449 $s9Jasonette0A4ViewV27installNativeActionHandlersyyFSaySDySSypGGyYaKcfU3_TQ0_ + 1
+	24  Jasonette_iOS.debug.dylib           0x0000000104b3907d $s9Jasonette0A4ViewV27installNativeActionHandlersyyFSaySDySSypGGyYaKcfU3_TATQ0_ + 1
+	25  Jasonette_iOS.debug.dylib           0x00000001049d3725 $s9Jasonette16ActionDispatcherC11addressBook014_00E1EA1C64333F17A293E58DA650C625ELLypSgyYaKFTQ1_ + 1
+	26  Jasonette_iOS.debug.dylib           0x00000001049cadb9 $s9Jasonette16ActionDispatcherC8dispatch014_00E1EA1C64333E17A293E58DA650C625ELL_7baseURL7payloadypSgAA05JasonB0C_10Foundation0M0VSgAHtYaKFTQ19_ + 1
+	27  Jasonette_iOS.debug.dylib           0x00000001049c233d $s9Jasonette16ActionDispatcherC7execute014_00E1EA1C64333E17A293E58DA650C625ELL_7baseURL7payloadypSgAA05JasonB0C_10Foundation0M0VSgAHtYaFTQ0_ + 1
+	28  Jasonette_iOS.debug.dylib           0x00000001049c2111 $s9Jasonette16ActionDispatcherC7executeyyAA05JasonB0CYaFTQ1_ + 1
+	29  Jasonette_iOS.debug.dylib           0x0000000104b2944d $s9Jasonette0A9ViewModelC4loadyyYaFTQ3_ + 1
+	30  Jasonette_iOS.debug.dylib           0x0000000104b28175 $s9Jasonette0A9ViewModelC12loadIfNeededyyYaFyyYacfU_TQ0_ + 1
+	31  Jasonette_iOS.debug.dylib           0x0000000104b29e51 $s9Jasonette0A9ViewModelC12loadIfNeededyyYaFyyYacfU_TATQ0_ + 1
+	32  Jasonette_iOS.debug.dylib           0x0000000104946881 $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRTQ0_ + 1
+	33  Jasonette_iOS.debug.dylib           0x00000001049469dd $sxIeAgHr_xs5Error_pIegHrzo_s8SendableRzs5NeverORs_r0_lTRTATQ0_ + 1
+	34  libswift_Concurrency.dylib          0x00000002575f9d69 _ZL23completeTaskWithClosurePN5swift12AsyncContextEPNS_10SwiftErrorE + 1
+)
+libc++abi: terminating due to uncaught exception of type NSException
+com.bande-a-bonnot.jasonette: 83883
