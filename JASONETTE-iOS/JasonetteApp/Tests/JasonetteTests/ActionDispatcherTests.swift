@@ -337,50 +337,47 @@ final class ActionDispatcherTests: XCTestCase {
 
     // MARK: - $util.toast / $util.banner
 
-    func testUtilToastDisplaysAlertFallback() async {
-        let expectation = expectation(description: "toast fallback shown")
-        var receivedTitle: String?
-        dispatcher.setAlertHandler { title, _ in
-            receivedTitle = title
+    func testUtilToastShowsTransientToastNotification() async {
+        let expectation = expectation(description: "toast shown")
+        var receivedRequest: UtilityNotificationRequest?
+        dispatcher.setUtilityNotificationHandler { request in
+            receivedRequest = request
             expectation.fulfill()
         }
         let action = decodeAction([
             "type": "$util.toast",
-            "options": ["text": "Saved"]
+            "options": ["text": "Saved", "type": "success"]
         ])
 
         await dispatcher.execute(action)
 
         await fulfillment(of: [expectation], timeout: 1.0)
-        XCTAssertEqual(receivedTitle, "Saved")
+        XCTAssertEqual(receivedRequest, UtilityNotificationRequest(kind: .toast, title: "Saved", description: nil, styleType: "success"))
     }
 
-    func testUtilBannerDisplaysAlertFallback() async {
-        let expectation = expectation(description: "banner fallback shown")
-        var receivedTitle: String?
-        var receivedDescription: String?
-        dispatcher.setAlertHandler { title, description in
-            receivedTitle = title
-            receivedDescription = description
+    func testUtilBannerShowsTransientBannerNotification() async {
+        let expectation = expectation(description: "banner shown")
+        var receivedRequest: UtilityNotificationRequest?
+        dispatcher.setUtilityNotificationHandler { request in
+            receivedRequest = request
             expectation.fulfill()
         }
         let action = decodeAction([
             "type": "$util.banner",
-            "options": ["title": "Hello", "description": "World"]
+            "options": ["title": "Hello", "description": "World", "type": "info"]
         ])
 
         await dispatcher.execute(action)
 
         await fulfillment(of: [expectation], timeout: 1.0)
-        XCTAssertEqual(receivedTitle, "Hello")
-        XCTAssertEqual(receivedDescription, "World")
+        XCTAssertEqual(receivedRequest, UtilityNotificationRequest(kind: .banner, title: "Hello", description: "World", styleType: "info"))
     }
 
     func testTriggerPassesOptionsAsJasonPayloadToNamedAction() async {
         let expectation = expectation(description: "named banner rendered payload")
         var receivedTitle: String?
-        dispatcher.setAlertHandler { title, _ in
-            receivedTitle = title
+        dispatcher.setUtilityNotificationHandler { request in
+            receivedTitle = request.title
             expectation.fulfill()
         }
         let namedAction = decodeAction([

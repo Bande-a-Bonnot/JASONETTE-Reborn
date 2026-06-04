@@ -14,12 +14,22 @@ public final class JasonetteViewModel: ObservableObject {
     @Published var loadState: LoadState = .idle
     @Published var renderedRoot: JasonRoot?
     @Published var alertConfig: AlertConfig?
+    @Published var transientNotificationConfig: TransientNotificationConfig?
+    private var transientNotificationDismissTask: Task<Void, Never>?
     private var activeTemplateName: String = "body"
 
     struct AlertConfig: Identifiable {
         let id = UUIDv7.generate()
         let title: String
         let description: String?
+    }
+
+    struct TransientNotificationConfig: Identifiable, Equatable {
+        let id = UUIDv7.generate()
+        let kind: UtilityNotificationKind
+        let title: String
+        let description: String?
+        let styleType: String?
     }
 
     private let url: URL?
@@ -91,6 +101,9 @@ public final class JasonetteViewModel: ObservableObject {
         }
         actionDispatcher.setAlertHandler { [weak self] title, description in
             self?.alertConfig = AlertConfig(title: title, description: description)
+        }
+        actionDispatcher.setUtilityNotificationHandler { [weak self] request in
+            self?.showTransientNotification(request)
         }
         actionDispatcher.setRenderHandler { [weak self] templateName in
             guard let self else { return }
@@ -182,6 +195,21 @@ public final class JasonetteViewModel: ObservableObject {
             }
         } else {
             renderedRoot = doc.jason
+        }
+    }
+
+    private func showTransientNotification(_ request: UtilityNotificationRequest) {
+        transientNotificationDismissTask?.cancel()
+        transientNotificationConfig = TransientNotificationConfig(
+            kind: request.kind,
+            title: request.title,
+            description: request.description,
+            styleType: request.styleType
+        )
+        transientNotificationDismissTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
+            guard !Task.isCancelled else { return }
+            await MainActor.run { self?.transientNotificationConfig = nil }
         }
     }
 

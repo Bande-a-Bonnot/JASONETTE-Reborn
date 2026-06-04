@@ -118,6 +118,73 @@ private struct SectionComponentPaddingModifier: ViewModifier {
     }
 }
 
+private struct TransientNotificationView: View {
+    let config: JasonetteViewModel.TransientNotificationConfig
+
+    var body: some View {
+        switch config.kind {
+        case .toast:
+            Text(config.title)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(foregroundColor)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(Capsule().fill(backgroundColor))
+                .shadow(radius: 8, y: 3)
+                .accessibilityLabel(config.title)
+        case .banner:
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: iconName)
+                    .font(.headline)
+                    .padding(.top, 1)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(config.title)
+                        .font(.subheadline.weight(.semibold))
+                    if let description = config.description, !description.isEmpty {
+                        Text(description)
+                            .font(.caption)
+                    }
+                }
+                Spacer(minLength: 0)
+            }
+            .foregroundStyle(foregroundColor)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(backgroundColor))
+            .shadow(radius: 10, y: 4)
+            .accessibilityElement(children: .combine)
+        }
+    }
+
+    private var normalizedType: String {
+        config.styleType?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() ?? ""
+    }
+
+    private var backgroundColor: Color {
+        switch normalizedType {
+        case "success": Color.green
+        case "error": Color.red
+        case "warning": Color.orange
+        case "dark": Color.black.opacity(0.88)
+        case "info": Color.blue
+        default: Color.primary.opacity(0.86)
+        }
+    }
+
+    private var foregroundColor: Color { .white }
+
+    private var iconName: String {
+        switch normalizedType {
+        case "success": "checkmark.circle.fill"
+        case "error": "xmark.octagon.fill"
+        case "warning": "exclamationmark.triangle.fill"
+        default: "info.circle.fill"
+        }
+    }
+}
+
 /// Main view that renders a complete Jasonette document.
 @MainActor
 struct JasonetteView: View {
@@ -179,6 +246,7 @@ struct JasonetteView: View {
                 dismissButton: .default(Text("OK"))
             )
         }
+        .overlay { transientNotificationOverlay }
         #if os(iOS)
         .sheet(item: $mediaCapturePresentation, onDismiss: mediaCaptureDismissed) { presentation in
             MediaCapturePicker(presentation: presentation, onComplete: completeMediaCapture)
@@ -204,6 +272,29 @@ struct JasonetteView: View {
         let viewModel = viewModel
         registerTabActionHandler(currentTabID) { [weak viewModel] action in
             viewModel?.handleAction(action)
+        }
+    }
+
+    @ViewBuilder
+    private var transientNotificationOverlay: some View {
+        if let config = viewModel.transientNotificationConfig {
+            VStack(spacing: 0) {
+                if config.kind == .banner {
+                    TransientNotificationView(config: config)
+                        .padding(.horizontal, 16)
+                        .padding(.top, 12)
+                    Spacer(minLength: 0)
+                } else {
+                    Spacer(minLength: 0)
+                    TransientNotificationView(config: config)
+                        .padding(.horizontal, 24)
+                        .padding(.bottom, 32)
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .allowsHitTesting(false)
+            .transition(.opacity.combined(with: .move(edge: config.kind == .banner ? .top : .bottom)))
+            .animation(.easeInOut(duration: 0.2), value: config.id)
         }
     }
 

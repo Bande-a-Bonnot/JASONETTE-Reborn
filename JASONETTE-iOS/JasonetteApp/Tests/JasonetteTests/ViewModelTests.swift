@@ -118,6 +118,41 @@ final class ViewModelTests: XCTestCase {
         XCTAssertEqual(alert.id.uuid.8 & 0xC0, 0x80)
     }
 
+    func testToastActionCreatesTransientNotificationNotAlert() async {
+        let doc = simpleDocument(actions: [
+            "$load": [
+                "type": "$util.toast",
+                "options": ["text": "Saved", "type": "success"]
+            ]
+        ])
+        let vm = JasonetteViewModel(document: doc)
+
+        await vm.load()
+
+        XCTAssertNil(vm.alertConfig)
+        XCTAssertEqual(vm.transientNotificationConfig?.kind, .toast)
+        XCTAssertEqual(vm.transientNotificationConfig?.title, "Saved")
+        XCTAssertEqual(vm.transientNotificationConfig?.styleType, "success")
+    }
+
+    func testBannerActionCreatesTransientNotificationNotAlert() async {
+        let doc = simpleDocument(actions: [
+            "$load": [
+                "type": "$util.banner",
+                "options": ["title": "Hello", "description": "World", "type": "info"]
+            ]
+        ])
+        let vm = JasonetteViewModel(document: doc)
+
+        await vm.load()
+
+        XCTAssertNil(vm.alertConfig)
+        XCTAssertEqual(vm.transientNotificationConfig?.kind, .banner)
+        XCTAssertEqual(vm.transientNotificationConfig?.title, "Hello")
+        XCTAssertEqual(vm.transientNotificationConfig?.description, "World")
+        XCTAssertEqual(vm.transientNotificationConfig?.styleType, "info")
+    }
+
     // MARK: - Render fallback
 
     func testRenderFallsBackToRawDocumentWithoutTemplates() async {

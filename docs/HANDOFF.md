@@ -1,6 +1,6 @@
 # Agent Handoff Document
 
-Last updated: 2026-06-03
+Last updated: 2026-06-04
 
 **Update this file before context compaction and at the end of significant sessions.**
 
@@ -8,7 +8,7 @@ Last updated: 2026-06-03
 
 ### Test Suite
 
-- iOS: 545 tests, 0 failures (verified 2026-06-03 after `$util.addressbook` support; `swift build` succeeded; generic iOS Simulator `xcodebuild` build succeeded); direct-entry iPhone 17 Pro simulator QA for network Eliza and textarea fixtures succeeded 2026-05-31, though `agent-device` attach/snapshot timed out
+- iOS: 547 tests, 0 failures (verified 2026-06-04 after transient `$util.toast`/`$util.banner` UI; `swift build` succeeded); generic iOS Simulator `xcodebuild` build succeeded 2026-06-03; direct-entry iPhone 17 Pro simulator QA for action screens completed 2026-06-03 with findings in `docs/qa/2026-06-03-ios-action-screen-qa.md`
 - Android CI: `pull_request` Android job ran/passed on PR #21, non-Android-change PR #22, and follow-up PR #23; Kotlin JSON primitive accessor compile failures fixed by squash `92e65dd`; oversized plain-integer JSON parsing aligned between Android test helper and production renderer in `c3f4f8f`; decimal/exponent policy is now explicitly documented as `Double` and centralized in Android `JsonValueConverter` (local Gradle verification blocked by missing Java runtime on 2026-05-26; limitation and CI fallback documented in `JASONETTE-Android/JasonetteApp/README.md`)
 - Run iOS: `cd JASONETTE-iOS/JasonetteApp && swift test`
 - Build iOS: `swift build` (<1s)
@@ -34,9 +34,9 @@ label, image, button, textfield, textarea, slider, switch, space, html (`WKWebVi
 
 ### Actions
 
-| Working / user-visible | Payload-only / no UI | Recognized fallback alert |
-|------------------------|----------------------|---------------------------|
-| `$set`, `$cache.set`, `$cache.reset`, `$flush`, `$render`, `$reload`, `$href`, `$back`, `$close`, `$network.request`, `$lambda`/`trigger`, `$util.alert`, `$util.toast`, `$util.banner`, `$util.picker`, `$util.datepicker`, `$timer.start`, `$timer.stop`, `$audio.play`, `$geo.get`, `$media.camera`, `$media.picker`, `$media.play`, `$snapshot`, `$util.share`, `$util.addressbook`, `$log` | `$get`, `$cache.get`, `$script.include` | `$vision.scan` |
+| Working / user-visible | Payload-only / no UI | Recognized fallback alert | Known QA issue |
+|------------------------|----------------------|---------------------------|----------------|
+| `$set`, `$cache.set`, `$cache.reset`, `$flush`, `$render`, `$reload`, `$href`, `$back`, `$close`, `$network.request`, `$lambda`/`trigger`, `$util.alert`, `$util.toast`, `$util.banner`, `$util.picker`, `$util.datepicker`, `$timer.start`, `$timer.stop`, `$audio.play`, `$media.camera`, `$media.picker`, `$media.play`, `$snapshot`, `$util.share`, `$log` | `$get`, `$cache.get`, `$script.include` | `$vision.scan` | `$util.addressbook` crashes in simulator QA after Contacts permission; `$geo.get` permission appears but direct fixture did not visibly render success |
 
 ### Rendering Pipeline
 
@@ -58,7 +58,7 @@ See `docs/plans/2026-03-28-fix-ios-components-actions-audit-plan.md` for the ful
 
 ### Phase B — Missing Native Actions
 
-Native/system UI implementation remains for `$vision.scan`. `$util.addressbook` now requests contacts through `CNContactStore`, returns legacy-compatible contact payload arrays under `$jason`, and routes permission/native failures into `error` branches. `$media.play` resolves/allowlists authored video URLs and presents native `AVPlayerViewController` playback in an iOS sheet. `$snapshot` captures the current iOS key window as PNG image data, stores base64 image payload under `$jason.data`, and can chain directly into `$util.share`. `$media.camera` now presents native camera capture on iOS with a camera authorization preflight and a Simulator photo-library fallback; `$media.picker` presents the photo library path; both return image base64 or captured video `file_url` payloads into success chains. `$util.share` now presents the native share sheet for text, URL, image-data, and file-URL items. The iOS renderer recognizes the Jasonpedia Action-screen variants and shows fallback alerts for unsupported native UI paths instead of silently doing nothing. `$geo.get` uses CoreLocation with a when-in-use permission request and routes denial/failure into the action `error` branch.
+Native/system UI implementation remains for `$vision.scan`. `$util.addressbook` requests contacts through `CNContactStore`, returns legacy-compatible contact payload arrays under `$jason`, and routes permission/native failures into `error` branches, but 2026-06-03 simulator QA found a Contacts crash from missing formatter keys; see `todos/056`. `$geo.get` uses CoreLocation with a when-in-use permission request and routes denial/failure into the action `error` branch, but direct-fixture QA did not visibly render the success path; see `todos/057`. `$media.play` resolves/allowlists authored video URLs and presents native `AVPlayerViewController` playback in an iOS sheet. `$snapshot` captures the current iOS key window as PNG image data, stores base64 image payload under `$jason.data`, and can chain directly into `$util.share`. `$media.camera` now presents native camera capture on iOS with a camera authorization preflight and a Simulator photo-library fallback; `$media.picker` presents the photo library path; both return image base64 or captured video `file_url` payloads into success chains. `$util.share` now presents the native share sheet for text, URL, image-data, and file-URL items. The iOS renderer recognizes the Jasonpedia Action-screen variants and shows fallback alerts for unsupported native UI paths instead of silently doing nothing, except the vision direct fixture needs follow-up; see `todos/058`.
 
 ### Phase C — Component Fixes
 
@@ -73,15 +73,17 @@ Tab navigation rewrite is on `main` (PR #20, plan at `docs/plans/tab-navigation-
 ### Open Todos
 
 P1:
-- none currently tracked as open
+- `todos/056` — fix iOS `$util.addressbook` Contacts crash after permission (`CNPropertyNotFetchedException` from unrequested formatter keys)
 
 P2:
-- none currently tracked as open
+- `todos/057` — investigate iOS `$geo.get` success rendering in the Jasonpedia direct fixture
 
 P3:
-- none currently tracked as open
+- `todos/058` — verify iOS `$vision.scan` fallback is user-visible from the direct fixture
 
 Completed this session:
+- `todos/055` — replaced `$util.toast`/`$util.banner` alert fallbacks with transient non-blocking SwiftUI notifications: toasts render as bottom capsule overlays, banners render as top full-width card overlays, authored `type` controls basic color/icon styling, and notifications auto-dismiss after ~2 seconds. Added ActionDispatcher and ViewModel coverage proving toast/banner route through the notification path instead of modal alerts. Verification: targeted utility-notification tests (7 tests); full `swift test` (547 tests); `swift build`; `npm run lint:md`. Marked todo complete.
+- Delegated iOS action-screen QA — `pi`/Codex QA pass on iPhone 17 Pro/iOS 26.2 at commit `619ff16` wrote `docs/qa/2026-06-03-ios-action-screen-qa.md` with artifacts under `docs/qa/artifacts/2026-06-03-ios-action-screen-qa/`. Confirmed media picker/camera Simulator fallback share flows and snapshot/share; found addressbook crash after Contacts permission (`CNPropertyNotFetchedException` from missing formatter keys), geo permission without visible success rendering, and vision direct fixture lacking visible fallback.
 - `todos/054` — implemented iOS `$util.addressbook`: `ActionDispatcher` now has an injectable address book handler, stores successful contact arrays under `$jason`, returns the contacts as the success-chain payload, and routes permission/native failures into `error` branches. `JasonetteView` installs an iOS native handler backed by `CNContactStore`, filters to contacts with phone numbers, and returns legacy-compatible `name`, `phone: [{type,text}]`, and `email` payloads. Added `NSContactsUsageDescription` to the iOS Tuist Info.plist settings. Verification: red targeted address-book tests first; `swift test --filter ActionDispatcherTests/testAddressBook` (3 tests); `swift test --filter ActionDispatcherTests` (62 tests); full `swift test` (545 tests); `swift build`; generic iOS Simulator `xcodebuild` build; `npm run lint:md`; committed as `06c94ed` and pushed to `origin/main` on 2026-06-03. Marked todo complete.
 - `todos/053` — implemented iOS `$media.play`: `ActionDispatcher` now has an injectable media playback handler, resolves authored `options.url` against the current document URL, applies the post-resolution `http`/`https` allowlist, invokes native playback, and routes blocked/failed playback into `error` branches. `JasonetteView` installs an iOS native handler backed by `AVPlayerViewController` in a SwiftUI sheet that starts playback automatically and resumes success chaining when dismissed. Verification: red targeted media-play tests first; `swift test --filter ActionDispatcherTests/testMediaPlay` (3 tests); `swift test --filter ActionDispatcherTests` (59 tests); full `swift test` (542 tests); `swift build`; `npm run lint:md`; GitHub Actions `CI` run `26845022780` and Pages run `26845017495` passed for pushed commit `df1661d`. Marked todo complete.
 - `todos/052` — implemented iOS `$snapshot`: `ActionDispatcher` now has an injectable snapshot handler, stores a base64 PNG image payload (`data`, `media_type: image`, `content_type: image/png`) in local state and `$jason`, propagates the payload through success chains such as `$util.share`, and routes capture failures into `error` branches. `JasonetteView` installs an iOS native handler that captures the current key window with `UIGraphicsImageRenderer` and `drawHierarchy(in:afterScreenUpdates:)`. Verification: red targeted snapshot tests first; `swift test --filter ActionDispatcherTests/testSnapshot` (3 tests); `swift test --filter ActionDispatcherTests` (56 tests); full `swift test` (539 tests); `swift build`; `npm run lint:md`. Marked todo complete.

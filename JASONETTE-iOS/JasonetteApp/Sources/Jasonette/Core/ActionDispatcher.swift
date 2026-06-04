@@ -168,6 +168,18 @@ struct SnapshotResult: Equatable {
     let contentType: String
 }
 
+enum UtilityNotificationKind: Equatable {
+    case toast
+    case banner
+}
+
+struct UtilityNotificationRequest: Equatable {
+    let kind: UtilityNotificationKind
+    let title: String
+    let description: String?
+    let styleType: String?
+}
+
 /// Executes Jasonette actions with success/error chaining.
 @MainActor
 public final class ActionDispatcher: ObservableObject {
@@ -175,6 +187,7 @@ public final class ActionDispatcher: ObservableObject {
     private var navigationHandler: ((JasonHref) -> Void)?
     private var reloadHandler: (() -> Void)?
     private var alertHandler: ((String, String?) -> Void)?
+    private var utilityNotificationHandler: ((UtilityNotificationRequest) -> Void)?
     private var renderHandler: ((String?) -> Void)?
     private var actionResolver: ((String) -> JasonAction?)?
     private var audioPlayHandler: ((URL) -> Void)?
@@ -214,6 +227,10 @@ public final class ActionDispatcher: ObservableObject {
 
     public func setAlertHandler(_ handler: @escaping (String, String?) -> Void) {
         self.alertHandler = handler
+    }
+
+    func setUtilityNotificationHandler(_ handler: @escaping (UtilityNotificationRequest) -> Void) {
+        self.utilityNotificationHandler = handler
     }
 
     public func setRenderHandler(_ handler: @escaping (String?) -> Void) {
@@ -368,13 +385,15 @@ public final class ActionDispatcher: ObservableObject {
             let text = renderedString(options["text"], payload: payload)
                 ?? renderedString(options["title"], payload: payload)
                 ?? "Done"
-            alertHandler?(text, nil)
+            showUtilityNotification(.toast, title: text, description: nil, styleType: options["type"]?.string)
             return payload
 
         case "$util.banner":
-            let title = renderedString(options["title"], payload: payload) ?? "Done"
+            let title = renderedString(options["title"], payload: payload)
+                ?? renderedString(options["text"], payload: payload)
+                ?? "Done"
             let description = renderedString(options["description"], payload: payload)
-            alertHandler?(title, description)
+            showUtilityNotification(.banner, title: title, description: description, styleType: options["type"]?.string)
             return payload
 
         case "$util.picker":
@@ -464,6 +483,25 @@ public final class ActionDispatcher: ObservableObject {
         let rendered = TemplateEngine.render(value.unwrapped, context: actionContext(payload: payload))
         if let string = rendered as? String { return string }
         return "\(rendered)"
+    }
+
+    private func showUtilityNotification(
+        _ kind: UtilityNotificationKind,
+        title: String,
+        description: String?,
+        styleType: String?
+    ) {
+        let request = UtilityNotificationRequest(
+            kind: kind,
+            title: title,
+            description: description,
+            styleType: styleType
+        )
+        if let utilityNotificationHandler {
+            utilityNotificationHandler(request)
+        } else {
+            alertHandler?(title, description)
+        }
     }
 
     private func actionContext(payload: Any?) -> [String: Any] {
