@@ -289,20 +289,13 @@ extension JasonetteView {
             throw ActionDispatcher.ActionError.addressBookPermissionDenied
         }
 
-        let keys: [CNKeyDescriptor] = [
-            CNContactGivenNameKey as CNKeyDescriptor,
-            CNContactFamilyNameKey as CNKeyDescriptor,
-            CNContactOrganizationNameKey as CNKeyDescriptor,
-            CNContactPhoneNumbersKey as CNKeyDescriptor,
-            CNContactEmailAddressesKey as CNKeyDescriptor
-        ]
-        let request = CNContactFetchRequest(keysToFetch: keys)
+        let request = CNContactFetchRequest(keysToFetch: AddressBookContactPayloadBuilder.keysToFetch)
         request.sortOrder = .givenName
 
         var contacts: [[String: Any]] = []
         try store.enumerateContacts(with: request) { contact, _ in
             guard !contact.phoneNumbers.isEmpty else { return }
-            contacts.append(addressBookPayload(for: contact))
+            contacts.append(AddressBookContactPayloadBuilder.payload(for: contact))
         }
         return contacts
     }
@@ -317,29 +310,6 @@ extension JasonetteView {
                 }
             }
         }
-    }
-
-    private func addressBookPayload(for contact: CNContact) -> [String: Any] {
-        [
-            "name": contactDisplayName(contact),
-            "phone": contact.phoneNumbers.map { labeledValue in
-                [
-                    "type": labeledValue.label.map(CNLabeledValue<CNPhoneNumber>.localizedString(forLabel:)) ?? "",
-                    "text": labeledValue.value.stringValue
-                ]
-            },
-            "email": contact.emailAddresses.map { String($0.value) }
-        ]
-    }
-
-    private func contactDisplayName(_ contact: CNContact) -> String {
-        if let formatted = CNContactFormatter.string(from: contact, style: .fullName), !formatted.isEmpty {
-            return formatted
-        }
-        if !contact.organizationName.isEmpty {
-            return contact.organizationName
-        }
-        return "Untitled"
     }
 
     func shareDismissed() {
