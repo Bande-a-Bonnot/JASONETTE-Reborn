@@ -433,6 +433,46 @@ final class ActionDispatcherTests: XCTestCase {
         XCTAssertEqual(stateManager.get()["geo_denied"] as? Bool, true)
     }
 
+    func testGeoGetPayloadFlowsIntoRenderSuccessAsJason() async {
+        let provider = StubGeolocationProvider(result: .success("12.34,56.78"))
+        dispatcher.setGeolocationProvider(provider)
+        let expectation = expectation(description: "render handler called")
+        dispatcher.setRenderHandler { template in
+            XCTAssertEqual(template, "coord")
+            expectation.fulfill()
+        }
+        let action = decodeAction([
+            "type": "$geo.get",
+            "success": [
+                "type": "$render",
+                "options": ["template": "coord"]
+            ]
+        ])
+
+        await dispatcher.execute(action)
+
+        await fulfillment(of: [expectation], timeout: 1.0)
+        let jason = stateManager.get()["$jason"] as? [String: Any]
+        XCTAssertEqual(jason?["coord"] as? String, "12.34,56.78")
+    }
+
+    func testGeoGetDenialWithoutErrorBranchShowsFallbackAlert() async {
+        let provider = StubGeolocationProvider(result: .failure(ActionDispatcher.ActionError.locationDenied))
+        dispatcher.setGeolocationProvider(provider)
+        let expectation = expectation(description: "fallback alert shown")
+        dispatcher.setAlertHandler { title, description in
+            XCTAssertEqual(title, "Action failed")
+            XCTAssertEqual(description, "Location permission was denied.")
+            expectation.fulfill()
+        }
+        let action = decodeAction(["type": "$geo.get"])
+
+        await dispatcher.execute(action)
+
+        await fulfillment(of: [expectation], timeout: 1.0)
+        XCTAssertEqual(provider.requestCount, 1)
+    }
+
     // MARK: - $media.camera / $util.share
 
     func testMediaCameraRequestsPhotoCaptureAndStoresPayload() async {

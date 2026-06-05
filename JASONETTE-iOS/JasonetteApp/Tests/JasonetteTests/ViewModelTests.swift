@@ -45,6 +45,20 @@ final class ViewModelTests: XCTestCase {
         ])
     }
 
+    private final class StubGeolocationProvider: GeolocationProviding {
+        var result: Result<String, Error>
+        private(set) var requestCount = 0
+
+        init(result: Result<String, Error>) {
+            self.result = result
+        }
+
+        func currentCoordinate() async throws -> String {
+            requestCount += 1
+            return try result.get()
+        }
+    }
+
     // MARK: - Load state transitions
 
     func testLoadIfNeededTransitionsToLoaded() async {
@@ -524,6 +538,27 @@ final class ViewModelTests: XCTestCase {
         XCTAssertTrue(ComponentView.knownComponentTypes.contains("html"))
         XCTAssertEqual(htmlComponent.css, "img{width: 100%;} p{font-family: Helvetica; font-size: 14px;}")
         XCTAssertTrue(htmlComponent.text?.contains("Continue reading") == true)
+    }
+
+    func testJasonpediaGeoFixtureRendersCoordinateAndMapFromGeoPayload() async throws {
+        let vm = JasonetteViewModel(document: try loadJasonpediaDocument("Jasonpedia/action/geo/index.json"))
+        let provider = StubGeolocationProvider(result: .success("37.3318,-122.0312"))
+        vm.actionDispatcher.setGeolocationProvider(provider)
+        await vm.load()
+
+        XCTAssertEqual(vm.loadState, .loaded)
+        let displayAction = try XCTUnwrap(vm.renderedRoot?.body?.layers?.first?.action)
+        await vm.actionDispatcher.execute(displayAction)
+        let coordLabel = try XCTUnwrap(vm.renderedRoot?.body?.sections?.first?.items?.first)
+        XCTAssertEqual(coordLabel.type, "label")
+        XCTAssertEqual(coordLabel.text, "37.3318,-122.0312")
+
+        let mapAction = try XCTUnwrap(vm.renderedRoot?.body?.layers?.last?.action)
+        await vm.actionDispatcher.execute(mapAction)
+        let map = try XCTUnwrap(vm.renderedRoot?.body?.sections?.first?.items?.first)
+        XCTAssertEqual(map.type, "map")
+        XCTAssertEqual(map.region?.coord, "37.3318,-122.0312")
+        XCTAssertEqual(provider.requestCount, 2)
     }
 
     func testJasonpediaMapComponentFixtureSelectsMapRendererPath() async throws {

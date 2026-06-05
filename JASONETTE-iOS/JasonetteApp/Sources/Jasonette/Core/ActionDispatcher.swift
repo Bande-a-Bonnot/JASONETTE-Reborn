@@ -292,8 +292,14 @@ public final class ActionDispatcher: ObservableObject {
             }
             return chainedPayload
         } catch {
+            let errorActions = continuationActions(action.errorActions, fallback: action.error)
+            guard !errorActions.isEmpty else {
+                alertHandler?("Action failed", error.localizedDescription)
+                return payload
+            }
+
             var chainedPayload = payload
-            for errorAction in continuationActions(action.errorActions, fallback: action.error) {
+            for errorAction in errorActions {
                 chainedPayload = await execute(errorAction, baseURL: baseURL, payload: chainedPayload) ?? chainedPayload
             }
             return chainedPayload
@@ -335,12 +341,13 @@ public final class ActionDispatcher: ObservableObject {
 
         // Render
         case "$render":
-            if let data = options["data"]?.unwrapped {
-                stateManager.set(["$jason": data])
+            let renderPayload = options["data"]?.unwrapped ?? payload
+            if let renderPayload {
+                stateManager.set(["$jason": renderPayload])
             }
             let templateName = options["template"]?.string
             renderHandler?(templateName)
-            return options["data"]?.unwrapped ?? payload
+            return renderPayload
 
         case "$reload":
             reloadHandler?()
