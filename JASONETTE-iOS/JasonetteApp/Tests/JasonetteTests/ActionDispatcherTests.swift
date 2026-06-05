@@ -473,6 +473,22 @@ final class ActionDispatcherTests: XCTestCase {
         XCTAssertEqual(provider.requestCount, 1)
     }
 
+    // MARK: - $vision.scan
+
+    func testVisionScanShowsRecognizedFallbackAlert() async {
+        let expectation = expectation(description: "vision fallback alert shown")
+        dispatcher.setAlertHandler { title, description in
+            XCTAssertEqual(title, "Not implemented yet")
+            XCTAssertEqual(description, "$vision.scan is recognized, but this iOS renderer does not implement the native UI yet.")
+            expectation.fulfill()
+        }
+        let action = decodeAction(["type": "$vision.scan"])
+
+        await dispatcher.execute(action)
+
+        await fulfillment(of: [expectation], timeout: 1.0)
+    }
+
     // MARK: - $media.camera / $util.share
 
     func testMediaCameraRequestsPhotoCaptureAndStoresPayload() async {

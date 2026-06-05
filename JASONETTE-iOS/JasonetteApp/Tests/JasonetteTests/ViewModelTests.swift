@@ -561,6 +561,22 @@ final class ViewModelTests: XCTestCase {
         XCTAssertEqual(provider.requestCount, 2)
     }
 
+    func testJasonpediaVisionFixtureShowsUnsupportedCameraBackgroundFallback() async throws {
+        let vm = JasonetteViewModel(document: try loadJasonpediaDocument("Jasonpedia/action/vision/index.json"))
+        await vm.load()
+
+        XCTAssertEqual(vm.loadState, .loaded)
+        let body = try XCTUnwrap(vm.renderedRoot?.body)
+        XCTAssertEqual(body.background?.dictionary?["type"]?.string, "camera")
+        let label = try XCTUnwrap(body.sections?.first?.items?.first?.components?.first)
+        XCTAssertEqual(label.text, "Scanning...")
+        XCTAssertEqual(vm.alertConfig?.title, "Not implemented yet")
+        XCTAssertEqual(
+            vm.alertConfig?.description,
+            "Camera-backed vision scanning is recognized, but this iOS renderer does not implement the live camera background or barcode scanner yet."
+        )
+    }
+
     func testJasonpediaMapComponentFixtureSelectsMapRendererPath() async throws {
         let vm = JasonetteViewModel(document: try loadJasonpediaDocument("Jasonpedia/view/component/map/index.json"))
         await vm.load()
