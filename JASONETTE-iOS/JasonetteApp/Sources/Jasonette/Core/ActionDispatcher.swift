@@ -168,6 +168,10 @@ struct SnapshotResult: Equatable {
     let contentType: String
 }
 
+struct VisionScanRequest: Equatable {
+    let kind: String?
+}
+
 enum UtilityNotificationKind: Equatable {
     case toast
     case banner
@@ -196,6 +200,7 @@ public final class ActionDispatcher: ObservableObject {
     private var shareHandler: ((ShareRequest) async throws -> Void)?
     private var snapshotHandler: (() async throws -> SnapshotResult)?
     private var addressBookHandler: (() async throws -> [[String: Any]])?
+    private var visionScanHandler: ((VisionScanRequest) async throws -> [String: Any])?
     private var geolocationProvider: GeolocationProviding = CoreLocationGeolocationProvider()
     private var audioPlayer: AVPlayer?
     private var timers: [String: Timer] = [:]
@@ -263,6 +268,10 @@ public final class ActionDispatcher: ObservableObject {
 
     func setAddressBookHandler(_ handler: @escaping () async throws -> [[String: Any]]) {
         self.addressBookHandler = handler
+    }
+
+    func setVisionScanHandler(_ handler: @escaping (VisionScanRequest) async throws -> [String: Any]) {
+        self.visionScanHandler = handler
     }
 
     func setGeolocationProvider(_ provider: GeolocationProviding) {
@@ -456,8 +465,11 @@ public final class ActionDispatcher: ObservableObject {
             return try await addressBook()
 
         case "$vision.scan":
-            alertHandler?("Not implemented yet", "\(type) is recognized, but this iOS renderer does not implement the native UI yet.")
-            return payload
+            guard visionScanHandler != nil else {
+                alertHandler?("Not implemented yet", "\(type) is recognized, but this platform cannot present the native scanner UI.")
+                return payload
+            }
+            return try await visionScan(visionScanRequest(from: options))
 
         case "$script.include":
             return payload
@@ -726,6 +738,20 @@ public final class ActionDispatcher: ObservableObject {
         }
     }
 
+    private func visionScanRequest(from options: [String: AnyCodable]) -> VisionScanRequest {
+        VisionScanRequest(kind: options["type"]?.string?.lowercased())
+    }
+
+    private func visionScan(_ request: VisionScanRequest) async throws -> Any? {
+        guard let visionScanHandler else {
+            throw ActionError.visionScanUnavailable
+        }
+        let result = try await visionScanHandler(request)
+        stateManager.set(result)
+        stateManager.set(["$jason": result])
+        return result
+    }
+
     private func truthy(_ value: AnyCodable?) -> Bool {
         guard let value else { return false }
         if let bool = value.bool { return bool }
@@ -878,6 +904,9 @@ public final class ActionDispatcher: ObservableObject {
         case snapshotUnavailable
         case addressBookUnavailable
         case addressBookPermissionDenied
+        case visionScanUnavailable
+        case visionScanPermissionDenied
+        case visionScanCancelled
     }
 }
 
@@ -914,6 +943,12 @@ extension ActionDispatcher.ActionError: LocalizedError {
             return "Address book access is unavailable on this device."
         case .addressBookPermissionDenied:
             return "Contacts permission was denied. Enable contacts access in Settings to use this Jasonette action."
+        case .visionScanUnavailable:
+            return "Barcode scanning is unavailable on this device."
+        case .visionScanPermissionDenied:
+            return "Camera permission was denied. Enable camera access in Settings to scan codes."
+        case .visionScanCancelled:
+            return "Barcode scanning was cancelled."
         }
     }
 }

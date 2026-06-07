@@ -107,6 +107,20 @@ final class ActionDispatcherTests: XCTestCase {
         }
     }
 
+    private final class StubVisionScanProvider {
+        var result: Result<[String: Any], Error>
+        private(set) var requests: [VisionScanRequest] = []
+
+        init(result: Result<[String: Any], Error>) {
+            self.result = result
+        }
+
+        func scan(_ request: VisionScanRequest) async throws -> [String: Any] {
+            requests.append(request)
+            return try result.get()
+        }
+    }
+
     // MARK: - $set
 
     func testSetUpdatesLocalState() async {
@@ -475,11 +489,75 @@ final class ActionDispatcherTests: XCTestCase {
 
     // MARK: - $vision.scan
 
-    func testVisionScanShowsRecognizedFallbackAlert() async {
+    func testVisionScanRequestsQRCodeAndStoresPayload() async {
+        let provider = StubVisionScanProvider(result: .success([
+            "content": "https://example.com/scanned",
+            "type": "qrcode"
+        ]))
+        dispatcher.setVisionScanHandler(provider.scan)
+        let action = decodeAction([
+            "type": "$vision.scan",
+            "options": ["type": "qrcode"]
+        ])
+
+        await dispatcher.execute(action)
+
+        XCTAssertEqual(provider.requests, [VisionScanRequest(kind: "qrcode")])
+        XCTAssertEqual(stateManager.get()["content"] as? String, "https://example.com/scanned")
+        let jason = stateManager.get()["$jason"] as? [String: Any]
+        XCTAssertEqual(jason?["content"] as? String, "https://example.com/scanned")
+    }
+
+    func testVisionScanPayloadFlowsIntoSuccessAction() async {
+        let provider = StubVisionScanProvider(result: .success(["content": "scanned-value"]))
+        dispatcher.setVisionScanHandler(provider.scan)
+        let expectation = expectation(description: "success alert used scan payload")
+        var receivedDescription: String?
+        dispatcher.setAlertHandler { _, description in
+            receivedDescription = description
+            expectation.fulfill()
+        }
+        let action = decodeAction([
+            "type": "$vision.scan",
+            "success": [
+                "type": "$util.alert",
+                "options": ["title": "Scan", "description": "{{$jason.content}}"]
+            ]
+        ])
+
+        await dispatcher.execute(action)
+
+        await fulfillment(of: [expectation], timeout: 1.0)
+        XCTAssertEqual(receivedDescription, "scanned-value")
+    }
+
+    func testVisionScanFailureRunsErrorBranch() async {
+        let provider = StubVisionScanProvider(result: .failure(ActionDispatcher.ActionError.visionScanPermissionDenied))
+        dispatcher.setVisionScanHandler(provider.scan)
+        let expectation = expectation(description: "error branch ran")
+        dispatcher.setAlertHandler { title, description in
+            XCTAssertEqual(title, "Scan failed")
+            XCTAssertEqual(description, "fallback")
+            expectation.fulfill()
+        }
+        let action = decodeAction([
+            "type": "$vision.scan",
+            "error": [
+                "type": "$util.alert",
+                "options": ["title": "Scan failed", "description": "fallback"]
+            ]
+        ])
+
+        await dispatcher.execute(action)
+
+        await fulfillment(of: [expectation], timeout: 1.0)
+    }
+
+    func testVisionScanWithoutNativeHandlerShowsRecognizedFallbackAlert() async {
         let expectation = expectation(description: "vision fallback alert shown")
         dispatcher.setAlertHandler { title, description in
             XCTAssertEqual(title, "Not implemented yet")
-            XCTAssertEqual(description, "$vision.scan is recognized, but this iOS renderer does not implement the native UI yet.")
+            XCTAssertEqual(description, "$vision.scan is recognized, but this platform cannot present the native scanner UI.")
             expectation.fulfill()
         }
         let action = decodeAction(["type": "$vision.scan"])

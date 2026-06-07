@@ -59,6 +59,20 @@ final class ViewModelTests: XCTestCase {
         }
     }
 
+    private final class StubVisionScanProvider {
+        var result: Result<[String: Any], Error>
+        private(set) var requests: [VisionScanRequest] = []
+
+        init(result: Result<[String: Any], Error>) {
+            self.result = result
+        }
+
+        func scan(_ request: VisionScanRequest) async throws -> [String: Any] {
+            requests.append(request)
+            return try result.get()
+        }
+    }
+
     // MARK: - Load state transitions
 
     func testLoadIfNeededTransitionsToLoaded() async {
@@ -561,7 +575,26 @@ final class ViewModelTests: XCTestCase {
         XCTAssertEqual(provider.requestCount, 2)
     }
 
-    func testJasonpediaVisionFixtureShowsUnsupportedCameraBackgroundFallback() async throws {
+    func testJasonpediaVisionFixtureStartsReadyActionAndRendersNativeScanPayload() async throws {
+        let vm = JasonetteViewModel(document: try loadJasonpediaDocument("Jasonpedia/action/vision/index.json"))
+        let provider = StubVisionScanProvider(result: .success([
+            "content": "https://example.com/scanned",
+            "type": "qrcode"
+        ]))
+        vm.actionDispatcher.setVisionScanHandler(provider.scan)
+
+        await vm.load()
+
+        XCTAssertEqual(vm.loadState, .loaded)
+        XCTAssertEqual(provider.requests, [VisionScanRequest(kind: nil)])
+        let body = try XCTUnwrap(vm.renderedRoot?.body)
+        XCTAssertEqual(body.background?.dictionary?["type"]?.string, "camera")
+        let label = try XCTUnwrap(body.sections?.first?.items?.first?.components?.first)
+        XCTAssertEqual(label.text, "https://example.com/scanned")
+        XCTAssertNil(vm.alertConfig)
+    }
+
+    func testJasonpediaVisionFixtureShowsScannerFallbackWhenNativeHandlerIsUnavailable() async throws {
         let vm = JasonetteViewModel(document: try loadJasonpediaDocument("Jasonpedia/action/vision/index.json"))
         await vm.load()
 
@@ -573,7 +606,7 @@ final class ViewModelTests: XCTestCase {
         XCTAssertEqual(vm.alertConfig?.title, "Not implemented yet")
         XCTAssertEqual(
             vm.alertConfig?.description,
-            "Camera-backed vision scanning is recognized, but this iOS renderer does not implement the live camera background or barcode scanner yet."
+            "$vision.scan is recognized, but this platform cannot present the native scanner UI."
         )
     }
 

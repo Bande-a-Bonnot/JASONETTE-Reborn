@@ -196,6 +196,8 @@ struct JasonetteView: View {
     @State var mediaPlaybackContinuation: CheckedContinuation<Void, Error>?
     @State var sharePresentation: SharePresentation?
     @State var shareContinuation: CheckedContinuation<Void, Error>?
+    @State var visionScanPresentation: VisionScanPresentation?
+    @State var visionScanContinuation: CheckedContinuation<[String: Any], Error>?
     #endif
     @Environment(\.jasonetteIsInsideTabShell) private var isInsideTabShell
     @Environment(\.jasonetteCurrentTabID) private var currentTabID
@@ -256,6 +258,9 @@ struct JasonetteView: View {
         }
         .sheet(item: $sharePresentation, onDismiss: shareDismissed) { presentation in
             ShareSheet(presentation: presentation, onComplete: completeShare)
+        }
+        .sheet(item: $visionScanPresentation, onDismiss: visionScanDismissed) { presentation in
+            VisionScannerView(presentation: presentation, onComplete: completeVisionScan)
         }
         #endif
         .environmentObject(viewModel.stateManager)

@@ -22,6 +22,11 @@ struct SharePresentation: Identifiable {
     let request: ShareRequest
 }
 
+struct VisionScanPresentation: Identifiable {
+    let id = UUIDv7.generate()
+    let request: VisionScanRequest
+}
+
 struct MediaPlaybackPlayer: UIViewControllerRepresentable {
     let presentation: MediaPlaybackPresentation
 
@@ -111,6 +116,176 @@ struct MediaCapturePicker: UIViewControllerRepresentable {
     }
 }
 
+struct VisionScannerView: UIViewControllerRepresentable {
+    let presentation: VisionScanPresentation
+    let onComplete: (Result<[String: Any], Error>) -> Void
+
+    func makeUIViewController(context: Context) -> VisionScannerViewController {
+        VisionScannerViewController(request: presentation.request, onComplete: onComplete)
+    }
+
+    func updateUIViewController(_ uiViewController: VisionScannerViewController, context: Context) {}
+}
+
+final class VisionScannerViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate {
+    private let request: VisionScanRequest
+    private let onComplete: (Result<[String: Any], Error>) -> Void
+    private let session = AVCaptureSession()
+    private let sessionQueue = DispatchQueue(label: "app.jasonette.vision-scanner.session")
+    private var previewLayer: AVCaptureVideoPreviewLayer?
+    private var hasCompleted = false
+
+    init(request: VisionScanRequest, onComplete: @escaping (Result<[String: Any], Error>) -> Void) {
+        self.request = request
+        self.onComplete = onComplete
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = .black
+        setupCaptureSession()
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        sessionQueue.async { [session] in
+            guard !session.isRunning else { return }
+            session.startRunning()
+        }
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        sessionQueue.async { [session] in
+            guard session.isRunning else { return }
+            session.stopRunning()
+        }
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        previewLayer?.frame = view.bounds
+    }
+
+    private func setupCaptureSession() {
+        guard let device = AVCaptureDevice.default(for: .video) else {
+            complete(.failure(ActionDispatcher.ActionError.visionScanUnavailable))
+            return
+        }
+
+        do {
+            let input = try AVCaptureDeviceInput(device: device)
+            let output = AVCaptureMetadataOutput()
+
+            session.beginConfiguration()
+            guard session.canAddInput(input), session.canAddOutput(output) else {
+                session.commitConfiguration()
+                complete(.failure(ActionDispatcher.ActionError.visionScanUnavailable))
+                return
+            }
+            session.addInput(input)
+            session.addOutput(output)
+            output.setMetadataObjectsDelegate(self, queue: .main)
+
+            let metadataTypes = Self.metadataObjectTypes(for: request, availableTypes: output.availableMetadataObjectTypes)
+            guard !metadataTypes.isEmpty else {
+                session.commitConfiguration()
+                complete(.failure(ActionDispatcher.ActionError.visionScanUnavailable))
+                return
+            }
+            output.metadataObjectTypes = metadataTypes
+            session.commitConfiguration()
+
+            let layer = AVCaptureVideoPreviewLayer(session: session)
+            layer.videoGravity = .resizeAspectFill
+            layer.frame = view.bounds
+            previewLayer = layer
+            view.layer.insertSublayer(layer, at: 0)
+        } catch {
+            complete(.failure(error))
+        }
+    }
+
+    func metadataOutput(
+        _ output: AVCaptureMetadataOutput,
+        didOutput metadataObjects: [AVMetadataObject],
+        from connection: AVCaptureConnection
+    ) {
+        guard let object = metadataObjects.compactMap({ $0 as? AVMetadataMachineReadableCodeObject }).first,
+              let value = object.stringValue,
+              !value.isEmpty else { return }
+
+        complete(.success([
+            "content": value,
+            "type": Self.jasonetteType(for: object.type),
+            "raw_type": object.type.rawValue
+        ]))
+    }
+
+    private func complete(_ result: Result<[String: Any], Error>) {
+        guard !hasCompleted else { return }
+        hasCompleted = true
+        sessionQueue.async { [session] in
+            if session.isRunning { session.stopRunning() }
+        }
+        onComplete(result)
+    }
+
+    private static func metadataObjectTypes(
+        for request: VisionScanRequest,
+        availableTypes: [AVMetadataObject.ObjectType]
+    ) -> [AVMetadataObject.ObjectType] {
+        let requested: [AVMetadataObject.ObjectType]
+        switch request.kind {
+        case "qrcode", "qr", "qr_code":
+            requested = [.qr]
+        case "barcode", "bar_code", "1d":
+            requested = barcodeTypes.filter { $0 != .qr }
+        default:
+            requested = barcodeTypes
+        }
+        return requested.filter { availableTypes.contains($0) }
+    }
+
+    private static let barcodeTypes: [AVMetadataObject.ObjectType] = [
+        .qr,
+        .ean8,
+        .ean13,
+        .upce,
+        .code39,
+        .code39Mod43,
+        .code93,
+        .code128,
+        .pdf417,
+        .aztec,
+        .dataMatrix,
+        .interleaved2of5,
+        .itf14
+    ]
+
+    private static func jasonetteType(for type: AVMetadataObject.ObjectType) -> String {
+        switch type {
+        case .qr:
+            return "qrcode"
+        case .ean8, .ean13, .upce, .code39, .code39Mod43, .code93, .code128, .interleaved2of5, .itf14:
+            return "barcode"
+        case .pdf417:
+            return "pdf417"
+        case .aztec:
+            return "aztec"
+        case .dataMatrix:
+            return "datamatrix"
+        default:
+            return type.rawValue
+        }
+    }
+}
+
 struct ShareSheet: UIViewControllerRepresentable {
     let presentation: SharePresentation
     let onComplete: (Result<Void, Error>) -> Void
@@ -165,6 +340,9 @@ extension JasonetteView {
         }
         viewModel.actionDispatcher.setAddressBookHandler {
             try await requestAddressBook()
+        }
+        viewModel.actionDispatcher.setVisionScanHandler { request in
+            try await presentVisionScan(request)
         }
     }
 
@@ -252,6 +430,19 @@ extension JasonetteView {
         }
     }
 
+    func presentVisionScan(_ request: VisionScanRequest) async throws -> [String: Any] {
+        guard AVCaptureDevice.default(for: .video) != nil else {
+            throw ActionDispatcher.ActionError.visionScanUnavailable
+        }
+        guard await cameraAccessAllowed() else {
+            throw ActionDispatcher.ActionError.visionScanPermissionDenied
+        }
+        return try await withCheckedThrowingContinuation { continuation in
+            visionScanContinuation = continuation
+            visionScanPresentation = VisionScanPresentation(request: request)
+        }
+    }
+
     func captureWindowSnapshot() throws -> SnapshotResult {
         guard let windowScene = UIApplication.shared.connectedScenes
             .compactMap({ $0 as? UIWindowScene })
@@ -325,6 +516,24 @@ extension JasonetteView {
         switch result {
         case .success:
             continuation.resume()
+        case .failure(let error):
+            continuation.resume(throwing: error)
+        }
+    }
+
+    func visionScanDismissed() {
+        guard let continuation = visionScanContinuation else { return }
+        visionScanContinuation = nil
+        continuation.resume(throwing: ActionDispatcher.ActionError.visionScanCancelled)
+    }
+
+    func completeVisionScan(_ result: Result<[String: Any], Error>) {
+        guard let continuation = visionScanContinuation else { return }
+        visionScanContinuation = nil
+        visionScanPresentation = nil
+        switch result {
+        case .success(let payload):
+            continuation.resume(returning: payload)
         case .failure(let error):
             continuation.resume(throwing: error)
         }

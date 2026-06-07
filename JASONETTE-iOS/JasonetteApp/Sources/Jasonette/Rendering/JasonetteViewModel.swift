@@ -159,6 +159,12 @@ public final class JasonetteViewModel: ObservableObject {
                 // Re-render after $load modifies state
                 if let d = document { render(d) }
             }
+            if let renderedRoot,
+               renderedRoot.body?.background?.dictionary?["type"]?.string == "camera",
+               let readyAction = doc.jason.head?.actions?["$vision.ready"] {
+                await actionDispatcher.execute(readyAction)
+                if let d = document { render(d) }
+            }
             if let renderedRoot {
                 showUnsupportedCameraBackgroundAlertIfNeeded(renderedRoot)
             }
@@ -173,8 +179,9 @@ public final class JasonetteViewModel: ObservableObject {
     private func showUnsupportedCameraBackgroundAlertIfNeeded(_ root: JasonRoot) {
         guard root.body?.background?.dictionary?["type"]?.string == "camera" else { return }
 
-        let hasVisionLifecycle = root.head?.actions?["$vision.ready"] != nil
-            || root.head?.actions?["$vision.onscan"] != nil
+        guard root.head?.actions?["$vision.ready"] == nil else { return }
+
+        let hasVisionLifecycle = root.head?.actions?["$vision.onscan"] != nil
             || root.head?.actions?.values.contains { $0.type == "$vision.scan" } == true
         guard hasVisionLifecycle else { return }
 
@@ -185,7 +192,7 @@ public final class JasonetteViewModel: ObservableObject {
         unsupportedCameraBackgroundAlertSignature = signature
         alertConfig = AlertConfig(
             title: "Not implemented yet",
-            description: "Camera-backed vision scanning is recognized, but this iOS renderer does not implement the live camera background or barcode scanner yet."
+            description: "Camera-backed vision scanning is recognized, but this iOS renderer does not implement the live camera background yet."
         )
     }
 
