@@ -27,6 +27,16 @@ struct VisionScanPresentation: Identifiable {
     let request: VisionScanRequest
 }
 
+struct UtilityPickerPresentation: Identifiable {
+    let id = UUIDv7.generate()
+    let request: UtilityPickerRequest
+}
+
+struct DatePickerPresentation: Identifiable {
+    let id = UUIDv7.generate()
+    let request: DatePickerRequest
+}
+
 struct MediaPlaybackPlayer: UIViewControllerRepresentable {
     let presentation: MediaPlaybackPresentation
 
@@ -112,6 +122,72 @@ struct MediaCapturePicker: UIViewControllerRepresentable {
                 "media_type": "image",
                 "content_type": "image/jpeg"
             ]))
+        }
+    }
+}
+
+struct UtilityPickerSheet: View {
+    let presentation: UtilityPickerPresentation
+    let onComplete: (Result<Int, Error>) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            List(Array(presentation.request.items.enumerated()), id: \.offset) { index, item in
+                Button {
+                    onComplete(.success(index))
+                    dismiss()
+                } label: {
+                    Text(item.text)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+            .navigationTitle("Picker")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        onComplete(.failure(ActionDispatcher.ActionError.utilityPickerCancelled))
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+}
+
+struct JasonetteDatePickerSheet: View {
+    let presentation: DatePickerPresentation
+    let onComplete: (Result<DatePickerResult, Error>) -> Void
+    @Environment(\.dismiss) private var dismiss
+    @State private var selectedDate: Date
+
+    init(presentation: DatePickerPresentation, onComplete: @escaping (Result<DatePickerResult, Error>) -> Void) {
+        self.presentation = presentation
+        self.onComplete = onComplete
+        let timestamp = presentation.request.initialValue ?? Int(Date().timeIntervalSince1970)
+        _selectedDate = State(initialValue: Date(timeIntervalSince1970: TimeInterval(timestamp)))
+    }
+
+    var body: some View {
+        NavigationStack {
+            DatePicker("Date", selection: $selectedDate, displayedComponents: [.date, .hourAndMinute])
+                .datePickerStyle(.graphical)
+                .padding()
+                .navigationTitle("Select Date")
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel") {
+                            onComplete(.failure(ActionDispatcher.ActionError.datePickerCancelled))
+                            dismiss()
+                        }
+                    }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Done") {
+                            onComplete(.success(DatePickerResult(value: Int(selectedDate.timeIntervalSince1970))))
+                            dismiss()
+                        }
+                    }
+                }
         }
     }
 }
@@ -344,6 +420,12 @@ extension JasonetteView {
         viewModel.actionDispatcher.setVisionScanHandler { request in
             try await presentVisionScan(request)
         }
+        viewModel.actionDispatcher.setUtilityPickerHandler { request in
+            try await presentUtilityPicker(request)
+        }
+        viewModel.actionDispatcher.setDatePickerHandler { request in
+            try await presentDatePicker(request)
+        }
     }
 
     func requestMediaCapture(_ request: MediaCaptureRequest) async throws -> [String: Any] {
@@ -443,6 +525,20 @@ extension JasonetteView {
         }
     }
 
+    func presentUtilityPicker(_ request: UtilityPickerRequest) async throws -> Int {
+        try await withCheckedThrowingContinuation { continuation in
+            utilityPickerContinuation = continuation
+            utilityPickerPresentation = UtilityPickerPresentation(request: request)
+        }
+    }
+
+    func presentDatePicker(_ request: DatePickerRequest) async throws -> DatePickerResult {
+        try await withCheckedThrowingContinuation { continuation in
+            datePickerContinuation = continuation
+            datePickerPresentation = DatePickerPresentation(request: request)
+        }
+    }
+
     func captureWindowSnapshot() throws -> SnapshotResult {
         guard let windowScene = UIApplication.shared.connectedScenes
             .compactMap({ $0 as? UIWindowScene })
@@ -534,6 +630,42 @@ extension JasonetteView {
         switch result {
         case .success(let payload):
             continuation.resume(returning: payload)
+        case .failure(let error):
+            continuation.resume(throwing: error)
+        }
+    }
+
+    func utilityPickerDismissed() {
+        guard let continuation = utilityPickerContinuation else { return }
+        utilityPickerContinuation = nil
+        continuation.resume(throwing: ActionDispatcher.ActionError.utilityPickerCancelled)
+    }
+
+    func completeUtilityPicker(_ result: Result<Int, Error>) {
+        guard let continuation = utilityPickerContinuation else { return }
+        utilityPickerContinuation = nil
+        utilityPickerPresentation = nil
+        switch result {
+        case .success(let index):
+            continuation.resume(returning: index)
+        case .failure(let error):
+            continuation.resume(throwing: error)
+        }
+    }
+
+    func datePickerDismissed() {
+        guard let continuation = datePickerContinuation else { return }
+        datePickerContinuation = nil
+        continuation.resume(throwing: ActionDispatcher.ActionError.datePickerCancelled)
+    }
+
+    func completeDatePicker(_ result: Result<DatePickerResult, Error>) {
+        guard let continuation = datePickerContinuation else { return }
+        datePickerContinuation = nil
+        datePickerPresentation = nil
+        switch result {
+        case .success(let result):
+            continuation.resume(returning: result)
         case .failure(let error):
             continuation.resume(throwing: error)
         }

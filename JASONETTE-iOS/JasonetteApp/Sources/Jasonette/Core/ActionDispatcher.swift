@@ -172,6 +172,24 @@ struct VisionScanRequest: Equatable {
     let kind: String?
 }
 
+struct UtilityPickerRequest {
+    let items: [UtilityPickerItem]
+}
+
+struct UtilityPickerItem {
+    let text: String
+    let value: Any?
+    let action: JasonAction?
+}
+
+struct DatePickerRequest: Equatable {
+    let initialValue: Int?
+}
+
+struct DatePickerResult: Equatable {
+    let value: Int
+}
+
 enum UtilityNotificationKind: Equatable {
     case toast
     case banner
@@ -201,6 +219,8 @@ public final class ActionDispatcher: ObservableObject {
     private var snapshotHandler: (() async throws -> SnapshotResult)?
     private var addressBookHandler: (() async throws -> [[String: Any]])?
     private var visionScanHandler: ((VisionScanRequest) async throws -> [String: Any])?
+    private var utilityPickerHandler: ((UtilityPickerRequest) async throws -> Int)?
+    private var datePickerHandler: ((DatePickerRequest) async throws -> DatePickerResult)?
     private var geolocationProvider: GeolocationProviding = CoreLocationGeolocationProvider()
     private var audioPlayer: AVPlayer?
     private var timers: [String: Timer] = [:]
@@ -272,6 +292,14 @@ public final class ActionDispatcher: ObservableObject {
 
     func setVisionScanHandler(_ handler: @escaping (VisionScanRequest) async throws -> [String: Any]) {
         self.visionScanHandler = handler
+    }
+
+    func setUtilityPickerHandler(_ handler: @escaping (UtilityPickerRequest) async throws -> Int) {
+        self.utilityPickerHandler = handler
+    }
+
+    func setDatePickerHandler(_ handler: @escaping (DatePickerRequest) async throws -> DatePickerResult) {
+        self.datePickerHandler = handler
     }
 
     func setGeolocationProvider(_ provider: GeolocationProviding) {
@@ -413,19 +441,10 @@ public final class ActionDispatcher: ObservableObject {
             return payload
 
         case "$util.picker":
-            let items = options["items"]?.array?.compactMap { item -> String? in
-                guard let dictionary = item.dictionary else { return item.string }
-                return dictionary["text"]?.string ?? dictionary["title"]?.string ?? dictionary["value"]?.string
-            } ?? []
-            alertHandler?("Picker", items.isEmpty ? "No picker items supplied." : items.joined(separator: "\n"))
-            return payload
+            return try await utilityPicker(utilityPickerRequest(from: options), baseURL: baseURL, payload: payload)
 
         case "$util.datepicker":
-            let selected = Int(Date().timeIntervalSince1970)
-            let value: [String: Any] = ["value": selected]
-            stateManager.set(value)
-            alertHandler?("Date", Date(timeIntervalSince1970: TimeInterval(selected)).formatted())
-            return value
+            return try await datePicker(datePickerRequest(from: options))
 
         // Media
         case "$audio.play":
@@ -738,6 +757,71 @@ public final class ActionDispatcher: ObservableObject {
         }
     }
 
+    private func utilityPickerRequest(from options: [String: AnyCodable]) -> UtilityPickerRequest {
+        let items = options["items"]?.array?.map { item -> UtilityPickerItem in
+            if let dictionary = item.dictionary {
+                let text = dictionary["text"]?.string
+                    ?? dictionary["title"]?.string
+                    ?? dictionary["value"]?.string
+                    ?? "Item"
+                return UtilityPickerItem(
+                    text: text,
+                    value: dictionary["value"]?.unwrapped,
+                    action: actionFromOption(dictionary["action"])
+                )
+            }
+            let text = item.string ?? String(describing: item.unwrapped)
+            return UtilityPickerItem(text: text, value: item.unwrapped, action: nil)
+        } ?? []
+        return UtilityPickerRequest(items: items)
+    }
+
+    private func utilityPicker(_ request: UtilityPickerRequest, baseURL: URL?, payload: Any?) async throws -> Any? {
+        guard !request.items.isEmpty else {
+            alertHandler?("Picker", "No picker items supplied.")
+            throw ActionError.emptyPickerItems
+        }
+        guard let utilityPickerHandler else {
+            alertHandler?("Picker", request.items.map(\.text).joined(separator: "\n"))
+            return payload
+        }
+
+        let selectedIndex = try await utilityPickerHandler(request)
+        guard request.items.indices.contains(selectedIndex) else {
+            throw ActionError.invalidPickerSelection
+        }
+        let item = request.items[selectedIndex]
+        let selectedPayload: [String: Any] = [
+            "index": selectedIndex,
+            "value": item.value ?? selectedIndex,
+            "text": item.text
+        ]
+        stateManager.set(selectedPayload)
+        stateManager.set(["$jason": selectedPayload])
+        if let itemAction = item.action {
+            return await execute(itemAction, baseURL: baseURL, payload: selectedPayload) ?? selectedPayload
+        }
+        return selectedPayload
+    }
+
+    private func datePickerRequest(from options: [String: AnyCodable]) -> DatePickerRequest {
+        DatePickerRequest(initialValue: options["value"]?.int ?? options["timestamp"]?.int)
+    }
+
+    private func datePicker(_ request: DatePickerRequest) async throws -> Any? {
+        let result: DatePickerResult
+        if let datePickerHandler {
+            result = try await datePickerHandler(request)
+        } else {
+            result = DatePickerResult(value: Int(Date().timeIntervalSince1970))
+            alertHandler?("Date", Date(timeIntervalSince1970: TimeInterval(result.value)).formatted())
+        }
+        let payload: [String: Any] = ["value": result.value]
+        stateManager.set(payload)
+        stateManager.set(["$jason": payload])
+        return payload
+    }
+
     private func visionScanRequest(from options: [String: AnyCodable]) -> VisionScanRequest {
         VisionScanRequest(kind: options["type"]?.string?.lowercased())
     }
@@ -907,6 +991,10 @@ public final class ActionDispatcher: ObservableObject {
         case visionScanUnavailable
         case visionScanPermissionDenied
         case visionScanCancelled
+        case emptyPickerItems
+        case invalidPickerSelection
+        case utilityPickerCancelled
+        case datePickerCancelled
     }
 }
 
@@ -949,6 +1037,14 @@ extension ActionDispatcher.ActionError: LocalizedError {
             return "Camera permission was denied. Enable camera access in Settings to scan codes."
         case .visionScanCancelled:
             return "Barcode scanning was cancelled."
+        case .emptyPickerItems:
+            return "No picker items were supplied."
+        case .invalidPickerSelection:
+            return "The picker selection was invalid."
+        case .utilityPickerCancelled:
+            return "Picker selection was cancelled."
+        case .datePickerCancelled:
+            return "Date selection was cancelled."
         }
     }
 }

@@ -121,6 +121,35 @@ final class ActionDispatcherTests: XCTestCase {
         }
     }
 
+    private final class StubUtilityPickerProvider {
+        let selectedIndex: Int?
+        private(set) var requests: [UtilityPickerRequest] = []
+
+        init(selectedIndex: Int?) {
+            self.selectedIndex = selectedIndex
+        }
+
+        func pick(_ request: UtilityPickerRequest) async throws -> Int {
+            requests.append(request)
+            guard let selectedIndex else { throw ActionDispatcher.ActionError.utilityPickerCancelled }
+            return selectedIndex
+        }
+    }
+
+    private final class StubDatePickerProvider {
+        let result: Result<DatePickerResult, Error>
+        private(set) var requests: [DatePickerRequest] = []
+
+        init(result: Result<DatePickerResult, Error>) {
+            self.result = result
+        }
+
+        func pickDate(_ request: DatePickerRequest) async throws -> DatePickerResult {
+            requests.append(request)
+            return try result.get()
+        }
+    }
+
     // MARK: - $set
 
     func testSetUpdatesLocalState() async {
@@ -485,6 +514,86 @@ final class ActionDispatcherTests: XCTestCase {
 
         await fulfillment(of: [expectation], timeout: 1.0)
         XCTAssertEqual(provider.requestCount, 1)
+    }
+
+    // MARK: - $util.picker / $util.datepicker
+
+    func testUtilityPickerExecutesSelectedItemAction() async {
+        let provider = StubUtilityPickerProvider(selectedIndex: 1)
+        dispatcher.setUtilityPickerHandler(provider.pick)
+        let expectation = expectation(description: "selected picker item action executed")
+        dispatcher.setAlertHandler { title, description in
+            XCTAssertEqual(title, "Second")
+            XCTAssertEqual(description, "Selected")
+            expectation.fulfill()
+        }
+        let action = decodeAction([
+            "type": "$util.picker",
+            "options": [
+                "items": [
+                    ["text": "First", "action": ["type": "$util.alert", "options": ["title": "First"]]],
+                    ["text": "Second", "action": ["type": "$util.alert", "options": ["title": "Second", "description": "Selected"]]]
+                ]
+            ]
+        ])
+
+        await dispatcher.execute(action)
+
+        await fulfillment(of: [expectation], timeout: 1.0)
+        XCTAssertEqual(provider.requests.first?.items.map(\.text), ["First", "Second"])
+        XCTAssertEqual(stateManager.get()["value"] as? Int, 1)
+        XCTAssertEqual(stateManager.get()["text"] as? String, "Second")
+    }
+
+    func testUtilityPickerSelectionPayloadFlowsToSuccessActionWhenItemHasNoAction() async {
+        let provider = StubUtilityPickerProvider(selectedIndex: 0)
+        dispatcher.setUtilityPickerHandler(provider.pick)
+        let expectation = expectation(description: "picker success used selection payload")
+        var receivedDescription: String?
+        dispatcher.setAlertHandler { _, description in
+            receivedDescription = description
+            expectation.fulfill()
+        }
+        let action = decodeAction([
+            "type": "$util.picker",
+            "options": ["items": [["text": "Blue", "value": "blue"]]],
+            "success": [
+                "type": "$util.alert",
+                "options": ["title": "Picked", "description": "{{$jason.value}}/{{$jason.text}}"]
+            ]
+        ])
+
+        await dispatcher.execute(action)
+
+        await fulfillment(of: [expectation], timeout: 1.0)
+        XCTAssertEqual(receivedDescription, "blue/Blue")
+    }
+
+    func testDatePickerStoresUnixTimestampAndFlowsToSuccessAction() async {
+        let provider = StubDatePickerProvider(result: .success(DatePickerResult(value: 1_700_000_000)))
+        dispatcher.setDatePickerHandler(provider.pickDate)
+        let expectation = expectation(description: "datepicker success used value")
+        var receivedDescription: String?
+        dispatcher.setAlertHandler { _, description in
+            receivedDescription = description
+            expectation.fulfill()
+        }
+        let action = decodeAction([
+            "type": "$util.datepicker",
+            "success": [
+                "type": "$util.alert",
+                "options": ["title": "Date", "description": "{{$jason.value}}"]
+            ]
+        ])
+
+        await dispatcher.execute(action)
+
+        await fulfillment(of: [expectation], timeout: 1.0)
+        XCTAssertEqual(provider.requests.count, 1)
+        XCTAssertEqual(stateManager.get()["value"] as? Int, 1_700_000_000)
+        let jason = stateManager.get()["$jason"] as? [String: Any]
+        XCTAssertEqual(jason?["value"] as? Int, 1_700_000_000)
+        XCTAssertEqual(receivedDescription, "1700000000")
     }
 
     // MARK: - $vision.scan

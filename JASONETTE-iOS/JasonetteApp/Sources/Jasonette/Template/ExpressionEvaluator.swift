@@ -16,6 +16,9 @@ public enum ExpressionEvaluator {
         if let legacyResult = evaluateLegacyMutationExpression(trimmed, context: context) {
             return legacyResult
         }
+        if let legacyResult = evaluateLegacyDateToStringExpression(trimmed, context: context) {
+            return legacyResult
+        }
 
         if let cached = _nodeCache[trimmed] {
             return resolve(cached, context: context)
@@ -70,6 +73,34 @@ public enum ExpressionEvaluator {
 
         base[assignment.key] = assignment.value
         return base
+    }
+
+    /// Supports the legacy Jasonpedia datepicker success expression:
+    /// `(new Date(parseInt($jason.value) * 1000)).toString()`.
+    ///
+    /// This is intentionally narrow: it unwraps one parenthesized `new Date(...)`
+    /// followed by `.toString()`, evaluates only the timestamp expression through
+    /// the safe parser, and formats that date without executing arbitrary JS.
+    private static func evaluateLegacyDateToStringExpression(_ expression: String, context: [String: Any]) -> Any? {
+        let suffix = ".toString()"
+        guard expression.hasSuffix(suffix) else { return nil }
+
+        var constructor = String(expression.dropLast(suffix.count))
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        if constructor.hasPrefix("("), constructor.hasSuffix(")") {
+            constructor = String(constructor.dropFirst().dropLast())
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+
+        let prefix = "new Date("
+        guard constructor.hasPrefix(prefix), constructor.hasSuffix(")") else { return nil }
+        let timestampExpression = String(constructor.dropFirst(prefix.count).dropLast())
+        guard let rawTimestamp = evaluate(timestampExpression, context: context),
+              var timestamp = toDouble(rawTimestamp) else { return nil }
+        if abs(timestamp) > 10_000_000_000 {
+            timestamp /= 1_000
+        }
+        return Date(timeIntervalSince1970: timestamp).description
     }
 
     private static func parseLegacyAssignment(_ statement: String, variableName: String) -> (key: String, value: String)? {

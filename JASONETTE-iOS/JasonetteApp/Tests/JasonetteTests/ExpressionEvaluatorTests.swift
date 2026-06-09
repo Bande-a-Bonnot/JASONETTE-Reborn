@@ -13,6 +13,24 @@ final class ExpressionEvaluatorTests: XCTestCase {
         XCTAssertTrue(value?.hasPrefix("#") == true)
     }
 
+    func testLegacyDateToStringExpressionFormatsUnixMilliseconds() {
+        let value = eval(
+            "(new Date(parseInt($jason.value) * 1000)).toString()",
+            context: ["$jason": ["value": 1_700_000_000]]
+        ) as? String
+
+        XCTAssertTrue(value?.contains("2023") == true)
+    }
+
+    func testLegacyDateToStringExpressionReturnsNilForMalformedTimestamp() {
+        let value = eval(
+            "(new Date(parseInt($jason.value) * 1000)).toString()",
+            context: ["$jason": ["value": "not-a-number"]]
+        )
+
+        XCTAssertNil(value)
+    }
+
     // MARK: - isTruthy
 
     func testIsTruthyNil() {

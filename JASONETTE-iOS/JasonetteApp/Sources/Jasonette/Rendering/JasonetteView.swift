@@ -198,6 +198,10 @@ struct JasonetteView: View {
     @State var shareContinuation: CheckedContinuation<Void, Error>?
     @State var visionScanPresentation: VisionScanPresentation?
     @State var visionScanContinuation: CheckedContinuation<[String: Any], Error>?
+    @State var utilityPickerPresentation: UtilityPickerPresentation?
+    @State var utilityPickerContinuation: CheckedContinuation<Int, Error>?
+    @State var datePickerPresentation: DatePickerPresentation?
+    @State var datePickerContinuation: CheckedContinuation<DatePickerResult, Error>?
     #endif
     @Environment(\.jasonetteIsInsideTabShell) private var isInsideTabShell
     @Environment(\.jasonetteCurrentTabID) private var currentTabID
@@ -261,6 +265,12 @@ struct JasonetteView: View {
         }
         .sheet(item: $visionScanPresentation, onDismiss: visionScanDismissed) { presentation in
             VisionScannerView(presentation: presentation, onComplete: completeVisionScan)
+        }
+        .sheet(item: $utilityPickerPresentation, onDismiss: utilityPickerDismissed) { presentation in
+            UtilityPickerSheet(presentation: presentation, onComplete: completeUtilityPicker)
+        }
+        .sheet(item: $datePickerPresentation, onDismiss: datePickerDismissed) { presentation in
+            JasonetteDatePickerSheet(presentation: presentation, onComplete: completeDatePicker)
         }
         #endif
         .environmentObject(viewModel.stateManager)
