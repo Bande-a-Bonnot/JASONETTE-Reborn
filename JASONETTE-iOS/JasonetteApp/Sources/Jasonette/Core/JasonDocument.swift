@@ -7,6 +7,15 @@ public struct JasonDocument: Codable, Sendable {
     enum CodingKeys: String, CodingKey {
         case jason = "$jason"
     }
+
+    public init(jason: JasonRoot) {
+        self.jason = jason
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        jason = try container.decode(JasonRoot.self, forKey: .jason)
+    }
 }
 
 public struct JasonRoot: Codable, Sendable {
@@ -118,6 +127,7 @@ public struct JasonHref: Codable, Sendable {
     public var transition: String?
     public var fresh: Bool?
     public var preload: AnyCodable?
+    public var options: [String: AnyCodable]?
 }
 
 public final class JasonAction: Codable, @unchecked Sendable {

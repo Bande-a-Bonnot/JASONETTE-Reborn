@@ -202,6 +202,11 @@ final class ExpressionParser {
             return .array(elements)
         }
 
+        // Object literal
+        if ch == "{" {
+            return try parseObjectLiteral()
+        }
+
         // Parenthesized expression
         if ch == "(" {
             advance()
@@ -261,6 +266,35 @@ final class ExpressionParser {
         }
         advance() // closing quote
         return .literal(str)
+    }
+
+    private func parseObjectLiteral() throws -> ExpressionEvaluator.Node {
+        try expect("{")
+        var fields: [String: ExpressionEvaluator.Node] = [:]
+        skipWhitespace()
+        if peek() != "}" {
+            while true {
+                let key: String
+                if peek() == "'" || peek() == "\"" {
+                    if case .literal(let value) = try parseString(), let string = value as? String {
+                        key = string
+                    } else {
+                        throw ParseError.expectedIdentifier
+                    }
+                } else {
+                    key = try readIdentifier()
+                }
+                skipWhitespace()
+                try expect(":")
+                fields[key] = try parseTernary()
+                skipWhitespace()
+                guard peek() == "," else { break }
+                advance()
+                skipWhitespace()
+            }
+        }
+        try expect("}")
+        return .object(fields)
     }
 
     private func readIdentifier() throws -> String {

@@ -34,6 +34,7 @@ public final class JasonetteViewModel: ObservableObject {
     }
 
     private let url: URL?
+    private let initialParams: [String: AnyCodable]
     private(set) var documentURL: URL?
     private var document: JasonDocument?
     /// True once the preloaded seed document (if any) has been rendered. After
@@ -53,8 +54,14 @@ public final class JasonetteViewModel: ObservableObject {
     /// previews without navigation wiring.
     let onNavigate: (NavigationRequest) -> Void
 
-    init(url: URL, onNavigate: ((NavigationRequest) -> Void)? = nil, loader: DocumentLoader = DocumentLoader()) {
+    init(
+        url: URL,
+        initialParams: [String: AnyCodable] = [:],
+        onNavigate: ((NavigationRequest) -> Void)? = nil,
+        loader: DocumentLoader = DocumentLoader()
+    ) {
         self.url = url
+        self.initialParams = initialParams
         self.documentURL = url
         self.document = nil
         self.loader = loader
@@ -63,8 +70,9 @@ public final class JasonetteViewModel: ObservableObject {
         wireHandlers()
     }
 
-    init(document: JasonDocument, onNavigate: ((NavigationRequest) -> Void)? = nil) {
+    init(document: JasonDocument, initialParams: [String: AnyCodable] = [:], onNavigate: ((NavigationRequest) -> Void)? = nil) {
         self.url = nil
+        self.initialParams = initialParams
         self.documentURL = nil
         self.document = document
         self.loader = DocumentLoader()
@@ -80,11 +88,13 @@ public final class JasonetteViewModel: ObservableObject {
         url: URL,
         preloadedDoc: JasonDocument,
         documentURL: URL? = nil,
+        initialParams: [String: AnyCodable] = [:],
         onNavigate: ((NavigationRequest) -> Void)? = nil,
         loader: DocumentLoader = DocumentLoader()
     ) {
         let resolvedDocumentURL = documentURL ?? url
         self.url = url
+        self.initialParams = initialParams
         self.documentURL = resolvedDocumentURL
         self.document = preloadedDoc
         self.loader = loader
@@ -146,10 +156,12 @@ public final class JasonetteViewModel: ObservableObject {
                 actionDispatcher.setDocumentURL(loaded.url)
             }
             seedConsumed = true
-            guard let doc = document else {
+            guard var doc = document else {
                 loadState = .error("No document")
                 return
             }
+            doc = await resolveHeadDataMixins(in: doc, baseURL: documentURL)
+            document = doc
             render(doc)
             loadState = .loaded
 
@@ -196,10 +208,44 @@ public final class JasonetteViewModel: ObservableObject {
         )
     }
 
+    private func resolveHeadDataMixins(in doc: JasonDocument, baseURL: URL?) async -> JasonDocument {
+        guard let head = doc.jason.head,
+              let data = head.data,
+              let mixinURLString = data["@"]?.string,
+              let mixinURL = JasonURL.resolve(mixinURLString, against: baseURL)
+        else { return doc }
+
+        do {
+            let loaded = try await loader.loadJSON(from: mixinURL).value
+            guard let remoteData = loaded as? [String: Any] else { return doc }
+            var merged = remoteData
+            for (key, value) in data where key != "@" {
+                merged[key] = value.unwrapped
+            }
+            var root = doc.jason
+            var resolvedHead = head
+            resolvedHead.data = merged.mapValues { wrapAsAnyCodable($0) }
+            root.head = resolvedHead
+            return JasonDocument(jason: root)
+        } catch {
+            #if DEBUG
+            print("[Jasonette] data mixin load failed (\(error)); rendering inline data")
+            #endif
+            return doc
+        }
+    }
+
     private func render(_ doc: JasonDocument) {
         let head = doc.jason.head
         let data = head?.data?.compactMapValues { $0.unwrapped } ?? [:]
         var context = data.merging(stateManager.local) { _, new in new }
+        if context["$jason"] == nil {
+            context["$jason"] = context
+        }
+        context["$root"] = context["$jason"]
+        if !initialParams.isEmpty {
+            context["$params"] = initialParams.mapValues { $0.unwrapped }
+        }
         context["$get"] = stateManager.local
         context["$cache"] = stateManager.cache
 
@@ -225,6 +271,19 @@ public final class JasonetteViewModel: ObservableObject {
             }
         } else {
             renderedRoot = doc.jason
+        }
+    }
+
+    private func wrapAsAnyCodable(_ value: Any) -> AnyCodable {
+        switch value {
+        case let codable as AnyCodable:
+            return codable
+        case let array as [Any]:
+            return AnyCodable(array.map { wrapAsAnyCodable($0) })
+        case let dictionary as [String: Any]:
+            return AnyCodable(dictionary.mapValues { wrapAsAnyCodable($0) })
+        default:
+            return AnyCodable(value)
         }
     }
 
@@ -259,7 +318,7 @@ public final class JasonetteViewModel: ObservableObject {
             onNavigate(.app(url))
         default:
             switch href.transition {
-            case "modal":  onNavigate(.modal(url))
+            case "modal":  onNavigate(.modal(url, href.options ?? [:]))
             case "switch": onNavigate(.switchTab(url))
             default:       onNavigate(.push(url))
             }

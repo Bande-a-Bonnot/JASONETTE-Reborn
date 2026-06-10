@@ -310,6 +310,31 @@ final class ActionDispatcherTests: XCTestCase {
         XCTAssertEqual(receivedHref?.transition, "slide")
     }
 
+    func testHrefCarriesNestedOptionsAsNavigationParams() async {
+        let expectation = expectation(description: "navigation called")
+        var receivedHref: JasonHref?
+        dispatcher.setNavigationHandler { href in
+            receivedHref = href
+            expectation.fulfill()
+        }
+        let action = decodeAction([
+            "type": "$href",
+            "options": [
+                "url": "https://example.com/modal.json",
+                "transition": "modal",
+                "options": ["code": "{{message}}"]
+            ]
+        ])
+        stateManager.set(["message": "rendered"])
+
+        await dispatcher.execute(action)
+
+        await fulfillment(of: [expectation], timeout: 1.0)
+        XCTAssertEqual(receivedHref?.url, "https://example.com/modal.json")
+        XCTAssertEqual(receivedHref?.transition, "modal")
+        XCTAssertEqual(receivedHref?.options?["code"]?.string, "rendered")
+    }
+
     // MARK: - $back
 
     func testBackCallsNavigationWithBack() async {

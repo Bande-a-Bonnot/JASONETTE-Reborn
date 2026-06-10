@@ -320,6 +320,31 @@ final class TemplateEngineTests: XCTestCase {
         XCTAssertEqual(arr[0]["text"] as? String, "Visible")
     }
 
+    func testIfElseSplitAcrossArrayCollapsesScalarBranchResult() {
+        let template: [Any] = [
+            ["{{#if hasProfile}}": "profile.png"],
+            ["{{#else}}": "egg.png"],
+        ]
+
+        let result = TemplateEngine.render(template, context: ["hasProfile": false])
+
+        XCTAssertEqual(result as? String, "egg.png")
+    }
+
+    func testIfElseSplitAcrossArrayPreservesComponentBranchArray() {
+        let template: [Any] = [
+            ["{{#if show}}": ["type": "label", "text": "Visible"]],
+            ["{{#else}}": ["type": "label", "text": "Hidden"]],
+        ]
+
+        let result = TemplateEngine.render(template, context: ["show": true])
+        guard let arr = result as? [[String: Any]] else {
+            XCTFail("Expected array"); return
+        }
+        XCTAssertEqual(arr.count, 1)
+        XCTAssertEqual(arr[0]["text"] as? String, "Visible")
+    }
+
     // MARK: - #each edge cases
 
     func testEachWithEmptyArrayProducesNoItems() {

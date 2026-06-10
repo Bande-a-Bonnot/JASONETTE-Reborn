@@ -13,6 +13,44 @@ final class ExpressionEvaluatorTests: XCTestCase {
         XCTAssertTrue(value?.hasPrefix("#") == true)
     }
 
+    func testStringSplitAndIndexingSupportJasonpediaTemplateJavaScriptFixture() {
+        let value = eval(
+            "$jason.coord.split(',')[0] + '📍' + $jason.coord.split(',')[1]",
+            context: ["$jason": ["coord": "48.8566,2.3522"]]
+        ) as? String
+
+        XCTAssertEqual(value, "48.8566📍2.3522")
+    }
+
+    func testHeDecodeHelperSupportsScriptIncludeFixture() {
+        let value = eval("he.decode($get.caption)", context: ["$get": ["caption": "prisoner&#39;s dilemma"]]) as? String
+
+        XCTAssertEqual(value, "prisoner's dilemma")
+    }
+
+    func testUnderscoreWhereSupportsObjectLiterals() {
+        let value = eval("$root._.where([{title: 'Cymbeline', author: 'Shakespeare', year: 1611}, {title: 'Other', author: 'Someone'}], {author: 'Shakespeare'})", context: [
+            "$root": ["_": "__jasonette_underscore__"],
+        ]) as? [[String: Any]]
+
+        XCTAssertEqual(value?.count, 1)
+        XCTAssertEqual(value?.first?["title"] as? String, "Cymbeline")
+    }
+
+    func testJSONStringifySupportsParamsContext() {
+        let value = eval("JSON.stringify($params.code, null, 2)", context: [
+            "$params": ["code": ["message": "Hello"]],
+        ]) as? String
+
+        XCTAssertEqual(value, "{\"message\":\"Hello\"}")
+    }
+
+    func testLegacyForLoopJSONStringifyExpressionSupportsTemplateFunctionFixture() {
+        let value = eval("var items=[]; for(var i=0; i<10; i++){items.push(i);} return JSON.stringify(items);") as? String
+
+        XCTAssertEqual(value, "[0,1,2,3,4,5,6,7,8,9]")
+    }
+
     func testLegacyDateToStringExpressionFormatsUnixMilliseconds() {
         let value = eval(
             "(new Date(parseInt($jason.value) * 1000)).toString()",

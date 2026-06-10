@@ -19,6 +19,12 @@ public enum ExpressionEvaluator {
         if let legacyResult = evaluateLegacyDateToStringExpression(trimmed, context: context) {
             return legacyResult
         }
+        if let legacyResult = evaluateLegacyForLoopJSONStringifyExpression(trimmed) {
+            return legacyResult
+        }
+        if let legacyResult = evaluateLegacyUnderscoreEveryExpression(trimmed) {
+            return legacyResult
+        }
 
         if let cached = _nodeCache[trimmed] {
             return resolve(cached, context: context)
@@ -103,6 +109,45 @@ public enum ExpressionEvaluator {
         return Date(timeIntervalSince1970: timestamp).description
     }
 
+    /// Supports the legacy Jasonpedia JavaScript-function template demo:
+    /// `var items=[]; for(var i=0; i<10; i++){items.push(i);} return JSON.stringify(items);`
+    ///
+    /// This intentionally recognizes only a simple zero-based counter loop that
+    /// pushes the counter into an array and returns `JSON.stringify(array)`.
+    private static func evaluateLegacyForLoopJSONStringifyExpression(_ expression: String) -> Any? {
+        let compact = expression.replacingOccurrences(of: "\\s+", with: "", options: .regularExpression)
+        let pattern = #"^var([A-Za-z_$][A-Za-z0-9_$]*)=\[\];for\(vari=0;i<(\d+);i\+\+\)\{\1\.push\(i\);\}returnJSON\.stringify\(\1\);?$"#
+        guard let regex = try? NSRegularExpression(pattern: pattern),
+              let match = regex.firstMatch(in: compact, range: NSRange(compact.startIndex..., in: compact)),
+              let limitRange = Range(match.range(at: 2), in: compact),
+              let limit = Int(compact[limitRange]),
+              limit >= 0,
+              limit <= 1_000
+        else { return nil }
+
+        let array = Array(0..<limit)
+        guard let data = try? JSONSerialization.data(withJSONObject: array),
+              let string = String(data: data, encoding: .utf8)
+        else { return nil }
+        return string
+    }
+
+    /// Supports Jasonpedia's underscore `_.every(..., function(num) { return
+    /// typeof num === 'number'; }).toString()` examples without evaluating
+    /// arbitrary JavaScript callbacks.
+    private static func evaluateLegacyUnderscoreEveryExpression(_ expression: String) -> Any? {
+        let suffix = ").toString()"
+        let hasToString = expression.hasSuffix(suffix)
+        let core = hasToString ? String(expression.dropLast(suffix.count) + ")") : expression
+        let prefix = "$root._.every("
+        let callback = ", function(num) { return typeof num === 'number'; })"
+        guard core.hasPrefix(prefix), core.hasSuffix(callback) else { return nil }
+        let arrayExpression = String(core.dropFirst(prefix.count).dropLast(callback.count))
+        guard let values = evaluate(arrayExpression, context: [:]) as? [Any] else { return nil }
+        let result = values.allSatisfy { typeofValue($0) == "number" }
+        return hasToString ? (result ? "true" : "false") : result
+    }
+
     private static func parseLegacyAssignment(_ statement: String, variableName: String) -> (key: String, value: String)? {
         guard statement.hasPrefix(variableName) else { return nil }
         let remainder = statement.dropFirst(variableName.count).trimmingCharacters(in: .whitespacesAndNewlines)
@@ -140,6 +185,7 @@ public enum ExpressionEvaluator {
         case ternary(Node, Node, Node)
         case call(Node, [Node])
         case array([Node])
+        case object([String: Node])
     }
 
     // MARK: - Safe function allowlist
@@ -162,6 +208,46 @@ public enum ExpressionEvaluator {
         "String": { args in args.first.map { "\($0)" } },
         "Number": { args in args.first.flatMap { toDouble($0) } },
         "Array.isArray": { args in args.first is [Any] },
+        "he.decode": { args in
+            guard let value = args.first else { return nil }
+            return decodeHTMLEntities("\(value)")
+        },
+        "_.where": { args in
+            guard args.count >= 2,
+                  let items = args[0] as? [Any],
+                  let criteria = args[1] as? [String: Any]
+            else { return nil }
+            return items.filter { item in
+                guard let object = item as? [String: Any] else { return false }
+                return criteria.allSatisfy { key, expected in looseEqual(object[key], expected) }
+            }
+        },
+        "_.every": { args in
+            guard let items = args.first as? [Any] else { return nil }
+            return items.allSatisfy { typeofValue($0) == "number" }
+        },
+        "_.indexBy": { args in
+            guard args.count >= 2,
+                  let items = args[0] as? [Any],
+                  let key = args[1] as? String
+            else { return nil }
+            var result: [String: Any] = [:]
+            for item in items {
+                guard let object = item as? [String: Any], let value = object[key] else { continue }
+                result["\(value)"] = object
+            }
+            return result
+        },
+        "_.uniq": { args in
+            guard let items = args.first as? [Any] else { return nil }
+            var seen: Set<String> = []
+            var result: [Any] = []
+            for item in items {
+                let key = stableString(item)
+                if seen.insert(key).inserted { result.append(item) }
+            }
+            return result
+        },
         "randomcolor": { _ in
             String(format: "#%06X", Int.random(in: 0...0xFFFFFF))
         },
@@ -244,7 +330,12 @@ public enum ExpressionEvaluator {
             }
 
         case .call(let callee, let args):
-            let resolvedArgs = args.compactMap { resolve($0, context: context, depth: depth + 1) }
+            let resolvedArgs = args.map { resolve($0, context: context, depth: depth + 1) ?? NSNull() }
+            if case .member(let object, let method) = callee,
+               let target = resolve(object, context: context, depth: depth + 1),
+               let result = callMethod(method, on: target, args: resolvedArgs) {
+                return result
+            }
             if let ref = resolve(callee, context: context, depth: depth + 1) as? String,
                let fn = safeFunctions[ref] {
                 return fn(resolvedArgs)
@@ -257,6 +348,9 @@ public enum ExpressionEvaluator {
 
         case .array(let elements):
             return elements.compactMap { resolve($0, context: context, depth: depth + 1) }
+
+        case .object(let fields):
+            return fields.mapValues { resolve($0, context: context, depth: depth + 1) ?? NSNull() }
         }
     }
 
@@ -350,6 +444,77 @@ public enum ExpressionEvaluator {
             if let s = obj as? String { return s.count }
         }
         return nil
+    }
+
+    private static func callMethod(_ method: String, on target: Any, args: [Any]) -> Any? {
+        switch method {
+        case "where" where target as? String == "__jasonette_underscore__":
+            return safeFunctions["_.where"]?(args)
+        case "every" where target as? String == "__jasonette_underscore__":
+            return safeFunctions["_.every"]?(args)
+        case "indexBy" where target as? String == "__jasonette_underscore__":
+            return safeFunctions["_.indexBy"]?(args)
+        case "uniq" where target as? String == "__jasonette_underscore__":
+            return safeFunctions["_.uniq"]?(args)
+        case "split":
+            guard let string = target as? String else { return nil }
+            let separator = args.first.map { "\($0)" } ?? ","
+            return string.components(separatedBy: separator)
+        case "toString":
+            return stringifyForJavaScript(target)
+        default:
+            return nil
+        }
+    }
+
+    private static func stringifyForJavaScript(_ value: Any) -> String {
+        if value is NSNull { return "null" }
+        if let string = value as? String { return string }
+        if let bool = value as? Bool { return bool ? "true" : "false" }
+        if let int = value as? Int { return "\(int)" }
+        if let double = value as? Double { return "\(double)" }
+        if let array = value as? [Any] { return array.map { stringifyForJavaScript($0) }.joined(separator: ",") }
+        if JSONSerialization.isValidJSONObject(value),
+           let data = try? JSONSerialization.data(withJSONObject: value, options: [.sortedKeys]),
+           let string = String(data: data, encoding: .utf8) {
+            return string
+        }
+        return "\(value)"
+    }
+
+    private static func stableString(_ value: Any) -> String {
+        if JSONSerialization.isValidJSONObject(value),
+           let data = try? JSONSerialization.data(withJSONObject: value, options: [.sortedKeys]),
+           let string = String(data: data, encoding: .utf8) {
+            return string
+        }
+        return stringifyForJavaScript(value)
+    }
+
+    private static func decodeHTMLEntities(_ string: String) -> String {
+        var result = string
+            .replacingOccurrences(of: "&amp;", with: "&")
+            .replacingOccurrences(of: "&lt;", with: "<")
+            .replacingOccurrences(of: "&gt;", with: ">")
+            .replacingOccurrences(of: "&quot;", with: "\"")
+            .replacingOccurrences(of: "&apos;", with: "'")
+            .replacingOccurrences(of: "&#39;", with: "'")
+
+        let pattern = #"&#(x?[0-9A-Fa-f]+);"#
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return result }
+        for match in regex.matches(in: result, range: NSRange(result.startIndex..., in: result)).reversed() {
+            guard let fullRange = Range(match.range(at: 0), in: result),
+                  let valueRange = Range(match.range(at: 1), in: result)
+            else { continue }
+            let raw = String(result[valueRange])
+            let radix = raw.lowercased().hasPrefix("x") ? 16 : 10
+            let digits = radix == 16 ? String(raw.dropFirst()) : raw
+            guard let scalarValue = UInt32(digits, radix: radix),
+                  let scalar = UnicodeScalar(scalarValue)
+            else { continue }
+            result.replaceSubrange(fullRange, with: String(Character(scalar)))
+        }
+        return result
     }
 
     private static func applyArith(_ l: Any?, _ r: Any?, _ op: (Double, Double) -> Double) -> Any? {

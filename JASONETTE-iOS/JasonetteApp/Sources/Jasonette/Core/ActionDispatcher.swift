@@ -398,7 +398,8 @@ public final class ActionDispatcher: ObservableObject {
                     url: resolvedURL,
                     view: options["view"]?.string,
                     transition: options["transition"]?.string,
-                    fresh: options["fresh"]?.bool
+                    fresh: options["fresh"]?.bool,
+                    options: options["options"]?.dictionary
                 )
                 navigationHandler?(href)
             }
@@ -491,6 +492,10 @@ public final class ActionDispatcher: ObservableObject {
             return try await visionScan(visionScanRequest(from: options))
 
         case "$script.include":
+            stateManager.set([
+                "_": "__jasonette_underscore__",
+                "he": "__jasonette_he__",
+            ])
             return payload
 
         case "$log", "$log.info", "$log.debug", "$log.error":
@@ -554,6 +559,7 @@ public final class ActionDispatcher: ObservableObject {
         }
         context["$get"] = stateManager.local
         context["$cache"] = stateManager.cache
+        context["$root"] = context["$jason"] ?? context
         return context
     }
 

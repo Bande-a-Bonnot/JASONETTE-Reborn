@@ -1,6 +1,6 @@
 # Agent Handoff Document
 
-Last updated: 2026-06-09
+Last updated: 2026-06-10
 
 **Update this file before context compaction and at the end of significant sessions.**
 
@@ -8,7 +8,7 @@ Last updated: 2026-06-09
 
 ### Test Suite
 
-- iOS: 563 tests, 0 failures (verified 2026-06-09 after native `$util.picker`/`$util.datepicker` implementation and Jasonpedia date expression compatibility; `swift build` succeeded); generic iOS Simulator `xcodebuild` Debug build succeeded 2026-06-09; direct-entry iPhone 17 Pro simulator QA for action screens completed 2026-06-03 with findings in `docs/qa/2026-06-03-ios-action-screen-qa.md`
+- iOS: 577 tests, 0 failures (verified 2026-06-10 after `$script.include`/Template JavaScript compatibility and Jasonpedia split-conditional template fixes; `swift build` succeeded); generic iOS Simulator `xcodebuild` Debug build last succeeded 2026-06-09; direct-entry iPhone 17 Pro simulator QA for action screens completed 2026-06-03 with findings in `docs/qa/2026-06-03-ios-action-screen-qa.md`
 - Android CI: `pull_request` Android job ran/passed on PR #21, non-Android-change PR #22, and follow-up PR #23; Kotlin JSON primitive accessor compile failures fixed by squash `92e65dd`; oversized plain-integer JSON parsing aligned between Android test helper and production renderer in `c3f4f8f`; decimal/exponent policy is now explicitly documented as `Double` and centralized in Android `JsonValueConverter` (local Gradle verification blocked by missing Java runtime on 2026-05-26; limitation and CI fallback documented in `JASONETTE-Android/JasonetteApp/README.md`)
 - Run iOS: `cd JASONETTE-iOS/JasonetteApp && swift test`
 - Build iOS: `swift build` (<1s)
@@ -44,7 +44,7 @@ label, image, button, textfield, textarea, slider, switch, space, html (`WKWebVi
 JSON → JasonDocument (Codable) → TemplateEngine → JasonetteViewModel → JasonetteView → ComponentView
 ```
 
-- **Templates**: Dynamic named templates via `$render` with `options.template`. Default "body".
+- **Templates**: Dynamic named templates via `$render` with `options.template`. Default "body". Legacy Jasonpedia compatibility includes object-form `#each`, split-array scalar `#if`/`#else`, safe JavaScript-like expressions used by Template demos, and `head.data` remote `@` mixins.
 - **Layers**: ZStack overlays above ScrollView. Positioned via top/left/bottom/right + alignment + padding; `left`+`right` and `top`+`bottom` stretch between same-axis insets.
 - **Body background**: `body.background` or `body.style.background` color strings parsed via `Color(css:)`; http(s) background image URLs render behind the body; backgrounds use `.ignoresSafeArea()`.
 - **Footer**: tabs (HStack) or input (dedicated `FooterInputView`), mutually exclusive.
@@ -82,6 +82,7 @@ P3:
 - none currently tracked as open
 
 Completed this session:
+- `todos/061` — fixed iOS `$script.include` and Template JavaScript regressions: `$script.include` now seeds safe compatibility symbols for Jasonpedia `he.js`/`underscore.js`; `head.data` remote `@` mixins load before template rendering; `$href.options` propagates through action dispatch, modal navigation, and template context as `$params`; the expression evaluator supports the affected legacy expressions (`he.decode`, selected underscore helpers, string `split`, object literals, `toString`, and the narrow for-loop/`JSON.stringify` fixture); and Template arrays support split `#if`/`#else` scalar branches for legacy URL fallbacks. Verification: targeted `$href`/script/template tests (7); full `swift test` (577); `swift build`; `npm run lint:md`. Marked todo complete.
 - `todos/060` — implemented native iOS `$util.picker` and `$util.datepicker`: `ActionDispatcher` now has injectable picker/date seams, picker selections store `index`/`text`/`value` under local state and `$jason`, selected picker items can execute item-level actions, datepicker returns `$jason.value` as Unix timestamp seconds, and SwiftUI sheets handle Cancel/interactive dismissal without hanging continuations. Added narrow compatibility for the Jasonpedia datepicker success expression `(new Date(parseInt($jason.value) * 1000)).toString()` with malformed timestamp coverage. Verification: targeted picker tests (2); targeted datepicker test (1); targeted legacy date expression tests (2); full `swift test` (563); `swift build`; generic iOS Simulator `xcodebuild` Debug build; `npm run lint:md`. Marked todo complete.
 - `todos/059` — implemented native iOS `$vision.scan`: `ActionDispatcher` now has an injectable scanner handler, scanner payloads are stored in local state and `$jason`, success/error chains receive the payload, `JasonetteView` installs an iOS scanner sheet backed by `AVCaptureSession` + `AVCaptureMetadataOutput` for QR/common barcodes, and camera-background documents now fire `$vision.ready` so the Jasonpedia vision fixture can launch its existing `qr` chain. No-handler paths still show a recognized fallback alert. Verification: targeted vision dispatcher + ViewModel fixture tests (6); full `swift test` (558); `swift build`; generic iOS Simulator `xcodebuild` Debug build; `npm run lint:md`. Marked todo complete.
 - `todos/058` — clarified and fixed the iOS vision fallback path. Root cause: `Jasonpedia/action/vision/index.json` does not call `$vision.scan` from `$load`; it renders a camera background and expects unsupported `$vision.ready` to trigger named action `qr`, so the renderer stayed on `Scanning...`. Direct `$vision.scan` still shows a recognized fallback alert, and the ViewModel now detects rendered camera backgrounds paired with vision lifecycle actions and shows a user-visible unsupported camera/vision alert, de-duped per rendered document signature. Verification: targeted direct vision fallback test (1); Jasonpedia vision fixture test (1); full `swift test` (554); `swift build`; `npm run lint:md`. Marked todo complete.

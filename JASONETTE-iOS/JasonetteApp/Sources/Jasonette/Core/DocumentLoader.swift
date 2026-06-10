@@ -94,6 +94,29 @@ public final class DocumentLoader: Sendable {
         return LoadedDocument(document: try decode(data), url: responseURL)
     }
 
+    /// Load an arbitrary JSON resource with the same HTTP/scheme policy used
+    /// for Jasonette documents. Used by legacy `head.data: { "@": url }`
+    /// data mixins in Jasonpedia examples.
+    public func loadJSON(from url: URL) async throws -> (value: Any, url: URL) {
+        guard let scheme = url.scheme?.lowercased(),
+              Self.allowedSchemes.contains(scheme) else {
+            throw DocumentError.blockedURL
+        }
+        let (data, response) = try await session.data(from: url)
+        let responseURL = response.url ?? url
+        guard let responseScheme = responseURL.scheme?.lowercased(),
+              Self.allowedSchemes.contains(responseScheme) else {
+            throw DocumentError.blockedURL
+        }
+        guard let httpResponse = response as? HTTPURLResponse,
+              (200..<300).contains(httpResponse.statusCode) else {
+            throw DocumentError.httpError(
+                (response as? HTTPURLResponse)?.statusCode ?? 0
+            )
+        }
+        return (try JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed]), responseURL)
+    }
+
     /// Decode a document from JSON data.
     public func decode(_ data: Data) throws -> JasonDocument {
         try decoder.decode(JasonDocument.self, from: data)

@@ -61,21 +61,83 @@ public enum TemplateEngine {
 
     // MARK: - Array rendering
 
-    private static func renderArray(_ arr: [Any], context: [String: Any], depth: Int) -> [Any] {
+    private static func renderArray(_ arr: [Any], context: [String: Any], depth: Int) -> Any {
         var result: [Any] = []
-        for item in arr {
-            if let dict = item as? [String: Any], let directive = findDirective(dict) {
-                let rendered = applyDirective(directive, template: dict, context: context, depth: depth + 1)
-                if let arr = rendered as? [Any] {
-                    result.append(contentsOf: arr)
-                } else {
-                    result.append(rendered)
+        var index = 0
+        var containsOnlyConditionalBranches = !arr.isEmpty
+
+        while index < arr.count {
+            let item = arr[index]
+            if let dict = item as? [String: Any],
+               let firstBranch = ifBranch(in: dict),
+               !hasInlineConditionalCompanion(in: dict) {
+                var elseifs: [(String, Any)] = []
+                var elseTemplate: Any?
+                var next = index + 1
+
+                while next < arr.count, let branchDict = arr[next] as? [String: Any] {
+                    if let elseif = elseifBranch(in: branchDict) {
+                        elseifs.append(elseif)
+                        next += 1
+                    } else if let fallback = elseBranch(in: branchDict) {
+                        elseTemplate = fallback
+                        next += 1
+                        break
+                    } else {
+                        break
+                    }
                 }
+
+                appendRendered(
+                    applyDirective(
+                        .ifCondition(
+                            firstBranch.0,
+                            firstBranch.1,
+                            elseifs.isEmpty ? nil : elseifs,
+                            elseTemplate
+                        ),
+                        template: dict,
+                        context: context,
+                        depth: depth + 1
+                    ),
+                    to: &result
+                )
+                index = next
+                continue
+            }
+
+            if let dict = item as? [String: Any], let directive = findDirective(dict) {
+                containsOnlyConditionalBranches = false
+                appendRendered(
+                    applyDirective(directive, template: dict, context: context, depth: depth + 1),
+                    to: &result
+                )
             } else {
+                containsOnlyConditionalBranches = false
                 result.append(render(item, context: context, depth: depth + 1))
             }
+            index += 1
+        }
+
+        // Legacy Jasonette sometimes expresses a scalar conditional value as an
+        // array of branch objects, e.g. `"url": [{"{{#if ...}}": "..."},
+        // {"{{#else}}": "..."}]`. Collapse only scalar branch results; arrays
+        // of rendered component objects must remain arrays.
+        if containsOnlyConditionalBranches,
+           result.count == 1,
+           !(result[0] is [String: Any]),
+           !(result[0] is [Any]) {
+            return result[0]
         }
         return result
+    }
+
+    private static func appendRendered(_ rendered: Any, to result: inout [Any]) {
+        if let arr = rendered as? [Any] {
+            result.append(contentsOf: arr)
+        } else {
+            result.append(rendered)
+        }
     }
 
     // MARK: - Object rendering
@@ -110,20 +172,16 @@ public enum TemplateEngine {
                 let expr = String(key[start..<end])
                 return .each(expr, dict[key]!)
             }
-            if key.hasPrefix("{{#if ") && key.hasSuffix("}}") {
-                let start = key.index(key.startIndex, offsetBy: 6)
-                let end = key.index(key.endIndex, offsetBy: -2)
-                let expr = String(key[start..<end])
-                let template = dict[key]!
+            if let branch = ifBranch(key: key, value: dict[key]!) {
+                let expr = branch.0
+                let template = branch.1
 
-                // Look for elseif and else
+                // Look for elseif and else in the same object.
                 var elseifs: [(String, Any)] = []
                 var elseTemplate: Any?
                 for (k, v) in dict {
-                    if k.hasPrefix("{{#elseif ") && k.hasSuffix("}}") {
-                        let s = k.index(k.startIndex, offsetBy: 10)
-                        let e = k.index(k.endIndex, offsetBy: -2)
-                        elseifs.append((String(k[s..<e]), v))
+                    if let elseif = elseifBranch(key: k, value: v) {
+                        elseifs.append(elseif)
                     }
                     if k == "{{#else}}" {
                         elseTemplate = v
@@ -138,6 +196,42 @@ public enum TemplateEngine {
             }
         }
         return nil
+    }
+
+    private static func ifBranch(in dict: [String: Any]) -> (String, Any)? {
+        for (key, value) in dict {
+            if let branch = ifBranch(key: key, value: value) { return branch }
+        }
+        return nil
+    }
+
+    private static func ifBranch(key: String, value: Any) -> (String, Any)? {
+        guard key.hasPrefix("{{#if ") && key.hasSuffix("}}") else { return nil }
+        let start = key.index(key.startIndex, offsetBy: 6)
+        let end = key.index(key.endIndex, offsetBy: -2)
+        return (String(key[start..<end]), value)
+    }
+
+    private static func elseifBranch(in dict: [String: Any]) -> (String, Any)? {
+        for (key, value) in dict {
+            if let branch = elseifBranch(key: key, value: value) { return branch }
+        }
+        return nil
+    }
+
+    private static func elseifBranch(key: String, value: Any) -> (String, Any)? {
+        guard key.hasPrefix("{{#elseif ") && key.hasSuffix("}}") else { return nil }
+        let start = key.index(key.startIndex, offsetBy: 10)
+        let end = key.index(key.endIndex, offsetBy: -2)
+        return (String(key[start..<end]), value)
+    }
+
+    private static func elseBranch(in dict: [String: Any]) -> Any? {
+        dict["{{#else}}"]
+    }
+
+    private static func hasInlineConditionalCompanion(in dict: [String: Any]) -> Bool {
+        dict.keys.contains("{{#else}}") || dict.keys.contains { $0.hasPrefix("{{#elseif ") && $0.hasSuffix("}}") }
     }
 
     private static func applyDirective(

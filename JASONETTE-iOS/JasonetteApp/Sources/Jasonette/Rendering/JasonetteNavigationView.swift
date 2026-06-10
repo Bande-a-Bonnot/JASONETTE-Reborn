@@ -3,11 +3,35 @@ import SwiftUI
 import SafariServices
 #endif
 
-/// URL wrapper for item-driven .sheet(item:) — avoids global retroactive Identifiable on URL.
+/// Navigation stack/sheet target carrying Jasonette `$href.options` params.
+struct NavigationTarget: Identifiable, Hashable {
+    let id: String
+    let url: URL
+    let params: [String: AnyCodable]
+
+    init(_ url: URL, params: [String: AnyCodable] = [:]) {
+        self.id = [url.absoluteString, params.stableJSONString].joined(separator: "|")
+        self.url = url
+        self.params = params
+    }
+}
+
+/// URL wrapper for item-driven Safari sheets — avoids global retroactive Identifiable on URL.
 struct IdentifiableURL: Identifiable {
     let id: String
     let url: URL
     init(_ url: URL) { self.id = url.absoluteString; self.url = url }
+}
+
+private extension Dictionary where Key == String, Value == AnyCodable {
+    var stableJSONString: String {
+        let unwrapped = mapValues { $0.unwrapped }
+        guard JSONSerialization.isValidJSONObject(unwrapped),
+              let data = try? JSONSerialization.data(withJSONObject: unwrapped, options: [.sortedKeys]),
+              let string = String(data: data, encoding: .utf8)
+        else { return String(describing: unwrapped.sorted { $0.key < $1.key }) }
+        return string
+    }
 }
 
 /// Navigation intent produced by a `JasonetteView`, consumed by its enclosing
@@ -15,11 +39,11 @@ struct IdentifiableURL: Identifiable {
 /// root container installs its own, each modal installs its own — so
 /// navigation inside a modal cannot mutate the parent's stack.
 enum NavigationRequest: Sendable {
-    case push(URL)
+    case push(URL, [String: AnyCodable] = [:])
     /// Request that the enclosing tab shell select the tab matching this URL.
     /// If no shell is present or no tab matches, falls through to `.push`.
     case switchTab(URL)
-    case modal(URL)
+    case modal(URL, [String: AnyCodable] = [:])
     case back
     case close
     case web(URL)
@@ -44,8 +68,8 @@ struct JasonetteNavigationView: View {
     let rootURL: URL
     let preloadedDoc: JasonDocument?
     let preloadedDocumentURL: URL?
-    @State private var path: [URL] = []
-    @State private var modalURL: IdentifiableURL?
+    @State private var path: [NavigationTarget] = []
+    @State private var modalTarget: NavigationTarget?
     @State private var safariURL: IdentifiableURL?
     @Environment(\.openURL) private var openURL
     @Environment(\.jasonetteSwitchTab) private var switchTab
@@ -57,26 +81,41 @@ struct JasonetteNavigationView: View {
     // Scheme allowlists live on DocumentLoader to keep nav, action dispatch,
     // footer tabs, and $href in lockstep.
 
-    init(url: URL, preloadedDoc: JasonDocument? = nil, preloadedDocumentURL: URL? = nil) {
+    private let initialParams: [String: AnyCodable]
+
+    init(
+        url: URL,
+        preloadedDoc: JasonDocument? = nil,
+        preloadedDocumentURL: URL? = nil,
+        initialParams: [String: AnyCodable] = [:]
+    ) {
         self.rootURL = url
         self.preloadedDoc = preloadedDoc
         self.preloadedDocumentURL = preloadedDocumentURL
+        self.initialParams = initialParams
         self.onClose = nil
     }
 
     /// Sheet-scoped initializer used by the modal branch below.
-    init(url: URL, preloadedDoc: JasonDocument? = nil, preloadedDocumentURL: URL? = nil, onClose: @escaping () -> Void) {
+    init(
+        url: URL,
+        preloadedDoc: JasonDocument? = nil,
+        preloadedDocumentURL: URL? = nil,
+        initialParams: [String: AnyCodable] = [:],
+        onClose: @escaping () -> Void
+    ) {
         self.rootURL = url
         self.preloadedDoc = preloadedDoc
         self.preloadedDocumentURL = preloadedDocumentURL
+        self.initialParams = initialParams
         self.onClose = onClose
     }
 
     var body: some View {
         NavigationStack(path: $path) {
             rootContent
-                .navigationDestination(for: URL.self) { url in
-                    JasonetteView(url: url, onNavigate: dispatch)
+                .navigationDestination(for: NavigationTarget.self) { target in
+                    JasonetteView(url: target.url, initialParams: target.params, onNavigate: dispatch)
                 }
                 .toolbar {
                     if onClose != nil {
@@ -86,8 +125,8 @@ struct JasonetteNavigationView: View {
                     }
                 }
         }
-        .sheet(item: $modalURL) { item in
-            JasonetteNavigationView(url: item.url, onClose: { modalURL = nil })
+        .sheet(item: $modalTarget) { target in
+            JasonetteNavigationView(url: target.url, initialParams: target.params, onClose: { modalTarget = nil })
         }
         #if os(iOS)
         .sheet(item: $safariURL) { item in
@@ -100,9 +139,9 @@ struct JasonetteNavigationView: View {
     @ViewBuilder
     private var rootContent: some View {
         if let doc = preloadedDoc {
-            JasonetteView(url: rootURL, preloadedDoc: doc, documentURL: preloadedDocumentURL, onNavigate: dispatch)
+            JasonetteView(url: rootURL, preloadedDoc: doc, documentURL: preloadedDocumentURL, initialParams: initialParams, onNavigate: dispatch)
         } else {
-            JasonetteView(url: rootURL, onNavigate: dispatch)
+            JasonetteView(url: rootURL, initialParams: initialParams, onNavigate: dispatch)
         }
     }
 
@@ -114,21 +153,21 @@ struct JasonetteNavigationView: View {
         case .close:
             // Close the currently-presented child modal if any; otherwise ask
             // our presenter to dismiss us (no-op at the root).
-            if modalURL != nil {
-                modalURL = nil
+            if modalTarget != nil {
+                modalTarget = nil
             } else {
                 onClose?()
             }
 
-        case .push(let url):
-            path.append(url)
+        case .push(let url, let params):
+            path.append(NavigationTarget(url, params: params))
 
         case .switchTab(let url):
             // Ask the enclosing tab shell. No shell or no match → push.
-            if !switchTab(url) { path.append(url) }
+            if !switchTab(url) { path.append(NavigationTarget(url)) }
 
-        case .modal(let url):
-            modalURL = IdentifiableURL(url)
+        case .modal(let url, let params):
+            modalTarget = NavigationTarget(url, params: params)
 
         case .web(let url):
             guard let scheme = url.scheme?.lowercased(),

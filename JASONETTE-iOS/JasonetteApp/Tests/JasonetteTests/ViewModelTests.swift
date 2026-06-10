@@ -137,6 +137,31 @@ final class ViewModelTests: XCTestCase {
         XCTAssertEqual(vm.renderedRoot?.head?.title, "Redirected")
     }
 
+    func testHeadDataRemoteMixinLoadsBeforeTemplateRender() async throws {
+        let doc = try loadJasonpediaDocument("Jasonpedia/action/script/underscorejs/index.json")
+        StubURLProtocol.requestHandler = { request in
+            let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+            let data = Data(#"{"tests":[{"title":"_.where","code":{"type":"$href","options":{"url":"modal.json","transition":"modal","options":{"code":"{{$root._.where([{title: 'Cymbeline', author: 'Shakespeare'}], {author: 'Shakespeare'})}}"}}}}]}"#.utf8)
+            return (response, data)
+        }
+        defer { StubURLProtocol.requestHandler = nil }
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [StubURLProtocol.self]
+        let loader = DocumentLoader(session: URLSession(configuration: config))
+        let vm = JasonetteViewModel(
+            url: URL(string: "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/action/script/underscorejs/index.json")!,
+            preloadedDoc: doc,
+            documentURL: URL(string: "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/action/script/underscorejs/index.json")!,
+            loader: loader
+        )
+
+        await vm.load()
+
+        let items = try XCTUnwrap(vm.renderedRoot?.body?.sections?.first?.items)
+        XCTAssertEqual(items.map { $0.components?.first?.text }, ["_.where"])
+        XCTAssertEqual(items.first?.action?.type, "$href")
+    }
+
     // MARK: - ID policy
 
     func testAlertConfigUsesUUIDv7() {
@@ -219,10 +244,11 @@ final class ViewModelTests: XCTestCase {
     func testHandleHrefDefaultTransitionEmitsPush() {
         let (vm, capture) = makeViewModelCapturing(simpleDocument())
         vm.handleHref(JasonHref(url: "https://example.com", view: nil))
-        guard case .push(let url) = capture.last else {
+        guard case .push(let url, let params) = capture.last else {
             return XCTFail("Expected .push, got \(String(describing: capture.last))")
         }
         XCTAssertEqual(url.absoluteString, "https://example.com")
+        XCTAssertTrue(params.isEmpty)
     }
 
     func testHandleHrefTransitionSwitchEmitsSwitchTab() {
@@ -243,10 +269,11 @@ final class ViewModelTests: XCTestCase {
             onNavigate: { capture.requests.append($0) }
         )
         vm.handleHref(JasonHref(url: "details/page.json", view: nil))
-        guard case .push(let url) = capture.last else {
+        guard case .push(let url, let params) = capture.last else {
             return XCTFail("Expected .push, got \(String(describing: capture.last))")
         }
         XCTAssertEqual(url, URL(string: "https://cdn.example.com/app/details/page.json")!)
+        XCTAssertTrue(params.isEmpty)
     }
 
     func testHandleHrefResolvesRootRelativeURLAgainstDocumentURL() {
@@ -258,19 +285,48 @@ final class ViewModelTests: XCTestCase {
             onNavigate: { capture.requests.append($0) }
         )
         vm.handleHref(JasonHref(url: "/global/page.json", view: nil))
-        guard case .push(let url) = capture.last else {
+        guard case .push(let url, let params) = capture.last else {
             return XCTFail("Expected .push, got \(String(describing: capture.last))")
         }
         XCTAssertEqual(url, URL(string: "https://cdn.example.com/global/page.json")!)
+        XCTAssertTrue(params.isEmpty)
     }
 
     func testHandleHrefTransitionModalEmitsModal() {
         let (vm, capture) = makeViewModelCapturing(simpleDocument())
         vm.handleHref(JasonHref(url: "https://example.com/detail", view: nil, transition: "modal"))
-        guard case .modal(let url) = capture.last else {
+        guard case .modal(let url, let params) = capture.last else {
             return XCTFail("Expected .modal, got \(String(describing: capture.last))")
         }
         XCTAssertEqual(url.absoluteString, "https://example.com/detail")
+        XCTAssertTrue(params.isEmpty)
+    }
+
+    func testHandleHrefTransitionModalCarriesOptionsAsParams() {
+        let (vm, capture) = makeViewModelCapturing(simpleDocument())
+        vm.handleHref(JasonHref(
+            url: "https://example.com/detail",
+            view: nil,
+            transition: "modal",
+            options: ["code": AnyCodable("result")]
+        ))
+        guard case .modal(let url, let params) = capture.last else {
+            return XCTFail("Expected .modal, got \(String(describing: capture.last))")
+        }
+        XCTAssertEqual(url.absoluteString, "https://example.com/detail")
+        XCTAssertEqual(params["code"]?.string, "result")
+    }
+
+    func testInitialParamsAreAvailableAsParamsInTemplates() async throws {
+        let vm = JasonetteViewModel(
+            document: try loadJasonpediaDocument("Jasonpedia/action/script/underscorejs/modal.json"),
+            initialParams: ["code": AnyCodable(["message": AnyCodable("Hello")])]
+        )
+
+        await vm.load()
+
+        let label = try XCTUnwrap(vm.renderedRoot?.body?.sections?.first?.items?.first)
+        XCTAssertEqual(label.text, "{\"message\":\"Hello\"}")
     }
 
     func testHandleHrefViewWebEmitsWeb() {
@@ -438,6 +494,40 @@ final class ViewModelTests: XCTestCase {
             "eliza.json",
             "https://jsonplaceholder.typicode.com/posts",
         ])
+    }
+
+    func testJasonpediaScriptHeFixtureRendersDecodedCaptionAfterScriptInclude() async throws {
+        let vm = JasonetteViewModel(document: try loadJasonpediaDocument("Jasonpedia/action/script/hejs/index.json"))
+
+        await vm.load()
+
+        let items = try XCTUnwrap(vm.renderedRoot?.body?.sections?.first?.items)
+        XCTAssertEqual(items.map(\.text), [
+            "[BEFORE DECODING] prisoner&#39;s dilemma",
+            "[AFTER DECODING] prisoner's dilemma",
+        ])
+    }
+
+    func testJasonpediaTemplateJavaScriptFixtureRendersSplitExpression() async throws {
+        let vm = JasonetteViewModel(document: try loadJasonpediaDocument("Jasonpedia/template/js.json"))
+        vm.actionDispatcher.setGeolocationProvider(StubGeolocationProvider(result: .success("48.8566,2.3522")))
+
+        await vm.load()
+
+        let sections = try XCTUnwrap(vm.renderedRoot?.body?.sections)
+        let resultLabel = sections[0].items?[1].components?[1].text
+        XCTAssertEqual(resultLabel, "48.8566📍2.3522")
+    }
+
+    func testJasonpediaTemplateJavaScriptFunctionFixtureRendersLegacyLoop() async throws {
+        let vm = JasonetteViewModel(document: try loadJasonpediaDocument("Jasonpedia/template/jsfunction.json"))
+        vm.actionDispatcher.setGeolocationProvider(StubGeolocationProvider(result: .success("48.8566,2.3522")))
+
+        await vm.load()
+
+        let sections = try XCTUnwrap(vm.renderedRoot?.body?.sections)
+        let resultLabel = sections[0].items?[1].components?[1].text
+        XCTAssertEqual(resultLabel, "[0,1,2,3,4,5,6,7,8,9]")
     }
 
     func testJasonpediaNetworkElizaFixtureUsesLocalDocumentAndMaintainedEndpoint() throws {

@@ -207,19 +207,31 @@ struct JasonetteView: View {
     @Environment(\.jasonetteCurrentTabID) private var currentTabID
     @Environment(\.jasonetteRegisterTabActionHandler) private var registerTabActionHandler
 
-    init(url: URL, onNavigate: ((NavigationRequest) -> Void)? = nil) {
-        _viewModel = StateObject(wrappedValue: JasonetteViewModel(url: url, onNavigate: onNavigate))
+    init(url: URL, initialParams: [String: AnyCodable] = [:], onNavigate: ((NavigationRequest) -> Void)? = nil) {
+        _viewModel = StateObject(wrappedValue: JasonetteViewModel(url: url, initialParams: initialParams, onNavigate: onNavigate))
     }
 
-    init(document: JasonDocument, onNavigate: ((NavigationRequest) -> Void)? = nil) {
-        _viewModel = StateObject(wrappedValue: JasonetteViewModel(document: document, onNavigate: onNavigate))
+    init(document: JasonDocument, initialParams: [String: AnyCodable] = [:], onNavigate: ((NavigationRequest) -> Void)? = nil) {
+        _viewModel = StateObject(wrappedValue: JasonetteViewModel(document: document, initialParams: initialParams, onNavigate: onNavigate))
     }
 
     /// Seeded init: render `preloadedDoc` on first load, refetch from `url`
     /// on subsequent reloads. Used by the tab shell to avoid a duplicate
     /// fetch of the bootstrap document while preserving reload semantics.
-    init(url: URL, preloadedDoc: JasonDocument, documentURL: URL? = nil, onNavigate: ((NavigationRequest) -> Void)? = nil) {
-        _viewModel = StateObject(wrappedValue: JasonetteViewModel(url: url, preloadedDoc: preloadedDoc, documentURL: documentURL, onNavigate: onNavigate))
+    init(
+        url: URL,
+        preloadedDoc: JasonDocument,
+        documentURL: URL? = nil,
+        initialParams: [String: AnyCodable] = [:],
+        onNavigate: ((NavigationRequest) -> Void)? = nil
+    ) {
+        _viewModel = StateObject(wrappedValue: JasonetteViewModel(
+            url: url,
+            preloadedDoc: preloadedDoc,
+            documentURL: documentURL,
+            initialParams: initialParams,
+            onNavigate: onNavigate
+        ))
     }
 
     var body: some View {
