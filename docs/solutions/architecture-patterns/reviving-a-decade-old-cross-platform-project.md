@@ -228,3 +228,31 @@ public init(stateManager: StateManager, session: URLSession = .shared)
 **Learning:** Plan for test isolation from the start. Adding DI after the fact requires touching every callsite — default parameters mitigate this but the refactor is still friction.
 
 See: `docs/solutions/test-failures/ios-test-isolation-patterns.md`
+
+## 21. Stewardship Is the Product Memory
+
+A revival is not only a rewrite. It is an act of stewardship: deciding what must
+survive, what can be modernized, and what should be left behind.
+
+Jasonette's durable idea was never a specific Objective-C class, Java adapter,
+or JavaScript helper. It was the promise that a JSON document could describe a
+real app screen with native behavior. Preserving that promise required a human
+through-line: compatibility pressure, taste, prioritization, and refusal to let
+"modernization" become a different product wearing the old name.
+
+Agentic coding can do a large share of the mechanical work: reading old fixtures,
+writing tests, porting behavior, fixing regressions, and keeping momentum across
+hundreds of small compatibility gaps. But the project still needs a steward to
+hold the shape of the thing. The steward keeps asking:
+
+- Does this still feel like Jasonette?
+- Which legacy quirks are protocol, and which are accidents?
+- Are demos failing because the renderer is wrong, the fixture is stale, or the
+  old ecosystem changed underneath us?
+- Are we shipping something people can actually use, not just something that
+  satisfies a checklist?
+
+**Learning:** In a resurrection project, the hard work is distributed. Agents can
+supply relentless implementation energy, but the product memory comes from
+stewardship: coherent vision, compatibility judgment, and the discipline to make
+old examples work for the right reasons.
