@@ -18,6 +18,8 @@ final class ActionDispatcherTests: XCTestCase {
 
     override func tearDown() {
         dispatcher.invalidateAllTimers()
+        StubURLProtocol.requestHandler = nil
+        StubURLProtocol.redirectHandler = nil
         UserDefaults.standard.removePersistentDomain(forName: suiteName)
         super.tearDown()
     }
@@ -1385,6 +1387,53 @@ final class ActionDispatcherTests: XCTestCase {
 
         await fulfillment(of: [expectation], timeout: 1.0)
         XCTAssertEqual(receivedDescription, "from network")
+    }
+
+    func testConvertCSVPassesRowsToRenderSuccessChain() async {
+        let expectation = expectation(description: "render called")
+        dispatcher.setRenderHandler { _ in expectation.fulfill() }
+        let action = decodeAction([
+            "type": "$convert.csv",
+            "options": ["data": "name,descrption,url\nFKA Twigs,Artist,https://example.com/twigs"],
+            "success": ["type": "$render"]
+        ])
+
+        await dispatcher.execute(action)
+
+        await fulfillment(of: [expectation], timeout: 1.0)
+        let payload = stateManager.get()["$jason"] as? [[String: Any]]
+        XCTAssertEqual(payload?.count, 1)
+        XCTAssertEqual(payload?.first?["name"] as? String, "FKA Twigs")
+        XCTAssertEqual(payload?.first?["descrption"] as? String, "Artist")
+        XCTAssertEqual(payload?.first?["url"] as? String, "https://example.com/twigs")
+    }
+
+    func testConvertRSSPassesItemsToRenderSuccessChain() async {
+        let expectation = expectation(description: "render called")
+        dispatcher.setRenderHandler { _ in expectation.fulfill() }
+        let rss = """
+        <rss><channel><item>
+          <title><![CDATA[Album &amp; Review]]></title>
+          <dc:creator>Pitchfork</dc:creator>
+          <link>https://example.com/review</link>
+          <media:content url="https://example.com/image.jpg" />
+        </item></channel></rss>
+        """
+        let action = decodeAction([
+            "type": "$convert.rss",
+            "options": ["data": rss],
+            "success": ["type": "$render"]
+        ])
+
+        await dispatcher.execute(action)
+
+        await fulfillment(of: [expectation], timeout: 1.0)
+        let payload = stateManager.get()["$jason"] as? [[String: Any]]
+        XCTAssertEqual(payload?.count, 1)
+        XCTAssertEqual(payload?.first?["title"] as? String, "Album & Review")
+        XCTAssertEqual(payload?.first?["author"] as? String, "Pitchfork")
+        XCTAssertEqual(payload?.first?["url"] as? String, "https://example.com/review")
+        XCTAssertEqual((payload?.first?["image"] as? [String: Any])?["url"] as? String, "https://example.com/image.jpg")
     }
 
     func testNetworkRequestStoresDictResponse() async {

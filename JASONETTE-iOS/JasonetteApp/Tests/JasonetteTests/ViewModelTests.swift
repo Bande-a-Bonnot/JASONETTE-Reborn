@@ -530,6 +530,39 @@ final class ViewModelTests: XCTestCase {
         XCTAssertEqual(resultLabel, "[0,1,2,3,4,5,6,7,8,9]")
     }
 
+    func testJasonpediaTemplateCSVFixtureRendersConvertedRows() throws {
+        let doc = try loadJasonpediaDocument("Jasonpedia/template/csv.json")
+        let body = try renderBodyTemplate(doc, context: [
+            "$jason": [[
+                "name": "FKA Twigs",
+                "descrption": "The artist formerly known as Twigs",
+                "url": "https://example.com/twigs",
+                "icon": "https://example.com/twigs.png",
+            ]],
+        ])
+
+        let item = try XCTUnwrap(body.sections?.first?.items?.first)
+        XCTAssertEqual(item.components?[1].components?[0].text, "FKA Twigs")
+        XCTAssertEqual(item.components?[1].components?[1].text, "The artist formerly known as Twigs")
+        XCTAssertEqual(item.href?.url, "https://example.com/twigs")
+    }
+
+    func testJasonpediaTemplateRSSFixtureRendersConvertedItems() throws {
+        let doc = try loadJasonpediaDocument("Jasonpedia/template/rss.json")
+        let body = try renderBodyTemplate(doc, context: [
+            "$jason": [[
+                "title": "Album Review",
+                "author": "Pitchfork",
+                "image": ["url": "https://example.com/image.jpg"],
+            ]],
+        ])
+
+        let section = try XCTUnwrap(body.sections?.first)
+        XCTAssertEqual(section.header?.components?[0].text, "Album Review")
+        XCTAssertEqual(section.header?.components?[1].text, "Pitchfork")
+        XCTAssertEqual(section.items?.first?.url, "https://example.com/image.jpg")
+    }
+
     func testJasonpediaNetworkElizaFixtureUsesLocalDocumentAndMaintainedEndpoint() throws {
         let doc = try loadJasonpediaDocument("Jasonpedia/action/network/eliza.json")
         let loadAction = try XCTUnwrap(doc.jason.head?.actions?["$load"])

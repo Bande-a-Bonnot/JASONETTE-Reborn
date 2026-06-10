@@ -419,6 +419,17 @@ public final class ActionDispatcher: ObservableObject {
         case "$network.request":
             return try await networkRequest(options, baseURL: baseURL)
 
+        // Conversion
+        case "$convert.csv":
+            let converted = convertCSV(options["data"]?.string ?? payload as? String ?? "")
+            stateManager.set(["$jason": converted])
+            return converted
+
+        case "$convert.rss":
+            let converted = convertRSS(options["data"]?.string ?? payload as? String ?? "")
+            stateManager.set(["$jason": converted])
+            return converted
+
         // Util
         case "$util.alert":
             let title = renderedString(options["title"], payload: payload) ?? ""
@@ -976,6 +987,131 @@ public final class ActionDispatcher: ObservableObject {
             return text
         }
         return nil
+    }
+
+    // MARK: - Conversion
+
+    private func convertCSV(_ text: String) -> [[String: Any]] {
+        let rows = parseCSVRows(text)
+        guard let headerRow = rows.first else { return [] }
+        let headers = headerRow.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+        return rows.dropFirst().compactMap { row in
+            guard row.contains(where: { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) else { return nil }
+            var object: [String: Any] = [:]
+            for (index, header) in headers.enumerated() where !header.isEmpty {
+                let value = index < row.count ? row[index].trimmingCharacters(in: .whitespacesAndNewlines) : ""
+                object[header] = value
+            }
+            return object
+        }
+    }
+
+    private func parseCSVRows(_ text: String) -> [[String]] {
+        var rows: [[String]] = []
+        var row: [String] = []
+        var field = ""
+        var inQuotes = false
+        var iterator = text.makeIterator()
+
+        while let char = iterator.next() {
+            if char == "\"" {
+                if inQuotes, let next = iterator.next() {
+                    if next == "\"" {
+                        field.append(next)
+                    } else {
+                        inQuotes = false
+                        if next == "," {
+                            row.append(field)
+                            field = ""
+                        } else if next == "\n" {
+                            row.append(field)
+                            rows.append(row)
+                            row = []
+                            field = ""
+                        } else if next != "\r" {
+                            field.append(next)
+                        }
+                    }
+                } else {
+                    inQuotes.toggle()
+                }
+            } else if char == ",", !inQuotes {
+                row.append(field)
+                field = ""
+            } else if char == "\n", !inQuotes {
+                row.append(field)
+                rows.append(row)
+                row = []
+                field = ""
+            } else if char != "\r" || inQuotes {
+                field.append(char)
+            }
+        }
+
+        if !field.isEmpty || !row.isEmpty {
+            row.append(field)
+            rows.append(row)
+        }
+        return rows
+    }
+
+    private func convertRSS(_ text: String) -> [[String: Any]] {
+        let itemPattern = #"(?is)<item\b[^>]*>(.*?)</item>"#
+        guard let regex = try? NSRegularExpression(pattern: itemPattern) else { return [] }
+        return regex.matches(in: text, range: NSRange(text.startIndex..., in: text)).compactMap { match in
+            guard let range = Range(match.range(at: 1), in: text) else { return nil }
+            let item = String(text[range])
+            var object: [String: Any] = [:]
+            if let title = firstXMLValue(named: "title", in: item) { object["title"] = title }
+            if let author = firstXMLValue(named: "dc:creator", in: item)
+                ?? firstXMLValue(named: "author", in: item) {
+                object["author"] = author
+            }
+            if let description = firstXMLValue(named: "description", in: item) { object["description"] = description }
+            if let link = firstXMLValue(named: "link", in: item) { object["url"] = link }
+            if let imageURL = firstXMLAttribute(named: "url", inFirstTagMatching: #"(?is)<media:(?:content|thumbnail)\b[^>]*>"#, text: item)
+                ?? firstXMLAttribute(named: "href", inFirstTagMatching: #"(?is)<enclosure\b[^>]*>"#, text: item)
+                ?? firstXMLAttribute(named: "url", inFirstTagMatching: #"(?is)<enclosure\b[^>]*>"#, text: item) {
+                object["image"] = ["url": imageURL]
+            }
+            return object.isEmpty ? nil : object
+        }
+    }
+
+    private func firstXMLValue(named name: String, in text: String) -> String? {
+        let escaped = NSRegularExpression.escapedPattern(for: name)
+        let pattern = "(?is)<\(escaped)\\b[^>]*>(?:<!\\[CDATA\\[(.*?)\\]\\]>|(.*?))</\(escaped)>"
+        guard let regex = try? NSRegularExpression(pattern: pattern),
+              let match = regex.firstMatch(in: text, range: NSRange(text.startIndex..., in: text))
+        else { return nil }
+        let captureIndex = match.range(at: 1).location != NSNotFound ? 1 : 2
+        guard let range = Range(match.range(at: captureIndex), in: text) else { return nil }
+        return decodeXMLEntities(String(text[range]).trimmingCharacters(in: .whitespacesAndNewlines))
+    }
+
+    private func firstXMLAttribute(named name: String, inFirstTagMatching tagPattern: String, text: String) -> String? {
+        guard let tagRegex = try? NSRegularExpression(pattern: tagPattern),
+              let tagMatch = tagRegex.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)),
+              let tagRange = Range(tagMatch.range, in: text)
+        else { return nil }
+        let tag = String(text[tagRange])
+        let escapedName = NSRegularExpression.escapedPattern(for: name)
+        let attrPattern = "\\b\(escapedName)\\s*=\\s*[\"']([^\"']+)[\"']"
+        guard let attrRegex = try? NSRegularExpression(pattern: attrPattern),
+              let attrMatch = attrRegex.firstMatch(in: tag, range: NSRange(tag.startIndex..., in: tag)),
+              let attrRange = Range(attrMatch.range(at: 1), in: tag)
+        else { return nil }
+        return decodeXMLEntities(String(tag[attrRange]))
+    }
+
+    private func decodeXMLEntities(_ string: String) -> String {
+        string
+            .replacingOccurrences(of: "&amp;", with: "&")
+            .replacingOccurrences(of: "&lt;", with: "<")
+            .replacingOccurrences(of: "&gt;", with: ">")
+            .replacingOccurrences(of: "&quot;", with: "\"")
+            .replacingOccurrences(of: "&apos;", with: "'")
+            .replacingOccurrences(of: "&#39;", with: "'")
     }
 
     enum ActionError: Error {
