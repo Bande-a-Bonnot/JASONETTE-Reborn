@@ -1,5 +1,5 @@
 ---
-status: pending
+status: complete
 priority: p1
 issue_id: "001"
 tags: [code-review, security, state-management]
@@ -55,11 +55,19 @@ Option A — namespace under `$response`. Document the change in the Jasonette s
 
 ## Acceptance Criteria
 
-- [ ] Network response keys do not overwrite existing local state keys
-- [ ] Template expressions can still access response data
-- [ ] Test: server returning `{"$jason": "injected"}` does not overwrite the existing `$jason` context key
-- [ ] Test: `{{$response.field}}` evaluates correctly after a `$network.request`
+- [x] Network response keys do not overwrite existing local state keys
+- [x] Template expressions can still access response data
+- [x] Test: server returning `{"$jason": "injected"}` does not overwrite the existing `$jason` context key
+- [x] Test: `{{$response.field}}` evaluates correctly after a `$network.request`
 
 ## Work Log
 
 - 2026-03-12: Identified by security-sentinel agent during code review of PR fix/testflight-crashes-and-component-tests
+
+## Completion Notes
+
+Completed: 2026-06-11
+
+The iOS `$network.request` path stores response payloads only under the `$response` namespace. Existing local keys, including `$jason`, are preserved even when a response body includes colliding keys. Coverage now includes `$response.field` access plus a malicious `{"$jason": ...}` response regression.
+
+Verification: `swift test --filter SecurityTests/testNetworkResponse`.

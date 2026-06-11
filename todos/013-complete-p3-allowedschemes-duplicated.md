@@ -1,5 +1,5 @@
 ---
-status: pending
+status: complete
 priority: p3
 issue_id: "013"
 tags: [code-review, architecture, dry]
@@ -46,9 +46,17 @@ Option A — simple, one-file change.
 
 ## Acceptance Criteria
 
-- [ ] Single source of truth for allowed URL schemes
-- [ ] Adding a new scheme requires changing one line
+- [x] Single source of truth for allowed URL schemes
+- [x] Adding a new scheme requires changing one line
 
 ## Work Log
 
 - 2026-03-12: Identified by code-simplicity-reviewer agent during code review
+
+## Completion Notes
+
+Completed: 2026-06-11
+
+Document/navigation URL scheme policy is centralized on `DocumentLoader.allowedSchemes`, with specialized `imageSchemes` and `appSchemes` documented for the cases that intentionally differ. Action, navigation, component, and URL-resolution call sites reference the shared policy instead of maintaining duplicate document-scheme constants.
+
+Verification: `swift test --filter URLResolutionTests`.

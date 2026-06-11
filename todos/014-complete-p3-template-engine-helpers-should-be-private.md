@@ -1,5 +1,5 @@
 ---
-status: pending
+status: complete
 priority: p3
 issue_id: "014"
 tags: [code-review, architecture, access-control]
@@ -33,10 +33,18 @@ All helpers are now `private`. No tests call internal methods directly — all t
 
 ## Acceptance Criteria
 
-- [ ] Only `render(_:context:)` is non-private on `TemplateEngine`
-- [ ] No tests call implementation-detail methods directly
-- [ ] Build passes with stricter access control
+- [x] Only `render(_:context:)` is non-private on `TemplateEngine`
+- [x] No tests call implementation-detail methods directly
+- [x] Build passes with stricter access control
 
 ## Work Log
 
 - 2026-03-12: Identified by pattern-recognition-specialist agent during code review
+
+## Completion Notes
+
+Completed: 2026-06-11
+
+`TemplateEngine` exposes only `render(_:context:)` as its public entry point; implementation helpers and the `Directive` enum are private. Tests continue to exercise behavior only through the public render API.
+
+Verification: `swift test --filter TemplateEngineTests`.

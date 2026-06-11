@@ -1,5 +1,5 @@
 ---
-status: pending
+status: complete
 priority: p2
 issue_id: "005"
 tags: [code-review, security, performance, anycOdable]
@@ -68,10 +68,18 @@ Option A — consistent with existing depth-guard pattern.
 
 ## Acceptance Criteria
 
-- [ ] `unwrapped` on a 512-level deeply-nested AnyCodable does not crash
-- [ ] Test: `testUnwrappedHandlesMaxDepthWithoutCrash`
-- [ ] Depth limit chosen ≥ practical real-world document depth (≥32)
+- [x] `unwrapped` on a 512-level deeply-nested AnyCodable does not crash
+- [x] Test: `testUnwrappedHandlesMaxDepthWithoutCrash`
+- [x] Depth limit chosen ≥ practical real-world document depth (≥32)
 
 ## Work Log
 
 - 2026-03-12: Identified by security-sentinel agent during code review
+
+## Completion Notes
+
+Completed: 2026-06-11
+
+`AnyCodable.unwrapped` now uses a 64-level depth guard while recursively stripping nested wrappers, preventing deeply nested values from overflowing the stack during render preparation.
+
+Verification: `swift test --filter AnyCodableTests/testUnwrappedHandlesMaxDepthWithoutCrash`.

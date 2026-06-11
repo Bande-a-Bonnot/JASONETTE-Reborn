@@ -1,5 +1,5 @@
 ---
-status: pending
+status: complete
 priority: p1
 issue_id: "004"
 tags: [code-review, data-integrity, state-management, userdefaults]
@@ -69,10 +69,18 @@ Option A — validate the full candidate dict before merging.
 
 ## Acceptance Criteria
 
-- [ ] `cacheSet` with a non-JSON-serializable value does not corrupt subsequent writes
-- [ ] Debug build shows an assertion failure or log when invalid value is passed
-- [ ] Test: verify that `cacheSet(["good": "val"])` after `cacheSet(["bad": Date()])` still persists "good"
+- [x] `cacheSet` with a non-JSON-serializable value does not corrupt subsequent writes
+- [x] Debug build shows an assertion failure or log when invalid value is passed
+- [x] Test: verify that `cacheSet(["good": "val"])` after `cacheSet(["bad": Date()])` still persists "good"
 
 ## Work Log
 
 - 2026-03-12: Identified by data-integrity-guardian agent during code review
+
+## Completion Notes
+
+Completed: 2026-06-11
+
+`StateManager.cacheSet` now validates the merged candidate before mutating cache state. Invalid non-JSON values are rejected through the debug failure handler and do not poison later valid writes.
+
+Verification: `swift test --filter StateManagerTests`.

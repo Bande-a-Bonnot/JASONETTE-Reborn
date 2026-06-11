@@ -1,5 +1,5 @@
 ---
-status: pending
+status: complete
 priority: p2
 issue_id: "011"
 tags: [code-review, performance, template-engine]
@@ -73,10 +73,18 @@ Option A with a bounded dictionary (cap at 256 entries with simple LRU). `Expres
 
 ## Acceptance Criteria
 
-- [ ] Identical expression strings reuse the parsed AST
-- [ ] Cache is bounded (does not grow unbounded on documents with many unique expressions)
-- [ ] All existing expression evaluator tests pass
+- [x] Identical expression strings reuse the parsed AST
+- [x] Cache is bounded (does not grow unbounded on documents with many unique expressions)
+- [x] All existing expression evaluator tests pass
 
 ## Work Log
 
 - 2026-03-12: Identified by performance-oracle agent during code review
+
+## Completion Notes
+
+Completed: 2026-06-11
+
+`ExpressionEvaluator` now caches parsed AST nodes by trimmed expression string with a 256-entry bound. Cached ASTs are resolved against the current context, so identical expressions can be reused safely across different data.
+
+Verification: `swift test --filter ExpressionEvaluatorTests/testCachedExpressionResolvesWithDifferentContexts`.

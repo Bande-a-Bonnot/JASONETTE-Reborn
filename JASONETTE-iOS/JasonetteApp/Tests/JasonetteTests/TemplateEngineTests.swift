@@ -387,6 +387,25 @@ final class TemplateEngineTests: XCTestCase {
         XCTAssertEqual(arr[0]["text"] as? String, "outer")
     }
 
+    func testEachTruncatesAtMaxItems() {
+        let items = Array(0..<1_500)
+        let template: [String: Any] = [
+            "{{#each items}}": [
+                "type": "label",
+                "text": "{{$index}}"
+            ]
+        ]
+
+        let result = TemplateEngine.render(template, context: ["items": items])
+        guard let renderedItems = result as? [[String: Any]] else {
+            return XCTFail("Expected rendered item array")
+        }
+
+        XCTAssertEqual(renderedItems.count, 1_000)
+        XCTAssertEqual(renderedItems.first?["text"] as? Int, 0)
+        XCTAssertEqual(renderedItems.last?["text"] as? Int, 999)
+    }
+
     // MARK: - Depth guard
 
     func testDepthGuardDoesNotCrashOnDeeplyNested() {

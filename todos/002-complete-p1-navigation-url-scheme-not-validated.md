@@ -1,5 +1,5 @@
 ---
-status: pending
+status: complete
 priority: p1
 issue_id: "002"
 tags: [code-review, security, navigation]
@@ -52,12 +52,20 @@ Option A — validate in `handleHref` in `JasonetteViewModel`.
 
 ## Acceptance Criteria
 
-- [ ] `href` with `file://` URL is silently ignored (no navigation, no crash)
-- [ ] `href` with `javascript:` URL is silently ignored
-- [ ] `href` with `https://` URL navigates correctly
-- [ ] Test: `testHandleHrefWithFileURLIsIgnored`
-- [ ] Test: `testHandleHrefWithJavascriptURLIsIgnored`
+- [x] `href` with `file://` URL is silently ignored (no navigation, no crash)
+- [x] `href` with `javascript:` URL is silently ignored
+- [x] `href` with `https://` URL navigates correctly
+- [x] Test: `testHandleHrefWithFileURLIsIgnored`
+- [x] Test: `testHandleHrefWithJavascriptURLIsIgnored`
 
 ## Work Log
 
 - 2026-03-12: Identified by security-sentinel agent during code review of PR fix/testflight-crashes-and-component-tests
+
+## Completion Notes
+
+Completed: 2026-06-11
+
+`JasonetteViewModel.handleHref` resolves authored URLs through `JasonURL.resolve(..., allowedSchemes:)` before emitting push/modal/switch/web/app navigation requests. Default document navigation rejects `file:` and `javascript:` before they enter the navigation stack; HTTPS still dispatches normally.
+
+Verification: `swift test --filter ViewModelTests/testHandleHref`.

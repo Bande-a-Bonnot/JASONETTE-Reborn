@@ -122,7 +122,9 @@ public final class JasonetteViewModel: ObservableObject {
             if self.document?.jason.head?.templates?[name] != nil {
                 self.activeTemplateName = name
             }
-            if let doc = self.document { self.render(doc) }
+            if let doc = self.document, !self.render(doc) {
+                self.loadState = .error(Self.templateRenderFailureMessage)
+            }
         }
         actionDispatcher.setActionResolver { [weak self] name in
             self?.document?.jason.head?.actions?[name]
@@ -162,20 +164,33 @@ public final class JasonetteViewModel: ObservableObject {
             }
             doc = await resolveHeadDataMixins(in: doc, baseURL: documentURL)
             document = doc
-            render(doc)
+            let initialRenderSucceeded = render(doc)
+            let loadAction = doc.jason.head?.actions?["$load"]
+            guard initialRenderSucceeded || loadAction != nil else {
+                loadState = .error(Self.templateRenderFailureMessage)
+                return
+            }
             loadState = .loaded
 
-            // Fire $load lifecycle
-            if let loadAction = doc.jason.head?.actions?["$load"] {
+            // Fire $load lifecycle. Some legacy templates intentionally need
+            // `$load` to seed state before their first successful typed body
+            // decode (for example dynamic layer style objects).
+            if let loadAction {
                 await actionDispatcher.execute(loadAction)
                 // Re-render after $load modifies state
-                if let d = document { render(d) }
+                if let d = document, !render(d) {
+                    loadState = .error(Self.templateRenderFailureMessage)
+                    return
+                }
             }
             if let renderedRoot,
                renderedRoot.body?.background?.dictionary?["type"]?.string == "camera",
                let readyAction = doc.jason.head?.actions?["$vision.ready"] {
                 await actionDispatcher.execute(readyAction)
-                if let d = document { render(d) }
+                if let d = document, !render(d) {
+                    loadState = .error(Self.templateRenderFailureMessage)
+                    return
+                }
             }
             if let renderedRoot {
                 showUnsupportedCameraBackgroundAlertIfNeeded(renderedRoot)
@@ -235,7 +250,10 @@ public final class JasonetteViewModel: ObservableObject {
         }
     }
 
-    private func render(_ doc: JasonDocument) {
+    private static let templateRenderFailureMessage = "Template render failed; showing error instead of silently discarding the template."
+
+    @discardableResult
+    private func render(_ doc: JasonDocument) -> Bool {
         let head = doc.jason.head
         let data = head?.data?.compactMapValues { $0.unwrapped } ?? [:]
         var context = data.merging(stateManager.local) { _, new in new }
@@ -257,20 +275,23 @@ public final class JasonetteViewModel: ObservableObject {
                 print("[Jasonette] render: template produced non-serializable output, falling back to raw document")
                 #endif
                 renderedRoot = doc.jason
-                return
+                return doc.jason.hasRenderableBodyContent
             }
             do {
                 let renderedData = try JSONSerialization.data(withJSONObject: rendered)
                 let body = try decoder.decode(JasonBody.self, from: renderedData)
                 renderedRoot = JasonRoot(head: head, body: body)
+                return true
             } catch {
                 #if DEBUG
                 print("[Jasonette] render: template decode failed (\(error)), falling back to raw document")
                 #endif
                 renderedRoot = doc.jason
+                return doc.jason.hasRenderableBodyContent
             }
         } else {
             renderedRoot = doc.jason
+            return true
         }
     }
 
@@ -335,7 +356,19 @@ public final class JasonetteViewModel: ObservableObject {
             return
         }
         await actionDispatcher.execute(pullAction)
-        if let doc = document { render(doc) }
+        if let doc = document, !render(doc) {
+            loadState = .error(Self.templateRenderFailureMessage)
+        }
+    }
+}
+
+private extension JasonRoot {
+    var hasRenderableBodyContent: Bool {
+        guard let body else { return false }
+        if body.background != nil || body.header != nil || body.footer != nil { return true }
+        if body.sections?.isEmpty == false { return true }
+        if body.layers?.isEmpty == false { return true }
+        return false
     }
 }
 

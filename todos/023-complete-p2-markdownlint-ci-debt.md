@@ -1,5 +1,5 @@
 ---
-status: ready
+status: complete
 priority: p2
 issue_id: "023"
 tags: [ci, markdownlint, docs, hygiene]
@@ -28,12 +28,20 @@ The `lint` job in CI has been red on `main` for every PR since the 015–022 tod
 
 ## Acceptance Criteria
 
-- [ ] `lint` job passes on `main` (green check on next push)
-- [ ] Running `markdownlint-cli2` on todos/ returns zero errors
-- [ ] New todo files added after this fix pass lint without manual cleanup
+- [x] `lint` job passes on `main` (green check on next push)
+- [x] Running `markdownlint-cli2` on todos/ returns zero errors
+- [x] New todo files added after this fix pass lint without manual cleanup
 
 ## Notes
 
 Deferred out of PR #17 scope — the PR is about network response handling and footer tab items, not markdown hygiene. Opening as P2 because it blocks the CI green signal every reviewer expects.
 
 Source: PR #17 review loop, 2026-04-18.
+
+## Completion Notes
+
+Completed: 2026-06-11
+
+Markdown lint debt is cleared; `npm run lint:md` now scans the repository markdown set with zero errors.
+
+Verification: `npm run lint:md` — 0 errors.

@@ -1,5 +1,5 @@
 ---
-status: pending
+status: complete
 priority: p2
 issue_id: "009"
 tags: [code-review, correctness, template-engine]
@@ -52,10 +52,18 @@ Option A — one character change.
 
 ## Acceptance Criteria
 
-- [ ] `renderArray` passes `depth + 1` to `applyDirective`
-- [ ] All existing `#each` and `#if` tests still pass
-- [ ] Depth guard test confirms deeply-nested directive trees are handled correctly
+- [x] `renderArray` passes `depth + 1` to `applyDirective`
+- [x] All existing `#each` and `#if` tests still pass
+- [x] Depth guard test confirms deeply-nested directive trees are handled correctly
 
 ## Work Log
 
 - 2026-03-12: Identified by architecture-strategist agent during code review
+
+## Completion Notes
+
+Completed: 2026-06-11
+
+`TemplateEngine.renderArray` now passes `depth + 1` when applying array-level directives, aligning directive and non-directive depth accounting. Existing nested directive/depth guard tests cover the behavior.
+
+Verification: `swift test --filter TemplateEngineTests`.

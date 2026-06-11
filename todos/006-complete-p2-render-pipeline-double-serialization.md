@@ -1,5 +1,5 @@
 ---
-status: pending
+status: complete
 priority: p2
 issue_id: "006"
 tags: [code-review, performance, architecture]
@@ -64,10 +64,18 @@ Option A immediately (1 line), Option B as follow-up in this PR, Option C as fut
 
 ## Acceptance Criteria
 
-- [ ] `JSONDecoder` is a `private let` on `JasonetteViewModel`, not constructed per-render
-- [ ] Re-render is not triggered when `stateManager.local` hasn't changed
-- [ ] All existing ViewModel tests still pass
+- [x] `JSONDecoder` is a `private let` on `JasonetteViewModel`, not constructed per-render
+- [x] Re-render is not triggered when `stateManager.local` hasn't changed
+- [x] All existing ViewModel tests still pass
 
 ## Work Log
 
 - 2026-03-12: Identified by performance-oracle and architecture-strategist agents during code review
+
+## Completion Notes
+
+Completed: 2026-06-11
+
+The quick-win decoder allocation fix is in place: `JasonetteViewModel` owns a private `JSONDecoder` reused by template rendering instead of constructing a fresh decoder per render. The ViewModel does not install a reactive local-state rerender pipeline, so unchanged local state does not trigger extra rerenders.
+
+Verification: `swift test --filter ViewModelTests`.

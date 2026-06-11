@@ -267,6 +267,31 @@ final class SecurityTests: XCTestCase {
         XCTAssertNil(stateManager.get()["field"], "Response keys must not be hoisted to the top-level state")
     }
 
+    func testNetworkResponseCannotOverwriteJasonNamespace() async {
+        stateManager.set(["$jason": ["safe": true]])
+        StubURLProtocol.requestHandler = { request in
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: nil
+            )!
+            return (response, Data(#"{"$jason":"injected","field":"value"}"#.utf8))
+        }
+        let action = decodeAction([
+            "type": "$network.request",
+            "options": ["url": "https://example.com/api"]
+        ])
+
+        await dispatcher.execute(action)
+
+        let existingJason = stateManager.get()["$jason"] as? [String: Any]
+        XCTAssertEqual(existingJason?["safe"] as? Bool, true)
+        let responseDict = stateManager.get()["$response"] as? [String: Any]
+        XCTAssertEqual(responseDict?["$jason"] as? String, "injected")
+        XCTAssertEqual(responseDict?["field"] as? String, "value")
+    }
+
     // MARK: - Edge cases
 
     func testEmptyURLReturnsError() async {

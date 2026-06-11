@@ -1,5 +1,5 @@
 ---
-status: pending
+status: complete
 priority: p2
 issue_id: "008"
 tags: [code-review, architecture, configuration]
@@ -53,9 +53,17 @@ Option A immediately (one-liner). Option B in a follow-up when todo #007 adds `m
 
 ## Acceptance Criteria
 
-- [ ] No magic number `20` in `ExpressionEvaluator.resolve()`
-- [ ] `TemplateEngine.maxDepth` and `ExpressionEvaluator`'s equivalent have the same value by definition
+- [x] No magic number `20` in `ExpressionEvaluator.resolve()`
+- [x] `TemplateEngine.maxDepth` and `ExpressionEvaluator`'s equivalent have the same value by definition
 
 ## Work Log
 
 - 2026-03-12: Identified by architecture-strategist and pattern-recognition-specialist agents during code review
+
+## Completion Notes
+
+Completed: 2026-06-11
+
+`ExpressionEvaluator` now uses a named `maxDepth` constant in `resolve` rather than a hard-coded `20`, matching the `TemplateEngine` depth-guard pattern.
+
+Verification: `swift test --filter ExpressionEvaluatorTests`.

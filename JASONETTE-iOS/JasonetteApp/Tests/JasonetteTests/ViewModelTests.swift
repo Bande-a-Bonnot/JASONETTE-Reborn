@@ -1,6 +1,79 @@
 import XCTest
 @testable import Jasonette
 
+private final class ReloadRaceURLProtocol: URLProtocol {
+    nonisolated(unsafe) private static var pendingRequests: [ReloadRaceURLProtocol] = []
+    nonisolated(unsafe) private static var stoppedRequests: [URL] = []
+    private static let lock = NSLock()
+
+    private var stopped = false
+
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+
+    override func startLoading() {
+        Self.lock.lock()
+        Self.pendingRequests.append(self)
+        Self.lock.unlock()
+    }
+
+    override func stopLoading() {
+        Self.lock.lock()
+        stopped = true
+        if let url = request.url { Self.stoppedRequests.append(url) }
+        Self.lock.unlock()
+    }
+
+    static func reset() {
+        lock.lock()
+        pendingRequests = []
+        stoppedRequests = []
+        lock.unlock()
+    }
+
+    static var pendingCount: Int {
+        lock.lock()
+        defer { lock.unlock() }
+        return pendingRequests.count
+    }
+
+    static var stoppedCount: Int {
+        lock.lock()
+        defer { lock.unlock() }
+        return stoppedRequests.count
+    }
+
+    static func completeRequest(at index: Int, title: String) {
+        lock.lock()
+        guard pendingRequests.indices.contains(index) else {
+            lock.unlock()
+            return
+        }
+        let proto = pendingRequests[index]
+        let isStopped = proto.stopped
+        lock.unlock()
+
+        guard !isStopped else { return }
+        let json = """
+        {
+            "$jason": {
+                "head": {"title": "\(title)"},
+                "body": {"sections": [{"items": [{"type": "label", "text": "\(title)"}]}]}
+            }
+        }
+        """
+        let response = HTTPURLResponse(
+            url: proto.request.url!,
+            statusCode: 200,
+            httpVersion: nil,
+            headerFields: nil
+        )!
+        proto.client?.urlProtocol(proto, didReceive: response, cacheStoragePolicy: .notAllowed)
+        proto.client?.urlProtocol(proto, didLoad: Data(json.utf8))
+        proto.client?.urlProtocolDidFinishLoading(proto)
+    }
+}
+
 @MainActor
 final class ViewModelTests: XCTestCase {
 
@@ -91,6 +164,46 @@ final class ViewModelTests: XCTestCase {
         // Call again — should remain loaded without re-loading
         await vm.loadIfNeeded()
         XCTAssertEqual(vm.loadState, .loaded)
+    }
+
+    func testReloadCancelsPreviousLoad() async throws {
+        ReloadRaceURLProtocol.reset()
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [ReloadRaceURLProtocol.self]
+        let loader = DocumentLoader(session: URLSession(configuration: config))
+        let vm = JasonetteViewModel(url: URL(string: "https://example.com/reload.json")!, loader: loader)
+
+        vm.reload()
+        try await waitUntil { ReloadRaceURLProtocol.pendingCount == 1 }
+
+        vm.reload()
+        try await waitUntil { ReloadRaceURLProtocol.pendingCount == 2 }
+
+        ReloadRaceURLProtocol.completeRequest(at: 0, title: "Stale")
+        try await Task.sleep(nanoseconds: 50_000_000)
+        XCTAssertNotEqual(vm.renderedRoot?.head?.title, "Stale")
+
+        ReloadRaceURLProtocol.completeRequest(at: 1, title: "Fresh")
+        try await waitUntil { vm.loadState == .loaded }
+        XCTAssertGreaterThanOrEqual(ReloadRaceURLProtocol.stoppedCount, 1)
+        XCTAssertEqual(vm.renderedRoot?.head?.title, "Fresh")
+    }
+
+    private func waitUntil(
+        timeoutNanoseconds: UInt64 = 2_000_000_000,
+        predicate: @escaping () -> Bool
+    ) async throws {
+        let started = DispatchTime.now().uptimeNanoseconds
+        while !predicate() {
+            if DispatchTime.now().uptimeNanoseconds - started > timeoutNanoseconds {
+                throw NSError(
+                    domain: "ViewModelTests",
+                    code: 1,
+                    userInfo: [NSLocalizedDescriptionKey: "Timed out waiting for async test condition"]
+                )
+            }
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
     }
 
     func testPreloadedDocumentURLIsPreservedSeparatelyFromIdentityURL() async {
@@ -363,10 +476,13 @@ final class ViewModelTests: XCTestCase {
         }
     }
 
-    func testHandleHrefRejectsDisallowedScheme() {
+    func testHandleHrefRejectsDisallowedSchemes() {
         let (vm, capture) = makeViewModelCapturing(simpleDocument())
         vm.handleHref(JasonHref(url: "file:///etc/passwd", view: nil))
-        XCTAssertNil(capture.last, "Disallowed scheme must not dispatch a navigation")
+        XCTAssertEqual(capture.requests.count, 0, "file: URL must not dispatch a navigation")
+
+        vm.handleHref(JasonHref(url: "javascript:alert(1)", view: nil))
+        XCTAssertEqual(capture.requests.count, 0, "javascript: URL must not dispatch a navigation")
     }
 
     func testHandleHrefDefaultHandlerIsNoop() {
@@ -798,8 +914,11 @@ final class ViewModelTests: XCTestCase {
         ])
         let vm = JasonetteViewModel(document: doc)
         await vm.load()
-        // Template renders sections as a string, which fails decode → falls back to raw doc
-        XCTAssertEqual(vm.loadState, .loaded)
+        // Template renders sections as a string, which fails decode → surfaces an error instead of silently reporting success.
+        guard case .error(let message) = vm.loadState else {
+            return XCTFail("Expected render failure to surface as .error, got \(vm.loadState)")
+        }
+        XCTAssertTrue(message.contains("Template render failed"))
         XCTAssertNotNil(vm.renderedRoot)
     }
 

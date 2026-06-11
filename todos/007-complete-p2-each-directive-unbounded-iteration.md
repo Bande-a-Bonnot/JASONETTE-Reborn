@@ -1,5 +1,5 @@
 ---
-status: pending
+status: complete
 priority: p2
 issue_id: "007"
 tags: [code-review, security, performance, template-engine]
@@ -57,11 +57,19 @@ Option B — truncation with debug warning.
 
 ## Acceptance Criteria
 
-- [ ] `#each` with 10,000 items only renders `maxItems` items
-- [ ] Warning logged in debug builds when truncation occurs
-- [ ] Test: `testEachTruncatesAtMaxItems`
-- [ ] Existing `#each` tests with small arrays still pass
+- [x] `#each` with 10,000 items only renders `maxItems` items
+- [x] Warning logged in debug builds when truncation occurs
+- [x] Test: `testEachTruncatesAtMaxItems`
+- [x] Existing `#each` tests with small arrays still pass
 
 ## Work Log
 
 - 2026-03-12: Identified by security-sentinel agent during code review
+
+## Completion Notes
+
+Completed: 2026-06-11
+
+`TemplateEngine` caps `#each` expansion at 1,000 items and logs a debug warning when authored data exceeds that cap. Added coverage proving a 1,500-item input renders exactly 1,000 items and preserves `$index` semantics at the boundary.
+
+Verification: `swift test --filter TemplateEngineTests/testEachTruncatesAtMaxItems`.

@@ -1,5 +1,5 @@
 ---
-status: pending
+status: complete
 priority: p2
 issue_id: "010"
 tags: [code-review, correctness, concurrency, view-model]
@@ -56,10 +56,18 @@ Option A — explicit task cancellation is the correct Swift Concurrency pattern
 
 ## Acceptance Criteria
 
-- [ ] Calling `reload()` twice rapidly only results in one completed render
-- [ ] The stale task from a previous `reload()` does not write to `renderedRoot`
-- [ ] Test: `testReloadCancelsPreviousLoad`
+- [x] Calling `reload()` twice rapidly only results in one completed render
+- [x] The stale task from a previous `reload()` does not write to `renderedRoot`
+- [x] Test: `testReloadCancelsPreviousLoad`
 
 ## Work Log
 
 - 2026-03-12: Identified by data-integrity-guardian agent during code review
+
+## Completion Notes
+
+Completed: 2026-06-11
+
+`JasonetteViewModel` tracks the active load task, cancels it before `reload()`/`loadIfNeeded()` starts a replacement, and keeps `loadState` in `.loading` during reload. Added a URLProtocol-backed race regression proving a cancelled stale request does not render over the fresh reload result; repeated locally 10x without flake.
+
+Verification: `swift test --filter ViewModelTests/testReloadCancelsPreviousLoad` (10 repeated runs).

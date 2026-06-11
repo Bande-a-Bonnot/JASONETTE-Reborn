@@ -1,5 +1,5 @@
 ---
-status: pending
+status: complete
 priority: p1
 issue_id: "003"
 tags: [code-review, architecture, error-handling, debugging]
@@ -68,10 +68,18 @@ Option A immediately (one PR), Option C as follow-up.
 
 ## Acceptance Criteria
 
-- [ ] Template render failure produces a visible log entry in debug builds
-- [ ] Test: `testRenderFallsBackToRawDocumentWhenTemplateInvalid` asserts on some observable signal (not just "doesn't crash")
-- [ ] No silent `loadState = .loaded` when template is discarded
+- [x] Template render failure produces a visible log entry in debug builds
+- [x] Test: `testRenderFallsBackToRawDocumentWhenTemplateInvalid` asserts on some observable signal (not just "doesn't crash")
+- [x] No silent `loadState = .loaded` when template is discarded
 
 ## Work Log
 
 - 2026-03-12: Identified by architecture-strategist and data-integrity-guardian agents during code review
+
+## Completion Notes
+
+Completed: 2026-06-11
+
+Template render fallback paths now emit DEBUG console diagnostics and return failure to the caller. `JasonetteViewModel.load()` surfaces invalid template output as `.error(...)` instead of reporting `.loaded` after silently discarding the template, while still retaining the raw document as fallback state for debugging.
+
+Verification: `swift test --filter ViewModelTests/testRenderFallsBackToRawDocumentWhenTemplateInvalid`.
