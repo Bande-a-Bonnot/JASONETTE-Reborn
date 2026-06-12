@@ -3,7 +3,7 @@
     "head": {
       "title": "Vault boy",
       "description": "Touch the vault boy to hear him laugh for you.",
-      "preview": "http://i.giphy.com/l41YybJPL0z2n1snm.gif",
+      "preview": "https://i.giphy.com/l41YybJPL0z2n1snm.gif",
       "actions": {
         "hahaha": {
           "type": "$audio.play",
@@ -22,7 +22,7 @@
       },
       "style": {
         "border": "none",
-        "background": "http://i.giphy.com/l41YybJPL0z2n1snm.gif"
+        "background": "https://i.giphy.com/l41YybJPL0z2n1snm.gif"
       },
       "sections": [
         {
