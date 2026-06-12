@@ -176,6 +176,14 @@ mounted document tabs, per-tab toolbar buttons, and pushed child pages.
 
 - The first `snapshot` can take a long time or time out while the XCTest runner
   starts. Retry once before assuming the app is inaccessible.
+- 2026-06-12 / `agent-device` 0.17.2: when the iOS runner is cold, the default
+  prepare/open path can exceed the tool's daemon request budget. On this machine,
+  `prepare ios-runner --timeout 240000` timed out, while
+  `prepare ios-runner --timeout 360000` succeeded in about 166s. `open --help`
+  does not expose a matching `--timeout` flag in 0.17.2, so `open` can still hit
+  a fixed 90s daemon timeout before establishing an active app session. See
+  `todos/065-p3-stabilize-agent-device-ios-snapshot-qa.md` and
+  `docs/qa/artifacts/2026-06-11-ui-qa-queue-run/agent-device-065-diagnostics.md`.
 - Screenshots may show an iOS breadcrumb back to `AgentDeviceRunner...`; this is
   a QA harness artifact.
 - Prefer accessibility refs from `snapshot -i`. If a control is collapsed or

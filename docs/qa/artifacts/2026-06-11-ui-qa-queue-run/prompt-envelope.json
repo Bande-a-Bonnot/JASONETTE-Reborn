@@ -1,0 +1,17 @@
+{
+  "schema_version": "foundry.prompt-envelope.v1",
+  "run_id": "2026-06-11-jasonette-ui-qa-queue-run",
+  "phase": "ui-qa",
+  "recipient": "ui-qa-agent",
+  "prompt": "You are a UI QA agent for the Jasonette Reborn iOS app. Work only in /Users/thomas/Projects/Banade-a-Bonnot/JASONETTE-Reborn. Read AGENTS.md, docs/HANDOFF.md, and docs/qa/README.md. Run an iOS Simulator exploratory QA pass using the existing Debug app workflow and agent-device where possible. Build/install/launch the iOS app on the preferred iPhone 17 Pro simulator if available; otherwise use a booted iOS simulator. Use the production Jasonpedia demo and direct-entry URLs for high-value screens from the current handoff/todo queue: action index/actions, template/script/conversion examples, map/html/text input, media/share/snapshot if feasible without real hardware, tabs/navigation. Capture screenshots/artifacts under docs/qa/artifacts/2026-06-11-ui-qa-queue-run/ when they support findings. Do not edit source files or todos. Return a concise but thorough report with: environment, commands, areas tested, confirmed working behavior, issues found with reproduction steps/evidence, and proposed todo entries for each actionable issue (priority, title, problem statement, acceptance criteria, verification guidance). Treat expected simulator/hardware limitations as notes unless the app handles them poorly. Also call out if any previous queue/documentation hygiene issues are visible in UI context, but prioritize UI defects.",
+  "visible_context": [
+    {
+      "label": "repo",
+      "kind": "workspace",
+      "sha256": "current-working-tree",
+      "content": "Jasonette Reborn iOS renderer workspace. Important docs: AGENTS.md, docs/HANDOFF.md, docs/qa/README.md. Existing QA artifact directory for this run: docs/qa/artifacts/2026-06-11-ui-qa-queue-run/."
+    }
+  ],
+  "withheld_context": [],
+  "redactions": []
+}
