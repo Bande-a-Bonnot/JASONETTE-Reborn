@@ -391,21 +391,24 @@ struct JasonetteView: View {
 
     @ViewBuilder
     private func layerView(_ component: JasonComponent, headStyles: [String: JasonStyle]) -> some View {
-        let style = resolveLayerStyle(component, headStyles: headStyles)
-        let positioning = LayerPositioning(style: style)
+        GeometryReader { proxy in
+            let style = resolveLayerStyle(component, headStyles: headStyles)
+            let positioning = LayerPositioning(style: style, containerSize: proxy.size)
 
-        ZStack(alignment: positioning.alignment) {
-            Color.clear
-                .allowsHitTesting(false)
-            ComponentView(
-                component,
-                headStyles: headStyles,
-                onHref: { viewModel.handleHref($0) },
-                onAction: { viewModel.handleAction($0) },
-                documentURL: viewModel.documentURL
-            )
-            .modifier(LayerPositioningModifier(positioning: positioning))
-            .modifier(DynamicLayerInteractionModifier(style: style))
+            ZStack(alignment: positioning.alignment) {
+                Color.clear
+                    .allowsHitTesting(false)
+                ComponentView(
+                    component,
+                    headStyles: headStyles,
+                    onHref: { viewModel.handleHref($0) },
+                    onAction: { viewModel.handleAction($0) },
+                    documentURL: viewModel.documentURL,
+                    expandsAlignment: false
+                )
+                .modifier(LayerPositioningModifier(positioning: positioning))
+                .modifier(DynamicLayerInteractionModifier(style: style))
+            }
         }
         .allowsHitTesting(true)
     }

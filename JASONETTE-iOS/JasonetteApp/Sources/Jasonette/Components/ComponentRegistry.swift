@@ -13,25 +13,33 @@ public struct ComponentView: View {
     let onHref: ((JasonHref) -> Void)?
     let onAction: ((JasonAction) -> Void)?
     let documentURL: URL?
+    let expandsAlignment: Bool
 
     public init(
         _ component: JasonComponent,
         headStyles: [String: JasonStyle] = [:],
         onHref: ((JasonHref) -> Void)? = nil,
         onAction: ((JasonAction) -> Void)? = nil,
-        documentURL: URL? = nil
+        documentURL: URL? = nil,
+        expandsAlignment: Bool = true
     ) {
         self.component = component
         self.headStyles = headStyles
         self.onHref = onHref
         self.onAction = onAction
         self.documentURL = documentURL
+        self.expandsAlignment = expandsAlignment
     }
 
     public var body: some View {
         let resolvedStyle = JasonStyle.resolve(for: component, headStyles: headStyles)
         let content = componentContent(resolvedStyle: resolvedStyle)
-            .modifier(JasonStyleModifier(style: component.style, headStyles: headStyles, className: component.class))
+            .modifier(JasonStyleModifier(
+                style: component.style,
+                headStyles: headStyles,
+                className: component.class,
+                expandsAlignment: expandsAlignment
+            ))
 
         if let href = component.href {
             Button {

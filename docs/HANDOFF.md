@@ -1,6 +1,6 @@
 # Agent Handoff Document
 
-Last updated: 2026-06-11
+Last updated: 2026-06-12
 
 **Update this file before context compaction and at the end of significant sessions.**
 
@@ -8,7 +8,7 @@ Last updated: 2026-06-11
 
 ### Test Suite
 
-- iOS: 584 tests, 0 failures (verified 2026-06-11 after clearing legacy code-review todos and adding reload/render/security/template regressions; `swift build` succeeded); generic iOS Simulator `xcodebuild` Debug build last succeeded 2026-06-09; direct-entry iPhone 17 Pro simulator QA for action screens completed 2026-06-03 with findings in `docs/qa/2026-06-03-ios-action-screen-qa.md`
+- iOS: 587 tests, 0 failures (verified 2026-06-12 after fixing Dynamic Layers positioning/hit-area regressions; `swift build` succeeded); generic iOS Simulator `xcodebuild` Debug build last succeeded 2026-06-09; direct-entry iPhone 17 Pro simulator QA for action screens completed 2026-06-03 with findings in `docs/qa/2026-06-03-ios-action-screen-qa.md`
 - Android CI: `pull_request` Android job ran/passed on PR #21, non-Android-change PR #22, and follow-up PR #23; Kotlin JSON primitive accessor compile failures fixed by squash `92e65dd`; oversized plain-integer JSON parsing aligned between Android test helper and production renderer in `c3f4f8f`; decimal/exponent policy is now explicitly documented as `Double` and centralized in Android `JsonValueConverter` (local Gradle verification blocked by missing Java runtime on 2026-05-26; limitation and CI fallback documented in `JASONETTE-Android/JasonetteApp/README.md`)
 - Run iOS: `cd JASONETTE-iOS/JasonetteApp && swift test`
 - Build iOS: `swift build` (<1s)
@@ -82,6 +82,7 @@ P3:
 - `todos/065` — stabilize the `agent-device` iOS snapshot workflow. Current diagnosis: raw `simctl` launches Jasonette on both iPhone 17 Pro and a second SE simulator, and `prepare ios-runner --timeout 360000` can succeed (~166s), but `agent-device open` in 0.17.2 exposes no `--timeout` flag and still hits a fixed 90s daemon timeout before establishing an active app session; see `docs/qa/artifacts/2026-06-11-ui-qa-queue-run/agent-device-065-diagnostics.md`.
 
 Completed this session:
+- Fixed the Dynamic Layers example so its legacy percentage positioning (`left: "50%-43"`, `left: "50%-50"`, `10%`, `calc(...)`) is resolved against the actual layer container via `GeometryReader`, restoring centered Mario/button placement. Layer rendering now opts out of full-width `align` expansion so invisible centered-label hit areas no longer overlap other layers or block Mario's drag gestures. Verification: `swift test --filter LayerPositioningTests`; full `swift test` (587); `swift build`.
 - `todos/063` — completed the iOS map first-paint/loading-state follow-up. A pinned-UDID direct-entry recheck captured the Jasonpedia map fixture at ~3s, 6s, 10s, and 15s; native map content was visible by 3s and screenshots were pixel-identical afterward (0.0000% changed pixels), so no renderer placeholder/code change is needed. Evidence: `docs/qa/artifacts/2026-06-11-ui-qa-queue-run/24-map-recheck-*.png`. Marked todo complete.
 - Investigated `todos/065` beyond the initial QA report: verified `agent-device open --help` has no `--timeout` flag while `prepare ios-runner` does, confirmed extended `prepare ios-runner --timeout 360000` succeeds, confirmed subsequent `open` still times out before session creation, tried `--no-device-hub`, a fresh state dir, a second simulator, and `disconnect` without clearing the issue. Left todo open with detailed logs and added a QA README note.
 - `todos/064` — fixed the Jasonpedia Vault Boy audio fixture ATS regression by changing the GIF preview/background URL from `http://i.giphy.com/...` to `https://i.giphy.com/...`. Verified the HTTPS asset returns HTTP 200, `jq empty` + `npm run spec:validate` pass, `npm run lint:md` passes, and direct-entry Simulator smoke via a local Jasonpedia server renders the Vault Boy media (`docs/qa/artifacts/2026-06-11-ui-qa-queue-run/22-action-audio-vaultboy-https.png`). Marked todo complete.

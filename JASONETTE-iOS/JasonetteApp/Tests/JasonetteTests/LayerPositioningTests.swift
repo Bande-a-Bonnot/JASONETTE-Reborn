@@ -32,6 +32,34 @@ final class LayerPositioningTests: XCTestCase {
         XCTAssertEqual(positioning.insets.trailing, 16)
     }
 
+    func testLayerLengthResolverSupportsLegacyPercentMinusOffset() {
+        XCTAssertEqual(LayerLengthResolver.resolve("50%-43", relativeTo: 390), 152)
+        XCTAssertEqual(LayerLengthResolver.resolve("50% - 43", relativeTo: 390), 152)
+        XCTAssertEqual(LayerLengthResolver.resolve("calc(50% - 43)", relativeTo: 390), 152)
+    }
+
+    func testContainerRelativePositioningUsesMatchingAxis() throws {
+        let style = JasonStyle(
+            top: AnyCodable("10%"),
+            left: AnyCodable("50%-43"),
+            bottom: AnyCodable("70"),
+            right: AnyCodable("5%")
+        )
+        let positioning = LayerPositioning(style: style, containerSize: CGSize(width: 390, height: 844))
+
+        XCTAssertEqual(try XCTUnwrap(positioning.top), 84.4, accuracy: 0.001)
+        XCTAssertEqual(try XCTUnwrap(positioning.left), 152, accuracy: 0.001)
+        XCTAssertEqual(try XCTUnwrap(positioning.bottom), 70, accuracy: 0.001)
+        XCTAssertEqual(try XCTUnwrap(positioning.right), 19.5, accuracy: 0.001)
+    }
+
+    func testPercentagePositioningWithoutContainerRemainsUnresolved() {
+        let style = JasonStyle(left: AnyCodable("50%-43"))
+        let positioning = LayerPositioning(style: style)
+
+        XCTAssertNil(positioning.left)
+    }
+
     func testUnpositionedLayerIsCenteredAndDoesNotStretch() {
         let positioning = LayerPositioning(style: JasonStyle())
 

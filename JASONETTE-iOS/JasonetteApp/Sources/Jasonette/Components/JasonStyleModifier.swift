@@ -5,6 +5,19 @@ struct JasonStyleModifier: ViewModifier {
     let style: JasonStyle?
     let headStyles: [String: JasonStyle]
     let className: String?
+    let expandsAlignment: Bool
+
+    init(
+        style: JasonStyle?,
+        headStyles: [String: JasonStyle],
+        className: String?,
+        expandsAlignment: Bool = true
+    ) {
+        self.style = style
+        self.headStyles = headStyles
+        self.className = className
+        self.expandsAlignment = expandsAlignment
+    }
 
     func body(content: Content) -> some View {
         content
@@ -14,7 +27,7 @@ struct JasonStyleModifier: ViewModifier {
             .applyBorder(resolved)
             .applySize(resolved)
             .applyOpacity(resolved)
-            .applyAlignment(resolved)
+            .applyAlignment(resolved, expands: expandsAlignment)
     }
 
     private var resolved: JasonStyle {
@@ -108,14 +121,26 @@ private extension View {
     }
 
     @ViewBuilder
-    func applyAlignment(_ style: JasonStyle) -> some View {
+    func applyAlignment(_ style: JasonStyle, expands: Bool) -> some View {
         switch style.align {
         case "center":
-            self.frame(maxWidth: .infinity, alignment: .center)
+            if expands {
+                self.frame(maxWidth: .infinity, alignment: .center)
+            } else {
+                self.multilineTextAlignment(.center)
+            }
         case "right":
-            self.frame(maxWidth: .infinity, alignment: .trailing)
+            if expands {
+                self.frame(maxWidth: .infinity, alignment: .trailing)
+            } else {
+                self.multilineTextAlignment(.trailing)
+            }
         case "left":
-            self.frame(maxWidth: .infinity, alignment: .leading)
+            if expands {
+                self.frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                self.multilineTextAlignment(.leading)
+            }
         default:
             self
         }
