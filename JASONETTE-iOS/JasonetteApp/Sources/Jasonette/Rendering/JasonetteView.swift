@@ -406,8 +406,11 @@ struct JasonetteView: View {
                     documentURL: viewModel.documentURL,
                     expandsAlignment: false
                 )
-                .modifier(LayerPositioningModifier(positioning: positioning))
+                // Apply transforms before edge padding/positioning so resize and
+                // rotation use the component's own center, not the larger
+                // transparent positioned layer frame.
                 .modifier(DynamicLayerInteractionModifier(style: style))
+                .modifier(LayerPositioningModifier(positioning: positioning))
             }
         }
         .allowsHitTesting(true)
