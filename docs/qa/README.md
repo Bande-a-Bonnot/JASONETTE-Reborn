@@ -58,6 +58,28 @@ As of 2026-05-28, the old asset-catalog workaround that cleared
 missing `AccentColor` asset has been added, and the device-specific build has
 been re-verified on iPhone 17 Pro / iOS 26.2.
 
+## TestFlight / installed-app build provenance
+
+The iOS app exposes its embedded build provenance without using App Store
+Connect or Xcode Cloud web consoles. Open this URL on a device/simulator with
+Jasonette installed:
+
+```text
+jasonette-build://
+```
+
+The app presents a `Jasonette Build` sheet with the app version/build, Git
+commit/branch, Xcode Cloud workflow/build number, generation timestamp, and a
+Copy Build Info button. For Simulator verification:
+
+```bash
+xcrun simctl openurl booted jasonette-build://
+```
+
+Xcode Cloud metadata is captured in
+`JASONETTE-iOS/JasonetteApp/ci_scripts/ci_post_clone.sh` before Tuist generation
+and injected into the generated iOS Info.plist by `Project.swift`.
+
 ## iOS Simulator QA with `agent-device`
 
 Use `agent-device` for agent-driven simulator QA. Raw `simctl` is excellent for

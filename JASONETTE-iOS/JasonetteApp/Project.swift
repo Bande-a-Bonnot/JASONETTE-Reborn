@@ -1,4 +1,18 @@
+import Foundation
 import ProjectDescription
+
+func buildSetting(_ key: String, default defaultValue: String = "unknown") -> String {
+    let value = ProcessInfo.processInfo.environment[key]?.trimmingCharacters(in: .whitespacesAndNewlines)
+    return value?.isEmpty == false ? value! : defaultValue
+}
+
+let buildMetadataSettings: [String: SettingValue] = [
+    "JASONETTE_GIT_COMMIT": .string(buildSetting("JASONETTE_GIT_COMMIT")),
+    "JASONETTE_GIT_BRANCH": .string(buildSetting("JASONETTE_GIT_BRANCH")),
+    "JASONETTE_CI_WORKFLOW": .string(buildSetting("JASONETTE_CI_WORKFLOW", default: "local")),
+    "JASONETTE_CI_BUILD_NUMBER": .string(buildSetting("JASONETTE_CI_BUILD_NUMBER", default: "local")),
+    "JASONETTE_BUILD_GENERATED_AT": .string(buildSetting("JASONETTE_BUILD_GENERATED_AT")),
+]
 
 let automaticSigningSettings: Settings = .settings(
     base: [
@@ -16,7 +30,7 @@ let project = Project(
     settings: .settings(base: [
         "MARKETING_VERSION": "2.0.0",
         "CURRENT_PROJECT_VERSION": "1",
-    ]),
+    ].merging(buildMetadataSettings) { _, new in new }),
     targets: [
         // MARK: - iOS
         .target(
@@ -31,6 +45,15 @@ let project = Project(
                 "CFBundleShortVersionString": "$(MARKETING_VERSION)",
                 "CFBundleVersion": "$(CURRENT_PROJECT_VERSION)",
                 "ITSAppUsesNonExemptEncryption": false,
+                "JasonetteGitCommit": "$(JASONETTE_GIT_COMMIT)",
+                "JasonetteGitBranch": "$(JASONETTE_GIT_BRANCH)",
+                "JasonetteCIWorkflow": "$(JASONETTE_CI_WORKFLOW)",
+                "JasonetteCIBuildNumber": "$(JASONETTE_CI_BUILD_NUMBER)",
+                "JasonetteBuildGeneratedAt": "$(JASONETTE_BUILD_GENERATED_AT)",
+                "CFBundleURLTypes": [[
+                    "CFBundleURLName": "com.bande-a-bonnot.jasonette.build",
+                    "CFBundleURLSchemes": ["jasonette-build"],
+                ]],
                 "NSLocationWhenInUseUsageDescription": "Jasonette documents can request your location to render geo demos and location-aware screens.",
                 "NSCameraUsageDescription": "Jasonette documents can request camera access so you can capture photos or videos for media actions.",
                 "NSPhotoLibraryUsageDescription": "Jasonette documents can open your photo library when selecting media or when the camera is unavailable in Simulator.",
