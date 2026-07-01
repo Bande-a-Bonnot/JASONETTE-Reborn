@@ -1,17 +1,65 @@
 import Foundation
 import ProjectDescription
 
-func buildSetting(_ key: String, default defaultValue: String = "unknown") -> String {
-    let value = ProcessInfo.processInfo.environment[key]?.trimmingCharacters(in: .whitespacesAndNewlines)
-    return value?.isEmpty == false ? value! : defaultValue
+func environmentValue(_ keys: String...) -> String? {
+    for key in keys {
+        let value = ProcessInfo.processInfo.environment[key]?.trimmingCharacters(in: .whitespacesAndNewlines)
+        if value?.isEmpty == false { return value }
+    }
+    return nil
+}
+
+func shellValue(_ arguments: [String]) -> String? {
+    let process = Process()
+    process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+    process.arguments = arguments
+
+    let pipe = Pipe()
+    process.standardOutput = pipe
+    process.standardError = Pipe()
+
+    do {
+        try process.run()
+        process.waitUntilExit()
+    } catch {
+        return nil
+    }
+
+    guard process.terminationStatus == 0 else { return nil }
+    let data = pipe.fileHandleForReading.readDataToEndOfFile()
+    let value = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
+    return value?.isEmpty == false ? value : nil
+}
+
+func iso8601Now() -> String {
+    let formatter = ISO8601DateFormatter()
+    formatter.formatOptions = [.withInternetDateTime]
+    return formatter.string(from: Date())
 }
 
 let buildMetadataSettings: [String: SettingValue] = [
-    "JASONETTE_GIT_COMMIT": .string(buildSetting("JASONETTE_GIT_COMMIT")),
-    "JASONETTE_GIT_BRANCH": .string(buildSetting("JASONETTE_GIT_BRANCH")),
-    "JASONETTE_CI_WORKFLOW": .string(buildSetting("JASONETTE_CI_WORKFLOW", default: "local")),
-    "JASONETTE_CI_BUILD_NUMBER": .string(buildSetting("JASONETTE_CI_BUILD_NUMBER", default: "local")),
-    "JASONETTE_BUILD_GENERATED_AT": .string(buildSetting("JASONETTE_BUILD_GENERATED_AT")),
+    "JASONETTE_GIT_COMMIT": .string(
+        environmentValue("JASONETTE_GIT_COMMIT", "CI_COMMIT")
+            ?? shellValue(["git", "rev-parse", "HEAD"])
+            ?? "unknown"
+    ),
+    "JASONETTE_GIT_BRANCH": .string(
+        environmentValue("JASONETTE_GIT_BRANCH", "CI_BRANCH")
+            ?? shellValue(["git", "rev-parse", "--abbrev-ref", "HEAD"])
+            ?? "unknown"
+    ),
+    "JASONETTE_CI_WORKFLOW": .string(
+        environmentValue("JASONETTE_CI_WORKFLOW", "CI_WORKFLOW")
+            ?? "Xcode Cloud"
+    ),
+    "JASONETTE_CI_BUILD_NUMBER": .string(
+        environmentValue("JASONETTE_CI_BUILD_NUMBER", "CI_BUILD_NUMBER")
+            ?? "$(CURRENT_PROJECT_VERSION)"
+    ),
+    "JASONETTE_BUILD_GENERATED_AT": .string(
+        environmentValue("JASONETTE_BUILD_GENERATED_AT", "CI_BUILD_ID")
+            ?? iso8601Now()
+    ),
 ]
 
 let automaticSigningSettings: Settings = .settings(
