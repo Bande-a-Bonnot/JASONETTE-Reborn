@@ -73,6 +73,30 @@ describe('renderComponent', () => {
     expect(input.name).toBe('notifications');
   });
 
+  it('renders html text with authored css in srcdoc', () => {
+    const el = renderComponent({
+      type: 'html',
+      css: 'p{color:red;}',
+      text: '<p>Hello</p>',
+    }, {});
+    const iframe = el.querySelector('iframe') as HTMLIFrameElement;
+    expect(iframe).not.toBeNull();
+    expect(iframe.srcdoc).toContain('<style>p{color:red;}</style>');
+    expect(iframe.srcdoc).toContain('<p>Hello</p>');
+  });
+
+  it('renders html url as iframe src without inline css injection', () => {
+    const el = renderComponent({
+      type: 'html',
+      css: 'p{color:red;}',
+      url: 'https://example.com/article.html',
+    }, {});
+    const iframe = el.querySelector('iframe') as HTMLIFrameElement;
+    expect(iframe).not.toBeNull();
+    expect(iframe.src).toContain('https://example.com/article.html');
+    expect(iframe.srcdoc).toBe('');
+  });
+
   it('renders unknown type', () => {
     const el = renderComponent({ type: 'unknown-widget' }, {});
     expect(el.textContent).toContain('Unknown');

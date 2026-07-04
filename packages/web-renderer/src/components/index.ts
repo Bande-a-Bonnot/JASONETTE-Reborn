@@ -93,7 +93,7 @@ registerComponent('html', (c) => {
   if (c.text) {
     // Use srcdoc iframe for sandboxing
     const iframe = document.createElement('iframe');
-    iframe.srcdoc = c.text;
+    iframe.srcdoc = htmlSrcdoc(String(c.text), typeof c.css === 'string' ? c.css : undefined);
     iframe.style.width = '100%';
     iframe.style.border = 'none';
     el.appendChild(iframe);
@@ -106,6 +106,15 @@ registerComponent('html', (c) => {
   }
   return el;
 });
+
+export function htmlSrcdoc(html: string, css?: string): string {
+  if (!css) return html;
+  return `<style>${escapeStyleContent(css)}</style>${html}`;
+}
+
+function escapeStyleContent(css: string): string {
+  return css.replace(/<\/style/gi, '<\\/style');
+}
 
 registerComponent('slider', (c) => {
   const el = document.createElement('input');

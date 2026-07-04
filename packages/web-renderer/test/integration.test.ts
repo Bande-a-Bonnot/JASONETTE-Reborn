@@ -78,6 +78,16 @@ describe('Integration: Jasonpedia fixtures', () => {
     expect(state.document).not.toBeNull();
   });
 
+  it('renders view/component/html/index.json with component css in iframe srcdoc', () => {
+    const doc = loadFixture('view/component/html/index.json');
+    renderer.renderDocument(doc);
+
+    const iframe = root.querySelector('.jasonette-html iframe') as HTMLIFrameElement;
+    expect(iframe).not.toBeNull();
+    expect(iframe.srcdoc).toContain('<style>img{width: 100%;} p{font-family: Helvetica; font-size: 14px;}</style>');
+    expect(iframe.srcdoc).toContain('Nexus devices');
+  });
+
   it('head styles generate a stylesheet', () => {
     const doc = loadFixture('core/index.json');
     renderer.renderDocument(doc);
