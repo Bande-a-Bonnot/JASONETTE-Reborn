@@ -152,7 +152,7 @@ public final class JasonetteViewModel: ObservableObject {
             // subsequent load() refetches so `$reload`/retry/pull work.
             let hasUnconsumedSeed = document != nil && !seedConsumed
             if let url, !hasUnconsumedSeed {
-                let loaded = try await loader.loadWithMetadata(from: url)
+                let loaded = try await loader.loadResolvingIncludesWithMetadata(from: url)
                 document = loaded.document
                 documentURL = loaded.url
                 actionDispatcher.setDocumentURL(loaded.url)
@@ -162,7 +162,7 @@ public final class JasonetteViewModel: ObservableObject {
                 loadState = .error("No document")
                 return
             }
-            doc = await resolveHeadDataMixins(in: doc, baseURL: documentURL)
+            doc = await resolveLegacyIncludes(in: doc, baseURL: documentURL)
             document = doc
             let initialRenderSucceeded = render(doc)
             let loadAction = doc.jason.head?.actions?["$load"]
@@ -223,28 +223,16 @@ public final class JasonetteViewModel: ObservableObject {
         )
     }
 
-    private func resolveHeadDataMixins(in doc: JasonDocument, baseURL: URL?) async -> JasonDocument {
-        guard let head = doc.jason.head,
-              let data = head.data,
-              let mixinURLString = data["@"]?.string,
-              let mixinURL = JasonURL.resolve(mixinURLString, against: baseURL)
-        else { return doc }
-
+    private func resolveLegacyIncludes(in doc: JasonDocument, baseURL: URL?) async -> JasonDocument {
         do {
-            let loaded = try await loader.loadJSON(from: mixinURL).value
-            guard let remoteData = loaded as? [String: Any] else { return doc }
-            var merged = remoteData
-            for (key, value) in data where key != "@" {
-                merged[key] = value.unwrapped
-            }
-            var root = doc.jason
-            var resolvedHead = head
-            resolvedHead.data = merged.mapValues { wrapAsAnyCodable($0) }
-            root.head = resolvedHead
-            return JasonDocument(jason: root)
+            let encoded = try JSONEncoder().encode(doc)
+            let value = try JSONSerialization.jsonObject(with: encoded, options: [.fragmentsAllowed])
+            let resolved = try await loader.resolveLegacyIncludes(in: value, baseURL: baseURL)
+            let data = try JSONSerialization.data(withJSONObject: resolved, options: [])
+            return try decoder.decode(JasonDocument.self, from: data)
         } catch {
             #if DEBUG
-            print("[Jasonette] data mixin load failed (\(error)); rendering inline data")
+            print("[Jasonette] legacy include resolution failed (\(error)); rendering inline document")
             #endif
             return doc
         }

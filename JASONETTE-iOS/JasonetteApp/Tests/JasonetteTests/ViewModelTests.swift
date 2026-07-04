@@ -85,15 +85,21 @@ final class ViewModelTests: XCTestCase {
     }
 
     private func loadJasonpediaDocument(_ relativePath: String) throws -> JasonDocument {
+        let data = try Data(contentsOf: repoRootURL().appendingPathComponent(relativePath))
+        return try JSONDecoder().decode(JasonDocument.self, from: data)
+    }
+
+    private func loadFixtureString(_ relativePath: String) throws -> String {
+        try String(contentsOf: repoRootURL().appendingPathComponent(relativePath), encoding: .utf8)
+    }
+
+    private func repoRootURL() -> URL {
         let testDir = URL(fileURLWithPath: #file).deletingLastPathComponent()
-        let repoRoot = testDir
+        return testDir
             .deletingLastPathComponent() // JasonetteTests/ -> Tests/
             .deletingLastPathComponent() // Tests/ -> JasonetteApp/
             .deletingLastPathComponent() // JasonetteApp/ -> JASONETTE-iOS/
             .deletingLastPathComponent() // JASONETTE-iOS/ -> JASONETTE-Reborn/
-        let url = repoRoot.appendingPathComponent(relativePath)
-        let data = try Data(contentsOf: url)
-        return try JSONDecoder().decode(JasonDocument.self, from: data)
     }
 
     private func renderBodyTemplate(_ doc: JasonDocument, context: [String: Any]) throws -> JasonBody {
@@ -273,6 +279,39 @@ final class ViewModelTests: XCTestCase {
         let items = try XCTUnwrap(vm.renderedRoot?.body?.sections?.first?.items)
         XCTAssertEqual(items.map { $0.components?.first?.text }, ["_.where"])
         XCTAssertEqual(items.first?.action?.type, "$href")
+    }
+
+    func testJasonpediaWebContainerFeedResolvesIncludesThroughViewModelLoad() async throws {
+        let base = "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/webcontainer/feed"
+        let fixtures: [String: String] = [
+            "\(base)/index.json": try loadFixtureString("Jasonpedia/webcontainer/feed/index.json"),
+            "\(base)/db.json": try loadFixtureString("Jasonpedia/webcontainer/feed/db.json"),
+            "\(base)/item.json": try loadFixtureString("Jasonpedia/webcontainer/feed/item.json"),
+            "\(base)/special_item.json": try loadFixtureString("Jasonpedia/webcontainer/feed/special_item.json"),
+            "\(base)/animated_item.json": try loadFixtureString("Jasonpedia/webcontainer/feed/animated_item.json")
+        ]
+        var requestCounts: [String: Int] = [:]
+        StubURLProtocol.requestHandler = { request in
+            let url = request.url!.absoluteString
+            requestCounts[url, default: 0] += 1
+            let body = try XCTUnwrap(fixtures[url], "Unexpected request: \(url)")
+            let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+            return (response, Data(body.utf8))
+        }
+        defer { StubURLProtocol.requestHandler = nil }
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [StubURLProtocol.self]
+        let loader = DocumentLoader(session: URLSession(configuration: config))
+        let vm = JasonetteViewModel(url: URL(string: "\(base)/index.json")!, loader: loader)
+
+        await vm.load()
+
+        XCTAssertEqual(vm.loadState, .loaded)
+        let sections = try XCTUnwrap(vm.renderedRoot?.body?.sections)
+        XCTAssertEqual(sections.first?.items?.count, 5)
+        XCTAssertEqual(sections.first?.items?.first?.components?.first?.url, "https://pbs.twimg.com/profile_images/557061751150112768/eMwi4Xz2.jpeg")
+        XCTAssertEqual(sections.dropFirst().first?.items?.count, 2)
+        XCTAssertEqual(requestCounts["\(base)/item.json"], 1)
     }
 
     // MARK: - ID policy

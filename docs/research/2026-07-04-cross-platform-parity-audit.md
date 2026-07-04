@@ -226,10 +226,10 @@ Current gaps:
 
 1. **Web UI action/render parity** — unblock click-driven demos and template
    render chains first because the code surface is smaller than native media.
-   Candidate todo: `todos/066-p1-web-action-render-parity.md`.
+   Completed todo: `todos/066-complete-p1-web-action-render-parity.md`.
 2. **iOS legacy include preprocessing** — iOS is otherwise strong; `+`/`$require`
    support would unlock webcontainer/shared-template fixtures.
-   Candidate todo: `todos/067-p1-ios-legacy-include-preprocessing.md`.
+   Completed todo: `todos/067-complete-p1-ios-legacy-include-preprocessing.md`.
 3. **Android runtime parity baseline** — implement a narrow Android pass for
    navigation/action re-render/render-context behavior before native media.
    Candidate todo: `todos/068-p1-android-runtime-parity-baseline.md`.

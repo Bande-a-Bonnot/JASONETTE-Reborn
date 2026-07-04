@@ -42,6 +42,17 @@ final class DocumentLoaderTests: XCTestCase {
         }
     }
 
+    private func loadFixtureString(_ relativePath: String) throws -> String {
+        let testDir = URL(fileURLWithPath: #file).deletingLastPathComponent()
+        let repoRoot = testDir
+            .deletingLastPathComponent() // JasonetteTests/ -> Tests/
+            .deletingLastPathComponent() // Tests/ -> JasonetteApp/
+            .deletingLastPathComponent() // JasonetteApp/ -> JASONETTE-iOS/
+            .deletingLastPathComponent() // JASONETTE-iOS/ -> JASONETTE-Reborn/
+        let url = repoRoot.appendingPathComponent(relativePath)
+        return try String(contentsOf: url, encoding: .utf8)
+    }
+
     // MARK: - Load from URL
 
     func testLoadReturnsDocumentOn200() async throws {
@@ -349,6 +360,223 @@ final class DocumentLoaderTests: XCTestCase {
         let url = URL(string: "http://example.com/doc.json")!
         let doc = try await loader.load(from: url)
         XCTAssertEqual(doc.jason.head?.title, "Sample")
+    }
+
+    // MARK: - Legacy includes
+
+    func testLoadResolvingIncludesWithMetadataExpandsJasonpediaWebContainerIframe() async throws {
+        let base = "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/webcontainer"
+        let iframe = try loadFixtureString("Jasonpedia/webcontainer/iframe.json")
+        let template = try loadFixtureString("Jasonpedia/webcontainer/template.json")
+        StubURLProtocol.requestHandler = { request in
+            let body: String
+            switch request.url?.absoluteString {
+            case "\(base)/iframe.json": body = iframe
+            case "\(base)/template.json": body = template
+            default:
+                XCTFail("Unexpected request: \(request.url?.absoluteString ?? "nil")")
+                body = "{}"
+            }
+            let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+            return (response, Data(body.utf8))
+        }
+
+        let loaded = try await loader.loadResolvingIncludesWithMetadata(from: URL(string: "\(base)/iframe.json")!)
+        let bodyTemplate = try XCTUnwrap(loaded.document.jason.head?.templates?["body"]?.dictionary)
+        let header = try XCTUnwrap(bodyTemplate["header"]?.dictionary)
+        let style = try XCTUnwrap(bodyTemplate["style"]?.dictionary)
+        let background = try XCTUnwrap(style["background"]?.dictionary)
+
+        XCTAssertEqual(header["title"]?.string, "iframe")
+        XCTAssertEqual(background["text"]?.string?.contains("hardbound.co"), true)
+        XCTAssertEqual(background["action"]?.dictionary?["type"]?.string, "$default")
+    }
+
+    func testLoadResolvingIncludesWithMetadataResolvesNestedRelativesAgainstIncludingDocument() async throws {
+        let rootURL = URL(string: "https://example.com/root/index.json")!
+        let partialURL = URL(string: "https://example.com/root/partials/template.json")!
+        let leafURL = URL(string: "https://example.com/root/partials/leaf.json")!
+        var requested: [URL] = []
+        StubURLProtocol.requestHandler = { request in
+            requested.append(request.url!)
+            let body: String
+            switch request.url {
+            case rootURL:
+                body = #"{"+":"partials/template.json","title":"Root"}"#
+            case partialURL:
+                body = #"{"$jason":{"head":{"templates":{"body":{"sections":[{"items":[{"+":"leaf.json"}]}]}}}}}"#
+            case leafURL:
+                body = #"{"type":"label","text":"Nested relative"}"#
+            default:
+                XCTFail("Unexpected request: \(request.url?.absoluteString ?? "nil")")
+                body = "{}"
+            }
+            let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+            return (response, Data(body.utf8))
+        }
+
+        let loaded = try await loader.loadResolvingIncludesWithMetadata(from: rootURL)
+        let template = try XCTUnwrap(loaded.document.jason.head?.templates?["body"]?.dictionary)
+        let sections = try XCTUnwrap(template["sections"]?.array)
+        let firstItem = try XCTUnwrap(sections.first?.dictionary?["items"]?.array?.first?.dictionary)
+
+        XCTAssertEqual(firstItem["text"]?.string, "Nested relative")
+        XCTAssertTrue(requested.contains(leafURL))
+    }
+
+    func testLoadResolvingIncludesWithMetadataFetchesLoopTemplateOnceBeforeRender() async throws {
+        let base = "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/webcontainer/feed"
+        let fixtures: [String: String] = [
+            "\(base)/index.json": try loadFixtureString("Jasonpedia/webcontainer/feed/index.json"),
+            "\(base)/db.json": try loadFixtureString("Jasonpedia/webcontainer/feed/db.json"),
+            "\(base)/item.json": try loadFixtureString("Jasonpedia/webcontainer/feed/item.json"),
+            "\(base)/special_item.json": try loadFixtureString("Jasonpedia/webcontainer/feed/special_item.json"),
+            "\(base)/animated_item.json": try loadFixtureString("Jasonpedia/webcontainer/feed/animated_item.json")
+        ]
+        var requestCounts: [String: Int] = [:]
+        StubURLProtocol.requestHandler = { request in
+            let url = request.url!.absoluteString
+            requestCounts[url, default: 0] += 1
+            let body = try XCTUnwrap(fixtures[url], "Unexpected request: \(url)")
+            let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+            return (response, Data(body.utf8))
+        }
+
+        let loaded = try await loader.loadResolvingIncludesWithMetadata(from: URL(string: "\(base)/index.json")!)
+        let data = loaded.document.jason.head?.data?.compactMapValues { $0.unwrapped } ?? [:]
+        let template = try XCTUnwrap(loaded.document.jason.head?.templates?["body"]?.unwrapped)
+        let rendered = TemplateEngine.render(template, context: data)
+        let renderedData = try JSONSerialization.data(withJSONObject: rendered)
+        let body = try JSONDecoder().decode(JasonBody.self, from: renderedData)
+
+        let items = try XCTUnwrap(data["items"] as? [Any])
+        XCTAssertEqual(items.count, 5)
+        XCTAssertEqual(body.sections?.first?.items?.count, 5)
+        XCTAssertEqual(body.sections?.first?.items?.first?.components?.first?.url, "https://pbs.twimg.com/profile_images/557061751150112768/eMwi4Xz2.jpeg")
+        XCTAssertEqual(requestCounts["\(base)/item.json"], 1)
+    }
+
+    func testLoadResolvingIncludesWithMetadataLetsDocumentReferencesSeeMergedOverlay() async throws {
+        let rootURL = URL(string: "https://example.com/webcontainer/iframe.json")!
+        let templateURL = URL(string: "https://example.com/webcontainer/template.json")!
+        StubURLProtocol.requestHandler = { request in
+            let body: String
+            switch request.url {
+            case rootURL:
+                body = ##"{"+":"template.json","title":"Overlay Title","theme":"#123456","html":"<h1>Overlay HTML</h1>","action":{"type":"$default"}}"##
+            case templateURL:
+                body = #"{"$jason":{"head":{"templates":{"body":{"header":{"title":{"+":"$document.title"},"style":{"background":{"+":"$document.theme"}}},"style":{"background":{"type":"html","text":{"+":"$document.html"},"action":{"+":"$document.action"}}}}}}}}"#
+            default:
+                XCTFail("Unexpected request: \(request.url?.absoluteString ?? "nil")")
+                body = "{}"
+            }
+            let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+            return (response, Data(body.utf8))
+        }
+
+        let loaded = try await loader.loadResolvingIncludesWithMetadata(from: rootURL)
+        let bodyTemplate = try XCTUnwrap(loaded.document.jason.head?.templates?["body"]?.dictionary)
+        let header = try XCTUnwrap(bodyTemplate["header"]?.dictionary)
+        let style = try XCTUnwrap(bodyTemplate["style"]?.dictionary)
+        let background = try XCTUnwrap(style["background"]?.dictionary)
+
+        XCTAssertEqual(header["title"]?.string, "Overlay Title")
+        XCTAssertEqual(header["style"]?.dictionary?["background"]?.string, "#123456")
+        XCTAssertEqual(background["text"]?.string, "<h1>Overlay HTML</h1>")
+        XCTAssertEqual(background["action"]?.dictionary?["type"]?.string, "$default")
+    }
+
+    func testLoadResolvingIncludesWithMetadataFailsSoftForLegacyAtDataMixin() async throws {
+        let rootURL = URL(string: "https://example.com/mixin.json")!
+        StubURLProtocol.requestHandler = { request in
+            guard request.url == rootURL else { throw URLError(.cannotFindHost) }
+            let body = #"{"$jason":{"head":{"data":{"@":"missing.json","title":"Inline"},"templates":{"body":{"sections":[{"items":[{"type":"label","text":"{{title}}"}]}]}}}}}"#
+            let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+            return (response, Data(body.utf8))
+        }
+
+        let loaded = try await loader.loadResolvingIncludesWithMetadata(from: rootURL)
+
+        XCTAssertEqual(loaded.document.jason.head?.data?["title"]?.string, "Inline")
+        XCTAssertEqual(loaded.document.jason.head?.data?["@"]?.string, "missing.json")
+    }
+
+    func testLoadResolvingIncludesWithMetadataUsesLoadedDocumentRootForSelectedPathDocumentReferences() async throws {
+        let rootURL = URL(string: "https://example.com/root.json")!
+        let partialURL = URL(string: "https://example.com/partial.json")!
+        StubURLProtocol.requestHandler = { request in
+            let body: String
+            switch request.url {
+            case rootURL:
+                body = #"{"$jason":{"head":{"templates":{"body":{"sections":[{"items":[{"+":"item@partial.json"}]}]}}}}}"#
+            case partialURL:
+                body = #"{"title":"Partial Title","item":{"type":"label","text":{"+":"$document.title"}}}"#
+            default:
+                XCTFail("Unexpected request: \(request.url?.absoluteString ?? "nil")")
+                body = "{}"
+            }
+            let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+            return (response, Data(body.utf8))
+        }
+
+        let loaded = try await loader.loadResolvingIncludesWithMetadata(from: rootURL)
+        let template = try XCTUnwrap(loaded.document.jason.head?.templates?["body"]?.dictionary)
+        let sections = try XCTUnwrap(template["sections"]?.array)
+        let firstItem = try XCTUnwrap(sections.first?.dictionary?["items"]?.array?.first?.dictionary)
+
+        XCTAssertEqual(firstItem["text"]?.string, "Partial Title")
+    }
+
+    func testLoadResolvingIncludesWithMetadataDoesNotTreatAtInsideURLAsPathSeparator() async throws {
+        let rootURL = URL(string: "https://example.com/root.json")!
+        let remoteURL = URL(string: "https://example.com/remote.json?email=a@b.com")!
+        var requestedRemote = false
+        StubURLProtocol.requestHandler = { request in
+            let body: String
+            switch request.url {
+            case rootURL:
+                body = #"{"+":"https://example.com/remote.json?email=a@b.com"}"#
+            case remoteURL:
+                requestedRemote = true
+                body = #"{"$jason":{"head":{"title":"Remote"},"body":{"sections":[]}}}"#
+            default:
+                XCTFail("Unexpected request: \(request.url?.absoluteString ?? "nil")")
+                body = "{}"
+            }
+            let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+            return (response, Data(body.utf8))
+        }
+
+        let loaded = try await loader.loadResolvingIncludesWithMetadata(from: rootURL)
+
+        XCTAssertTrue(requestedRemote)
+        XCTAssertEqual(loaded.document.jason.head?.title, "Remote")
+    }
+
+    func testLoadResolvingIncludesWithMetadataRejectsNestedIncludeCycle() async throws {
+        let a = URL(string: "https://example.com/a.json")!
+        let b = URL(string: "https://example.com/b.json")!
+        StubURLProtocol.requestHandler = { request in
+            let body: String
+            switch request.url {
+            case a: body = #"{"+":"b.json"}"#
+            case b: body = #"{"+":"a.json"}"#
+            default:
+                XCTFail("Unexpected request: \(request.url?.absoluteString ?? "nil")")
+                body = "{}"
+            }
+            let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+            return (response, Data(body.utf8))
+        }
+
+        do {
+            _ = try await loader.loadResolvingIncludesWithMetadata(from: a)
+            XCTFail("Expected include cycle error")
+        } catch DocumentLoader.DocumentError.includeCycle {
+            // expected
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
     }
 
     // MARK: - Footer / tabs

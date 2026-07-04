@@ -114,7 +114,15 @@ public enum TemplateEngine {
                 )
             } else {
                 containsOnlyConditionalBranches = false
-                result.append(render(item, context: context, depth: depth + 1))
+                let rendered = render(item, context: context, depth: depth + 1)
+                // Legacy Jasonette component arrays sometimes nest a split
+                // conditional chain as one array item (`components: [[{"{{#if ...}}": ...}, ...]]`).
+                // Flatten only that directive shape; preserve ordinary arrays-of-arrays.
+                if let nestedArray = item as? [Any], isSplitConditionalChain(nestedArray) {
+                    appendRendered(rendered, to: &result)
+                } else {
+                    result.append(rendered)
+                }
             }
             index += 1
         }
@@ -137,6 +145,18 @@ public enum TemplateEngine {
             result.append(contentsOf: arr)
         } else {
             result.append(rendered)
+        }
+    }
+
+    private static func isSplitConditionalChain(_ arr: [Any]) -> Bool {
+        guard !arr.isEmpty else { return false }
+        return arr.allSatisfy { item in
+            guard let dict = item as? [String: Any], !dict.isEmpty else { return false }
+            return dict.keys.allSatisfy { key in
+                ifBranch(key: key, value: dict[key] as Any) != nil
+                    || elseifBranch(key: key, value: dict[key] as Any) != nil
+                    || key == "{{#else}}"
+            }
         }
     }
 

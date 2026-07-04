@@ -345,6 +345,38 @@ final class TemplateEngineTests: XCTestCase {
         XCTAssertEqual(arr[0]["text"] as? String, "Visible")
     }
 
+    func testNestedSplitConditionalArrayFlattensSelectedComponentSibling() {
+        let template: [Any] = [
+            ["type": "label", "text": "Before"],
+            [
+                ["{{#if interactive}}": ["type": "html", "text": "Interactive"]],
+                ["{{#else}}": ["type": "html", "text": "Static"]]
+            ]
+        ]
+
+        let result = TemplateEngine.render(template, context: ["interactive": false])
+        guard let arr = result as? [[String: Any]] else {
+            XCTFail("Expected array"); return
+        }
+        XCTAssertEqual(arr.count, 2)
+        XCTAssertEqual(arr[0]["text"] as? String, "Before")
+        XCTAssertEqual(arr[1]["text"] as? String, "Static")
+    }
+
+    func testNonDirectiveNestedArraysArePreserved() {
+        let template: [Any] = [
+            ["matrix": [[1, 2], [3, 4]]],
+            [["plain", "nested"]]
+        ]
+
+        let result = TemplateEngine.render(template, context: [:])
+        guard let arr = result as? [Any] else {
+            XCTFail("Expected array"); return
+        }
+        XCTAssertEqual(((arr[0] as? [String: Any])?["matrix"] as? [[Int]])?.first, [1, 2])
+        XCTAssertEqual((arr[1] as? [[String]])?.first, ["plain", "nested"])
+    }
+
     // MARK: - #each edge cases
 
     func testEachWithEmptyArrayProducesNoItems() {
