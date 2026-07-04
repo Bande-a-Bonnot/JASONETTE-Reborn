@@ -56,4 +56,15 @@ class DocumentLoaderTest {
         assertEquals(2, tabs?.size)
         assertEquals("Home", tabs?.get(0)?.text)
     }
+
+    @Test fun testDecodeWithFooterInputAndTriggerAction() {
+        val json = """{"${'$'}jason":{"body":{"footer":{"input":{"name":"message","placeholder":"Say something...","left":{"image":"https://example.com/cam.png"},"right":{"text":"Send","action":{"trigger":"send"}}}}}}}"""
+        val doc = loader.decode(json)
+        val input = doc.jason.body?.footer?.input
+        assertEquals("message", input?.name)
+        assertEquals("Say something...", input?.placeholder)
+        assertEquals("https://example.com/cam.png", input?.left?.image)
+        assertEquals("Send", input?.right?.text)
+        assertEquals("send", input?.right?.action?.trigger)
+    }
 }

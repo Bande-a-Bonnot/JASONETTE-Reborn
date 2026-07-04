@@ -32,11 +32,17 @@ fun ComponentView(
             }
         }
 
+    val effectiveType = component.type ?: when {
+        component.url != null || component.image != null -> "image"
+        component.text != null -> "label"
+        else -> null
+    }
+
     Box(modifier = modifier) {
-        when (component.type) {
+        when (effectiveType) {
             "label" -> LabelComponent(text = component.text ?: "")
-            "image" -> ImageComponent(url = component.url, style = component.style)
-            "button" -> ButtonComponent(text = component.text, url = component.url)
+            "image" -> ImageComponent(url = component.url ?: component.image, style = component.style)
+            "button" -> ButtonComponent(text = component.text, url = component.url ?: component.image)
             "textfield" -> {
                 val name = component.name ?: ""
                 TextFieldComponent(
@@ -44,7 +50,10 @@ fun ComponentView(
                     placeholder = component.placeholder ?: "",
                     keyboard = component.keyboard,
                     value = stateManager?.local?.get(name) as? String ?: "",
-                    onValueChange = { stateManager?.set(mapOf(name to it)) }
+                    onValueChange = {
+                        stateManager?.set(mapOf(name to it))
+                        component.action?.let { action -> onAction?.invoke(action) }
+                    }
                 )
             }
             "textarea" -> {
@@ -53,7 +62,10 @@ fun ComponentView(
                     name = name,
                     placeholder = component.placeholder ?: "",
                     value = stateManager?.local?.get(name) as? String ?: "",
-                    onValueChange = { stateManager?.set(mapOf(name to it)) }
+                    onValueChange = {
+                        stateManager?.set(mapOf(name to it))
+                        component.action?.let { action -> onAction?.invoke(action) }
+                    }
                 )
             }
             "slider" -> {
@@ -61,7 +73,10 @@ fun ComponentView(
                 SliderComponent(
                     name = name,
                     value = (component.value as? JsonPrimitive)?.floatOrNull ?: 50f,
-                    onValueChange = { stateManager?.set(mapOf(name to it)) }
+                    onValueChange = {
+                        stateManager?.set(mapOf(name to it))
+                        component.action?.let { action -> onAction?.invoke(action) }
+                    }
                 )
             }
             "space" -> SpaceComponent(height = component.style?.height?.dp)
@@ -70,10 +85,14 @@ fun ComponentView(
                 SwitchComponent(
                     name = name,
                     isOn = (component.value as? JsonPrimitive)?.content == "true",
-                    onCheckedChange = { stateManager?.set(mapOf(name to it)) }
+                    onCheckedChange = {
+                        stateManager?.set(mapOf(name to it))
+                        component.action?.let { action -> onAction?.invoke(action) }
+                    }
                 )
             }
             "map" -> MapStubComponent()
+            "html" -> HtmlStubComponent()
             "vertical" -> LayoutView(
                 direction = LayoutDirection.VERTICAL,
                 components = component.components ?: emptyList(),
@@ -93,7 +112,7 @@ fun ComponentView(
                 onAction = onAction
             )
             else -> androidx.compose.material3.Text(
-                text = "[Unknown: ${component.type ?: "nil"}]",
+                text = "[Unknown: ${effectiveType ?: "nil"}]",
                 color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
             )
         }

@@ -24,6 +24,10 @@ fun JasonetteScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
+    LaunchedEffect(onNavigate) {
+        viewModel.setNavigationHandler(onNavigate)
+    }
+
     when (val state = uiState) {
         is UiState.Loading -> {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -52,6 +56,17 @@ fun JasonetteScreen(
                     head?.title?.let { title ->
                         TopAppBar(title = { Text(title) })
                     }
+                },
+                bottomBar = {
+                    body?.footer?.let { footer ->
+                        FooterView(
+                            footer = footer,
+                            headStyles = headStyles,
+                            stateManager = viewModel.stateManager,
+                            onHref = { viewModel.handleHref(it) },
+                            onAction = { viewModel.handleAction(it) }
+                        )
+                    }
                 }
             ) { padding ->
                 LazyColumn(
@@ -68,7 +83,7 @@ fun JasonetteScreen(
                                     header,
                                     headStyles = headStyles,
                                     stateManager = viewModel.stateManager,
-                                    onHref = onNavigate,
+                                    onHref = { viewModel.handleHref(it) },
                                     onAction = { viewModel.handleAction(it) }
                                 )
                             }
@@ -78,7 +93,7 @@ fun JasonetteScreen(
                                 component,
                                 headStyles = headStyles,
                                 stateManager = viewModel.stateManager,
-                                onHref = onNavigate,
+                                onHref = { viewModel.handleHref(it) },
                                 onAction = { viewModel.handleAction(it) }
                             )
                         }
@@ -91,7 +106,7 @@ fun JasonetteScreen(
                                 component,
                                 headStyles = headStyles,
                                 stateManager = viewModel.stateManager,
-                                onHref = onNavigate,
+                                onHref = { viewModel.handleHref(it) },
                                 onAction = { viewModel.handleAction(it) }
                             )
                         }
@@ -102,6 +117,68 @@ fun JasonetteScreen(
     }
 
     LaunchedEffect(Unit) { viewModel.loadIfNeeded() }
+}
+
+@Composable
+private fun FooterView(
+    footer: JasonFooter,
+    headStyles: Map<String, JasonStyle>,
+    stateManager: StateManager,
+    onHref: ((JasonHref) -> Unit),
+    onAction: ((JasonAction) -> Unit)
+) {
+    val tabs = footer.tabs?.items
+    val input = footer.input
+    Surface(tonalElevation = 3.dp) {
+        when {
+            tabs != null -> {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    tabs.forEach { item ->
+                        ComponentView(
+                            item,
+                            headStyles = headStyles,
+                            stateManager = stateManager,
+                            onHref = onHref,
+                            onAction = onAction
+                        )
+                    }
+                }
+            }
+            input != null -> {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    input.left?.let { component ->
+                        ComponentView(component, headStyles, stateManager, onHref, onAction)
+                    }
+                    ComponentView(
+                        JasonComponent(
+                            type = "textfield",
+                            name = input.name,
+                            placeholder = input.placeholder
+                        ),
+                        headStyles = headStyles,
+                        stateManager = stateManager,
+                        onHref = onHref,
+                        onAction = onAction
+                    )
+                    input.right?.let { component ->
+                        ComponentView(component, headStyles, stateManager, onHref, onAction)
+                    }
+                }
+            }
+        }
+    }
 }
 
 /** Convenience overload that creates a ViewModel from a URL. */

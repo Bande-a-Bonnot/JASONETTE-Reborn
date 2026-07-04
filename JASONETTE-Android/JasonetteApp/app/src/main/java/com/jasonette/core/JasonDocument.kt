@@ -64,7 +64,8 @@ data class JasonComponent(
     val components: List<JasonComponent>? = null,
     val href: JasonHref? = null,
     val action: JasonAction? = null,
-    val keyboard: String? = null
+    val keyboard: String? = null,
+    val image: String? = null
 )
 
 @Serializable
@@ -79,6 +80,7 @@ data class JasonHref(
 @Serializable
 data class JasonAction(
     val type: String? = null,
+    val trigger: String? = null,
     val options: JsonObject? = null,
     val success: JasonAction? = null,
     val error: JasonAction? = null
@@ -87,7 +89,15 @@ data class JasonAction(
 @Serializable
 data class JasonFooter(
     val tabs: JasonTabs? = null,
-    val input: Map<String, JasonComponent>? = null
+    val input: JasonFooterInput? = null
+)
+
+@Serializable
+data class JasonFooterInput(
+    val name: String? = null,
+    val placeholder: String? = null,
+    val left: JasonComponent? = null,
+    val right: JasonComponent? = null
 )
 
 @Serializable

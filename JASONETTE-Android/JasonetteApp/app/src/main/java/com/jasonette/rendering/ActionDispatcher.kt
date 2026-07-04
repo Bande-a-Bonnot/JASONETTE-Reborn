@@ -3,12 +3,41 @@ package com.jasonette.rendering
 import com.jasonette.core.*
 import kotlinx.serialization.json.JsonPrimitive
 import java.net.HttpURLConnection
+import java.net.URI
 import java.net.URL
 
 /**
  * Executes Jasonette actions with success/error chaining.
  */
-class ActionDispatcher(private val stateManager: StateManager) {
+class ActionDispatcher(
+    private val stateManager: StateManager,
+    private var baseUrl: String? = null,
+    private val networkClient: (suspend (String, kotlinx.serialization.json.JsonObject?) -> String)? = null
+) {
+    private var renderHandler: (() -> Unit)? = null
+    private var reloadHandler: (() -> Unit)? = null
+    private var navigationHandler: ((JasonHref) -> Unit)? = null
+    private var actionResolver: ((String) -> JasonAction?)? = null
+
+    fun setBaseUrl(url: String?) {
+        baseUrl = url
+    }
+
+    fun setRenderHandler(handler: (() -> Unit)?) {
+        renderHandler = handler
+    }
+
+    fun setReloadHandler(handler: (() -> Unit)?) {
+        reloadHandler = handler
+    }
+
+    fun setNavigationHandler(handler: ((JasonHref) -> Unit)?) {
+        navigationHandler = handler
+    }
+
+    fun setActionResolver(handler: ((String) -> JasonAction?)?) {
+        actionResolver = handler
+    }
 
     suspend fun execute(action: JasonAction) {
         try {
@@ -20,6 +49,12 @@ class ActionDispatcher(private val stateManager: StateManager) {
     }
 
     private suspend fun dispatch(action: JasonAction) {
+        if (action.type == null) {
+            action.trigger?.let { trigger ->
+                actionResolver?.invoke(trigger)?.let { execute(it) }
+            }
+            return
+        }
         val type = action.type ?: return
         val options = action.options
 
@@ -43,13 +78,18 @@ class ActionDispatcher(private val stateManager: StateManager) {
             "\$cache.get" -> {}
             "\$cache.reset" -> stateManager.cacheReset()
 
-            "\$render" -> {} // handled by ViewModel re-render
-            "\$reload" -> {} // handled by ViewModel
+            "\$render" -> renderHandler?.invoke()
+            "\$reload" -> reloadHandler?.invoke()
 
             "\$network.request" -> {
                 val urlStr = (options?.get("url") as? JsonPrimitive)?.content
                     ?: throw ActionException("Missing URL")
                 networkRequest(urlStr, options)
+            }
+
+            "\$href" -> {
+                val href = hrefFromOptions(options)
+                dispatchHref(href)
             }
 
             else -> println("[Jasonette] Unknown action: $type")
@@ -60,6 +100,19 @@ class ActionDispatcher(private val stateManager: StateManager) {
         urlStr: String,
         options: kotlinx.serialization.json.JsonObject?
     ) {
+        val body = networkClient?.invoke(urlStr, options) ?: httpNetworkRequest(urlStr, options)
+        val responseValue = try {
+            JsonValueConverter.jsonElementToAny(kotlinx.serialization.json.Json.parseToJsonElement(body))
+        } catch (_: Exception) {
+            body
+        }
+        stateManager.set(mapOf("\$response" to responseValue))
+    }
+
+    private fun httpNetworkRequest(
+        urlStr: String,
+        options: kotlinx.serialization.json.JsonObject?
+    ): String {
         val url = URL(urlStr)
         val conn = url.openConnection() as HttpURLConnection
         try {
@@ -71,21 +124,40 @@ class ActionDispatcher(private val stateManager: StateManager) {
             val code = conn.responseCode
             if (code !in 200..299) throw ActionException("HTTP error: $code")
 
-            val body = conn.inputStream.bufferedReader().readText()
-            // Store response in local state
-            try {
-                val json = kotlinx.serialization.json.Json.parseToJsonElement(body)
-                if (json is kotlinx.serialization.json.JsonObject) {
-                    json.entries.forEach { (key, value) ->
-                        stateManager.set(mapOf(key to jsonElementToString(value)))
-                    }
-                }
-            } catch (_: Exception) {
-                // Not JSON, ignore
-            }
+            return conn.inputStream.bufferedReader().readText()
         } finally {
             conn.disconnect()
         }
+    }
+
+    fun dispatchHref(href: JasonHref) {
+        val url = href.url ?: throw ActionException("Missing URL")
+        val resolved = resolveAllowedUrl(url)
+        navigationHandler?.invoke(href.copy(url = resolved))
+    }
+
+    private fun hrefFromOptions(options: kotlinx.serialization.json.JsonObject?): JasonHref {
+        fun stringOption(name: String): String? = (options?.get(name) as? JsonPrimitive)?.content
+        return JasonHref(
+            url = stringOption("url"),
+            view = stringOption("view"),
+            transition = stringOption("transition")
+        )
+    }
+
+    private fun resolveAllowedUrl(url: String): String {
+        val resolved = try {
+            val uri = URI(url)
+            if (uri.isAbsolute) uri else baseUrl?.let { URI(it).resolve(uri) }
+        } catch (_: Exception) {
+            null
+        } ?: throw ActionException("Invalid URL")
+
+        val scheme = resolved.scheme?.lowercase()
+        if (scheme !in setOf("http", "https")) {
+            throw ActionException("URL scheme not allowed")
+        }
+        return resolved.toString()
     }
 
     private fun jsonElementToString(element: kotlinx.serialization.json.JsonElement): String {

@@ -123,9 +123,19 @@ fun SwitchComponent(
     Switch(checked = isOn, onCheckedChange = onCheckedChange)
 }
 
-// Map stub
+// Unsupported native component stubs
 @Composable
 fun MapStubComponent() {
+    UnsupportedStubComponent("Map")
+}
+
+@Composable
+fun HtmlStubComponent() {
+    UnsupportedStubComponent("HTML")
+}
+
+@Composable
+fun UnsupportedStubComponent(label: String) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -134,7 +144,7 @@ fun MapStubComponent() {
         shape = MaterialTheme.shapes.medium
     ) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = androidx.compose.ui.Alignment.Center) {
-            Text("Map", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("$label not supported yet", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

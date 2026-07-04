@@ -1,6 +1,7 @@
 package com.jasonette
 
 import com.jasonette.core.JasonAction
+import com.jasonette.core.JasonHref
 import com.jasonette.core.StateManager
 import com.jasonette.rendering.ActionDispatcher
 import kotlinx.coroutines.test.runTest
@@ -59,21 +60,27 @@ class ActionDispatcherTest {
     }
 
     @Test
-    fun testRenderDoesNotCrash() = runTest {
+    fun testRenderCallsRegisteredHandler() = runTest {
         val (_, dispatcher) = createDispatcher()
+        var renderCount = 0
+        dispatcher.setRenderHandler { renderCount++ }
         val action = makeAction("\$render")
 
-        // $render is a no-op in ActionDispatcher (handled by ViewModel)
         dispatcher.execute(action)
+
+        assertEquals(1, renderCount)
     }
 
     @Test
-    fun testReloadDoesNotCrash() = runTest {
+    fun testReloadCallsRegisteredHandler() = runTest {
         val (_, dispatcher) = createDispatcher()
+        var reloadCount = 0
+        dispatcher.setReloadHandler { reloadCount++ }
         val action = makeAction("\$reload")
 
-        // $reload is a no-op in ActionDispatcher (handled by ViewModel)
         dispatcher.execute(action)
+
+        assertEquals(1, reloadCount)
     }
 
     @Test
@@ -92,6 +99,71 @@ class ActionDispatcherTest {
 
         // The error chain should have fired, setting error_caught
         assertEquals("true", sm.local["error_caught"])
+    }
+
+    @Test
+    fun testNetworkRequestStoresStructuredResponsePayload() = runTest {
+        val sm = StateManager(context = null)
+        val dispatcher = ActionDispatcher(sm) { _, _ -> "{\"items\":[{\"name\":\"Ada\"}],\"ok\":true}" }
+        val action = JasonAction(
+            type = "\$network.request",
+            options = JsonObject(mapOf("url" to JsonPrimitive("https://example.com/api.json")))
+        )
+
+        dispatcher.execute(action)
+
+        @Suppress("UNCHECKED_CAST")
+        val response = sm.local["\$response"] as Map<String, Any?>
+        assertEquals(true, response["ok"])
+        @Suppress("UNCHECKED_CAST")
+        val items = response["items"] as List<Map<String, Any?>>
+        assertEquals("Ada", items.first()["name"])
+    }
+
+    @Test
+    fun testHrefResolvesRelativeUrlAndDispatchesNavigation() = runTest {
+        val (_, dispatcher) = createDispatcher()
+        var navigated: JasonHref? = null
+        dispatcher.setBaseUrl("https://example.com/path/index.json")
+        dispatcher.setNavigationHandler { navigated = it }
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$href",
+                options = JsonObject(mapOf("url" to JsonPrimitive("next.json"), "transition" to JsonPrimitive("push")))
+            )
+        )
+
+        assertEquals("https://example.com/path/next.json", navigated?.url)
+        assertEquals("push", navigated?.transition)
+    }
+
+    @Test
+    fun testHrefBlocksUnsafeSchemes() = runTest {
+        val (_, dispatcher) = createDispatcher()
+        var navigated = false
+        dispatcher.setNavigationHandler { navigated = true }
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$href",
+                options = JsonObject(mapOf("url" to JsonPrimitive("javascript:alert(1)")))
+            )
+        )
+
+        assertFalse(navigated)
+    }
+
+    @Test
+    fun testNamedTriggerResolvesHeadAction() = runTest {
+        val (sm, dispatcher) = createDispatcher()
+        dispatcher.setActionResolver { name ->
+            if (name == "send") makeAction("\$set", mapOf("sent" to "true")) else null
+        }
+
+        dispatcher.execute(JasonAction(trigger = "send"))
+
+        assertEquals("true", sm.local["sent"])
     }
 
     @Test

@@ -47,6 +47,30 @@ See `docs/research/2026-07-04-cross-platform-parity-audit.md`.
 - `JASONETTE-Android/JasonetteApp/app/src/main/java/com/jasonette/components/ComponentView.kt`
 - `JASONETTE-Android/JasonetteApp/app/src/test/java/com/jasonette/`
 
+## Progress Notes
+
+2026-07-04 partial baseline slice:
+
+- Added Android `ActionDispatcher` callbacks for `$render`, `$reload`, `$href`,
+  and named `trigger` resolution through the active document actions map.
+- Changed `$network.request` to store a structured `$response` payload instead
+  of flattening object fields into local state.
+- Added relative URL resolution and http/https scheme guards for `$href` and
+  component `href` dispatch through `JasonetteViewModel`.
+- Added render-context exposure for `$jason`, `$get`, `$cache`, and `$response`,
+  and re-render after handled actions except `$reload`.
+- Added baseline footer tab/input rendering and explicit HTML placeholder path;
+  map remains an explicit placeholder.
+- Added focused unit coverage for dispatcher render/reload callbacks,
+  structured `$response`, `$href` safety/resolution, named trigger resolution,
+  and footer input decoding.
+
+Still open after this slice:
+
+- Add a ViewModel-level render-context regression test and Jasonpedia fixture
+  smoke once Android test execution is available locally or via CI feedback.
+- Tighten footer/render UI coverage beyond decode-level tests.
+
 ## Verification
 
 Requires Java 17 locally or CI Android job:
@@ -57,6 +81,6 @@ cd JASONETTE-Android/JasonetteApp
 ./gradlew assembleDebug
 ```
 
-Current local environment note: `java -version` still fails with `Unable to
-locate a Java Runtime`; use GitHub Actions for Android verification until Java is
-available locally.
+Current local environment note: `java -version` and `./gradlew test --no-daemon`
+still fail with `Unable to locate a Java Runtime`; use GitHub Actions for Android
+verification until Java is available locally.

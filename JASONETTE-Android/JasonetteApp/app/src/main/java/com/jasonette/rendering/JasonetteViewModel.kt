@@ -28,11 +28,19 @@ class JasonetteViewModel(
 
     private val loader = DocumentLoader()
     val stateManager = StateManager(application)
-    val actionDispatcher = ActionDispatcher(stateManager)
+    val actionDispatcher = ActionDispatcher(stateManager, baseUrl = url)
+    private var navigationHandler: ((JasonHref) -> Unit)? = null
 
     private val json = Json {
         ignoreUnknownKeys = true
         isLenient = true
+    }
+
+    init {
+        actionDispatcher.setRenderHandler { renderCurrentDocument() }
+        actionDispatcher.setReloadHandler { reload() }
+        actionDispatcher.setNavigationHandler { href -> navigationHandler?.invoke(href) }
+        actionDispatcher.setActionResolver { name -> document?.jason?.head?.actions?.get(name) }
     }
 
     fun loadIfNeeded() {
@@ -51,6 +59,7 @@ class JasonetteViewModel(
             try {
                 if (document == null && url != null) {
                     document = loader.load(url)
+                    actionDispatcher.setBaseUrl(url)
                 }
                 val doc = document ?: run {
                     _uiState.value = UiState.Error("No document")
@@ -72,7 +81,7 @@ class JasonetteViewModel(
     private fun render(doc: JasonDocument) {
         val head = doc.jason.head
         val data = head?.data?.let { jsonObjectToMap(it) } ?: emptyMap()
-        val context = data + stateManager.local
+        val context = renderContext(data)
 
         if (head?.templates?.body != null) {
             val templateValue = JsonValueConverter.jsonElementToAny(head.templates.body)
@@ -95,7 +104,37 @@ class JasonetteViewModel(
     fun handleAction(action: JasonAction) {
         viewModelScope.launch {
             actionDispatcher.execute(action)
+            if (action.type != "\$reload") {
+                renderCurrentDocument()
+            }
         }
+    }
+
+    fun handleHref(href: JasonHref) {
+        try {
+            actionDispatcher.dispatchHref(href)
+        } catch (_: Exception) {
+            // Drop unsafe or malformed navigation requests.
+        }
+    }
+
+    fun setNavigationHandler(handler: ((JasonHref) -> Unit)?) {
+        navigationHandler = handler
+    }
+
+    private fun renderCurrentDocument() {
+        document?.let { render(it) }
+    }
+
+    private fun renderContext(data: Map<String, Any?>): Map<String, Any?> {
+        val context = (data + stateManager.local).toMutableMap()
+        if (!context.containsKey("\$jason")) {
+            context["\$jason"] = data
+        }
+        context["\$get"] = stateManager.local.toMap()
+        context["\$cache"] = stateManager.cacheGet()
+        stateManager.local["\$response"]?.let { context["\$response"] = it }
+        return context
     }
 
     // Helpers
