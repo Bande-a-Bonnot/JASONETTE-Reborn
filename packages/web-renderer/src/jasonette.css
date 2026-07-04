@@ -1,6 +1,8 @@
 /* Jasonette Web Renderer — Base Styles */
 
 .jasonette {
+  position: relative;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
@@ -126,6 +128,20 @@
 .jasonette-html iframe {
   width: 100%;
   border: none;
+}
+
+.jasonette-background-web {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+  z-index: 0;
+}
+
+.jasonette > :not(.jasonette-background-web) {
+  position: relative;
+  z-index: 1;
 }
 
 /* Switch */

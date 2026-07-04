@@ -215,16 +215,7 @@ export class JasonetteRenderer {
   }
 
   private renderBodyToDOM(body: JasonBody): void {
-    // Background
-    if (body.background) {
-      const bg = typeof body.background === 'string' ? body.background : '';
-      if (/^https?:\/\//.test(bg)) {
-        this.root.style.backgroundImage = `url(${bg})`;
-        this.root.style.backgroundSize = 'cover';
-      } else if (bg) {
-        this.root.style.backgroundColor = bg;
-      }
-    }
+    this.renderBodyBackground(body);
 
     // Header
     if (body.header) {
@@ -268,6 +259,40 @@ export class JasonetteRenderer {
     if (body.footer) {
       const footer = this.renderFooter(body.footer as unknown as Record<string, unknown>);
       this.root.appendChild(footer);
+    }
+  }
+
+  private renderBodyBackground(body: JasonBody): void {
+    this.root.style.backgroundImage = '';
+    this.root.style.backgroundSize = '';
+    this.root.style.backgroundColor = '';
+
+    const styleBackground = (body as JasonBody & { style?: JasonStyle }).style?.background;
+    const background = body.background ?? styleBackground;
+
+    if (typeof background === 'string') {
+      if (/^https?:\/\//.test(background)) {
+        this.root.style.backgroundImage = `url(${background})`;
+        this.root.style.backgroundSize = 'cover';
+      } else if (background) {
+        this.root.style.backgroundColor = background;
+      }
+      return;
+    }
+
+    if (background && typeof background === 'object') {
+      const webBackground = background as { type?: unknown; text?: unknown; url?: unknown };
+      if (webBackground.type === 'html' && (typeof webBackground.text === 'string' || typeof webBackground.url === 'string')) {
+        const iframe = document.createElement('iframe');
+        iframe.className = 'jasonette-background-web';
+        iframe.setAttribute('aria-hidden', 'true');
+        if (typeof webBackground.text === 'string') {
+          iframe.srcdoc = webBackground.text;
+        } else if (typeof webBackground.url === 'string') {
+          iframe.src = webBackground.url;
+        }
+        this.root.appendChild(iframe);
+      }
     }
   }
 

@@ -1,4 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { JasonetteRenderer } from '../src/renderer.js';
 import type { JasonDocument } from '../src/types.js';
 
@@ -130,6 +132,67 @@ describe('JasonetteRenderer', () => {
     expect(styleEl).not.toBeNull();
     expect(styleEl?.textContent).toContain('.red');
     expect(styleEl?.textContent).toContain('#ff0000');
+  });
+
+  it('renders html body background as web container iframe', () => {
+    const doc: JasonDocument = {
+      $jason: {
+        body: {
+          background: {
+            type: 'html',
+            url: 'https://example.com/background.html',
+          },
+          sections: [{ items: [{ type: 'label', text: 'Foreground' }] }],
+        },
+      },
+    };
+
+    renderer.renderDocument(doc);
+    const iframe = root.querySelector('.jasonette-background-web') as HTMLIFrameElement;
+    const sections = root.querySelector('.jasonette-sections');
+    expect(iframe).not.toBeNull();
+    expect(iframe.src).toContain('https://example.com/background.html');
+    expect(sections).not.toBeNull();
+    expect(Array.from(root.children).indexOf(iframe)).toBeLessThan(Array.from(root.children).indexOf(sections!));
+    expect(root.textContent).toContain('Foreground');
+  });
+
+  it('renders legacy body.style.background html text as web container iframe', () => {
+    const doc = {
+      $jason: {
+        head: {
+          templates: {
+            body: {
+              style: {
+                background: {
+                  type: 'html',
+                  text: '<html><body>Backdrop</body></html>',
+                },
+              },
+              sections: [{ items: [{ type: 'label', text: 'Foreground' }] }],
+            },
+          },
+        },
+      },
+    } as JasonDocument;
+
+    renderer.renderDocument(doc);
+    const iframe = root.querySelector('.jasonette-background-web') as HTMLIFrameElement;
+    expect(iframe).not.toBeNull();
+    expect(iframe.srcdoc).toContain('Backdrop');
+    expect(root.textContent).toContain('Foreground');
+  });
+
+  it('stylesheet anchors web backgrounds to the renderer root behind content', () => {
+    const css = readFileSync(resolve(import.meta.dirname, '../src/jasonette.css'), 'utf-8');
+    expect(css).toContain('.jasonette {');
+    expect(css).toContain('position: relative;');
+    expect(css).toContain('overflow: hidden;');
+    expect(css).toContain('.jasonette-background-web');
+    expect(css).toContain('position: absolute;');
+    expect(css).toContain('z-index: 0;');
+    expect(css).toContain('.jasonette > :not(.jasonette-background-web)');
+    expect(css).toContain('z-index: 1;');
   });
 
   it('renders layout with components', () => {
