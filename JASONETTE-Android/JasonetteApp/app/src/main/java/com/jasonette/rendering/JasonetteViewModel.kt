@@ -4,12 +4,10 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.jasonette.core.*
-import com.jasonette.template.TemplateEngine
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
 
 sealed class UiState {
     data object Loading : UiState()
@@ -35,6 +33,7 @@ class JasonetteViewModel(
         ignoreUnknownKeys = true
         isLenient = true
     }
+    private val documentRenderer = JasonetteDocumentRenderer(stateManager, json)
 
     init {
         actionDispatcher.setRenderHandler { renderCurrentDocument() }
@@ -79,26 +78,7 @@ class JasonetteViewModel(
     }
 
     private fun render(doc: JasonDocument) {
-        val head = doc.jason.head
-        val data = head?.data?.let { jsonObjectToMap(it) } ?: emptyMap()
-        val context = renderContext(data)
-
-        if (head?.templates?.body != null) {
-            val templateValue = JsonValueConverter.jsonElementToAny(head.templates.body)
-            val rendered = TemplateEngine.render(templateValue, context)
-            try {
-                val jsonStr = json.encodeToString(
-                    kotlinx.serialization.json.JsonElement.serializer(),
-                    JsonValueConverter.anyToJsonElement(rendered)
-                )
-                val root = json.decodeFromString<JasonRoot>(jsonStr)
-                _uiState.value = UiState.Loaded(root.copy(head = head))
-            } catch (_: Exception) {
-                _uiState.value = UiState.Loaded(doc.jason)
-            }
-        } else {
-            _uiState.value = UiState.Loaded(doc.jason)
-        }
+        _uiState.value = UiState.Loaded(documentRenderer.render(doc))
     }
 
     fun handleAction(action: JasonAction) {
@@ -126,20 +106,5 @@ class JasonetteViewModel(
         document?.let { render(it) }
     }
 
-    private fun renderContext(data: Map<String, Any?>): Map<String, Any?> {
-        val context = (data + stateManager.local).toMutableMap()
-        if (!context.containsKey("\$jason")) {
-            context["\$jason"] = data
-        }
-        context["\$get"] = stateManager.local.toMap()
-        context["\$cache"] = stateManager.cacheGet()
-        stateManager.local["\$response"]?.let { context["\$response"] = it }
-        return context
-    }
-
     // Helpers
-
-    private fun jsonObjectToMap(obj: JsonObject): Map<String, Any?> {
-        return obj.entries.associate { (key, value) -> key to JsonValueConverter.jsonElementToAny(value) }
-    }
 }

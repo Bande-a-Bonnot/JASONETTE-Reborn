@@ -32,17 +32,13 @@ fun ComponentView(
             }
         }
 
-    val effectiveType = component.type ?: when {
-        component.url != null || component.image != null -> "image"
-        component.text != null -> "label"
-        else -> null
-    }
+    val effectiveType = effectiveComponentType(component)
 
     Box(modifier = modifier) {
         when (effectiveType) {
             "label" -> LabelComponent(text = component.text ?: "")
-            "image" -> ImageComponent(url = component.url ?: component.image, style = component.style)
-            "button" -> ButtonComponent(text = component.text, url = component.url ?: component.image)
+            "image" -> ImageComponent(url = componentImageURL(component), style = component.style)
+            "button" -> ButtonComponent(text = component.text, url = componentImageURL(component))
             "textfield" -> {
                 val name = component.name ?: ""
                 TextFieldComponent(
@@ -118,6 +114,14 @@ fun ComponentView(
         }
     }
 }
+
+fun effectiveComponentType(component: JasonComponent): String? = component.type ?: when {
+    component.url != null || component.image != null -> "image"
+    component.text != null -> "label"
+    else -> null
+}
+
+fun componentImageURL(component: JasonComponent): String? = component.image ?: component.url
 
 enum class LayoutDirection { VERTICAL, HORIZONTAL }
 

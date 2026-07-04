@@ -107,6 +107,11 @@ object TemplateEngine {
 
                 items.mapIndexed { index, item ->
                     val itemContext = context.toMutableMap()
+                    if (item is Map<*, *>) {
+                        item.entries.forEach { (key, value) ->
+                            key?.toString()?.let { itemContext[it] = value }
+                        }
+                    }
                     itemContext["\$jason"] = item
                     itemContext["\$index"] = index
                     context["\$jason"]?.let { itemContext["\$root"] = it }

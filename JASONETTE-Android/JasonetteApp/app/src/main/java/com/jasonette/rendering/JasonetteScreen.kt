@@ -141,7 +141,7 @@ private fun FooterView(
                 ) {
                     tabs.forEach { item ->
                         ComponentView(
-                            item,
+                            footerTabComponent(item),
                             headStyles = headStyles,
                             stateManager = stateManager,
                             onHref = onHref,
@@ -179,6 +179,12 @@ private fun FooterView(
             }
         }
     }
+}
+
+fun footerTabComponent(item: JasonComponent): JasonComponent {
+    if (item.href != null || item.url == null) return item
+    val displayUrl = if (item.image == null && item.type == null && item.text != null) null else item.url
+    return item.copy(url = displayUrl, href = JasonHref(url = item.url))
 }
 
 /** Convenience overload that creates a ViewModel from a URL. */
