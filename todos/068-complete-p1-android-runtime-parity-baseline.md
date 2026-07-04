@@ -1,6 +1,6 @@
 ---
 id: "019f2ece-a72e-777b-8081-edbc863d8b17"
-status: open
+status: complete
 priority: p1
 issue_id: "068"
 tags: [android, parity, actions, rendering, navigation]
@@ -65,11 +65,25 @@ See `docs/research/2026-07-04-cross-platform-parity-audit.md`.
   structured `$response`, `$href` safety/resolution, named trigger resolution,
   and footer input decoding.
 
-Still open after this slice:
+2026-07-04 fixture-smoke completion slice:
 
-- Add a ViewModel-level render-context regression test and Jasonpedia fixture
-  smoke now that CI confirms this baseline compiles/tests.
-- Tighten footer/render UI coverage beyond decode-level tests.
+- Extracted Android document template rendering into `JasonetteDocumentRenderer`
+  so render-context behavior is testable without a device/Robolectric.
+- Added render-context regression coverage for `$jason`, `$get`, and structured
+  `$response` without overwriting unrelated state.
+- Added Jasonpedia `$network` fixture smoke proving response item fields render
+  through `{{#each $response}}` as legacy templates expect.
+- Added `#each` item-context precedence coverage: item fields shadow parent
+  names, while `$jason`, `$index`, and `$root` are restored after item merging.
+- Added footer rendering tests for legacy image/text/url tab shapes, text-only
+  footer tab navigation, authored href preservation, and Jasonpedia footer input
+  control type inference.
+- Footer tabs now convert legacy item `url` into safe navigation `href` while
+  preserving icon display URL semantics.
+
+This completes the P1 Android runtime baseline acceptance criteria. Deeper native
+map/html parity, richer Android navigation stacks, and UI-level Compose/simulator
+coverage remain future parity work rather than this baseline todo.
 
 ## Verification
 
@@ -83,5 +97,9 @@ cd JASONETTE-Android/JasonetteApp
 
 Current local environment note: `java -version` and `./gradlew test --no-daemon`
 still fail with `Unable to locate a Java Runtime`; use GitHub Actions for Android
-verification until Java is available locally. GitHub CI run `28721345742` passed
-for exact commit `54d8ee6` after this slice.
+verification until Java is available locally.
+
+- GitHub CI run `28721345742` passed for exact commit `54d8ee6` after the first
+  Android baseline implementation slice.
+- GitHub CI run `28722041590` passed for exact commit `8d58c31` after the
+  fixture-smoke completion slice.
