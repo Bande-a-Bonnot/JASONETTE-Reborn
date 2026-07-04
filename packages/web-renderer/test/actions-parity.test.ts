@@ -61,6 +61,443 @@ describe('web action/render parity', () => {
     expect(root.textContent).toContain('Hello from action');
   });
 
+  it('passes trigger options as $jason payload to named actions', async () => {
+    const doc: JasonDocument = {
+      $jason: {
+        head: {
+          actions: {
+            banner: {
+              type: '$util.banner',
+              options: { title: 'Touched', description: '{{$jason.id}}' },
+            },
+          },
+          templates: {
+            body: {
+              sections: [{
+                items: [{
+                  type: 'button',
+                  text: 'Touch',
+                  action: { trigger: 'banner', options: { id: 'top' } },
+                }],
+              }],
+            },
+          },
+        },
+      },
+    };
+
+    renderer.renderDocument(doc);
+    root.querySelector('button')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(document.body.querySelector('.jasonette-banner')?.textContent).toContain('Touched top');
+  });
+
+  it('passes $lambda options as $jason payload to named actions', async () => {
+    const doc: JasonDocument = {
+      $jason: {
+        head: {
+          actions: {
+            banner: {
+              type: '$util.banner',
+              options: { title: '{{$jason.title}}', description: '{{$jason.description}}' },
+            },
+          },
+          templates: {
+            body: { sections: [{ items: [{ type: 'label', text: 'Lambda' }] }] },
+          },
+        },
+      },
+    };
+
+    renderer.renderDocument(doc);
+    await executeAction({
+      type: '$lambda',
+      options: { name: 'banner', options: { title: 'Trigger', description: 'it worked!' } },
+    }, renderer.getState());
+
+    expect(document.body.querySelector('.jasonette-banner')?.textContent).toContain('Trigger it worked!');
+  });
+
+  it('templates trigger options against network response payloads before named actions run', async () => {
+    const response = new Response(JSON.stringify({ cats: [{ status: 'sleepy' }] }), {
+      headers: { 'content-type': 'application/json' },
+    });
+    vi.stubGlobal('fetch', vi.fn(async () => response));
+
+    const doc: JasonDocument = {
+      $jason: {
+        head: {
+          actions: {
+            banner: {
+              type: '$util.banner',
+              options: { title: '{{$jason.title}}', description: '{{$jason.description}}' },
+            },
+          },
+          templates: {
+            body: { sections: [{ items: [{ type: 'label', text: 'Network trigger options' }] }] },
+          },
+        },
+      },
+    };
+
+    renderer.renderDocument(doc);
+    await executeAction({
+      type: '$network.request',
+      options: { url: 'https://example.com/cat.json' },
+      success: {
+        trigger: 'banner',
+        options: { title: 'Cat', description: '{{$jason.cats[0].status}}' },
+      },
+    }, renderer.getState());
+
+    expect(document.body.querySelector('.jasonette-banner')?.textContent).toContain('Cat sleepy');
+  });
+
+  it('supports whole-expression action options that render to objects', async () => {
+    const doc: JasonDocument = {
+      $jason: {
+        head: {
+          actions: {
+            banner: {
+              type: '$util.banner',
+              options: '{{$jason}}',
+            },
+          },
+          templates: {
+            body: { sections: [{ items: [{ type: 'label', text: 'String options' }] }] },
+          },
+        },
+      },
+    };
+
+    renderer.renderDocument(doc);
+    await executeAction({ trigger: 'banner', options: { title: 'Banner2', description: 'rendered object' } }, renderer.getState());
+
+    expect(document.body.querySelector('.jasonette-banner')?.textContent).toContain('Banner2 rendered object');
+  });
+
+  it('templates named success triggers against network response payloads', async () => {
+    const response = new Response(JSON.stringify({ cats: [{ status: 'playful' }] }), {
+      headers: { 'content-type': 'application/json' },
+    });
+    vi.stubGlobal('fetch', vi.fn(async () => response));
+
+    const doc: JasonDocument = {
+      $jason: {
+        head: {
+          actions: {
+            banner: {
+              type: '$util.banner',
+              options: { title: 'Cat', description: '{{$jason.cats[0].status}}' },
+            },
+          },
+          templates: {
+            body: { sections: [{ items: [{ type: 'label', text: 'Network' }] }] },
+          },
+        },
+      },
+    };
+
+    renderer.renderDocument(doc);
+    await executeAction({
+      type: '$network.request',
+      options: { url: 'https://example.com/cat.json' },
+      success: { trigger: 'banner' },
+    }, renderer.getState());
+
+    expect(document.body.querySelector('.jasonette-banner')?.textContent).toContain('Cat playful');
+  });
+
+  it('executes legacy success arrays in order', async () => {
+    const doc: JasonDocument = {
+      $jason: {
+        head: {
+          templates: {
+            body: { sections: [{ items: [{ type: 'label', text: '{{$get.first}} {{$get.second}}' }] }] },
+          },
+        },
+      },
+    };
+
+    renderer.renderDocument(doc);
+    await executeAction({
+      type: '$set',
+      options: { first: 'one' },
+      success: [
+        { type: '$set', options: { second: 'two' } },
+        { type: '$render' },
+      ],
+    }, renderer.getState());
+
+    expect(root.textContent).toContain('one two');
+  });
+
+  it('renders conditional action arrays against the incoming payload before execution', async () => {
+    const response = new Response(JSON.stringify({ cats: [{ status: 'alert' }] }), {
+      headers: { 'content-type': 'application/json' },
+    });
+    vi.stubGlobal('fetch', vi.fn(async () => response));
+
+    const doc: JasonDocument = {
+      $jason: {
+        head: {
+          actions: {
+            banner: {
+              type: '$util.banner',
+              options: { title: 'Conditional', description: '{{$jason.cats[0].status}}' },
+            },
+          },
+          templates: {
+            body: { sections: [{ items: [{ type: 'label', text: 'Conditional array' }] }] },
+          },
+        },
+      },
+    };
+
+    renderer.renderDocument(doc);
+    await executeAction({
+      type: '$network.request',
+      options: { url: 'https://example.com/cat.json' },
+      success: [
+        { "{{#if $jason && 'cats' in $jason}}": { trigger: 'banner' } },
+        { '{{#else}}': { type: '$util.toast', options: { text: 'Error' } } },
+      ],
+    }, renderer.getState());
+
+    expect(document.body.querySelector('.jasonette-banner')?.textContent).toContain('Conditional alert');
+    expect(document.body.querySelector('.jasonette-toast')).toBeNull();
+  });
+
+  it('continues mixed conditional action arrays after consuming the matching branch', async () => {
+    const doc: JasonDocument = {
+      $jason: {
+        head: {
+          templates: {
+            body: { sections: [{ items: [{ type: 'label', text: '{{$get.branch}} {{$get.after}}' }] }] },
+          },
+        },
+      },
+    };
+
+    renderer.renderDocument(doc);
+    await executeAction([
+      { "{{#if $jason.ok}}": { type: '$set', options: { branch: 'true' } } },
+      { '{{#else}}': { type: '$set', options: { branch: 'false' } } },
+      { type: '$set', options: { after: 'after' } },
+      { type: '$render' },
+    ], renderer.getState(), { ok: true });
+
+    expect(root.textContent).toContain('true after');
+    expect(root.textContent).not.toContain('false after');
+  });
+
+  it('executes adjacent independent conditional actions separately', async () => {
+    const doc: JasonDocument = {
+      $jason: {
+        head: {
+          templates: {
+            body: { sections: [{ items: [{ type: 'label', text: '{{$get.first}} {{$get.second}}' }] }] },
+          },
+        },
+      },
+    };
+
+    renderer.renderDocument(doc);
+    await executeAction([
+      { '{{#if $jason.first}}': { type: '$set', options: { first: 'one' } } },
+      { '{{#if $jason.second}}': { type: '$set', options: { second: 'two' } } },
+      { type: '$render' },
+    ], renderer.getState(), { first: true, second: true });
+
+    expect(root.textContent).toContain('one two');
+  });
+
+  it('supports conditional branches that return nested action arrays', async () => {
+    const doc: JasonDocument = {
+      $jason: {
+        head: {
+          actions: {
+            banner: {
+              type: '$util.banner',
+              options: { title: 'Nested', description: '{{$jason.status}}' },
+            },
+          },
+          templates: {
+            body: { sections: [{ items: [{ type: 'label', text: '{{$get.branch}}' }] }] },
+          },
+        },
+      },
+    };
+
+    renderer.renderDocument(doc);
+    await executeAction([
+      {
+        '{{#if $jason.ok}}': [
+          { type: '$set', options: { branch: 'nested' } },
+          { trigger: 'banner' },
+        ],
+      },
+      { type: '$render' },
+    ], renderer.getState(), { ok: true, status: 'payload' });
+
+    expect(root.textContent).toContain('nested');
+    expect(document.body.querySelector('.jasonette-banner')?.textContent).toContain('Nested payload');
+  });
+
+  it('continues after a false conditional branch without an else', async () => {
+    const doc: JasonDocument = {
+      $jason: {
+        head: {
+          templates: {
+            body: { sections: [{ items: [{ type: 'label', text: '{{$get.after}}' }] }] },
+          },
+        },
+      },
+    };
+
+    renderer.renderDocument(doc);
+    await executeAction([
+      { '{{#if $jason.ok}}': { type: '$set', options: { after: 'wrong' } } },
+      { type: '$set', options: { after: 'after' } },
+      { type: '$render' },
+    ], renderer.getState(), { ok: false });
+
+    expect(root.textContent).toContain('after');
+    expect(root.textContent).not.toContain('wrong');
+  });
+
+  it('preserves payload across side-effect-only actions in sequential arrays', async () => {
+    const response = new Response(JSON.stringify({ cats: [{ status: 'sleeping' }] }), {
+      headers: { 'content-type': 'application/json' },
+    });
+    vi.stubGlobal('fetch', vi.fn(async () => response));
+
+    const doc: JasonDocument = {
+      $jason: {
+        head: {
+          actions: {
+            banner: {
+              type: '$util.banner',
+              options: { title: 'After toast', description: '{{$jason.cats[0].status}}' },
+            },
+          },
+          templates: {
+            body: { sections: [{ items: [{ type: 'label', text: 'Side effect chain' }] }] },
+          },
+        },
+      },
+    };
+
+    renderer.renderDocument(doc);
+    await executeAction({
+      type: '$network.request',
+      options: { url: 'https://example.com/cat.json' },
+      success: [
+        { type: '$util.toast', options: { text: 'Saw {{$jason.cats[0].status}}' } },
+        { trigger: 'banner' },
+      ],
+    }, renderer.getState());
+
+    expect(document.body.querySelector('.jasonette-toast')?.textContent).toContain('Saw sleeping');
+    expect(document.body.querySelector('.jasonette-banner')?.textContent).toContain('After toast sleeping');
+  });
+
+  it('preserves payload across state-mutating actions in sequential arrays', async () => {
+    const response = new Response(JSON.stringify({ cats: [{ status: 'purring' }] }), {
+      headers: { 'content-type': 'application/json' },
+    });
+    vi.stubGlobal('fetch', vi.fn(async () => response));
+
+    const doc: JasonDocument = {
+      $jason: {
+        head: {
+          actions: {
+            banner: {
+              type: '$util.banner',
+              options: { title: 'After set', description: '{{$jason.cats[0].status}} {{$get.seen}}' },
+            },
+          },
+          templates: {
+            body: { sections: [{ items: [{ type: 'label', text: 'State chain' }] }] },
+          },
+        },
+      },
+    };
+
+    renderer.renderDocument(doc);
+    await executeAction({
+      type: '$network.request',
+      options: { url: 'https://example.com/cat.json' },
+      success: [
+        { type: '$set', options: { seen: 'yes' } },
+        { trigger: 'banner' },
+      ],
+    }, renderer.getState());
+
+    expect(document.body.querySelector('.jasonette-banner')?.textContent).toContain('After set purring yes');
+  });
+
+  it('passes the incoming payload through $lambda when options.options is absent', async () => {
+    const response = new Response(JSON.stringify({ cats: [{ status: 'curious' }] }), {
+      headers: { 'content-type': 'application/json' },
+    });
+    vi.stubGlobal('fetch', vi.fn(async () => response));
+
+    const doc: JasonDocument = {
+      $jason: {
+        head: {
+          actions: {
+            banner: {
+              type: '$util.banner',
+              options: { title: 'Lambda payload', description: '{{$jason.cats[0].status}}' },
+            },
+          },
+          templates: {
+            body: { sections: [{ items: [{ type: 'label', text: 'Lambda inherited payload' }] }] },
+          },
+        },
+      },
+    };
+
+    renderer.renderDocument(doc);
+    await executeAction({
+      type: '$network.request',
+      options: { url: 'https://example.com/cat.json' },
+      success: { type: '$lambda', options: { name: 'banner' } },
+    }, renderer.getState());
+
+    expect(document.body.querySelector('.jasonette-banner')?.textContent).toContain('Lambda payload curious');
+  });
+
+  it('executes legacy error arrays with the error payload as $jason', async () => {
+    const doc: JasonDocument = {
+      $jason: {
+        head: {
+          templates: {
+            body: { sections: [{ items: [{ type: 'label', text: '{{$get.errorMessage}}' }] }] },
+          },
+        },
+      },
+    };
+
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    renderer.renderDocument(doc);
+    await executeAction({
+      type: '$href',
+      options: { url: 'javascript:alert(1)' },
+      error: [
+        { type: '$set', options: { errorMessage: 'Blocked {{$jason.error}}' } },
+        { type: '$render' },
+      ],
+    }, renderer.getState());
+
+    expect(errorSpy).toHaveBeenCalledOnce();
+    expect(root.textContent).toContain('Blocked Error: $href: blocked url scheme javascript:');
+  });
+
   it('executes legacy component trigger via head.actions', async () => {
     const doc: JasonDocument = {
       $jason: {

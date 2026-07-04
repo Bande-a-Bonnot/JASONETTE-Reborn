@@ -1,3 +1,5 @@
+import { transform } from '@jasonette/template-engine';
+import type { RenderContext } from '@jasonette/template-engine';
 import type { JasonAction, AppState } from '../types.js';
 
 export type ActionHandler = (
@@ -7,7 +9,7 @@ export type ActionHandler = (
   data?: unknown,
 ) => Promise<unknown>;
 
-export type ActionDispatch = (action: JasonAction, data?: unknown) => Promise<unknown>;
+export type ActionDispatch = (action: JasonAction | JasonAction[], data?: unknown) => Promise<unknown>;
 
 const handlers: Record<string, ActionHandler> = {};
 
@@ -19,18 +21,38 @@ export function registerAction(type: string, handler: ActionHandler): void {
  * Execute an action and chain success/error handlers.
  */
 export async function executeAction(
-  action: JasonAction,
+  action: JasonAction | JasonAction[],
   state: AppState,
   data?: unknown,
 ): Promise<unknown> {
-  if (!action.type) {
-    if (action.trigger && state.actions[action.trigger]) {
-      return executeAction(state.actions[action.trigger], state, data);
+  if (Array.isArray(action)) {
+    let result: unknown = data;
+    for (let index = 0; index < action.length; index += 1) {
+      const next = action[index];
+      const chain = isConditionalStartObject(next) ? collectConditionalChain(action, index) : undefined;
+      if (!chain && isConditionalActionObject(next)) continue;
+
+      const rendered = chain
+        ? transform(chain, actionContext(state, result))
+        : next;
+      if (chain) index += chain.length - 1;
+      if (rendered === undefined || rendered === null) continue;
+
+      const nextResult = await executeAction(rendered as JasonAction | JasonAction[], state, result);
+      if (shouldReplaceArrayPayload(rendered, nextResult)) result = nextResult;
+    }
+    return result;
+  }
+
+  const normalizedAction = normalizeAction(action, state, data);
+
+  if (!normalizedAction.type) {
+    if (normalizedAction.trigger && state.actions[normalizedAction.trigger]) {
+      return executeAction(state.actions[normalizedAction.trigger], state, normalizedAction.options ?? data);
     }
     return undefined;
   }
-
-  const handler = handlers[action.type];
+  const handler = handlers[normalizedAction.type!];
   if (!handler) {
     console.warn(`[jasonette] Unknown action: ${action.type}`);
     return undefined;
@@ -41,31 +63,100 @@ export async function executeAction(
   };
 
   try {
-    const result = await handler(action, state, dispatch, data);
+    const result = await handler(normalizedAction, state, dispatch, data);
 
     // Chain success handler
-    if (action.success) {
-      return executeAction(action.success, state, result);
+    if (normalizedAction.success) {
+      return executeAction(normalizedAction.success, state, result);
     }
 
     return result;
   } catch (err) {
-    console.error(`[jasonette] Action error (${action.type}):`, err);
+    console.error(`[jasonette] Action error (${normalizedAction.type}):`, err);
 
     // Chain error handler
-    if (action.error) {
-      return executeAction(action.error, state, { error: String(err) });
+    if (normalizedAction.error) {
+      return executeAction(normalizedAction.error, state, { error: String(err) });
     }
 
     return undefined;
   }
 }
 
+function isConditionalActionObject(action: JasonAction): boolean {
+  const keys = Object.keys(action);
+  return keys.length > 0 && keys.every((key) =>
+    /^\{\{#(?:if|elseif)\s+.+\}\}$/.test(key) || key === '{{#else}}',
+  );
+}
+
+function isConditionalStartObject(action: JasonAction): boolean {
+  return Object.keys(action).some((key) => /^\{\{#if\s+.+\}\}$/.test(key));
+}
+
+function isConditionalContinuationObject(action: JasonAction): boolean {
+  const keys = Object.keys(action);
+  return keys.length > 0 && keys.every((key) =>
+    /^\{\{#elseif\s+.+\}\}$/.test(key) || key === '{{#else}}',
+  );
+}
+
+function collectConditionalChain(action: JasonAction[], start: number): JasonAction[] {
+  const chain: JasonAction[] = [action[start]];
+  for (let index = start + 1; index < action.length; index += 1) {
+    const next = action[index];
+    if (!isConditionalContinuationObject(next)) break;
+    chain.push(next);
+    if (Object.keys(next).some((key) => key === '{{#else}}')) break;
+  }
+  return chain;
+}
+
+const arraySideEffectActionTypes = new Set([
+  '$set', '$cache.set', '$cache.reset', '$flush', '$render', '$reload', '$href', '$back', '$close',
+  '$util.alert', '$util.toast', '$util.banner', '$timer.start', '$timer.stop', '$log',
+]);
+
+function shouldReplaceArrayPayload(action: unknown, result: unknown): boolean {
+  if (result === undefined) return false;
+  if (Array.isArray(action)) return true;
+  if (!action || typeof action !== 'object') return true;
+
+  const type = (action as JasonAction).type;
+  return !type || !arraySideEffectActionTypes.has(type);
+}
+
+function normalizeAction(action: JasonAction, state: AppState, data?: unknown): JasonAction {
+  if (action.options === undefined) return action;
+
+  return {
+    ...action,
+    options: transform(action.options, actionContext(state, data)),
+  };
+}
+
+function optionsObject(options: unknown): Record<string, unknown> {
+  return options && typeof options === 'object' && !Array.isArray(options)
+    ? options as Record<string, unknown>
+    : {};
+}
+
+function actionContext(state: AppState, data?: unknown): RenderContext {
+  return {
+    $jason: data ?? {},
+    $get: state.local,
+    $cache: state.cache,
+    $params: state.params,
+    $response: state.response,
+  };
+}
+
 // --- Built-in Actions ---
 
 registerAction('$render', async (action, state, _dispatch, data) => {
-  const renderData = action.options?.data ?? data ?? state.response;
-  const template = action.options?.template;
+  const opts = optionsObject(action.options);
+  const renderData = opts.data ?? data ?? state.response;
+  const template = opts.template;
   document.dispatchEvent(new CustomEvent('jasonette:render', {
     detail: { data: renderData, template },
   }));
@@ -78,7 +169,7 @@ registerAction('$reload', async (action, state) => {
 });
 
 registerAction('$network.request', async (action, state) => {
-  const opts = action.options ?? {};
+  const opts = optionsObject(action.options);
   const url = opts.url;
   if (typeof url !== 'string' || !url) throw new Error('$network.request: missing or invalid url');
 
@@ -108,7 +199,7 @@ registerAction('$network.request', async (action, state) => {
 });
 
 registerAction('$href', async (action) => {
-  const opts = action.options ?? {};
+  const opts = optionsObject(action.options);
   const url = opts.url;
   if (typeof url !== 'string' || !url) throw new Error('$href: missing or invalid url');
   const parsed = new URL(url, document.baseURI);
@@ -133,8 +224,9 @@ registerAction('$close', async () => {
 });
 
 registerAction('$set', async (action, state) => {
-  if (action.options && typeof action.options === 'object') {
-    Object.assign(state.local, action.options);
+  const opts = optionsObject(action.options);
+  if (Object.keys(opts).length > 0) {
+    Object.assign(state.local, opts);
   }
   return state.local;
 });
@@ -144,8 +236,9 @@ registerAction('$get', async (_action, state) => {
 });
 
 registerAction('$cache.set', async (action, state) => {
-  if (action.options && typeof action.options === 'object') {
-    Object.assign(state.cache, action.options);
+  const opts = optionsObject(action.options);
+  if (Object.keys(opts).length > 0) {
+    Object.assign(state.cache, opts);
     try {
       localStorage.setItem('jasonette:cache', JSON.stringify(state.cache));
     } catch { /* quota exceeded, ignore */ }
@@ -175,7 +268,7 @@ registerAction('$flush', async (_action, state) => {
 });
 
 registerAction('$util.alert', async (action) => {
-  const opts = action.options ?? {};
+  const opts = optionsObject(action.options);
   const title = (opts.title as string) ?? '';
   const description = (opts.description as string) ?? '';
   alert(`${title}\n${description}`.trim());
@@ -183,7 +276,7 @@ registerAction('$util.alert', async (action) => {
 });
 
 registerAction('$util.toast', async (action) => {
-  const opts = action.options ?? {};
+  const opts = optionsObject(action.options);
   const text = (opts.text as string) ?? (opts.title as string) ?? '';
 
   const toast = document.createElement('div');
@@ -196,7 +289,7 @@ registerAction('$util.toast', async (action) => {
 });
 
 registerAction('$util.banner', async (action) => {
-  const opts = action.options ?? {};
+  const opts = optionsObject(action.options);
   const title = (opts.title as string) ?? '';
   const description = (opts.description as string) ?? '';
 
@@ -215,7 +308,7 @@ registerAction('$util.banner', async (action) => {
 const timers: Record<string, number> = {};
 
 registerAction('$timer.start', async (action) => {
-  const opts = action.options ?? {};
+  const opts = optionsObject(action.options);
   const interval = Number(opts.interval ?? 1000);
   const name = (opts.name as string) ?? 'default';
   const timerAction = opts.action as JasonAction | undefined;
@@ -233,7 +326,7 @@ registerAction('$timer.start', async (action) => {
 });
 
 registerAction('$timer.stop', async (action) => {
-  const opts = action.options ?? {};
+  const opts = optionsObject(action.options);
   const name = (opts.name as string) ?? 'default';
   if (timers[name]) {
     clearInterval(timers[name]);
@@ -243,15 +336,16 @@ registerAction('$timer.stop', async (action) => {
 });
 
 registerAction('$log', async (action) => {
-  console.log('[jasonette:$log]', action.options);
+  console.log('[jasonette:$log]', optionsObject(action.options));
   return undefined;
 });
 
-registerAction('$lambda', async (action, state, dispatch) => {
-  // $lambda calls a named action from head.actions
-  const name = action.options?.name as string;
+registerAction('$lambda', async (action, state, dispatch, data) => {
+  // $lambda calls a named action from head.actions and passes options.options as payload.
+  const opts = optionsObject(action.options);
+  const name = opts.name as string;
   if (name && state.actions[name]) {
-    return dispatch(state.actions[name]);
+    return dispatch(state.actions[name], opts.options ?? data);
   }
   return undefined;
 });

@@ -67,9 +67,9 @@ export interface JasonHref {
 export interface JasonAction {
   type?: string;
   trigger?: string;
-  options?: Record<string, unknown>;
-  success?: JasonAction;
-  error?: JasonAction;
+  options?: unknown;
+  success?: JasonAction | JasonAction[];
+  error?: JasonAction | JasonAction[];
   [key: string]: unknown;
 }
 
