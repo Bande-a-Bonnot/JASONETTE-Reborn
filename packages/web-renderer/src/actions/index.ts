@@ -4,6 +4,7 @@ export type ActionHandler = (
   action: JasonAction,
   state: AppState,
   dispatch: ActionDispatch,
+  data?: unknown,
 ) => Promise<unknown>;
 
 export type ActionDispatch = (action: JasonAction, data?: unknown) => Promise<unknown>;
@@ -22,7 +23,12 @@ export async function executeAction(
   state: AppState,
   data?: unknown,
 ): Promise<unknown> {
-  if (!action.type) return undefined;
+  if (!action.type) {
+    if (action.trigger && state.actions[action.trigger]) {
+      return executeAction(state.actions[action.trigger], state, data);
+    }
+    return undefined;
+  }
 
   const handler = handlers[action.type];
   if (!handler) {
@@ -35,7 +41,7 @@ export async function executeAction(
   };
 
   try {
-    const result = await handler(action, state, dispatch);
+    const result = await handler(action, state, dispatch, data);
 
     // Chain success handler
     if (action.success) {
@@ -57,13 +63,13 @@ export async function executeAction(
 
 // --- Built-in Actions ---
 
-registerAction('$render', async (action, state) => {
-  // $render re-renders with new data
-  // Dispatched via custom event to the renderer
+registerAction('$render', async (action, state, _dispatch, data) => {
+  const renderData = action.options?.data ?? data ?? state.response;
+  const template = action.options?.template;
   document.dispatchEvent(new CustomEvent('jasonette:render', {
-    detail: { data: action.options?.data },
+    detail: { data: renderData, template },
   }));
-  return action.options?.data;
+  return renderData;
 });
 
 registerAction('$reload', async (action, state) => {
@@ -76,15 +82,16 @@ registerAction('$network.request', async (action, state) => {
   const url = opts.url;
   if (typeof url !== 'string' || !url) throw new Error('$network.request: missing or invalid url');
 
+  const headers = { ...((opts.headers as Record<string, string> | undefined) ?? {}) };
   const fetchOpts: RequestInit = {
     method: (opts.method as string)?.toUpperCase() ?? 'GET',
-    headers: opts.headers as Record<string, string>,
+    headers,
   };
 
   if (opts.body && fetchOpts.method !== 'GET') {
     if (typeof opts.body === 'object') {
       fetchOpts.body = JSON.stringify(opts.body);
-      (fetchOpts.headers as Record<string, string>)['Content-Type'] ??= 'application/json';
+      headers['Content-Type'] ??= 'application/json';
     } else {
       fetchOpts.body = String(opts.body);
     }
@@ -93,10 +100,36 @@ registerAction('$network.request', async (action, state) => {
   const response = await fetch(url, fetchOpts);
   const contentType = response.headers.get('content-type') ?? '';
 
-  if (contentType.includes('json')) {
-    return response.json();
+  const result = contentType.includes('json')
+    ? await response.json()
+    : await response.text();
+  state.response = result;
+  return result;
+});
+
+registerAction('$href', async (action) => {
+  const opts = action.options ?? {};
+  const url = opts.url;
+  if (typeof url !== 'string' || !url) throw new Error('$href: missing or invalid url');
+  const parsed = new URL(url, document.baseURI);
+  if (parsed.protocol === 'file:' || parsed.protocol === 'javascript:') {
+    throw new Error(`$href: blocked url scheme ${parsed.protocol}`);
   }
-  return response.text();
+
+  document.dispatchEvent(new CustomEvent('jasonette:navigate', {
+    detail: { ...opts, url: parsed.href },
+  }));
+  return opts;
+});
+
+registerAction('$back', async () => {
+  document.dispatchEvent(new CustomEvent('jasonette:back'));
+  return undefined;
+});
+
+registerAction('$close', async () => {
+  document.dispatchEvent(new CustomEvent('jasonette:close'));
+  return undefined;
 });
 
 registerAction('$set', async (action, state) => {

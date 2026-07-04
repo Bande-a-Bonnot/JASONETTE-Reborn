@@ -83,6 +83,17 @@ export function renderItem(
         }));
       }
     });
+  } else if (component.action || component.trigger) {
+    el.style.cursor = 'pointer';
+    if (component.action) el.setAttribute('data-action', JSON.stringify(component.action));
+    if (component.trigger) el.setAttribute('data-trigger', component.trigger);
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      el.dispatchEvent(new CustomEvent('jasonette:action', {
+        bubbles: true,
+        detail: component.action ?? { trigger: component.trigger },
+      }));
+    });
   }
 
   return el;

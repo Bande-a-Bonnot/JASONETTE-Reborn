@@ -267,6 +267,7 @@ export function evaluate(
     $root: context.$root,
     $index: context.$index,
     $cache: context.$cache,
+    $response: context.$response,
     $keys: context.$keys,
     // `this` is an alias for $jason (Jasonette v1 compat)
     this: context.$jason,

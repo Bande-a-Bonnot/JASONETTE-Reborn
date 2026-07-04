@@ -119,16 +119,18 @@ export function transform(
   }
 
   if (Array.isArray(value)) {
-    // Check if array contains conditional objects (template pattern for success/error chains)
-    const hasConditional = value.some(
-      item => typeof item === 'object' && item !== null && !Array.isArray(item) &&
-        Object.keys(item).some(k => IF_REGEX.test(k) || ELSEIF_REGEX.test(k) || ELSE_REGEX.test(k))
+    // Check if array is a pure conditional chain (template pattern for success/error chains).
+    // Mixed arrays, such as a false #if followed by a #each directive, should keep rendering
+    // later non-conditional entries instead of short-circuiting the whole array.
+    const isConditionalObject = (item: unknown): boolean => (
+      typeof item === 'object' && item !== null && !Array.isArray(item) &&
+      Object.keys(item).length > 0 &&
+      Object.keys(item).every(k => IF_REGEX.test(k) || ELSEIF_REGEX.test(k) || ELSE_REGEX.test(k))
     );
 
-    if (hasConditional) {
+    if (value.length > 0 && value.every(isConditionalObject)) {
       // Process as a conditional chain across array items
       for (const item of value) {
-        if (typeof item !== 'object' || item === null || Array.isArray(item)) continue;
         const itemKeys = Object.keys(item as Record<string, unknown>);
         for (const key of itemKeys) {
           const ifMatch = key.match(IF_REGEX) || key.match(ELSEIF_REGEX);
@@ -145,7 +147,12 @@ export function transform(
       return undefined;
     }
 
-    return value.map(item => transform(item, context, options)).filter(item => item !== undefined);
+    return value
+      .flatMap(item => {
+        const transformed = transform(item, context, options);
+        return Array.isArray(transformed) ? transformed : [transformed];
+      })
+      .filter(item => item !== undefined);
   }
 
   if (typeof value === 'object') {

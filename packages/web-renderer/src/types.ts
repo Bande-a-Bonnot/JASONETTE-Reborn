@@ -8,7 +8,7 @@ export interface JasonDocument {
 export interface JasonHead {
   title?: string;
   data?: Record<string, unknown>;
-  templates?: { body?: unknown };
+  templates?: { body?: unknown; [key: string]: unknown };
   styles?: Record<string, JasonStyle>;
   actions?: Record<string, JasonAction>;
 }
@@ -52,6 +52,7 @@ export interface JasonComponent {
   components?: JasonComponent[];
   href?: JasonHref;
   action?: JasonAction;
+  trigger?: string;
   [key: string]: unknown;
 }
 
@@ -65,6 +66,7 @@ export interface JasonHref {
 
 export interface JasonAction {
   type?: string;
+  trigger?: string;
   options?: Record<string, unknown>;
   success?: JasonAction;
   error?: JasonAction;
@@ -117,6 +119,10 @@ export interface AppState {
   local: Record<string, unknown>;
   /** Cache state ($cache) */
   cache: Record<string, unknown>;
+  /** Navigation params ($params) */
+  params: Record<string, unknown>;
+  /** Last network/action response ($response) */
+  response?: unknown;
   /** Navigation history */
   history: Array<{ url: string; document: JasonDocument }>;
 }

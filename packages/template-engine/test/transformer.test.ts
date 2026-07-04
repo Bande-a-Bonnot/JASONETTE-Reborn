@@ -193,6 +193,18 @@ describe('transform', () => {
       ];
       expect(transform(template, ctx({ a: false, b: false }))).toBeUndefined();
     });
+
+    it('continues rendering later directives in mixed arrays after an unmatched if', () => {
+      const template = [
+        { '{{#if $jason.error}}': { type: 'label', text: 'Error' } },
+        { '{{#each $response}}': { type: 'label', text: '{{name}}' } },
+      ];
+
+      expect(transform(template, { $jason: {}, $response: [{ name: 'Ada' }, { name: 'Grace' }] })).toEqual([
+        { type: 'label', text: 'Ada' },
+        { type: 'label', text: 'Grace' },
+      ]);
+    });
   });
 
   describe('object processing', () => {

@@ -26,6 +26,8 @@ export class JasonetteRenderer {
       actions: {},
       local: {},
       cache: this.loadCache(),
+      params: {},
+      response: undefined,
       history: [],
     };
 
@@ -42,8 +44,15 @@ export class JasonetteRenderer {
   }
 
   private setupEventListeners(): void {
-    // Navigation events from components
+    // Navigation events from components inside this renderer root.
     this.root.addEventListener('jasonette:navigate', ((e: CustomEvent) => {
+      e.stopPropagation();
+      const href = e.detail;
+      if (href.url) this.navigate(href.url, href);
+    }) as EventListener);
+
+    // Navigation events emitted by actions such as $href.
+    document.addEventListener('jasonette:navigate', ((e: CustomEvent) => {
       const href = e.detail;
       if (href.url) this.navigate(href.url, href);
     }) as EventListener);
@@ -52,7 +61,8 @@ export class JasonetteRenderer {
     document.addEventListener('jasonette:render', ((e: CustomEvent) => {
       if (this.state.document) {
         const data = e.detail?.data;
-        this.renderBody(this.state.document, data);
+        const template = e.detail?.template;
+        this.renderBody(this.state.document, data, typeof template === 'string' ? template : undefined);
       }
     }) as EventListener);
 
@@ -61,7 +71,20 @@ export class JasonetteRenderer {
       if (this.state.url) this.load(this.state.url);
     });
 
-    // Action events (from timers, etc.)
+    document.addEventListener('jasonette:back', () => this.back());
+
+    document.addEventListener('jasonette:close', () => {
+      const dialog = this.root.closest('dialog') as HTMLDialogElement | null;
+      if (dialog) dialog.close();
+    });
+
+    // Action events from components inside this renderer root.
+    this.root.addEventListener('jasonette:action', ((e: CustomEvent) => {
+      e.stopPropagation();
+      executeAction(e.detail, this.state);
+    }) as EventListener);
+
+    // Global action events (from timers, etc.)
     document.addEventListener('jasonette:action', ((e: CustomEvent) => {
       executeAction(e.detail, this.state);
     }) as EventListener);
@@ -125,6 +148,16 @@ export class JasonetteRenderer {
   /**
    * Render a $jason document directly (no fetch).
    */
+  private renderContext(data?: unknown): RenderContext {
+    return {
+      $jason: data ?? this.state.document?.$jason?.head?.data ?? {},
+      $get: this.state.local,
+      $cache: this.state.cache,
+      $params: this.state.params,
+      $response: this.state.response,
+    };
+  }
+
   renderDocument(doc: JasonDocument): void {
     this.state.document = doc;
     const head = doc.$jason?.head;
@@ -146,9 +179,8 @@ export class JasonetteRenderer {
 
     // Apply template if present
     let body: JasonBody | undefined;
-    if (head?.templates?.body && head?.data) {
-      const context: RenderContext = { $jason: head.data };
-      body = renderSync(head.templates.body, context) as JasonBody;
+    if (head?.templates?.body) {
+      body = renderSync(head.templates.body, this.renderContext(head.data)) as JasonBody;
     } else {
       body = doc.$jason?.body;
     }
@@ -161,7 +193,7 @@ export class JasonetteRenderer {
   /**
    * Re-render body with new data (for $render action).
    */
-  private renderBody(doc: JasonDocument, data?: unknown): void {
+  private renderBody(doc: JasonDocument, data?: unknown, templateName = 'body'): void {
     const head = doc.$jason?.head;
 
     // Remove everything except the stylesheet
@@ -170,10 +202,9 @@ export class JasonetteRenderer {
     if (styleEl) this.root.appendChild(styleEl);
 
     let body: JasonBody | undefined;
-    if (head?.templates?.body) {
-      const templateData = data ?? head.data ?? {};
-      const context: RenderContext = { $jason: templateData };
-      body = renderSync(head.templates.body, context) as JasonBody;
+    const template = head?.templates?.[templateName] ?? head?.templates?.body;
+    if (template) {
+      body = renderSync(template, this.renderContext(data ?? head?.data)) as JasonBody;
     } else {
       body = doc.$jason?.body;
     }

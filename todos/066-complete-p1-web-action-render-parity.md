@@ -1,6 +1,6 @@
 ---
 id: "019f2ece-a72e-7b97-8879-62b77b79d048"
-status: open
+status: complete
 priority: p1
 issue_id: "066"
 tags: [web, parity, actions, rendering, jasonpedia]
@@ -49,10 +49,24 @@ See `docs/research/2026-07-04-cross-platform-parity-audit.md`.
 - `packages/web-renderer/src/types.ts`
 - `packages/web-renderer/test/`
 
+## Completion Notes
+
+Implemented the web baseline for click-driven actions, legacy named triggers,
+`$render` data/template selection, `$response` propagation from
+`$network.request`, `$href`/`$back`/`$close` action registrations, and scoped
+component action dispatch. Also fixed template-engine mixed-array directive
+handling so a false `#if` entry does not suppress later `#each` fixture entries.
+
 ## Verification
 
 ```bash
-npm run test --workspace=@jasonette/web
+npm run build --workspace=@jasonette/template-engine
+npm run test --workspace=@jasonette/template-engine -- transformer.test.ts
 npm run typecheck --workspace=@jasonette/web
+npm run test --workspace=@jasonette/web -- actions-parity.test.ts
+npm run test --workspace=@jasonette/web
+npm run typecheck --workspace=@jasonette/template-engine
+npm run test --workspace=@jasonette/template-engine
+npm run build --workspace=@jasonette/web
 npm run lint:md
 ```
