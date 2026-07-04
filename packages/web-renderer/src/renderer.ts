@@ -8,6 +8,13 @@ import { renderItem } from './layouts/index.js';
 import { applyStyle, generateStyleSheet } from './style.js';
 import { executeAction } from './actions/index.js';
 
+function controlValue(target: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement): unknown {
+  if (target instanceof HTMLInputElement && target.type === 'checkbox') {
+    return target.checked;
+  }
+  return target.value;
+}
+
 /**
  * Jasonette Web Renderer.
  * Fetches a $jason document, applies templates, and renders to DOM.
@@ -78,6 +85,10 @@ export class JasonetteRenderer {
       if (dialog) dialog.close();
     });
 
+    // Control components update local state ($get) as their DOM values change.
+    this.root.addEventListener('input', (e) => this.handleControlValueEvent(e));
+    this.root.addEventListener('change', (e) => this.handleControlValueEvent(e));
+
     // Action events from components inside this renderer root.
     this.root.addEventListener('jasonette:action', ((e: CustomEvent) => {
       e.stopPropagation();
@@ -110,6 +121,28 @@ export class JasonetteRenderer {
     if (action) {
       executeAction(action, this.state).catch((err) =>
         console.error(`[jasonette] ${name} error:`, err),
+      );
+    }
+  }
+
+  private handleControlValueEvent(event: Event): void {
+    const target = event.target;
+    if (!(target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement)) {
+      return;
+    }
+    if (!target.name) return;
+
+    this.state.local[target.name] = controlValue(target);
+
+    const actionEl = target.closest('[data-action], [data-trigger]');
+    if (!(actionEl instanceof HTMLElement)) return;
+
+    const actionJson = actionEl.getAttribute('data-action');
+    const trigger = actionEl.getAttribute('data-trigger');
+    const action = actionJson ? JSON.parse(actionJson) : (trigger ? { trigger } : undefined);
+    if (action) {
+      executeAction(action, this.state).catch((err) =>
+        console.error('[jasonette] control action error:', err),
       );
     }
   }

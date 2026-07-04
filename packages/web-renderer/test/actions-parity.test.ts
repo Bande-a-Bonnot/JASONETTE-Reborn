@@ -94,6 +94,96 @@ describe('web action/render parity', () => {
     expect(root.textContent).toContain('Hello from trigger');
   });
 
+  it('updates named textfield values into $get for later render actions', async () => {
+    const doc: JasonDocument = {
+      $jason: {
+        head: {
+          templates: {
+            body: {
+              sections: [{
+                items: [
+                  { type: 'textfield', name: 'message', placeholder: 'Message' },
+                  { type: 'button', text: 'Render', action: { type: '$render' } },
+                  { type: 'label', text: '{{$get.message}}' },
+                ],
+              }],
+            },
+          },
+        },
+      },
+    };
+
+    renderer.renderDocument(doc);
+    const input = root.querySelector('input[name="message"]') as HTMLInputElement;
+    input.value = 'Typed message';
+    input.dispatchEvent(new InputEvent('input', { bubbles: true }));
+
+    root.querySelector('button')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(renderer.getState().local.message).toBe('Typed message');
+    expect(root.textContent).toContain('Typed message');
+  });
+
+  it('executes authored control action after updating $get state', async () => {
+    const doc: JasonDocument = {
+      $jason: {
+        head: {
+          templates: {
+            body: {
+              sections: [{
+                items: [
+                  { type: 'slider', name: 'gauge', value: 10, action: { type: '$render' } },
+                  { type: 'label', text: 'Gauge {{$get.gauge}}' },
+                ],
+              }],
+            },
+          },
+        },
+      },
+    };
+
+    renderer.renderDocument(doc);
+    const slider = root.querySelector('input[name="gauge"]') as HTMLInputElement;
+    slider.value = '42';
+    slider.dispatchEvent(new InputEvent('input', { bubbles: true }));
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(renderer.getState().local.gauge).toBe('42');
+    expect(root.textContent).toContain('Gauge 42');
+  });
+
+  it('stores switch values as booleans before running control actions', async () => {
+    const doc: JasonDocument = {
+      $jason: {
+        head: {
+          templates: {
+            body: {
+              sections: [{
+                items: [
+                  { type: 'switch', name: 'enabled', action: { type: '$render' } },
+                  { type: 'label', text: 'Enabled {{$get.enabled}}' },
+                ],
+              }],
+            },
+          },
+        },
+      },
+    };
+
+    renderer.renderDocument(doc);
+    const checkbox = root.querySelector('input[name="enabled"]') as HTMLInputElement;
+    checkbox.checked = true;
+    checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(renderer.getState().local.enabled).toBe(true);
+    expect(root.textContent).toContain('Enabled true');
+  });
+
   it('exposes $network.request response to $render templates as $response', async () => {
     const response = new Response(JSON.stringify({ title: 'Network title' }), {
       headers: { 'content-type': 'application/json' },

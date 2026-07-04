@@ -87,14 +87,24 @@ export function renderItem(
     el.style.cursor = 'pointer';
     if (component.action) el.setAttribute('data-action', JSON.stringify(component.action));
     if (component.trigger) el.setAttribute('data-trigger', component.trigger);
-    el.addEventListener('click', (e) => {
-      e.stopPropagation();
-      el.dispatchEvent(new CustomEvent('jasonette:action', {
-        bubbles: true,
-        detail: component.action ?? { trigger: component.trigger },
-      }));
-    });
+
+    if (!isControlComponent(component)) {
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        el.dispatchEvent(new CustomEvent('jasonette:action', {
+          bubbles: true,
+          detail: component.action ?? { trigger: component.trigger },
+        }));
+      });
+    }
   }
 
   return el;
+}
+
+function isControlComponent(component: JasonComponent): boolean {
+  return component.type === 'textfield' ||
+    component.type === 'textarea' ||
+    component.type === 'slider' ||
+    component.type === 'switch';
 }
