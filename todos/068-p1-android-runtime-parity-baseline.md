@@ -68,7 +68,7 @@ See `docs/research/2026-07-04-cross-platform-parity-audit.md`.
 Still open after this slice:
 
 - Add a ViewModel-level render-context regression test and Jasonpedia fixture
-  smoke once Android test execution is available locally or via CI feedback.
+  smoke now that CI confirms this baseline compiles/tests.
 - Tighten footer/render UI coverage beyond decode-level tests.
 
 ## Verification
@@ -83,4 +83,5 @@ cd JASONETTE-Android/JasonetteApp
 
 Current local environment note: `java -version` and `./gradlew test --no-daemon`
 still fail with `Unable to locate a Java Runtime`; use GitHub Actions for Android
-verification until Java is available locally.
+verification until Java is available locally. GitHub CI run `28721345742` passed
+for exact commit `54d8ee6` after this slice.
