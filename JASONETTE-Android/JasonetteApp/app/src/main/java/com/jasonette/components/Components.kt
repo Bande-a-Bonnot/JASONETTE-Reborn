@@ -1,5 +1,8 @@
 package com.jasonette.components
 
+import android.webkit.WebChromeClient
+import android.webkit.WebSettings
+import android.webkit.WebView
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
@@ -7,7 +10,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import coil.compose.AsyncImage
+import com.jasonette.core.JasonComponent
 import com.jasonette.core.JasonStyle
 import com.jasonette.core.dp
 
@@ -123,15 +128,64 @@ fun SwitchComponent(
     Switch(checked = isOn, onCheckedChange = onCheckedChange)
 }
 
+@Composable
+fun HtmlComponent(component: JasonComponent) {
+    AndroidView(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height((component.style?.height?.dp ?: 240f).dp),
+        factory = { context ->
+            WebView(context).apply {
+                settings.defaultTextEncodingName = "utf-8"
+                settings.javaScriptEnabled = true
+                settings.domStorageEnabled = true
+                settings.javaScriptCanOpenWindowsAutomatically = false
+                settings.mediaPlaybackRequiresUserGesture = false
+                settings.allowFileAccess = false
+                settings.allowContentAccess = false
+                settings.layoutAlgorithm = WebSettings.LayoutAlgorithm.TEXT_AUTOSIZING
+                webChromeClient = WebChromeClient()
+                isVerticalScrollBarEnabled = false
+                isHorizontalScrollBarEnabled = false
+            }
+        },
+        update = { webView ->
+            val loadKey = htmlComponentLoadKey(component) ?: return@AndroidView
+            if (webView.tag == loadKey) return@AndroidView
+            webView.tag = loadKey
+
+            val source = htmlComponentSource(component)
+            if (source != null) {
+                webView.loadDataWithBaseURL(
+                    htmlComponentUrl(component) ?: "http://localhost/",
+                    source,
+                    "text/html",
+                    "utf-8",
+                    null
+                )
+            } else {
+                htmlComponentUrl(component)?.let { webView.loadUrl(it) }
+            }
+        }
+    )
+}
+
+fun htmlComponentSource(component: JasonComponent): String? =
+    component.text?.let { text ->
+        if (component.css.isNullOrBlank()) text else "<style>${component.css}</style>$text"
+    }
+
+fun htmlComponentUrl(component: JasonComponent): String? =
+    component.url?.takeIf { it.startsWith("https://") || it.startsWith("http://") }
+
+fun htmlComponentLoadKey(component: JasonComponent): String? =
+    htmlComponentSource(component)?.let { "html:${htmlComponentUrl(component).orEmpty()}:$it" }
+        ?: htmlComponentUrl(component)?.let { "url:$it" }
+
 // Unsupported native component stubs
 @Composable
 fun MapStubComponent() {
     UnsupportedStubComponent("Map")
-}
-
-@Composable
-fun HtmlStubComponent() {
-    UnsupportedStubComponent("HTML")
 }
 
 @Composable

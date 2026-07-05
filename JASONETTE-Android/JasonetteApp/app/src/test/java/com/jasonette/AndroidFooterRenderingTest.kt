@@ -2,6 +2,9 @@ package com.jasonette
 
 import com.jasonette.components.componentImageURL
 import com.jasonette.components.effectiveComponentType
+import com.jasonette.components.htmlComponentLoadKey
+import com.jasonette.components.htmlComponentSource
+import com.jasonette.components.htmlComponentUrl
 import com.jasonette.core.DocumentLoader
 import com.jasonette.core.JasonBody
 import com.jasonette.core.JasonComponent
@@ -18,6 +21,42 @@ import org.junit.Test
 import java.io.File
 
 class AndroidFooterRenderingTest {
+    @Test
+    fun testHtmlComponentSourceIncludesInlineCssBeforeText() {
+        val component = JasonComponent(
+            type = "html",
+            css = "p{color:red;}",
+            text = "<p>Hello</p>"
+        )
+
+        assertEquals("<style>p{color:red;}</style><p>Hello</p>", htmlComponentSource(component))
+    }
+
+    @Test
+    fun testHtmlComponentHelpersAllowOnlyHttpUrlsAndAvoidDuplicateLoadKeys() {
+        val safe = JasonComponent(type = "html", url = "https://example.com/page.html")
+        val unsafe = JasonComponent(type = "html", url = "javascript:alert(1)")
+
+        assertEquals("https://example.com/page.html", htmlComponentUrl(safe))
+        assertEquals("url:https://example.com/page.html", htmlComponentLoadKey(safe))
+        assertNull(htmlComponentUrl(unsafe))
+        assertNull(htmlComponentLoadKey(unsafe))
+    }
+
+    @Test
+    fun testJasonpediaHtmlFixtureDecodesCssAndText() {
+        val document = loadJasonpediaFixture("Jasonpedia/view/component/html/index.json")
+        val component = document.jason.body?.sections?.first()?.items?.first()
+
+        assertNotNull(component)
+        val source = htmlComponentSource(component!!)
+        assertEquals("html", component.type)
+        assertEquals("html", effectiveComponentType(component))
+        assertTrue(component.css?.contains("img{width: 100%;}") == true)
+        assertTrue(source?.contains("<style>img{width: 100%;}") == true)
+        assertTrue(source?.contains("Continue reading") == true)
+    }
+
     @Test
     fun testBodyHeaderTitleOverridesHeadTitleForTopBar() {
         val head = JasonHead(title = "Head title")

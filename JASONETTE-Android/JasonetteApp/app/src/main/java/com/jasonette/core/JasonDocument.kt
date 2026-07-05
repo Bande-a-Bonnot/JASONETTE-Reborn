@@ -54,6 +54,7 @@ data class JasonComponent(
     val type: String? = null,
     val text: String? = null,
     val url: String? = null,
+    val css: String? = null,
     val name: String? = null,
     val value: JsonElement? = null,
     val placeholder: String? = null,
