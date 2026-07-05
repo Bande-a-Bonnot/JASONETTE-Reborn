@@ -1,8 +1,14 @@
 package com.jasonette
 
 import com.jasonette.core.DocumentLoader
+import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.*
 import org.junit.Test
+import java.io.File
 
 class DocumentLoaderTest {
     private val loader = DocumentLoader()
@@ -66,5 +72,227 @@ class DocumentLoaderTest {
         assertEquals("https://example.com/cam.png", input?.left?.image)
         assertEquals("Send", input?.right?.text)
         assertEquals("send", input?.right?.action?.trigger)
+    }
+
+    @Test fun testLoadResolvesLegacyWebcontainerTemplateAndDocumentReferences() = runTest {
+        val entryUrl = "https://example.com/webcontainer/pdf.json"
+        val templateUrl = "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/webcontainer/template.json"
+        val testLoader = fakeLoader(
+            entryUrl to fixture("Jasonpedia/webcontainer/pdf.json"),
+            templateUrl to fixture("Jasonpedia/webcontainer/template.json")
+        )
+
+        val doc = testLoader.load(entryUrl)
+        val bodyTemplate = doc.jason.head?.templates?.body?.jsonObject
+        val header = bodyTemplate?.get("header")?.jsonObject
+        val style = bodyTemplate?.get("style")?.jsonObject
+        val background = style?.get("background")?.jsonObject
+
+        assertEquals("PDF.json", header?.get("title")?.jsonPrimitive?.content)
+        assertEquals("#474747", header?.get("style")?.jsonObject?.get("background")?.jsonPrimitive?.content)
+        assertTrue(background?.get("text")?.jsonPrimitive?.content?.contains("mozilla.github.io/pdf.js") == true)
+        assertEquals("\$default", background?.get("action")?.jsonObject?.get("type")?.jsonPrimitive?.content)
+    }
+
+    @Test fun testLoadResolvesLegacyFeedSelectorIncludes() = runTest {
+        val entryUrl = "https://example.com/webcontainer/feed/index.json"
+        val dbUrl = "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/webcontainer/feed/db.json"
+        val itemUrl = "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/webcontainer/feed/item.json"
+        val specialUrl = "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/webcontainer/feed/special_item.json"
+        val animatedUrl = "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/webcontainer/feed/animated_item.json"
+        val testLoader = fakeLoader(
+            entryUrl to fixture("Jasonpedia/webcontainer/feed/index.json"),
+            dbUrl to fixture("Jasonpedia/webcontainer/feed/db.json"),
+            itemUrl to fixture("Jasonpedia/webcontainer/feed/item.json"),
+            specialUrl to fixture("Jasonpedia/webcontainer/feed/special_item.json"),
+            animatedUrl to fixture("Jasonpedia/webcontainer/feed/animated_item.json")
+        )
+
+        val doc = testLoader.load(entryUrl)
+        val data = doc.jason.head?.data
+        val items = data?.get("items")?.jsonArray
+        val bodyTemplate = doc.jason.head?.templates?.body?.jsonObject
+        val sections = bodyTemplate?.get("sections")?.jsonArray
+        val repeatedTemplate = sections?.get(0)?.jsonObject?.get("items")?.jsonObject?.values?.first()?.jsonObject
+        val specialItems = sections?.get(1)?.jsonObject?.get("items")?.jsonArray
+        val specialItem = specialItems?.get(0)?.jsonObject
+        val animatedItem = specialItems?.get(1)?.jsonObject
+
+        assertEquals("ethan", items?.get(0)?.jsonObject?.get("username")?.jsonPrimitive?.content)
+        assertEquals("horizontal", repeatedTemplate?.get("type")?.jsonPrimitive?.content)
+        assertEquals("vertical", specialItem?.get("type")?.jsonPrimitive?.content)
+        assertEquals("vertical", animatedItem?.get("type")?.jsonPrimitive?.content)
+    }
+
+    @Test fun testLoadResolvesSelectedIncludeDocumentReferencesAgainstFetchedRoot() = runTest {
+        val entryUrl = "https://example.com/entry.json"
+        val partsUrl = "https://example.com/parts.json"
+        val testLoader = fakeLoader(
+            entryUrl to """
+                {
+                  "${'$'}jason": {
+                    "head": {
+                      "data": {
+                        "item": {"+": "item@$partsUrl"}
+                      }
+                    }
+                  }
+                }
+            """.trimIndent(),
+            partsUrl to """
+                {
+                  "title": "Fetched title",
+                  "item": {"text": {"+": "${'$'}document.title"}}
+                }
+            """.trimIndent()
+        )
+
+        val doc = testLoader.load(entryUrl)
+        val item = doc.jason.head?.data?.get("item")?.jsonObject
+
+        assertEquals("Fetched title", item?.get("text")?.jsonPrimitive?.content)
+    }
+
+    @Test fun testLoadDoesNotTreatAtSignInsideUrlAsSelectorInclude() = runTest {
+        val entryUrl = "https://example.com/entry.json"
+        val includeUrl = "https://example.com/parts.json?email=a@b.com"
+        val requested = mutableListOf<String>()
+        val testLoader = DocumentLoader { url ->
+            requested.add(url)
+            val body = if (url == entryUrl) {
+                """
+                {
+                  "${'$'}jason": {
+                    "head": {
+                      "data": {
+                        "part": {"+": "$includeUrl"}
+                      }
+                    }
+                  }
+                }
+                """.trimIndent()
+            } else {
+                """{"text":"whole document"}"""
+            }
+            DocumentLoader.LoadedJson(body, url)
+        }
+
+        val doc = testLoader.load(entryUrl)
+        val part = doc.jason.head?.data?.get("part")?.jsonObject
+
+        assertEquals("whole document", part?.get("text")?.jsonPrimitive?.content)
+        assertEquals(listOf(entryUrl, includeUrl), requested)
+    }
+
+    @Test fun testLoadAllowsDuplicateSameUrlSelectorIncludes() = runTest {
+        val entryUrl = "https://example.com/entry.json"
+        val partsUrl = "https://example.com/parts.json"
+        val testLoader = fakeLoader(
+            entryUrl to """
+                {
+                  "${'$'}jason": {
+                    "head": {
+                      "data": {
+                        "first": {"+": "first@$partsUrl"},
+                        "second": {"+": "second@$partsUrl"}
+                      }
+                    }
+                  }
+                }
+            """.trimIndent(),
+            partsUrl to """{"first":{"text":"one"},"second":{"text":"two"}}"""
+        )
+
+        val doc = testLoader.load(entryUrl)
+        val data = doc.jason.head?.data
+
+        assertEquals("one", data?.get("first")?.jsonObject?.get("text")?.jsonPrimitive?.content)
+        assertEquals("two", data?.get("second")?.jsonObject?.get("text")?.jsonPrimitive?.content)
+    }
+
+    @Test fun testLoadGuardsLocalDocumentIncludeCycles() = runTest {
+        val entryUrl = "https://example.com/cycle.json"
+        val testLoader = fakeLoader(
+            entryUrl to """
+                {
+                  "${'$'}jason": {
+                    "head": {
+                      "data": {
+                        "self": {"+": "${'$'}document.${'$'}jason.head.data.self"}
+                      }
+                    }
+                  }
+                }
+            """.trimIndent()
+        )
+
+        val doc = testLoader.load(entryUrl)
+
+        assertSame(JsonNull, doc.jason.head?.data?.get("self"))
+    }
+
+    @Test fun testLoadRejectsUnsafeTopLevelDocumentUrlWithoutFetching() = runTest {
+        var fetched = false
+        val testLoader = DocumentLoader { url ->
+            fetched = true
+            DocumentLoader.LoadedJson("{}", url)
+        }
+
+        try {
+            testLoader.load("file:///tmp/document.json")
+            fail("Expected unsafe document URL to be rejected")
+        } catch (e: DocumentLoader.DocumentException) {
+            assertEquals("Blocked URL scheme", e.message)
+        }
+
+        assertFalse(fetched)
+    }
+
+    @Test fun testLoadBlocksUnsafeLegacyIncludeSchemes() = runTest {
+        val entryUrl = "https://example.com/unsafe.json"
+        val requested = mutableListOf<String>()
+        val testLoader = DocumentLoader { url ->
+            requested.add(url)
+            DocumentLoader.LoadedJson(
+                """
+                {
+                  "${'$'}jason": {
+                    "head": {
+                      "data": {"unsafe": {"+": "file:///tmp/secret.json"}},
+                      "title": "Safe"
+                    }
+                  }
+                }
+                """.trimIndent(),
+                url
+            )
+        }
+
+        val doc = testLoader.load(entryUrl)
+
+        assertEquals("Safe", doc.jason.head?.title)
+        assertEquals(listOf(entryUrl), requested)
+    }
+
+    private fun fakeLoader(vararg responses: Pair<String, String>): DocumentLoader {
+        val responseMap = responses.toMap()
+        return DocumentLoader { url ->
+            DocumentLoader.LoadedJson(
+                body = responseMap[url] ?: error("No fake response for $url"),
+                url = url
+            )
+        }
+    }
+
+    private fun fixture(path: String): String {
+        val candidates = listOf(
+            File("../../../$path"),
+            File("../../$path"),
+            File("../$path"),
+            File(path)
+        )
+        val file = candidates.firstOrNull { it.exists() }
+            ?: throw IllegalStateException("Fixture $path not found. Tried: $candidates. CWD: ${File(".").absolutePath}")
+        return file.readText()
     }
 }
