@@ -33,7 +33,13 @@ class JasonetteViewModel(
     private val loader = DocumentLoader()
     val stateManager = StateManager(application)
     private val timerScheduler = CoroutineJasonTimerScheduler(viewModelScope)
-    val actionDispatcher = ActionDispatcher(stateManager, baseUrl = url, timerScheduler = timerScheduler)
+    private val geolocationProvider = AndroidGeolocationProvider(application)
+    val actionDispatcher = ActionDispatcher(
+        stateManager,
+        baseUrl = url,
+        timerScheduler = timerScheduler,
+        geolocationProvider = geolocationProvider::currentCoordinate
+    )
     private var navigationHandler: ((JasonHref) -> Unit)? = null
     private var backHandler: (() -> Unit)? = null
     private var closeHandler: (() -> Unit)? = null

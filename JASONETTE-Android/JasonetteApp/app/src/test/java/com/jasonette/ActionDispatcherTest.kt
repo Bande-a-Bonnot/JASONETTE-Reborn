@@ -905,6 +905,65 @@ class ActionDispatcherTest {
     }
 
     @Test
+    fun testGeoGetStoresCoordValueAndJasonPayload() = runTest {
+        val sm = StateManager(context = null)
+        var requestCount = 0
+        val dispatcher = ActionDispatcher(sm, geolocationProvider = {
+            requestCount++
+            "12.34,56.78"
+        })
+
+        dispatcher.execute(JasonAction(type = "\$geo.get"))
+
+        assertEquals(1, requestCount)
+        assertEquals("12.34,56.78", sm.local["coord"])
+        assertEquals("12.34,56.78", sm.local["value"])
+        assertEquals(mapOf("coord" to "12.34,56.78", "value" to "12.34,56.78"), sm.local["\$jason"])
+    }
+
+    @Test
+    fun testGeoGetPayloadFlowsIntoRenderSuccessAsJason() = runTest {
+        val sm = StateManager(context = null)
+        val dispatcher = ActionDispatcher(sm, geolocationProvider = { "12.34,56.78" })
+        var renderCount = 0
+        dispatcher.setRenderHandler { template, _, _ ->
+            assertEquals("coord", template)
+            renderCount++
+        }
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$geo.get",
+                success = JasonAction(
+                    type = "\$render",
+                    options = JsonObject(mapOf("template" to JsonPrimitive("coord")))
+                )
+            )
+        )
+
+        assertEquals(1, renderCount)
+        val jason = sm.local["\$jason"] as Map<String, String>
+        assertEquals("12.34,56.78", jason["coord"])
+    }
+
+    @Test
+    fun testGeoGetFailureRunsErrorBranch() = runTest {
+        val sm = StateManager(context = null)
+        val geoDispatcher = ActionDispatcher(sm, geolocationProvider = {
+            throw ActionDispatcher.ActionException("Location permission denied")
+        })
+
+        geoDispatcher.execute(
+            JasonAction(
+                type = "\$geo.get",
+                error = makeAction("\$set", mapOf("geo_denied" to "true"))
+            )
+        )
+
+        assertEquals("true", sm.local["geo_denied"])
+    }
+
+    @Test
     fun testConvertCsvStoresRowsInJasonAndRunsSuccessChain() = runTest {
         val (sm, dispatcher) = createDispatcher()
         var renderCount = 0

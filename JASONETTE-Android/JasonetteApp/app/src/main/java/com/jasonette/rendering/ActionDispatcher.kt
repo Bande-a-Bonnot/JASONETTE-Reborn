@@ -19,6 +19,7 @@ class ActionDispatcher(
     private val stateManager: StateManager,
     private var baseUrl: String? = null,
     private val timerScheduler: JasonTimerScheduler = CoroutineJasonTimerScheduler(),
+    private val geolocationProvider: (suspend () -> String)? = null,
     private val networkClient: (suspend (String, kotlinx.serialization.json.JsonObject?) -> String)? = null
 ) {
     data class UtilityMessage(
@@ -209,6 +210,7 @@ class ActionDispatcher(
 
             "\$convert.csv" -> convertCsvAction(options)
             "\$convert.rss" -> convertRssAction(options)
+            "\$geo.get" -> geoGet()
 
             "\$network.request" -> {
                 val urlStr = (options?.get("url") as? JsonPrimitive)?.content
@@ -438,6 +440,12 @@ class ActionDispatcher(
         .replace("&quot;", "\"")
         .replace("&apos;", "'")
         .replace("&#39;", "'")
+
+    private suspend fun geoGet() {
+        val coord = geolocationProvider?.invoke() ?: throw ActionException("Location unavailable")
+        val payload = mapOf("coord" to coord, "value" to coord)
+        stateManager.set(payload + mapOf("\$jason" to payload))
+    }
 
     private suspend fun networkRequest(
         urlStr: String,
