@@ -43,6 +43,10 @@ Added JVM coverage for pure helpers and fixture decoding:
 Local Android Gradle execution remains blocked on this host by the missing Java
 runtime: `java -version` and `cd JASONETTE-Android/JasonetteApp && ./gradlew test
 --tests com.jasonette.AndroidFooterRenderingTest --no-daemon` fail before Gradle
-starts with `Unable to locate a Java Runtime`. Verification should rely on the
-GitHub Actions Android CI job, which provisions Java 17 and runs Gradle
-build/tests.
+starts with `Unable to locate a Java Runtime`.
+
+GitHub Actions CI run `28729894241` passed for exact head SHA
+`a333f93b99a9b6fe8a75845d96ed8b9ceafcd8fa`. Its Android job provisioned Java
+17, ran `./gradlew assembleDebug` and `./gradlew test`, and completed
+`:app:compileDebugKotlin`, `:app:testDebugUnitTest`, `:app:testReleaseUnitTest`,
+and `:app:test` successfully.
