@@ -15,6 +15,7 @@ import coil.compose.AsyncImage
 import com.jasonette.core.JasonComponent
 import com.jasonette.core.JasonStyle
 import com.jasonette.core.dp
+import kotlinx.serialization.json.content
 
 // Label
 @Composable
@@ -182,12 +183,47 @@ fun htmlComponentLoadKey(component: JasonComponent): String? =
     htmlComponentSource(component)?.let { "html:${htmlComponentUrl(component).orEmpty()}:$it" }
         ?: htmlComponentUrl(component)?.let { "url:$it" }
 
-// Unsupported native component stubs
 @Composable
-fun MapStubComponent() {
-    UnsupportedStubComponent("Map")
+fun MapComponent(component: JasonComponent) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height((component.style?.height?.dp ?: 200f).dp),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        shape = MaterialTheme.shapes.medium
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text("Map", style = MaterialTheme.typography.titleMedium)
+            mapRegionLabel(component)?.let { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            mapPinLabels(component).forEach { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        }
+    }
 }
 
+fun mapRegionLabel(component: JasonComponent): String? =
+    component.region?.coord?.takeIf { it.isNotBlank() }?.let { coord ->
+        val width = component.region.width?.content
+        val height = component.region.height?.content
+        when {
+            width != null && height != null -> "Region $coord (${width}m x ${height}m)"
+            else -> "Region $coord"
+        }
+    }
+
+fun mapPinLabels(component: JasonComponent): List<String> =
+    component.pins.orEmpty().mapIndexed { index, pin ->
+        val label = pin.title ?: "Pin ${index + 1}"
+        val description = pin.description?.let { " — $it" }.orEmpty()
+        val coord = pin.coord?.let { " @ $it" }.orEmpty()
+        "$label$description$coord"
+    }
+
+// Unsupported native component stubs
 @Composable
 fun UnsupportedStubComponent(label: String) {
     Surface(

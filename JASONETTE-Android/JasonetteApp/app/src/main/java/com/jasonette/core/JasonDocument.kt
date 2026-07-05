@@ -64,7 +64,26 @@ data class JasonComponent(
     val href: JasonHref? = null,
     val action: JasonAction? = null,
     val keyboard: String? = null,
-    val image: String? = null
+    val image: String? = null,
+    val region: JasonMapRegion? = null,
+    val pins: List<JasonMapPin>? = null
+)
+
+@Serializable
+data class JasonMapRegion(
+    val coord: String? = null,
+    val width: JsonPrimitive? = null,
+    val height: JsonPrimitive? = null
+)
+
+@Serializable
+data class JasonMapPin(
+    val coord: String? = null,
+    val title: String? = null,
+    val description: String? = null,
+    val style: JsonObject? = null,
+    val href: JasonHref? = null,
+    val action: JasonAction? = null
 )
 
 @Serializable

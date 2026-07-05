@@ -87,7 +87,7 @@ fun ComponentView(
                     }
                 )
             }
-            "map" -> MapStubComponent()
+            "map" -> MapComponent(component)
             "html" -> HtmlComponent(component)
             "vertical" -> LayoutView(
                 direction = LayoutDirection.VERTICAL,

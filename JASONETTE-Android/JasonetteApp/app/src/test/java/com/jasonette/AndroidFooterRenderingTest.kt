@@ -5,6 +5,8 @@ import com.jasonette.components.effectiveComponentType
 import com.jasonette.components.htmlComponentLoadKey
 import com.jasonette.components.htmlComponentSource
 import com.jasonette.components.htmlComponentUrl
+import com.jasonette.components.mapPinLabels
+import com.jasonette.components.mapRegionLabel
 import com.jasonette.core.DocumentLoader
 import com.jasonette.core.JasonBody
 import com.jasonette.core.JasonComponent
@@ -55,6 +57,47 @@ class AndroidFooterRenderingTest {
         assertTrue(component.css?.contains("img{width: 100%;}") == true)
         assertTrue(source?.contains("<style>img{width: 100%;}") == true)
         assertTrue(source?.contains("Continue reading") == true)
+    }
+
+    @Test
+    fun testJasonpediaMapFixtureDecodesRegionPinsAndVisibleLabels() {
+        val document = loadJasonpediaFixture("Jasonpedia/view/component/map/index.json")
+        val mapInHeader = document.jason.body?.sections?.first()?.header?.components?.getOrNull(1)
+        val mapWithPins = document.jason.body?.sections?.getOrNull(2)?.items?.first()
+
+        assertNotNull(mapInHeader)
+        assertEquals("map", mapInHeader?.type)
+        assertEquals("map", effectiveComponentType(mapInHeader!!))
+        assertEquals("Region 40.7197614,-73.9909211 (200m x 200m)", mapRegionLabel(mapInHeader))
+
+        assertNotNull(mapWithPins)
+        assertEquals("map", mapWithPins?.type)
+        assertEquals("Region 40.7197614,-73.9909211 (100m x 100m)", mapRegionLabel(mapWithPins!!))
+        assertEquals(
+            listOf("This is a pin — It really is. @ 40.7197614,-73.9909211"),
+            mapPinLabels(mapWithPins)
+        )
+    }
+
+    @Test
+    fun testMapPinFallbackLabelsWhenTitleMissing() {
+        val document = DocumentLoader().decode(
+            """
+            {
+              "${'$'}jason": {
+                "body": {
+                  "sections": [{"items": [{
+                    "type": "map",
+                    "pins": [{"coord": "1,2"}]
+                  }]}]
+                }
+              }
+            }
+            """.trimIndent()
+        )
+        val component = document.jason.body?.sections?.first()?.items?.first()
+
+        assertEquals(listOf("Pin 1 @ 1,2"), mapPinLabels(component!!))
     }
 
     @Test
