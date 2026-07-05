@@ -6,6 +6,8 @@ import com.jasonette.core.StateManager
 import com.jasonette.rendering.ActionDispatcher
 import com.jasonette.rendering.JasonTimerScheduler
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
@@ -419,6 +421,7 @@ class ActionDispatcherTest {
                         "body" to JsonObject(
                             mapOf(
                                 "user" to JsonPrimitive("{{\$get.name}}"),
+                                "{{\$get.tag}}_user" to JsonPrimitive("{{\$get.name}}"),
                                 "tags" to JsonArray(listOf(JsonPrimitive("{{\$get.tag}}")))
                             )
                         )
@@ -429,6 +432,7 @@ class ActionDispatcherTest {
 
         val body = observedOptions?.get("body") as JsonObject
         assertEquals("Ada", (body["user"] as JsonPrimitive).content)
+        assertEquals("Ada", (body["math_user"] as JsonPrimitive).content)
         val tags = body["tags"] as JsonArray
         assertEquals("math", (tags.first() as JsonPrimitive).content)
     }
@@ -644,6 +648,284 @@ class ActionDispatcherTest {
         dispatcher.execute(JasonAction(trigger = "send"))
 
         assertEquals("true", sm.local["sent"])
+    }
+
+    @Test
+    fun testLambdaPassesOptionsAsJasonAndRestoresPreviousPayload() = runTest {
+        val sm = StateManager(context = null)
+        val dispatcher = ActionDispatcher(sm)
+        sm.set(mapOf("\$jason" to mapOf("title" to "Original")))
+        dispatcher.setActionResolver { name ->
+            if (name == "banner") {
+                makeAction("\$set", mapOf("seen" to "{{\$jason.title}}"))
+            } else null
+        }
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$lambda",
+                options = JsonObject(
+                    mapOf(
+                        "name" to JsonPrimitive("banner"),
+                        "options" to JsonObject(mapOf("title" to JsonPrimitive("Trigger")))
+                    )
+                ),
+                success = makeAction("\$set", mapOf("after" to "{{\$jason.title}}"))
+            )
+        )
+
+        assertEquals("Trigger", sm.local["seen"])
+        assertEquals("Original", sm.local["after"])
+    }
+
+    @Test
+    fun testLambdaReturnSuccessFeedsCallerSuccessChain() = runTest {
+        val sm = StateManager(context = null)
+        val dispatcher = ActionDispatcher(sm)
+        dispatcher.setActionResolver { name ->
+            if (name == "lookup") {
+                Json.decodeFromString<JasonAction>(
+                    """
+                    {
+                      "type": "${'$'}return.success",
+                      "options": {"title": "Returned"}
+                    }
+                    """.trimIndent()
+                )
+            } else null
+        }
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$lambda",
+                options = JsonObject(mapOf("name" to JsonPrimitive("lookup"))),
+                success = makeAction("\$set", mapOf("after" to "{{\$jason.title}}"))
+            )
+        )
+
+        assertEquals("Returned", sm.local["after"])
+    }
+
+    @Test
+    fun testLambdaReturnErrorFeedsCallerErrorChain() = runTest {
+        val sm = StateManager(context = null)
+        val dispatcher = ActionDispatcher(sm)
+        dispatcher.setActionResolver { name ->
+            if (name == "lookup") {
+                Json.decodeFromString<JasonAction>(
+                    """
+                    {
+                      "type": "${'$'}return.error",
+                      "options": {"message": "Nope"}
+                    }
+                    """.trimIndent()
+                )
+            } else null
+        }
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$lambda",
+                options = JsonObject(mapOf("name" to JsonPrimitive("lookup"))),
+                error = makeAction("\$set", mapOf("error" to "{{\$jason.message}}"))
+            )
+        )
+
+        assertEquals("Nope", sm.local["error"])
+    }
+
+    @Test
+    fun testTriggerOptionsPassTemporarilyAsJason() = runTest {
+        val sm = StateManager(context = null)
+        val dispatcher = ActionDispatcher(sm)
+        sm.set(mapOf("\$jason" to mapOf("title" to "Original")))
+        dispatcher.setActionResolver { name ->
+            if (name == "banner") makeAction("\$set", mapOf("seen" to "{{\$jason.title}}")) else null
+        }
+
+        dispatcher.execute(
+            JasonAction(
+                trigger = "banner",
+                options = JsonObject(mapOf("title" to JsonPrimitive("Trigger"))),
+                success = makeAction("\$set", mapOf("after" to "{{\$jason.title}}"))
+            )
+        )
+
+        assertEquals("Trigger", sm.local["seen"])
+        assertEquals("Original", sm.local["after"])
+    }
+
+    @Test
+    fun testActionArraySuccessTemplatesEachActionAfterPreviousSideEffects() = runTest {
+        val sm = StateManager(context = null)
+        val dispatcher = ActionDispatcher(sm)
+        val action = Json.decodeFromString<JasonAction>(
+            """
+            {
+              "type": "${'$'}set",
+              "options": {"first": "one"},
+              "success": [
+                {
+                  "type": "${'$'}set",
+                  "options": {"second": "{{${'$'}get.first}} two"}
+                },
+                {
+                  "type": "${'$'}set",
+                  "options": {"third": "{{${'$'}get.second}} three"}
+                }
+              ]
+            }
+            """.trimIndent()
+        )
+
+        dispatcher.execute(action)
+
+        assertEquals("one", sm.local["first"])
+        assertEquals("one two", sm.local["second"])
+        assertEquals("one two three", sm.local["third"])
+    }
+
+    @Test
+    fun testActionArraySuccessTemplatesConditionalBranchesBeforeDispatch() = runTest {
+        val sm = StateManager(context = null)
+        val dispatcher = ActionDispatcher(sm) { _, _ -> "{\"ok\":true,\"message\":\"Ready\"}" }
+        val json = Json { ignoreUnknownKeys = true; isLenient = true }
+        val action = json.decodeFromString<JasonAction>(
+            """
+            {
+              "type": "${'$'}network.request",
+              "options": {"url": "https://example.com/data.json"},
+              "success": [
+                {
+                  "{{#if ${'$'}jason.ok}}": {
+                    "type": "${'$'}set",
+                    "options": {"message": "{{${'$'}jason.message}}"}
+                  }
+                },
+                {
+                  "{{#else}}": {
+                    "type": "${'$'}set",
+                    "options": {"fallback": "true"}
+                  }
+                }
+              ]
+            }
+            """.trimIndent()
+        )
+
+        dispatcher.execute(action)
+
+        assertEquals("Ready", sm.local["message"])
+        assertNull(sm.local["fallback"])
+    }
+
+    @Test
+    fun testActionArraySuccessRunsSplitElseBranchWhenConditionIsFalse() = runTest {
+        val sm = StateManager(context = null)
+        val dispatcher = ActionDispatcher(sm) { _, _ -> "{\"ok\":false}" }
+        val json = Json { ignoreUnknownKeys = true; isLenient = true }
+        val action = json.decodeFromString<JasonAction>(
+            """
+            {
+              "type": "${'$'}network.request",
+              "options": {"url": "https://example.com/data.json"},
+              "success": [
+                {
+                  "{{#if ${'$'}jason.ok}}": {
+                    "type": "${'$'}set",
+                    "options": {"message": "Ready"}
+                  }
+                },
+                {
+                  "{{#else}}": {
+                    "type": "${'$'}set",
+                    "options": {"fallback": "true"}
+                  }
+                }
+              ]
+            }
+            """.trimIndent()
+        )
+
+        dispatcher.execute(action)
+
+        assertNull(sm.local["message"])
+        assertEquals("true", sm.local["fallback"])
+    }
+
+    @Test
+    fun testLambdaConditionalOptionsCanRenderFallbackAction() = runTest {
+        val sm = StateManager(context = null)
+        val dispatcher = ActionDispatcher(sm)
+        sm.set(mapOf("\$jason" to mapOf("ok" to false)))
+        val json = Json { ignoreUnknownKeys = true; isLenient = true }
+        val action = json.decodeFromString<JasonAction>(
+            """
+            {
+              "type": "${'$'}lambda",
+              "options": [
+                {
+                  "{{#if ${'$'}jason.ok}}": {
+                    "name": "missing"
+                  }
+                },
+                {
+                  "{{#else}}": {
+                    "type": "${'$'}set",
+                    "options": {"fallback": "true"}
+                  }
+                }
+              ]
+            }
+            """.trimIndent()
+        )
+
+        dispatcher.execute(action)
+
+        assertEquals("true", sm.local["fallback"])
+    }
+
+    @Test
+    fun testJasonActionSerializesProgrammaticSuccessActionsAsArray() {
+        val json = Json { ignoreUnknownKeys = true; isLenient = true }
+        val encoded = json.encodeToString(
+            JasonAction.serializer(),
+            JasonAction(
+                type = "\$set",
+                successActions = listOf(
+                    makeAction("\$set", mapOf("one" to "1")),
+                    makeAction("\$set", mapOf("two" to "2"))
+                )
+            )
+        )
+        val success = (json.parseToJsonElement(encoded) as JsonObject)["success"]
+
+        assertTrue(success is JsonArray)
+        assertEquals(2, (success as JsonArray).size)
+    }
+
+    @Test
+    fun testUtilityStringOptionsCanTemplateWholeJasonPayload() = runTest {
+        val sm = StateManager(context = null)
+        val dispatcher = ActionDispatcher(sm)
+        sm.set(mapOf("\$jason" to mapOf("title" to "Notice", "description" to "Synced")))
+        var message: ActionDispatcher.UtilityMessage? = null
+        dispatcher.setUtilityHandler { message = it }
+        val json = Json { ignoreUnknownKeys = true; isLenient = true }
+        val action = json.decodeFromString<JasonAction>(
+            """
+            {
+              "type": "${'$'}util.banner",
+              "options": "{{${'$'}jason}}"
+            }
+            """.trimIndent()
+        )
+
+        dispatcher.execute(action)
+
+        assertEquals("banner", message?.kind)
+        assertEquals("Notice", message?.title)
+        assertEquals("Synced", message?.description)
     }
 
     @Test

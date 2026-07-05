@@ -86,7 +86,10 @@ arbitrary named `head.templates`, passes `$render.options.template` and
 `$render.options.data` through the dispatcher, renders selected templates with a
 `body` fallback, and exposes render data as `$jason` plus top-level fields.
 
-Follow-up P2 slices have started addressing the remaining native/common and
-body-level rendering gaps: `todos/081` added `$timer.start`/`$timer.stop`, and
-`todos/082` added a baseline for body header title/menu and background color
-strings while preserving object-valued background payloads for future work.
+Follow-up P2 slices have started addressing the remaining native/common,
+action-graph, and body-level rendering gaps: `todos/081` added
+`$timer.start`/`$timer.stop`, `todos/082` added a baseline for body header
+title/menu and background color strings while preserving object-valued
+background payloads for future work, and `todos/083` added single/array
+action continuations plus `$lambda`/trigger payload and `$return` baseline
+behavior.

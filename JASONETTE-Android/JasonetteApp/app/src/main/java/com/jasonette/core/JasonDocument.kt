@@ -1,6 +1,8 @@
 package com.jasonette.core
 
 import kotlinx.serialization.*
+import kotlinx.serialization.descriptors.*
+import kotlinx.serialization.encoding.*
 import kotlinx.serialization.json.*
 
 @Serializable
@@ -73,14 +75,88 @@ data class JasonHref(
     val preload: JsonElement? = null
 )
 
-@Serializable
+@Serializable(with = JasonActionSerializer::class)
 data class JasonAction(
     val type: String? = null,
     val trigger: String? = null,
-    val options: JsonObject? = null,
+    val options: JsonElement? = null,
     val success: JasonAction? = null,
-    val error: JasonAction? = null
+    val error: JasonAction? = null,
+    @Transient val successActions: List<JasonAction> = success?.let { listOf(it) } ?: emptyList(),
+    @Transient val errorActions: List<JasonAction> = error?.let { listOf(it) } ?: emptyList(),
+    @Transient val successElement: JsonElement? = null,
+    @Transient val errorElement: JsonElement? = null
 )
+
+@OptIn(ExperimentalSerializationApi::class)
+object JasonActionSerializer : KSerializer<JasonAction> {
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("JasonAction") {
+        element<String>("type", isOptional = true)
+        element<String>("trigger", isOptional = true)
+        element<JsonElement>("options", isOptional = true)
+        element<JsonElement>("success", isOptional = true)
+        element<JsonElement>("error", isOptional = true)
+    }
+
+    override fun deserialize(decoder: Decoder): JasonAction {
+        val jsonDecoder = decoder as? JsonDecoder
+            ?: throw SerializationException("JasonAction can only be decoded from JSON")
+        val element = jsonDecoder.decodeJsonElement()
+        val obj = element as? JsonObject
+            ?: throw SerializationException("JasonAction must be a JSON object")
+        val successElement = obj["success"]
+        val errorElement = obj["error"]
+        val successActions = decodeActionList(jsonDecoder.json, successElement)
+        val errorActions = decodeActionList(jsonDecoder.json, errorElement)
+        return JasonAction(
+            type = (obj["type"] as? JsonPrimitive)?.content,
+            trigger = (obj["trigger"] as? JsonPrimitive)?.content,
+            options = obj["options"],
+            success = successActions.firstOrNull(),
+            error = errorActions.firstOrNull(),
+            successActions = successActions,
+            errorActions = errorActions,
+            successElement = successElement,
+            errorElement = errorElement
+        )
+    }
+
+    override fun serialize(encoder: Encoder, value: JasonAction) {
+        val jsonEncoder = encoder as? JsonEncoder
+            ?: throw SerializationException("JasonAction can only be encoded to JSON")
+        val content = buildMap<String, JsonElement> {
+            value.type?.let { put("type", JsonPrimitive(it)) }
+            value.trigger?.let { put("trigger", JsonPrimitive(it)) }
+            value.options?.let { put("options", it) }
+            encodedContinuation(jsonEncoder.json, value.successElement, value.successActions, value.success)?.let { put("success", it) }
+            encodedContinuation(jsonEncoder.json, value.errorElement, value.errorActions, value.error)?.let { put("error", it) }
+        }
+        jsonEncoder.encodeJsonElement(JsonObject(content))
+    }
+
+    private fun encodedContinuation(
+        json: Json,
+        raw: JsonElement?,
+        actions: List<JasonAction>,
+        single: JasonAction?
+    ): JsonElement? = raw
+        ?: when {
+            actions.size > 1 -> JsonArray(actions.map { json.encodeToJsonElement(JasonAction.serializer(), it) })
+            actions.size == 1 -> json.encodeToJsonElement(JasonAction.serializer(), actions.first())
+            single != null -> json.encodeToJsonElement(JasonAction.serializer(), single)
+            else -> null
+        }
+
+    private fun decodeActionList(json: Json, element: JsonElement?): List<JasonAction> = when (element) {
+        null -> emptyList()
+        is JsonArray -> element.mapNotNull { decodeActionOrNull(json, it) }
+        is JsonObject -> decodeActionOrNull(json, element)?.let { listOf(it) } ?: emptyList()
+        else -> emptyList()
+    }
+
+    private fun decodeActionOrNull(json: Json, element: JsonElement): JasonAction? =
+        runCatching { json.decodeFromJsonElement(JasonAction.serializer(), element) }.getOrNull()
+}
 
 @Serializable
 data class JasonFooter(

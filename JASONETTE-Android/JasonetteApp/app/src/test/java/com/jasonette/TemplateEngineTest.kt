@@ -63,6 +63,49 @@ class TemplateEngineTest {
         assertEquals(0, result?.size)
     }
 
+    @Test fun testSplitIfElseArrayRendersOnlyMatchingBranch() {
+        val template = listOf(
+            mapOf("{{#if show}}" to mapOf("text" to "Visible")),
+            mapOf("{{#else}}" to mapOf("text" to "Hidden"))
+        )
+
+        val trueResult = TemplateEngine.render(template, mapOf("show" to true)) as? List<*>
+        val falseResult = TemplateEngine.render(template, mapOf("show" to false)) as? List<*>
+
+        assertEquals(listOf(mapOf("text" to "Visible")), trueResult)
+        assertEquals(listOf(mapOf("text" to "Hidden")), falseResult)
+    }
+
+    @Test fun testSplitIfElseifElseStopsBeforeNextSibling() {
+        val template = listOf(
+            mapOf("{{#if first}}" to mapOf("text" to "First")),
+            mapOf("{{#elseif second}}" to mapOf("text" to "Second")),
+            mapOf("{{#else}}" to mapOf("text" to "Fallback")),
+            mapOf("text" to "Sibling")
+        )
+
+        val result = TemplateEngine.render(template, mapOf("first" to false, "second" to true)) as? List<*>
+
+        assertEquals(listOf(mapOf("text" to "Second"), mapOf("text" to "Sibling")), result)
+    }
+
+    @Test fun testNestedSplitIfElseInsideBranchStaysScopedToBranch() {
+        val template = listOf(
+            mapOf(
+                "{{#if outer}}" to listOf(
+                    mapOf("{{#if inner}}" to mapOf("text" to "Inner")),
+                    mapOf("{{#else}}" to mapOf("text" to "Inner fallback"))
+                )
+            ),
+            mapOf("{{#else}}" to mapOf("text" to "Outer fallback")),
+            mapOf("text" to "Sibling")
+        )
+
+        val result = TemplateEngine.render(template, mapOf("outer" to true, "inner" to false)) as? List<*>
+
+        assertEquals(listOf(mapOf("text" to "Inner fallback"), mapOf("text" to "Sibling")), result)
+    }
+
     // Dictionary rendering
     @Test fun testDictionaryRendering() {
         val template = mapOf("type" to "label", "text" to "{{greeting}}")

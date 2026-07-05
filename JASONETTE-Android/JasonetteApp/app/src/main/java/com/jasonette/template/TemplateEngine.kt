@@ -41,22 +41,89 @@ object TemplateEngine {
     // Array rendering
     private fun renderArray(arr: List<*>, context: Map<String, Any?>): List<Any?> {
         val result = mutableListOf<Any?>()
-        for (item in arr) {
+        var index = 0
+        while (index < arr.size) {
+            val item = arr[index]
             if (item is Map<*, *>) {
                 val directive = findDirective(item)
+                if (directive is Directive.If && directive.elseTemplate == null) {
+                    val continuations = collectSplitContinuations(arr, index + 1)
+                    addRendered(result, applySplitIf(directive, continuations, context))
+                    index += 1 + continuations.size
+                    continue
+                }
                 if (directive != null) {
-                    val rendered = applyDirective(directive, item, context)
-                    if (rendered is List<*>) {
-                        result.addAll(rendered)
-                    } else {
-                        result.add(rendered)
-                    }
+                    addRendered(result, applyDirective(directive, item, context))
+                    index++
+                    continue
+                }
+                if (item.standaloneContinuation() != null) {
+                    index++
                     continue
                 }
             }
             result.add(render(item, context))
+            index++
         }
         return result
+    }
+
+    private fun addRendered(result: MutableList<Any?>, rendered: Any?) {
+        if (rendered is List<*>) {
+            result.addAll(rendered)
+        } else {
+            result.add(rendered)
+        }
+    }
+
+    private sealed class SplitContinuation {
+        data class ElseIf(val expr: String, val template: Any?) : SplitContinuation()
+        data class Else(val template: Any?) : SplitContinuation()
+    }
+
+    private fun collectSplitContinuations(arr: List<*>, start: Int): List<SplitContinuation> {
+        val continuations = mutableListOf<SplitContinuation>()
+        var index = start
+        while (index < arr.size) {
+            val continuation = (arr[index] as? Map<*, *>)?.standaloneContinuation() ?: break
+            continuations.add(continuation)
+            index++
+            if (continuation is SplitContinuation.Else) break
+        }
+        return continuations
+    }
+
+    private fun Map<*, *>.standaloneContinuation(): SplitContinuation? {
+        val entry = entries.firstOrNull() ?: return null
+        val key = entry.key.toString()
+        return when {
+            key.startsWith("{{#elseif ") && key.endsWith("}}") ->
+                SplitContinuation.ElseIf(key.substring(10, key.length - 2), entry.value)
+            key == "{{#else}}" -> SplitContinuation.Else(entry.value)
+            else -> null
+        }
+    }
+
+    private fun applySplitIf(
+        directive: Directive.If,
+        continuations: List<SplitContinuation>,
+        context: Map<String, Any?>
+    ): Any? {
+        val condResult = ExpressionEvaluator.evaluate(directive.expr, context)
+        if (ExpressionEvaluator.isTruthy(condResult)) return render(directive.template, context)
+
+        for (continuation in continuations) {
+            when (continuation) {
+                is SplitContinuation.ElseIf -> {
+                    val elseifResult = ExpressionEvaluator.evaluate(continuation.expr, context)
+                    if (ExpressionEvaluator.isTruthy(elseifResult)) {
+                        return render(continuation.template, context)
+                    }
+                }
+                is SplitContinuation.Else -> return render(continuation.template, context)
+            }
+        }
+        return emptyList<Any>()
     }
 
     // Object rendering

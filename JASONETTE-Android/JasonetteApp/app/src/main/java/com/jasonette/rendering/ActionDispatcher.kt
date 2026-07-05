@@ -71,22 +71,106 @@ class ActionDispatcher(
 
     suspend fun execute(action: JasonAction) {
         try {
-            dispatch(action)
-            action.success?.let { execute(it) }
-        } catch (_: Exception) {
-            action.error?.let { execute(it) }
+            executeAction(action)
+        } catch (_: LambdaReturn) {
+            // A top-level $return has no caller to resume.
         }
     }
 
+    private suspend fun executeAction(action: JasonAction) {
+        try {
+            dispatch(action)
+            executeContinuations(action, success = true)
+        } catch (ret: LambdaReturn) {
+            throw ret
+        } catch (_: Exception) {
+            executeContinuations(action, success = false)
+        }
+    }
+
+    private suspend fun executeContinuations(action: JasonAction, success: Boolean) {
+        val raw = if (success) action.successElement else action.errorElement
+        if (raw != null) {
+            executeContinuationElement(raw)
+            return
+        }
+        val fallback = if (success) action.successActions else action.errorActions
+        fallback.forEach { executeAction(it) }
+    }
+
+    private suspend fun executeContinuationElement(element: JsonElement) {
+        when (element) {
+            is JsonArray -> executeContinuationArray(element)
+            is JsonObject -> decodeActionOrNull(element)?.let { executeAction(it) }
+            else -> {}
+        }
+    }
+
+    private suspend fun executeContinuationArray(actions: JsonArray) {
+        var index = 0
+        while (index < actions.size) {
+            val current = actions[index]
+            val conditionalChain = if (isConditionalStartObject(current)) {
+                collectConditionalChain(actions, index)
+            } else null
+
+            if (conditionalChain != null) {
+                executeRenderedContinuation(conditionalChain)
+                index += conditionalChain.size
+                continue
+            }
+
+            if (isConditionalContinuationObject(current)) {
+                index++
+                continue
+            }
+
+            executeContinuationElement(current)
+            index++
+        }
+    }
+
+    private suspend fun executeRenderedContinuation(elements: List<JsonElement>) {
+        val rendered = JsonValueConverter.anyToJsonElement(
+            TemplateEngine.render(JsonValueConverter.jsonElementToAny(JsonArray(elements)), actionContext())
+        )
+        executeContinuationElement(rendered)
+    }
+
+    private fun isConditionalStartObject(element: JsonElement): Boolean =
+        element is JsonObject && element.keys.any { it.startsWith("{{#if ") && it.endsWith("}}") }
+
+    private fun isConditionalContinuationObject(element: JsonElement): Boolean =
+        element is JsonObject && element.isNotEmpty() && element.keys.all { key ->
+            (key.startsWith("{{#elseif ") && key.endsWith("}}")) || key == "{{#else}}"
+        }
+
+    private fun collectConditionalChain(actions: JsonArray, start: Int): List<JsonElement> {
+        val chain = mutableListOf<JsonElement>(actions[start])
+        var index = start + 1
+        while (index < actions.size) {
+            val next = actions[index]
+            if (!isConditionalContinuationObject(next)) break
+            chain.add(next)
+            if ((next as? JsonObject)?.containsKey("{{#else}}") == true) break
+            index++
+        }
+        return chain
+    }
+
+    private fun decodeActionOrNull(element: JsonElement): JasonAction? =
+        runCatching { actionJson.decodeFromJsonElement(JasonAction.serializer(), element) }.getOrNull()
+
     private suspend fun dispatch(action: JasonAction) {
+        val optionElement = templatedOptions(action.options)
         if (action.type == null) {
             action.trigger?.let { trigger ->
-                actionResolver?.invoke(trigger)?.let { execute(it) }
+                executeTrigger(trigger, optionElement)
             }
             return
         }
         val type = action.type ?: return
-        val options = templatedOptions(action.options)
+        val options = optionElement as? JsonObject
 
         when (type) {
             "\$set" -> {
@@ -118,6 +202,10 @@ class ActionDispatcher(
 
             "\$timer.start" -> startTimer(options)
             "\$timer.stop" -> timerScheduler.stop(stringOption(options, "name"))
+
+            "\$lambda" -> executeLambda(optionElement)
+            "\$return.success" -> throw LambdaReturn(success = true, payload = returnPayload(optionElement))
+            "\$return.error" -> throw LambdaReturn(success = false, payload = returnPayload(optionElement))
 
             "\$network.request" -> {
                 val urlStr = (options?.get("url") as? JsonPrimitive)?.content
@@ -175,6 +263,80 @@ class ActionDispatcher(
         }
     }
 
+    private suspend fun executeTrigger(trigger: String, options: JsonElement?) {
+        val payload = options?.let { JsonValueConverter.jsonElementToAny(it) }
+        var returned: LambdaReturn? = null
+        withTemporaryJason(payload) {
+            actionResolver?.invoke(trigger)?.let { action ->
+                try {
+                    executeAction(action)
+                } catch (ret: LambdaReturn) {
+                    returned = ret
+                }
+            }
+        }
+        returned?.let { ret ->
+            setJasonPayload(ret.payload)
+            if (!ret.success) throw ActionException("Trigger returned error")
+        }
+    }
+
+    private suspend fun executeLambda(options: JsonElement?) {
+        val lambdaOptions = lambdaOptionsObject(options) ?: return
+        val name = stringOption(lambdaOptions, "name")
+        if (name == null) {
+            decodeActionOrNull(lambdaOptions)?.let { executeAction(it) }
+            return
+        }
+        val payload = lambdaOptions["options"]?.let { JsonValueConverter.jsonElementToAny(it) }
+        var returned: LambdaReturn? = null
+        withTemporaryJason(payload) {
+            actionResolver?.invoke(name)?.let { action ->
+                try {
+                    executeAction(action)
+                } catch (ret: LambdaReturn) {
+                    returned = ret
+                }
+            }
+        }
+        returned?.let { ret ->
+            setJasonPayload(ret.payload)
+            if (!ret.success) throw ActionException("Lambda returned error")
+        }
+    }
+
+    private fun returnPayload(options: JsonElement?): Any? =
+        options?.let { JsonValueConverter.jsonElementToAny(it) } ?: stateManager.local["\$jason"]
+
+    private fun setJasonPayload(payload: Any?) {
+        stateManager.local["\$jason"] = payload
+    }
+
+    private suspend fun withTemporaryJason(payload: Any?, block: suspend () -> Unit) {
+        if (payload == null) {
+            block()
+            return
+        }
+        val hadPrevious = stateManager.local.containsKey("\$jason")
+        val previous = stateManager.local["\$jason"]
+        stateManager.local["\$jason"] = payload
+        try {
+            block()
+        } finally {
+            if (hadPrevious) {
+                stateManager.local["\$jason"] = previous
+            } else {
+                stateManager.local.remove("\$jason")
+            }
+        }
+    }
+
+    private fun lambdaOptionsObject(options: JsonElement?): JsonObject? = when (options) {
+        is JsonObject -> options
+        is JsonArray -> options.firstOrNull { it is JsonObject } as? JsonObject
+        else -> null
+    }
+
     private suspend fun networkRequest(
         urlStr: String,
         options: kotlinx.serialization.json.JsonObject?
@@ -185,7 +347,7 @@ class ActionDispatcher(
         } catch (_: Exception) {
             body
         }
-        stateManager.set(mapOf("\$response" to responseValue))
+        stateManager.set(mapOf("\$response" to responseValue, "\$jason" to responseValue))
     }
 
     private fun httpNetworkRequest(
@@ -215,32 +377,10 @@ class ActionDispatcher(
         navigationHandler?.invoke(href.copy(url = resolved))
     }
 
-    private fun templatedOptions(options: JsonObject?): JsonObject? {
-        val context = actionContext()
-        return options?.let { renderOptionElement(it, context) as? JsonObject ?: it }
-    }
-
-    private fun renderOptionElement(element: JsonElement, context: Map<String, Any?>): JsonElement {
-        return when (element) {
-            is JsonObject -> JsonObject(
-                element.mapKeys { (key, _) -> renderOptionKey(key, context) }
-                    .mapValues { (_, value) -> renderOptionElement(value, context) }
-            )
-            is JsonArray -> JsonArray(element.map { renderOptionElement(it, context) })
-            is JsonPrimitive -> {
-                if (element.isString && element.content.contains("{{")) {
-                    JsonValueConverter.anyToJsonElement(TemplateEngine.render(element.content, context))
-                } else {
-                    element
-                }
-            }
-            else -> element
-        }
-    }
-
-    private fun renderOptionKey(key: String, context: Map<String, Any?>): String {
-        if (!key.contains("{{")) return key
-        return TemplateEngine.render(key, context)?.toString() ?: key
+    private fun templatedOptions(options: JsonElement?): JsonElement? = options?.let {
+        JsonValueConverter.anyToJsonElement(
+            TemplateEngine.render(JsonValueConverter.jsonElementToAny(it), actionContext())
+        )
     }
 
     private fun actionContext(): Map<String, Any?> {
@@ -298,6 +438,8 @@ class ActionDispatcher(
             else -> element.toString()
         }
     }
+
+    private class LambdaReturn(val success: Boolean, val payload: Any?) : RuntimeException()
 
     class ActionException(message: String) : Exception(message)
 }
