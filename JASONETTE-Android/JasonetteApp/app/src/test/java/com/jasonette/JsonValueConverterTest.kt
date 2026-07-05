@@ -2,6 +2,9 @@ package com.jasonette
 
 import com.jasonette.core.JsonValueConverter
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -30,6 +33,15 @@ class JsonValueConverterTest {
 
         assertTrue(parsed is Double)
         assertEquals("1.2345678901234568E30", (parsed as Double).toString())
+    }
+
+    @Test
+    fun anyToJsonElementPreservesExistingJsonElements() {
+        val obj = JsonObject(mapOf("items" to JsonArray(listOf(JsonPrimitive("Ada")))))
+
+        val element = JsonValueConverter.anyToJsonElement(obj)
+
+        assertEquals(obj, element)
     }
 
     @Test

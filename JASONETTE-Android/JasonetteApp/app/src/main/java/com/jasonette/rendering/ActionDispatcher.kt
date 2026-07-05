@@ -1,6 +1,10 @@
 package com.jasonette.rendering
 
 import com.jasonette.core.*
+import com.jasonette.template.TemplateEngine
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import java.net.HttpURLConnection
 import java.net.URI
@@ -56,12 +60,12 @@ class ActionDispatcher(
             return
         }
         val type = action.type ?: return
-        val options = action.options
+        val options = templatedOptions(action.options)
 
         when (type) {
             "\$set" -> {
                 val values = options?.entries?.associate { (k, v) ->
-                    k to jsonElementToString(v)
+                    k to JsonValueConverter.jsonElementToAny(v)
                 } ?: emptyMap()
                 stateManager.set(values)
             }
@@ -134,6 +138,46 @@ class ActionDispatcher(
         val url = href.url ?: throw ActionException("Missing URL")
         val resolved = resolveAllowedUrl(url)
         navigationHandler?.invoke(href.copy(url = resolved))
+    }
+
+    private fun templatedOptions(options: JsonObject?): JsonObject? {
+        val context = actionContext()
+        return options?.let { renderOptionElement(it, context) as? JsonObject ?: it }
+    }
+
+    private fun renderOptionElement(element: JsonElement, context: Map<String, Any?>): JsonElement {
+        return when (element) {
+            is JsonObject -> JsonObject(
+                element.mapKeys { (key, _) -> renderOptionKey(key, context) }
+                    .mapValues { (_, value) -> renderOptionElement(value, context) }
+            )
+            is JsonArray -> JsonArray(element.map { renderOptionElement(it, context) })
+            is JsonPrimitive -> {
+                if (element.isString && element.content.contains("{{")) {
+                    JsonValueConverter.anyToJsonElement(TemplateEngine.render(element.content, context))
+                } else {
+                    element
+                }
+            }
+            else -> element
+        }
+    }
+
+    private fun renderOptionKey(key: String, context: Map<String, Any?>): String {
+        if (!key.contains("{{")) return key
+        return TemplateEngine.render(key, context)?.toString() ?: key
+    }
+
+    private fun actionContext(): Map<String, Any?> {
+        val local = stateManager.local.toMap()
+        val context = local.toMutableMap()
+        context["\$get"] = local
+        context["\$cache"] = stateManager.cacheGet()
+        local["\$response"]?.let { context["\$response"] = it }
+        if (!context.containsKey("\$jason")) {
+            context["\$jason"] = local
+        }
+        return context
     }
 
     private fun hrefFromOptions(options: kotlinx.serialization.json.JsonObject?): JasonHref {

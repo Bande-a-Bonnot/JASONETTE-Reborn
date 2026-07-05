@@ -5,6 +5,8 @@ import com.jasonette.core.JasonHref
 import com.jasonette.core.StateManager
 import com.jasonette.rendering.ActionDispatcher
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import org.junit.Assert.*
@@ -102,6 +104,229 @@ class ActionDispatcherTest {
     }
 
     @Test
+    fun testSetTemplatesOptionsFromLocalAndResponseContext() = runTest {
+        val (sm, dispatcher) = createDispatcher()
+        sm.set(
+            mapOf(
+                "name" to "Ada",
+                "\$response" to mapOf("items" to listOf(mapOf("title" to "First")))
+            )
+        )
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$set",
+                options = JsonObject(
+                    mapOf(
+                        "message" to JsonPrimitive("Hello {{\$get.name}}"),
+                        "title" to JsonPrimitive("{{\$response.items[0].title}}")
+                    )
+                )
+            )
+        )
+
+        assertEquals("Hello Ada", sm.local["message"])
+        assertEquals("First", sm.local["title"])
+    }
+
+    @Test
+    fun testSetStoresTemplatedAndUntemplatedStructuredOptionValues() = runTest {
+        val (sm, dispatcher) = createDispatcher()
+        sm.set(
+            mapOf(
+                "\$response" to mapOf(
+                    "items" to listOf(mapOf("name" to "Ada")),
+                    "meta" to mapOf("ok" to true)
+                )
+            )
+        )
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$set",
+                options = JsonObject(
+                    mapOf(
+                        "items" to JsonPrimitive("{{\$response.items}}"),
+                        "meta" to JsonPrimitive("{{\$response.meta}}"),
+                        "plainString" to JsonPrimitive("hello"),
+                        "number" to JsonPrimitive(42),
+                        "enabled" to JsonPrimitive(true),
+                        "missing" to JsonNull
+                    )
+                )
+            )
+        )
+
+        @Suppress("UNCHECKED_CAST")
+        val items = sm.local["items"] as List<Map<String, Any?>>
+        assertEquals("Ada", items.first()["name"])
+        assertEquals(mapOf("ok" to true), sm.local["meta"])
+        assertEquals("hello", sm.local["plainString"])
+        assertEquals(42, sm.local["number"])
+        assertEquals(true, sm.local["enabled"])
+        assertNull(sm.local["missing"])
+    }
+
+    @Test
+    fun testCacheSetTemplatesOptionsWithoutCrashingWhenCacheUnavailable() = runTest {
+        val (sm, dispatcher) = createDispatcher()
+        sm.set(mapOf("cacheKey" to "greeting", "cacheValue" to "hello"))
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$cache.set",
+                options = JsonObject(mapOf("{{\$get.cacheKey}}" to JsonPrimitive("{{\$get.cacheValue}}")))
+            )
+        )
+
+        assertTrue(sm.cacheGet().isEmpty())
+    }
+
+    @Test
+    fun testNetworkRequestTemplatesUrlBeforeExecution() = runTest {
+        val sm = StateManager(context = null)
+        sm.set(mapOf("postId" to "1"))
+        var requestedUrl: String? = null
+        val dispatcher = ActionDispatcher(sm) { url, _ ->
+            requestedUrl = url
+            "[]"
+        }
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$network.request",
+                options = JsonObject(mapOf("url" to JsonPrimitive("https://example.com/comments?postId={{\$get.postId}}")))
+            )
+        )
+
+        assertEquals("https://example.com/comments?postId=1", requestedUrl)
+    }
+
+    @Test
+    fun testNestedActionOptionsAreTemplatedBeforeHandlerExecution() = runTest {
+        val sm = StateManager(context = null)
+        sm.set(mapOf("name" to "Ada", "tag" to "math"))
+        var observedOptions: JsonObject? = null
+        val dispatcher = ActionDispatcher(sm) { _, options ->
+            observedOptions = options
+            "{}"
+        }
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$network.request",
+                options = JsonObject(
+                    mapOf(
+                        "url" to JsonPrimitive("https://example.com/api"),
+                        "body" to JsonObject(
+                            mapOf(
+                                "user" to JsonPrimitive("{{\$get.name}}"),
+                                "tags" to JsonArray(listOf(JsonPrimitive("{{\$get.tag}}")))
+                            )
+                        )
+                    )
+                )
+            )
+        )
+
+        val body = observedOptions?.get("body") as JsonObject
+        assertEquals("Ada", (body["user"] as JsonPrimitive).content)
+        val tags = body["tags"] as JsonArray
+        assertEquals("math", (tags.first() as JsonPrimitive).content)
+    }
+
+    @Test
+    fun testWholeExpressionObjectAndArrayOptionsSurviveWithoutStringification() = runTest {
+        val sm = StateManager(context = null)
+        sm.set(
+            mapOf(
+                "\$response" to mapOf(
+                    "items" to listOf(mapOf("name" to "Ada")),
+                    "meta" to mapOf("ok" to true)
+                )
+            )
+        )
+        var observedOptions: JsonObject? = null
+        val dispatcher = ActionDispatcher(sm) { _, options ->
+            observedOptions = options
+            "{}"
+        }
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$network.request",
+                options = JsonObject(
+                    mapOf(
+                        "url" to JsonPrimitive("https://example.com/api"),
+                        "body" to JsonObject(
+                            mapOf(
+                                "items" to JsonPrimitive("{{\$response.items}}"),
+                                "meta" to JsonPrimitive("{{\$response.meta}}")
+                            )
+                        )
+                    )
+                )
+            )
+        )
+
+        val body = observedOptions?.get("body") as JsonObject
+        val items = body["items"] as JsonArray
+        assertEquals("Ada", ((items.first() as JsonObject)["name"] as JsonPrimitive).content)
+        val meta = body["meta"] as JsonObject
+        assertEquals(JsonPrimitive(true), meta["ok"])
+    }
+
+    @Test
+    fun testTemplatingPreservesUntemplatedNestedPrimitiveOptions() = runTest {
+        val sm = StateManager(context = null)
+        var observedOptions: JsonObject? = null
+        val dispatcher = ActionDispatcher(sm) { _, options ->
+            observedOptions = options
+            "{}"
+        }
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$network.request",
+                options = JsonObject(
+                    mapOf(
+                        "url" to JsonPrimitive("https://example.com/api"),
+                        "body" to JsonObject(
+                            mapOf(
+                                "count" to JsonPrimitive(42),
+                                "enabled" to JsonPrimitive(true),
+                                "missing" to JsonNull
+                            )
+                        )
+                    )
+                )
+            )
+        )
+
+        val body = observedOptions?.get("body") as JsonObject
+        assertEquals(JsonPrimitive(42), body["count"])
+        assertEquals(JsonPrimitive(true), body["enabled"])
+        assertSame(JsonNull, body["missing"])
+    }
+
+    @Test
+    fun testTemplatedUnsafeHrefStillBlockedAfterInterpolation() = runTest {
+        val (sm, dispatcher) = createDispatcher()
+        sm.set(mapOf("scheme" to "javascript"))
+        var navigated = false
+        dispatcher.setNavigationHandler { navigated = true }
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$href",
+                options = JsonObject(mapOf("url" to JsonPrimitive("{{\$get.scheme}}:alert(1)")))
+            )
+        )
+
+        assertFalse(navigated)
+    }
+
+    @Test
     fun testNetworkRequestStoresStructuredResponsePayload() = runTest {
         val sm = StateManager(context = null)
         val dispatcher = ActionDispatcher(sm) { _, _ -> "{\"items\":[{\"name\":\"Ada\"}],\"ok\":true}" }
@@ -118,6 +343,25 @@ class ActionDispatcherTest {
         @Suppress("UNCHECKED_CAST")
         val items = response["items"] as List<Map<String, Any?>>
         assertEquals("Ada", items.first()["name"])
+    }
+
+    @Test
+    fun testHrefTemplatesUrlBeforeResolvingNavigation() = runTest {
+        val (sm, dispatcher) = createDispatcher()
+        sm.set(mapOf("next" to "detail"))
+        var navigated: JasonHref? = null
+        dispatcher.setBaseUrl("https://example.com/path/index.json")
+        dispatcher.setNavigationHandler { navigated = it }
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$href",
+                options = JsonObject(mapOf("url" to JsonPrimitive("{{\$get.next}}.json"), "transition" to JsonPrimitive("push")))
+            )
+        )
+
+        assertEquals("https://example.com/path/detail.json", navigated?.url)
+        assertEquals("push", navigated?.transition)
     }
 
     @Test

@@ -43,6 +43,7 @@ object JsonValueConverter {
             is Double -> JsonPrimitive(value)
             is Float -> JsonPrimitive(value)
             is Boolean -> JsonPrimitive(value)
+            is JsonElement -> value
             is List<*> -> JsonArray(value.map { anyToJsonElement(it) })
             is Map<*, *> -> JsonObject(
                 value.entries.associate { (key, item) -> key.toString() to anyToJsonElement(item) }
