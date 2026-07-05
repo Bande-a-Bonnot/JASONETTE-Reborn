@@ -2,10 +2,12 @@ package com.jasonette.rendering
 
 import com.jasonette.core.*
 import com.jasonette.template.TemplateEngine
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.decodeFromJsonElement
 import java.net.HttpURLConnection
 import java.net.URI
 import java.net.URL
@@ -16,6 +18,7 @@ import java.net.URL
 class ActionDispatcher(
     private val stateManager: StateManager,
     private var baseUrl: String? = null,
+    private val timerScheduler: JasonTimerScheduler = CoroutineJasonTimerScheduler(),
     private val networkClient: (suspend (String, kotlinx.serialization.json.JsonObject?) -> String)? = null
 ) {
     data class UtilityMessage(
@@ -32,6 +35,7 @@ class ActionDispatcher(
     private var closeHandler: (() -> Unit)? = null
     private var actionResolver: ((String) -> JasonAction?)? = null
     private var utilityHandler: ((UtilityMessage) -> Unit)? = null
+    private val actionJson = Json { ignoreUnknownKeys = true; isLenient = true }
 
     fun setBaseUrl(url: String?) {
         baseUrl = url
@@ -112,6 +116,9 @@ class ActionDispatcher(
             )
             "\$reload" -> reloadHandler?.invoke()
 
+            "\$timer.start" -> startTimer(options)
+            "\$timer.stop" -> timerScheduler.stop(stringOption(options, "name"))
+
             "\$network.request" -> {
                 val urlStr = (options?.get("url") as? JsonPrimitive)?.content
                     ?: throw ActionException("Missing URL")
@@ -150,6 +157,21 @@ class ActionDispatcher(
             "\$log.error" -> logMessage("ERROR", options)
 
             else -> println("[Jasonette] Unknown action: $type")
+        }
+    }
+
+    private fun startTimer(options: kotlinx.serialization.json.JsonObject?) {
+        val name = stringOption(options, "name") ?: throw ActionException("Missing timer name")
+        val intervalSeconds = stringOption(options, "interval")?.toDoubleOrNull()
+            ?: throw ActionException("Missing timer interval")
+        if (intervalSeconds <= 0) throw ActionException("Timer interval must be greater than zero")
+        val actionElement = options?.get("action") as? JsonObject
+            ?: throw ActionException("Missing timer action")
+        val timerAction = actionJson.decodeFromJsonElement(JasonAction.serializer(), actionElement)
+        val repeats = stringOption(options, "repeats")?.toBooleanStrictOrNull() ?: true
+
+        timerScheduler.start(name, (intervalSeconds * 1000).toLong().coerceAtLeast(1), repeats) {
+            execute(timerAction)
         }
     }
 

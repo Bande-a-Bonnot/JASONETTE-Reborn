@@ -4,6 +4,7 @@ import com.jasonette.core.JasonAction
 import com.jasonette.core.JasonHref
 import com.jasonette.core.StateManager
 import com.jasonette.rendering.ActionDispatcher
+import com.jasonette.rendering.JasonTimerScheduler
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonNull
@@ -13,6 +14,31 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class ActionDispatcherTest {
+    private class FakeTimerScheduler : JasonTimerScheduler {
+        data class Scheduled(
+            val name: String,
+            val intervalMillis: Long,
+            val repeats: Boolean,
+            val action: suspend () -> Unit
+        )
+
+        val scheduled = mutableMapOf<String, Scheduled>()
+        val stopped = mutableListOf<String?>()
+
+        override fun start(name: String, intervalMillis: Long, repeats: Boolean, action: suspend () -> Unit) {
+            scheduled[name] = Scheduled(name, intervalMillis, repeats, action)
+        }
+
+        override fun stop(name: String?) {
+            stopped.add(name)
+            if (name == null) scheduled.clear() else scheduled.remove(name)
+        }
+
+        suspend fun fire(name: String) {
+            scheduled[name]?.action?.invoke()
+        }
+    }
+
     private fun createDispatcher(): Pair<StateManager, ActionDispatcher> {
         val sm = StateManager(context = null)
         return sm to ActionDispatcher(sm)
@@ -131,6 +157,130 @@ class ActionDispatcherTest {
         dispatcher.execute(action)
 
         assertEquals(1, reloadCount)
+    }
+
+    @Test
+    fun testTimerStartSchedulesTemplatedActionAndContinuesSuccessChain() = runTest {
+        val sm = StateManager(context = null)
+        val scheduler = FakeTimerScheduler()
+        val dispatcher = ActionDispatcher(sm, timerScheduler = scheduler)
+        sm.set(mapOf("timerName" to "stopwatch"))
+        dispatcher.setActionResolver { name ->
+            if (name == "tick") makeAction("\$set", mapOf("ticked" to "true")) else null
+        }
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$timer.start",
+                options = JsonObject(
+                    mapOf(
+                        "name" to JsonPrimitive("{{\$get.timerName}}"),
+                        "interval" to JsonPrimitive("1"),
+                        "repeats" to JsonPrimitive("true"),
+                        "action" to JsonObject(mapOf("trigger" to JsonPrimitive("tick")))
+                    )
+                ),
+                success = makeAction("\$set", mapOf("started" to "true"))
+            )
+        )
+
+        val scheduled = scheduler.scheduled["stopwatch"]
+        assertEquals(1000L, scheduled?.intervalMillis)
+        assertEquals(true, scheduled?.repeats)
+        assertEquals("true", sm.local["started"])
+
+        scheduler.fire("stopwatch")
+
+        assertEquals("true", sm.local["ticked"])
+    }
+
+    @Test
+    fun testTimerStartDefaultsToRepeatingTimerWhenRepeatsIsOmitted() = runTest {
+        val sm = StateManager(context = null)
+        val scheduler = FakeTimerScheduler()
+        val dispatcher = ActionDispatcher(sm, timerScheduler = scheduler)
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$timer.start",
+                options = JsonObject(
+                    mapOf(
+                        "name" to JsonPrimitive("once"),
+                        "interval" to JsonPrimitive("0.5"),
+                        "action" to JsonObject(mapOf("type" to JsonPrimitive("\$set"), "options" to JsonObject(mapOf("done" to JsonPrimitive("true")))))
+                    )
+                )
+            )
+        )
+
+        val scheduled = scheduler.scheduled["once"]
+        assertEquals(500L, scheduled?.intervalMillis)
+        assertEquals(true, scheduled?.repeats)
+    }
+
+    @Test
+    fun testTimerStartWithRepeatsFalseSchedulesOneShotDelay() = runTest {
+        val sm = StateManager(context = null)
+        val scheduler = FakeTimerScheduler()
+        val dispatcher = ActionDispatcher(sm, timerScheduler = scheduler)
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$timer.start",
+                options = JsonObject(
+                    mapOf(
+                        "name" to JsonPrimitive("once"),
+                        "interval" to JsonPrimitive("0.5"),
+                        "repeats" to JsonPrimitive(false),
+                        "action" to JsonObject(mapOf("type" to JsonPrimitive("\$set"), "options" to JsonObject(mapOf("done" to JsonPrimitive("true")))))
+                    )
+                )
+            )
+        )
+
+        val scheduled = scheduler.scheduled["once"]
+        assertEquals(500L, scheduled?.intervalMillis)
+        assertEquals(false, scheduled?.repeats)
+    }
+
+    @Test
+    fun testTimerInvalidIntervalTriggersErrorChain() = runTest {
+        val (sm, dispatcher) = createDispatcher()
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$timer.start",
+                options = JsonObject(
+                    mapOf(
+                        "name" to JsonPrimitive("bad"),
+                        "interval" to JsonPrimitive("0"),
+                        "action" to JsonObject(mapOf("type" to JsonPrimitive("\$set"), "options" to JsonObject(mapOf("done" to JsonPrimitive("true")))))
+                    )
+                ),
+                error = makeAction("\$set", mapOf("timer_error" to "true"))
+            )
+        )
+
+        assertEquals("true", sm.local["timer_error"])
+    }
+
+    @Test
+    fun testTimerStopCancelsNamedOrAllTimersAndContinuesSuccessChain() = runTest {
+        val sm = StateManager(context = null)
+        val scheduler = FakeTimerScheduler()
+        val dispatcher = ActionDispatcher(sm, timerScheduler = scheduler)
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$timer.stop",
+                options = JsonObject(mapOf("name" to JsonPrimitive("stopwatch"))),
+                success = makeAction("\$set", mapOf("stopped" to "one"))
+            )
+        )
+        dispatcher.execute(JasonAction(type = "\$timer.stop"))
+
+        assertEquals(listOf("stopwatch", null), scheduler.stopped)
+        assertEquals("one", sm.local["stopped"])
     }
 
     @Test
