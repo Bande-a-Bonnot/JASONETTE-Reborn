@@ -28,6 +28,8 @@ class ActionDispatcher(
     private var renderHandler: (() -> Unit)? = null
     private var reloadHandler: (() -> Unit)? = null
     private var navigationHandler: ((JasonHref) -> Unit)? = null
+    private var backHandler: (() -> Unit)? = null
+    private var closeHandler: (() -> Unit)? = null
     private var actionResolver: ((String) -> JasonAction?)? = null
     private var utilityHandler: ((UtilityMessage) -> Unit)? = null
 
@@ -45,6 +47,14 @@ class ActionDispatcher(
 
     fun setNavigationHandler(handler: ((JasonHref) -> Unit)?) {
         navigationHandler = handler
+    }
+
+    fun setBackHandler(handler: (() -> Unit)?) {
+        backHandler = handler
+    }
+
+    fun setCloseHandler(handler: (() -> Unit)?) {
+        closeHandler = handler
     }
 
     fun setActionResolver(handler: ((String) -> JasonAction?)?) {
@@ -108,6 +118,8 @@ class ActionDispatcher(
                 val href = hrefFromOptions(options)
                 dispatchHref(href)
             }
+            "\$back" -> backHandler?.invoke()
+            "\$close" -> closeHandler?.invoke() ?: backHandler?.invoke()
 
             "\$util.alert" -> utilityHandler?.invoke(
                 UtilityMessage(

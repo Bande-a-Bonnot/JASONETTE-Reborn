@@ -419,6 +419,44 @@ class ActionDispatcherTest {
     }
 
     @Test
+    fun testBackAndCloseActionsCallNavigationHandlersAndContinueSuccessChain() = runTest {
+        val (sm, dispatcher) = createDispatcher()
+        var backCount = 0
+        var closeCount = 0
+        dispatcher.setBackHandler { backCount++ }
+        dispatcher.setCloseHandler { closeCount++ }
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$back",
+                success = makeAction("\$set", mapOf("backed" to "true"))
+            )
+        )
+        dispatcher.execute(
+            JasonAction(
+                type = "\$close",
+                success = makeAction("\$set", mapOf("closed" to "true"))
+            )
+        )
+
+        assertEquals(1, backCount)
+        assertEquals(1, closeCount)
+        assertEquals("true", sm.local["backed"])
+        assertEquals("true", sm.local["closed"])
+    }
+
+    @Test
+    fun testCloseFallsBackToBackHandlerWhenNoCloseHandlerIsRegistered() = runTest {
+        val (_, dispatcher) = createDispatcher()
+        var backCount = 0
+        dispatcher.setBackHandler { backCount++ }
+
+        dispatcher.execute(JasonAction(type = "\$close"))
+
+        assertEquals(1, backCount)
+    }
+
+    @Test
     fun testNamedTriggerResolvesHeadAction() = runTest {
         val (sm, dispatcher) = createDispatcher()
         dispatcher.setActionResolver { name ->

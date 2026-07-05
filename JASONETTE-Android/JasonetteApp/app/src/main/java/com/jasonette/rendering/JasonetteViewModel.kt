@@ -34,6 +34,8 @@ class JasonetteViewModel(
     val stateManager = StateManager(application)
     val actionDispatcher = ActionDispatcher(stateManager, baseUrl = url)
     private var navigationHandler: ((JasonHref) -> Unit)? = null
+    private var backHandler: (() -> Unit)? = null
+    private var closeHandler: (() -> Unit)? = null
 
     private val json = Json {
         ignoreUnknownKeys = true
@@ -45,6 +47,8 @@ class JasonetteViewModel(
         actionDispatcher.setRenderHandler { renderCurrentDocument() }
         actionDispatcher.setReloadHandler { reload() }
         actionDispatcher.setNavigationHandler { href -> navigationHandler?.invoke(href) }
+        actionDispatcher.setBackHandler { backHandler?.invoke() }
+        actionDispatcher.setCloseHandler { closeHandler?.invoke() ?: backHandler?.invoke() }
         actionDispatcher.setActionResolver { name -> document?.jason?.head?.actions?.get(name) }
         actionDispatcher.setUtilityHandler { message -> _utilityMessages.tryEmit(message) }
     }
@@ -107,6 +111,14 @@ class JasonetteViewModel(
 
     fun setNavigationHandler(handler: ((JasonHref) -> Unit)?) {
         navigationHandler = handler
+    }
+
+    fun setBackHandler(handler: (() -> Unit)?) {
+        backHandler = handler
+    }
+
+    fun setCloseHandler(handler: (() -> Unit)?) {
+        closeHandler = handler
     }
 
     private fun renderCurrentDocument() {

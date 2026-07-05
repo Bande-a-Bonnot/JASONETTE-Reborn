@@ -30,9 +30,12 @@ this audit.
   `openai-codex/gpt-5.5` / xhigh routing and returned a read-only report.
 - Web parity scout completed after the subagent tool accepted the requested
   `openai-codex/gpt-5.5` / xhigh routing and returned a read-only report.
-- Android gpt-5.5 scout could not run in this environment: the subagent backend
-  reported no available `openai-codex/gpt-5.5` credentials/model match. Android
-  findings below are from a local read-only audit using source files only.
+- Android gpt-5.5 scout could not run during the initial 2026-07-04 audit: the
+  subagent backend reported no available `openai-codex/gpt-5.5`
+  credentials/model match, so initial Android findings below came from a local
+  read-only audit using source files only. A refreshed dedicated Android parity
+  scout later succeeded with `openai-codex/gpt-5.5` / xhigh at HEAD `840e78b`;
+  see `docs/research/2026-07-05-android-parity-scout-head-840e78b.md`.
 - Current local Android Gradle verification remains unavailable: `java -version`
   fails with `Unable to locate a Java Runtime`.
 - Repo status before writing this artifact was clean on `main...origin/main`.

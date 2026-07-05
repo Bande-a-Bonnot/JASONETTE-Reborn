@@ -10,6 +10,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.jasonette.components.ComponentView
 import com.jasonette.core.*
 
@@ -20,14 +23,18 @@ import com.jasonette.core.*
 @Composable
 fun JasonetteScreen(
     viewModel: JasonetteViewModel,
-    onNavigate: ((JasonHref) -> Unit)? = null
+    onNavigate: ((JasonHref) -> Unit)? = null,
+    onBack: (() -> Unit)? = null,
+    onClose: (() -> Unit)? = null
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     var alertMessage by remember { mutableStateOf<ActionDispatcher.UtilityMessage?>(null) }
 
-    LaunchedEffect(onNavigate) {
+    LaunchedEffect(viewModel, onNavigate, onBack, onClose) {
         viewModel.setNavigationHandler(onNavigate)
+        viewModel.setBackHandler(onBack)
+        viewModel.setCloseHandler(onClose)
     }
 
     when (val state = uiState) {
@@ -146,7 +153,7 @@ fun JasonetteScreen(
         }
     }
 
-    LaunchedEffect(Unit) { viewModel.loadIfNeeded() }
+    LaunchedEffect(viewModel) { viewModel.loadIfNeeded() }
 }
 
 @Composable
@@ -221,9 +228,20 @@ fun footerTabComponent(item: JasonComponent): JasonComponent {
 @Composable
 fun JasonetteScreen(
     url: String,
-    onNavigate: ((JasonHref) -> Unit)? = null
+    viewModelKey: String = url,
+    onNavigate: ((JasonHref) -> Unit)? = null,
+    onBack: (() -> Unit)? = null,
+    onClose: (() -> Unit)? = null
 ) {
     val application = LocalContext.current.applicationContext as Application
-    val viewModel = remember { JasonetteViewModel(application, url = url) }
-    JasonetteScreen(viewModel = viewModel, onNavigate = onNavigate)
+    val viewModel: JasonetteViewModel = viewModel(
+        key = viewModelKey,
+        factory = object : ViewModelProvider.Factory {
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                @Suppress("UNCHECKED_CAST")
+                return JasonetteViewModel(application, url = url) as T
+            }
+        }
+    )
+    JasonetteScreen(viewModel = viewModel, onNavigate = onNavigate, onBack = onBack, onClose = onClose)
 }
