@@ -34,11 +34,13 @@ class JasonetteViewModel(
     val stateManager = StateManager(application)
     private val timerScheduler = CoroutineJasonTimerScheduler(viewModelScope)
     private val geolocationProvider = AndroidGeolocationProvider(application)
+    private val audioPlayer = AndroidAudioPlayer()
     val actionDispatcher = ActionDispatcher(
         stateManager,
         baseUrl = url,
         timerScheduler = timerScheduler,
-        geolocationProvider = geolocationProvider::currentCoordinate
+        geolocationProvider = geolocationProvider::currentCoordinate,
+        audioPlayer = audioPlayer::play
     )
     private var navigationHandler: ((JasonHref) -> Unit)? = null
     private var backHandler: (() -> Unit)? = null
@@ -146,6 +148,7 @@ class JasonetteViewModel(
 
     override fun onCleared() {
         timerScheduler.stop()
+        audioPlayer.release()
         super.onCleared()
     }
 

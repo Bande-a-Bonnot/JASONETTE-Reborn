@@ -964,6 +964,80 @@ class ActionDispatcherTest {
     }
 
     @Test
+    fun testAudioPlayResolvesUrlAndRunsSuccessChain() = runTest {
+        val sm = StateManager(context = null)
+        val played = mutableListOf<String>()
+        val dispatcher = ActionDispatcher(
+            sm,
+            baseUrl = "https://example.com/sounds/index.json",
+            audioPlayer = { played.add(it) }
+        )
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$audio.play",
+                options = JsonObject(mapOf("url" to JsonPrimitive("1up.mp3"))),
+                success = makeAction("\$set", mapOf("played" to "true"))
+            )
+        )
+
+        assertEquals(listOf("https://example.com/sounds/1up.mp3"), played)
+        assertEquals("true", sm.local["played"])
+    }
+
+    @Test
+    fun testAudioPlayRejectsDisallowedSchemeAndRunsErrorBranch() = runTest {
+        val sm = StateManager(context = null)
+        val played = mutableListOf<String>()
+        val dispatcher = ActionDispatcher(sm, audioPlayer = { played.add(it) })
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$audio.play",
+                options = JsonObject(mapOf("url" to JsonPrimitive("file:///tmp/1up.mp3"))),
+                error = makeAction("\$set", mapOf("blocked_audio" to "true"))
+            )
+        )
+
+        assertTrue(played.isEmpty())
+        assertEquals("true", sm.local["blocked_audio"])
+    }
+
+    @Test
+    fun testAudioPlayMissingUrlRunsErrorBranch() = runTest {
+        val sm = StateManager(context = null)
+        val dispatcher = ActionDispatcher(sm, audioPlayer = {})
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$audio.play",
+                error = makeAction("\$set", mapOf("missing_audio" to "true"))
+            )
+        )
+
+        assertEquals("true", sm.local["missing_audio"])
+    }
+
+    @Test
+    fun testAudioPlayProviderFailureRunsErrorBranch() = runTest {
+        val sm = StateManager(context = null)
+        val dispatcher = ActionDispatcher(
+            sm,
+            audioPlayer = { throw ActionDispatcher.ActionException("Audio playback failed") }
+        )
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$audio.play",
+                options = JsonObject(mapOf("url" to JsonPrimitive("https://example.com/missing.mp3"))),
+                error = makeAction("\$set", mapOf("audio_failed" to "true"))
+            )
+        )
+
+        assertEquals("true", sm.local["audio_failed"])
+    }
+
+    @Test
     fun testConvertCsvStoresRowsInJasonAndRunsSuccessChain() = runTest {
         val (sm, dispatcher) = createDispatcher()
         var renderCount = 0
