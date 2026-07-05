@@ -905,6 +905,98 @@ class ActionDispatcherTest {
     }
 
     @Test
+    fun testConvertCsvStoresRowsInJasonAndRunsSuccessChain() = runTest {
+        val (sm, dispatcher) = createDispatcher()
+        var renderCount = 0
+        dispatcher.setRenderHandler { _, _, _ -> renderCount++ }
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$convert.csv",
+                options = JsonObject(
+                    mapOf(
+                        "data" to JsonPrimitive(
+                            "name,descrption,url\nFKA Twigs,Artist,https://example.com/twigs"
+                        )
+                    )
+                ),
+                success = JasonAction(type = "\$render")
+            )
+        )
+
+        val payload = sm.local["\$jason"] as List<Map<String, String>>
+        assertEquals(1, payload.size)
+        assertEquals("FKA Twigs", payload.first()["name"])
+        assertEquals("Artist", payload.first()["descrption"])
+        assertEquals("https://example.com/twigs", payload.first()["url"])
+        assertEquals(1, renderCount)
+    }
+
+    @Test
+    fun testConvertCsvHandlesQuotedCommasAndEscapedQuotes() = runTest {
+        val (sm, dispatcher) = createDispatcher()
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$convert.csv",
+                options = JsonObject(
+                    mapOf(
+                        "data" to JsonPrimitive("name,description\n\"FKA, Twigs\",\"said \"\"hello\"\"\"")
+                    )
+                )
+            )
+        )
+
+        val payload = sm.local["\$jason"] as List<Map<String, String>>
+        assertEquals("FKA, Twigs", payload.first()["name"])
+        assertEquals("said \"hello\"", payload.first()["description"])
+    }
+
+    @Test
+    fun testConvertRssStoresItemsInJasonAndRunsSuccessChain() = runTest {
+        val (sm, dispatcher) = createDispatcher()
+        var renderCount = 0
+        dispatcher.setRenderHandler { _, _, _ -> renderCount++ }
+        val rss = """
+            <rss><channel><item>
+              <title><![CDATA[Album &amp; Review]]></title>
+              <dc:creator>Pitchfork</dc:creator>
+              <description>Reviewer&#39;s pick</description>
+              <link>https://example.com/review</link>
+              <media:content url="https://example.com/image.jpg" />
+            </item></channel></rss>
+        """.trimIndent()
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$convert.rss",
+                options = JsonObject(mapOf("data" to JsonPrimitive(rss))),
+                success = JasonAction(type = "\$render")
+            )
+        )
+
+        val payload = sm.local["\$jason"] as List<Map<String, Any>>
+        assertEquals(1, payload.size)
+        assertEquals("Album & Review", payload.first()["title"])
+        assertEquals("Pitchfork", payload.first()["author"])
+        assertEquals("Reviewer's pick", payload.first()["description"])
+        assertEquals("https://example.com/review", payload.first()["url"])
+        assertEquals(mapOf("url" to "https://example.com/image.jpg"), payload.first()["image"])
+        assertEquals(1, renderCount)
+    }
+
+    @Test
+    fun testConvertActionsCanUseCurrentJasonTextPayload() = runTest {
+        val (sm, dispatcher) = createDispatcher()
+        sm.set(mapOf("\$jason" to "name\nAda"))
+
+        dispatcher.execute(JasonAction(type = "\$convert.csv"))
+
+        val payload = sm.local["\$jason"] as List<Map<String, String>>
+        assertEquals("Ada", payload.first()["name"])
+    }
+
+    @Test
     fun testUtilityStringOptionsCanTemplateWholeJasonPayload() = runTest {
         val sm = StateManager(context = null)
         val dispatcher = ActionDispatcher(sm)

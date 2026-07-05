@@ -207,6 +207,9 @@ class ActionDispatcher(
             "\$return.success" -> throw LambdaReturn(success = true, payload = returnPayload(optionElement))
             "\$return.error" -> throw LambdaReturn(success = false, payload = returnPayload(optionElement))
 
+            "\$convert.csv" -> convertCsvAction(options)
+            "\$convert.rss" -> convertRssAction(options)
+
             "\$network.request" -> {
                 val urlStr = (options?.get("url") as? JsonPrimitive)?.content
                     ?: throw ActionException("Missing URL")
@@ -336,6 +339,105 @@ class ActionDispatcher(
         is JsonArray -> options.firstOrNull { it is JsonObject } as? JsonObject
         else -> null
     }
+
+    private fun convertCsvAction(options: JsonObject?) {
+        stateManager.set(mapOf("\$jason" to convertCsv(conversionInput(options))))
+    }
+
+    private fun convertRssAction(options: JsonObject?) {
+        stateManager.set(mapOf("\$jason" to convertRss(conversionInput(options))))
+    }
+
+    private fun conversionInput(options: JsonObject?): String =
+        stringOption(options, "data") ?: (stateManager.local["\$jason"] as? String) ?: ""
+
+    private fun convertCsv(text: String): List<Map<String, String>> {
+        val rows = parseCsvRows(text)
+        val headers = rows.firstOrNull()?.map { it.trim() } ?: return emptyList()
+        return rows.drop(1).mapNotNull { row ->
+            if (row.none { it.trim().isNotEmpty() }) return@mapNotNull null
+            buildMap {
+                headers.forEachIndexed { index, header ->
+                    if (header.isNotEmpty()) put(header, row.getOrElse(index) { "" }.trim())
+                }
+            }
+        }
+    }
+
+    private fun parseCsvRows(text: String): List<List<String>> {
+        val rows = mutableListOf<List<String>>()
+        val row = mutableListOf<String>()
+        val field = StringBuilder()
+        var inQuotes = false
+        var index = 0
+        while (index < text.length) {
+            val char = text[index]
+            when {
+                char == '"' && inQuotes && text.getOrNull(index + 1) == '"' -> {
+                    field.append('"')
+                    index++
+                }
+                char == '"' -> inQuotes = !inQuotes
+                char == ',' && !inQuotes -> {
+                    row.add(field.toString())
+                    field.clear()
+                }
+                char == '\n' && !inQuotes -> {
+                    row.add(field.toString())
+                    rows.add(row.toList())
+                    row.clear()
+                    field.clear()
+                }
+                char != '\r' || inQuotes -> field.append(char)
+            }
+            index++
+        }
+        if (field.isNotEmpty() || row.isNotEmpty()) {
+            row.add(field.toString())
+            rows.add(row.toList())
+        }
+        return rows
+    }
+
+    private fun convertRss(text: String): List<Map<String, Any>> {
+        val itemRegex = Regex("(?is)<item\\b[^>]*>(.*?)</item>")
+        return itemRegex.findAll(text).mapNotNull { match ->
+            val item = match.groupValues[1]
+            buildMap<String, Any> {
+                firstXmlValue("title", item)?.let { put("title", it) }
+                (firstXmlValue("dc:creator", item) ?: firstXmlValue("author", item))?.let { put("author", it) }
+                firstXmlValue("description", item)?.let { put("description", it) }
+                firstXmlValue("link", item)?.let { put("url", it) }
+                val imageUrl = firstXmlAttribute("url", "(?is)<media:(?:content|thumbnail)\\b[^>]*>", item)
+                    ?: firstXmlAttribute("href", "(?is)<enclosure\\b[^>]*>", item)
+                    ?: firstXmlAttribute("url", "(?is)<enclosure\\b[^>]*>", item)
+                imageUrl?.let { put("image", mapOf("url" to it)) }
+            }.takeIf { it.isNotEmpty() }
+        }.toList()
+    }
+
+    private fun firstXmlValue(name: String, text: String): String? {
+        val escaped = Regex.escape(name)
+        val regex = Regex("(?is)<$escaped\\b[^>]*>(?:<!\\[CDATA\\[(.*?)]]>|(.*?))</$escaped>")
+        val match = regex.find(text) ?: return null
+        val value = match.groups[1]?.value ?: match.groups[2]?.value ?: return null
+        return decodeXmlEntities(value.trim())
+    }
+
+    private fun firstXmlAttribute(name: String, tagPattern: String, text: String): String? {
+        val tag = Regex(tagPattern).find(text)?.value ?: return null
+        val attr = Regex("\\b${Regex.escape(name)}\\s*=\\s*[\"']([^\"']+)[\"']").find(tag)?.groupValues?.get(1)
+            ?: return null
+        return decodeXmlEntities(attr)
+    }
+
+    private fun decodeXmlEntities(value: String): String = value
+        .replace("&amp;", "&")
+        .replace("&lt;", "<")
+        .replace("&gt;", ">")
+        .replace("&quot;", "\"")
+        .replace("&apos;", "'")
+        .replace("&#39;", "'")
 
     private suspend fun networkRequest(
         urlStr: String,
