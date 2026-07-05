@@ -15,7 +15,6 @@ import coil.compose.AsyncImage
 import com.jasonette.core.JasonComponent
 import com.jasonette.core.JasonStyle
 import com.jasonette.core.dp
-import kotlinx.serialization.json.content
 
 // Label
 @Composable
