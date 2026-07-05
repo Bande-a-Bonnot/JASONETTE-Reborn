@@ -34,6 +34,42 @@ function resolveNavigationUrl(url: string, baseUrl: string | null): string {
   return parsed.href;
 }
 
+function cloneJson<T>(value: T): T {
+  if (value === undefined) return value;
+  return JSON.parse(JSON.stringify(value)) as T;
+}
+
+function resolveDocumentPath(root: unknown, ref: string): unknown {
+  if (!ref.startsWith('$document')) return undefined;
+  const path = ref === '$document' ? [] : ref.slice('$document.'.length).split('.');
+  let current: unknown = root;
+  for (const part of path) {
+    if (!part) continue;
+    if (current && typeof current === 'object' && !Array.isArray(current)) {
+      current = (current as Record<string, unknown>)[part];
+    } else {
+      return undefined;
+    }
+  }
+  return current;
+}
+
+function selectorInclude(ref: string): { selector?: string; url: string } {
+  const at = ref.indexOf('@');
+  if (at > 0) {
+    return { selector: ref.slice(0, at), url: ref.slice(at + 1) };
+  }
+  return { url: ref };
+}
+
+function includeUrl(ref: string, baseUrl: string): string | undefined {
+  const resolved = new URL(ref, baseUrl);
+  if (resolved.protocol !== 'http:' && resolved.protocol !== 'https:') {
+    return undefined;
+  }
+  return resolved.href;
+}
+
 /**
  * Jasonette Web Renderer.
  * Fetches a $jason document, applies templates, and renders to DOM.
@@ -190,8 +226,9 @@ export class JasonetteRenderer {
 
     try {
       const response = await fetch(url);
-      const doc = await response.json() as JasonDocument;
       const loadedUrl = response.url || url;
+      const rawDoc = await response.json() as JasonDocument;
+      const doc = await this.resolveLegacyIncludes(rawDoc, rawDoc, loadedUrl) as JasonDocument;
       this.state.url = loadedUrl;
       this.state.document = doc;
 
@@ -213,6 +250,73 @@ export class JasonetteRenderer {
       console.error('[jasonette] Failed to load:', url, err);
       this.root.textContent = `Failed to load: ${url}`;
     }
+  }
+
+  private async fetchInclude(ref: string, baseUrl: string): Promise<{ value: unknown; url: string; key: string } | undefined> {
+    const { selector, url } = selectorInclude(ref);
+    const resolvedUrl = includeUrl(url, baseUrl);
+    if (!resolvedUrl) return undefined;
+
+    const response = await fetch(resolvedUrl);
+    const finalUrl = response.url || resolvedUrl;
+    const fetched = await response.json() as unknown;
+    const key = `${selector ?? ''}@${finalUrl}`;
+    if (!selector) return { value: fetched, url: finalUrl, key };
+
+    if (fetched && typeof fetched === 'object' && !Array.isArray(fetched)) {
+      return { value: (fetched as Record<string, unknown>)[selector], url: finalUrl, key };
+    }
+    return { value: undefined, url: finalUrl, key };
+  }
+
+  private async resolveLegacyIncludes(
+    value: unknown,
+    root: unknown,
+    baseUrl: string,
+    includeDepth = 0,
+    includeStack = new Set<string>(),
+  ): Promise<unknown> {
+    if (Array.isArray(value)) {
+      const resolved = [];
+      for (const item of value) {
+        resolved.push(await this.resolveLegacyIncludes(item, root, baseUrl, includeDepth, new Set(includeStack)));
+      }
+      return resolved;
+    }
+
+    if (!value || typeof value !== 'object') return value;
+
+    const object = value as Record<string, unknown>;
+    if (typeof object['+'] === 'string') {
+      const includeRef = object['+'];
+      const { '+': _, ...rest } = object;
+
+      let included: unknown;
+      let includeBaseUrl = baseUrl;
+      if (includeRef.startsWith('$document')) {
+        included = resolveDocumentPath(root, includeRef);
+      } else if (includeDepth < 8) {
+        const fetched = await this.fetchInclude(includeRef, baseUrl);
+        if (fetched && !includeStack.has(fetched.key)) {
+          includeStack.add(fetched.key);
+          included = fetched.value;
+          includeBaseUrl = fetched.url;
+        }
+      }
+
+      const merged = included && typeof included === 'object' && !Array.isArray(included)
+        ? { ...(cloneJson(included) as Record<string, unknown>), ...rest }
+        : (Object.keys(rest).length > 0 ? { value: cloneJson(included), ...rest } : cloneJson(included));
+      const nextRoot = value === root ? merged : root;
+      const nextDepth = includeRef.startsWith('$document') ? includeDepth : includeDepth + 1;
+      return this.resolveLegacyIncludes(merged, nextRoot, includeBaseUrl, nextDepth, includeStack);
+    }
+
+    const result: Record<string, unknown> = {};
+    for (const [key, child] of Object.entries(object)) {
+      result[key] = await this.resolveLegacyIncludes(child, root, baseUrl, includeDepth, new Set(includeStack));
+    }
+    return result;
   }
 
   /**

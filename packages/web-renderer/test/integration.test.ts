@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { JasonetteRenderer } from '../src/renderer.js';
@@ -17,6 +17,110 @@ describe('Integration: Jasonpedia fixtures', () => {
     root = document.createElement('div');
     document.body.appendChild(root);
     renderer = new JasonetteRenderer(root);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+    document.body.innerHTML = '';
+  });
+
+  it('resolves legacy webcontainer + includes and local $document references on load', async () => {
+    const entry = loadFixture('webcontainer/pdf.json');
+    const template = loadFixture('webcontainer/template.json');
+    const responses: Record<string, JasonDocument> = {
+      'https://example.com/webcontainer/pdf.json': entry,
+      'https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/webcontainer/template.json': template,
+    };
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => ({
+      url,
+      json: async () => responses[url],
+    } as Response)));
+
+    await renderer.load('https://example.com/webcontainer/pdf.json');
+
+    expect(root.querySelector('.jasonette-header-title')?.textContent).toBe('PDF.json');
+    const iframe = root.querySelector('.jasonette-background-web') as HTMLIFrameElement;
+    expect(iframe).not.toBeNull();
+    expect(iframe.srcdoc).toContain('mozilla.github.io/pdf.js');
+  });
+
+  it('resolves legacy + selector includes inside Jasonpedia feed templates', async () => {
+    const entry = loadFixture('webcontainer/feed/index.json');
+    const db = loadFixture('webcontainer/feed/db.json');
+    const item = loadFixture('webcontainer/feed/item.json');
+    const special = loadFixture('webcontainer/feed/special_item.json');
+    const animated = loadFixture('webcontainer/feed/animated_item.json');
+    const responses: Record<string, unknown> = {
+      'https://example.com/webcontainer/feed/index.json': entry,
+      'https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/webcontainer/feed/db.json': db,
+      'https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/webcontainer/feed/item.json': item,
+      'https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/webcontainer/feed/special_item.json': special,
+      'https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/webcontainer/feed/animated_item.json': animated,
+    };
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => ({
+      url,
+      json: async () => responses[url],
+    } as Response)));
+
+    await renderer.load('https://example.com/webcontainer/feed/index.json');
+
+    expect(root.querySelector('.jasonette-header-title')?.textContent).toBe('the feed');
+    expect(root.textContent).toContain('ethan');
+    expect(root.textContent).toContain('Check out this animation');
+    expect(root.querySelectorAll('.jasonette-html iframe').length).toBeGreaterThan(2);
+    expect(vi.mocked(fetch)).toHaveBeenCalledWith('https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/webcontainer/feed/item.json');
+  });
+
+  it('resolves duplicate same-URL selector includes independently', async () => {
+    const entry: JasonDocument = {
+      $jason: {
+        head: {
+          data: {
+            first: { '+': 'first@https://example.com/parts.json' },
+            second: { '+': 'second@https://example.com/parts.json' },
+          },
+          templates: {
+            body: {
+              sections: [{ items: [{ type: 'label', text: '{{first.text}} {{second.text}}' }] }],
+            },
+          },
+        },
+      },
+    };
+    const parts = { first: { text: 'one' }, second: { text: 'two' } };
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => ({
+      url,
+      json: async () => url.endsWith('parts.json') ? parts : entry,
+    } as Response)));
+
+    await renderer.load('https://example.com/selector-entry.json');
+
+    expect(root.textContent).toContain('one two');
+    expect(vi.mocked(fetch)).toHaveBeenCalledWith('https://example.com/parts.json');
+  });
+
+  it('blocks unsafe legacy + include URL schemes', async () => {
+    const entry: JasonDocument = {
+      $jason: {
+        head: {
+          data: { unsafe: { '+': 'file:///tmp/secret.json' } },
+          templates: {
+            body: { sections: [{ items: [{ type: 'label', text: 'Safe include handling' }] }] },
+          },
+        },
+      },
+    };
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => ({
+      url,
+      json: async () => entry,
+    } as Response)));
+
+    await renderer.load('https://example.com/unsafe.json');
+
+    expect(root.textContent).toContain('Safe include handling');
+    expect(vi.mocked(fetch)).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(fetch)).not.toHaveBeenCalledWith('file:///tmp/secret.json');
   });
 
   it('renders core/index.json — navigation hub', () => {
