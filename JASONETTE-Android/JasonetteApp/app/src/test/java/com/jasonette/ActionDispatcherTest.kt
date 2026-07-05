@@ -411,6 +411,63 @@ class ActionDispatcherTest {
     }
 
     @Test
+    fun testUtilAlertEmitsTemplatedUtilityMessageAndRunsSuccessChain() = runTest {
+        val (sm, dispatcher) = createDispatcher()
+        sm.set(mapOf("name" to "Ada"))
+        var message: ActionDispatcher.UtilityMessage? = null
+        dispatcher.setUtilityHandler { message = it }
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$util.alert",
+                options = JsonObject(
+                    mapOf(
+                        "title" to JsonPrimitive("Hello {{\$get.name}}"),
+                        "description" to JsonPrimitive("Ready")
+                    )
+                ),
+                success = makeAction("\$set", mapOf("alerted" to "true"))
+            )
+        )
+
+        assertEquals("alert", message?.kind)
+        assertEquals("Hello Ada", message?.title)
+        assertEquals("Ready", message?.description)
+        assertEquals("true", sm.local["alerted"])
+    }
+
+    @Test
+    fun testUtilToastAndBannerEmitUtilityMessages() = runTest {
+        val (_, dispatcher) = createDispatcher()
+        val messages = mutableListOf<ActionDispatcher.UtilityMessage>()
+        dispatcher.setUtilityHandler { messages.add(it) }
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$util.toast",
+                options = JsonObject(mapOf("text" to JsonPrimitive("Saved")))
+            )
+        )
+        dispatcher.execute(
+            JasonAction(
+                type = "\$util.banner",
+                options = JsonObject(
+                    mapOf(
+                        "title" to JsonPrimitive("Notice"),
+                        "description" to JsonPrimitive("Synced")
+                    )
+                )
+            )
+        )
+
+        assertEquals("toast", messages.getOrNull(0)?.kind)
+        assertEquals("Saved", messages.getOrNull(0)?.text)
+        assertEquals("banner", messages.getOrNull(1)?.kind)
+        assertEquals("Notice", messages.getOrNull(1)?.title)
+        assertEquals("Synced", messages.getOrNull(1)?.description)
+    }
+
+    @Test
     fun testUnknownActionDoesNotCrash() = runTest {
         val (_, dispatcher) = createDispatcher()
         val action = makeAction("\$nonexistent.action")

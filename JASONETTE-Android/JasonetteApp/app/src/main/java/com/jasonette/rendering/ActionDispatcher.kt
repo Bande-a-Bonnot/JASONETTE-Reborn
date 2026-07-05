@@ -18,10 +18,18 @@ class ActionDispatcher(
     private var baseUrl: String? = null,
     private val networkClient: (suspend (String, kotlinx.serialization.json.JsonObject?) -> String)? = null
 ) {
+    data class UtilityMessage(
+        val kind: String,
+        val title: String? = null,
+        val description: String? = null,
+        val text: String? = null
+    )
+
     private var renderHandler: (() -> Unit)? = null
     private var reloadHandler: (() -> Unit)? = null
     private var navigationHandler: ((JasonHref) -> Unit)? = null
     private var actionResolver: ((String) -> JasonAction?)? = null
+    private var utilityHandler: ((UtilityMessage) -> Unit)? = null
 
     fun setBaseUrl(url: String?) {
         baseUrl = url
@@ -41,6 +49,10 @@ class ActionDispatcher(
 
     fun setActionResolver(handler: ((String) -> JasonAction?)?) {
         actionResolver = handler
+    }
+
+    fun setUtilityHandler(handler: ((UtilityMessage) -> Unit)?) {
+        utilityHandler = handler
     }
 
     suspend fun execute(action: JasonAction) {
@@ -95,6 +107,26 @@ class ActionDispatcher(
                 val href = hrefFromOptions(options)
                 dispatchHref(href)
             }
+
+            "\$util.alert" -> utilityHandler?.invoke(
+                UtilityMessage(
+                    kind = "alert",
+                    title = stringOption(options, "title") ?: "Alert",
+                    description = stringOption(options, "description"),
+                    text = stringOption(options, "text")
+                )
+            )
+            "\$util.toast" -> utilityHandler?.invoke(
+                UtilityMessage(kind = "toast", text = stringOption(options, "text") ?: stringOption(options, "title"))
+            )
+            "\$util.banner" -> utilityHandler?.invoke(
+                UtilityMessage(
+                    kind = "banner",
+                    title = stringOption(options, "title"),
+                    description = stringOption(options, "description"),
+                    text = stringOption(options, "text")
+                )
+            )
 
             else -> println("[Jasonette] Unknown action: $type")
         }
@@ -181,13 +213,15 @@ class ActionDispatcher(
     }
 
     private fun hrefFromOptions(options: kotlinx.serialization.json.JsonObject?): JasonHref {
-        fun stringOption(name: String): String? = (options?.get(name) as? JsonPrimitive)?.content
         return JasonHref(
-            url = stringOption("url"),
-            view = stringOption("view"),
-            transition = stringOption("transition")
+            url = stringOption(options, "url"),
+            view = stringOption(options, "view"),
+            transition = stringOption(options, "transition")
         )
     }
+
+    private fun stringOption(options: kotlinx.serialization.json.JsonObject?, name: String): String? =
+        (options?.get(name) as? JsonPrimitive)?.content
 
     private fun resolveAllowedUrl(url: String): String {
         val resolved = try {

@@ -4,8 +4,11 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.jasonette.core.*
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 
@@ -24,6 +27,9 @@ class JasonetteViewModel(
     private val _uiState = MutableStateFlow<UiState>(UiState.Loading)
     val uiState: StateFlow<UiState> = _uiState
 
+    private val _utilityMessages = MutableSharedFlow<ActionDispatcher.UtilityMessage>(extraBufferCapacity = 16)
+    val utilityMessages: SharedFlow<ActionDispatcher.UtilityMessage> = _utilityMessages.asSharedFlow()
+
     private val loader = DocumentLoader()
     val stateManager = StateManager(application)
     val actionDispatcher = ActionDispatcher(stateManager, baseUrl = url)
@@ -40,6 +46,7 @@ class JasonetteViewModel(
         actionDispatcher.setReloadHandler { reload() }
         actionDispatcher.setNavigationHandler { href -> navigationHandler?.invoke(href) }
         actionDispatcher.setActionResolver { name -> document?.jason?.head?.actions?.get(name) }
+        actionDispatcher.setUtilityHandler { message -> _utilityMessages.tryEmit(message) }
     }
 
     fun loadIfNeeded() {

@@ -23,6 +23,8 @@ fun JasonetteScreen(
     onNavigate: ((JasonHref) -> Unit)? = null
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    var alertMessage by remember { mutableStateOf<ActionDispatcher.UtilityMessage?>(null) }
 
     LaunchedEffect(onNavigate) {
         viewModel.setNavigationHandler(onNavigate)
@@ -52,6 +54,7 @@ fun JasonetteScreen(
             val headStyles = head?.styles ?: emptyMap()
 
             Scaffold(
+                snackbarHost = { SnackbarHost(snackbarHostState) },
                 topBar = {
                     head?.title?.let { title ->
                         TopAppBar(title = { Text(title) })
@@ -111,6 +114,33 @@ fun JasonetteScreen(
                             )
                         }
                     }
+                }
+            }
+        }
+    }
+
+    alertMessage?.let { message ->
+        AlertDialog(
+            onDismissRequest = { alertMessage = null },
+            confirmButton = {
+                TextButton(onClick = { alertMessage = null }) {
+                    Text("OK")
+                }
+            },
+            title = { Text(message.title ?: "Alert") },
+            text = { Text(message.description ?: message.text ?: "") }
+        )
+    }
+
+    LaunchedEffect(viewModel, snackbarHostState) {
+        viewModel.utilityMessages.collect { message ->
+            when (message.kind) {
+                "alert" -> alertMessage = message
+                "toast", "banner" -> {
+                    val display = listOfNotNull(message.title, message.description, message.text)
+                        .joinToString("\n")
+                        .ifBlank { message.kind }
+                    snackbarHostState.showSnackbar(display)
                 }
             }
         }
