@@ -83,6 +83,7 @@ class ActionDispatcher(
             }
 
             "\$get" -> {} // state available via stateManager.local
+            "\$flush" -> stateManager.cacheReset()
 
             "\$cache.set" -> {
                 val values = options?.entries?.associate { (k, v) ->
@@ -127,6 +128,10 @@ class ActionDispatcher(
                     text = stringOption(options, "text")
                 )
             )
+
+            "\$log", "\$log.info" -> logMessage("INFO", options)
+            "\$log.debug" -> logMessage("DEBUG", options)
+            "\$log.error" -> logMessage("ERROR", options)
 
             else -> println("[Jasonette] Unknown action: $type")
         }
@@ -222,6 +227,14 @@ class ActionDispatcher(
 
     private fun stringOption(options: kotlinx.serialization.json.JsonObject?, name: String): String? =
         (options?.get(name) as? JsonPrimitive)?.content
+
+    private fun logMessage(level: String, options: kotlinx.serialization.json.JsonObject?) {
+        val message = stringOption(options, "text")
+            ?: stringOption(options, "message")
+            ?: options?.toString()
+            ?: ""
+        println("[Jasonette][$level] $message")
+    }
 
     private fun resolveAllowedUrl(url: String): String {
         val resolved = try {

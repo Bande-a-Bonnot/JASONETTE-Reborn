@@ -42,6 +42,26 @@ class ActionDispatcherTest {
     }
 
     @Test
+    fun testFlushResetsCacheWithoutClearingLocalStateAndContinuesSuccessChain() = runTest {
+        val (sm, dispatcher) = createDispatcher()
+        sm.set(mapOf("name" to "Ada", "count" to 1))
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$flush",
+                success = JasonAction(
+                    type = "\$set",
+                    options = JsonObject(mapOf("flushed" to JsonPrimitive("{{\$get.name}}")))
+                )
+            )
+        )
+
+        assertEquals("Ada", sm.local["name"])
+        assertEquals(1, sm.local["count"])
+        assertEquals("Ada", sm.local["flushed"])
+    }
+
+    @Test
     fun testCacheSetWithNullContextIsNoOp() = runTest {
         val (sm, dispatcher) = createDispatcher()
         val action = makeAction("\$cache.set", mapOf("key" to "value"))
@@ -465,6 +485,24 @@ class ActionDispatcherTest {
         assertEquals("banner", messages.getOrNull(1)?.kind)
         assertEquals("Notice", messages.getOrNull(1)?.title)
         assertEquals("Synced", messages.getOrNull(1)?.description)
+    }
+
+    @Test
+    fun testLogActionsDoNotCrashAndRunSuccessChain() = runTest {
+        val (sm, dispatcher) = createDispatcher()
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$log.info",
+                options = JsonObject(mapOf("text" to JsonPrimitive("Hello {{flushed}}"))),
+                success = makeAction("\$set", mapOf("logged" to "true"))
+            )
+        )
+        dispatcher.execute(JasonAction(type = "\$log.debug", options = JsonObject(mapOf("message" to JsonPrimitive("Debug")))))
+        dispatcher.execute(JasonAction(type = "\$log.error", options = JsonObject(mapOf("text" to JsonPrimitive("Error")))))
+        dispatcher.execute(JasonAction(type = "\$log", options = JsonObject(mapOf("text" to JsonPrimitive("Generic")))))
+
+        assertEquals("true", sm.local["logged"])
     }
 
     @Test
