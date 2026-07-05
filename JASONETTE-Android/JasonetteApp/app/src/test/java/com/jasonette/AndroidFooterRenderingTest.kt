@@ -3,14 +3,86 @@ package com.jasonette
 import com.jasonette.components.componentImageURL
 import com.jasonette.components.effectiveComponentType
 import com.jasonette.core.DocumentLoader
+import com.jasonette.core.JasonBody
 import com.jasonette.core.JasonComponent
+import com.jasonette.core.JasonHead
+import com.jasonette.core.JasonHeader
 import com.jasonette.core.JasonHref
+import com.jasonette.rendering.bodyBackgroundCss
 import com.jasonette.rendering.footerTabComponent
+import com.jasonette.rendering.topBarTitle
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import org.junit.Assert.*
 import org.junit.Test
 import java.io.File
 
 class AndroidFooterRenderingTest {
+    @Test
+    fun testBodyHeaderTitleOverridesHeadTitleForTopBar() {
+        val head = JasonHead(title = "Head title")
+        val body = JasonBody(header = JasonHeader(title = "Body header"))
+
+        assertEquals("Body header", topBarTitle(head, body))
+    }
+
+    @Test
+    fun testTopBarTitleFallsBackToHeadTitle() {
+        assertEquals("Head title", topBarTitle(JasonHead(title = "Head title"), JasonBody()))
+    }
+
+    @Test
+    fun testBodyBackgroundCssPrefersStyleBackgroundThenBackgroundString() {
+        assertEquals("#112233", bodyBackgroundCss(JasonBody(background = JsonPrimitive("#112233"))))
+        assertEquals(
+            "#445566",
+            bodyBackgroundCss(
+                JasonBody(
+                    background = JsonPrimitive("#112233"),
+                    style = JsonObject(mapOf("background" to JsonPrimitive("#445566")))
+                )
+            )
+        )
+    }
+
+    @Test
+    fun testBodyStyleBackgroundObjectDecodesWithoutBlockingDocument() {
+        val document = DocumentLoader().decode(
+            """
+            {
+              "${'$'}jason": {
+                "body": {
+                  "style": {
+                    "background": {"type": "html", "text": "<h1>BG</h1>"}
+                  },
+                  "sections": [{"items": [{"type": "label", "text": "Loaded"}]}]
+                }
+              }
+            }
+            """.trimIndent()
+        )
+
+        assertNull(bodyBackgroundCss(document.jason.body))
+        assertEquals("Loaded", document.jason.body?.sections?.first()?.items?.first()?.text)
+    }
+
+    @Test
+    fun testBodyBackgroundObjectDecodesWithoutCssColor() {
+        val document = DocumentLoader().decode(
+            """
+            {
+              "${'$'}jason": {
+                "body": {
+                  "background": {"type": "html", "text": "<h1>BG</h1>"}
+                }
+              }
+            }
+            """.trimIndent()
+        )
+
+        assertNull(bodyBackgroundCss(document.jason.body))
+    }
+
     @Test
     fun testFooterTabShapeRendersImageButNavigatesToUrl() {
         val tab = JasonComponent(

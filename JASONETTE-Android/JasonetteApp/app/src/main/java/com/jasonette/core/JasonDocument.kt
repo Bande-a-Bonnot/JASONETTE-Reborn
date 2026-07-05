@@ -26,6 +26,7 @@ data class JasonHead(
 @Serializable
 data class JasonBody(
     val background: JsonElement? = null,
+    val style: JsonObject? = null,
     val header: JasonHeader? = null,
     val sections: List<JasonSection>? = null,
     val layers: List<JasonComponent>? = null,

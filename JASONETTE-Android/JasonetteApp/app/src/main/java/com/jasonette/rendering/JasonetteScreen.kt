@@ -1,6 +1,7 @@
 package com.jasonette.rendering
 
 import android.app.Application
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -14,7 +15,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.jasonette.components.ComponentView
+import com.jasonette.components.parseCssColor
 import com.jasonette.core.*
+import kotlinx.serialization.json.JsonPrimitive
 
 /**
  * Main composable that renders a complete Jasonette document.
@@ -63,8 +66,23 @@ fun JasonetteScreen(
             Scaffold(
                 snackbarHost = { SnackbarHost(snackbarHostState) },
                 topBar = {
-                    head?.title?.let { title ->
-                        TopAppBar(title = { Text(title) })
+                    val title = topBarTitle(head, body)
+                    val menu = body?.header?.menu
+                    if (title != null || menu != null) {
+                        TopAppBar(
+                            title = { Text(title ?: "") },
+                            actions = {
+                                menu?.let { component ->
+                                    ComponentView(
+                                        component,
+                                        headStyles = headStyles,
+                                        stateManager = viewModel.stateManager,
+                                        onHref = { viewModel.handleHref(it) },
+                                        onAction = { viewModel.handleAction(it) }
+                                    )
+                                }
+                            }
+                        )
                     }
                 },
                 bottomBar = {
@@ -79,9 +97,11 @@ fun JasonetteScreen(
                     }
                 }
             ) { padding ->
+                val backgroundColor = bodyBackgroundCss(body)?.let { parseCssColor(it) }
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
+                        .let { modifier -> backgroundColor?.let { modifier.background(it) } ?: modifier }
                         .padding(padding),
                     verticalArrangement = Arrangement.spacedBy(0.dp)
                 ) {
@@ -155,6 +175,13 @@ fun JasonetteScreen(
 
     LaunchedEffect(viewModel) { viewModel.loadIfNeeded() }
 }
+
+fun topBarTitle(head: JasonHead?, body: JasonBody?): String? =
+    body?.header?.title ?: head?.title
+
+fun bodyBackgroundCss(body: JasonBody?): String? =
+    (body?.style?.get("background") as? JsonPrimitive)?.content
+        ?: (body?.background as? JsonPrimitive)?.content
 
 @Composable
 private fun FooterView(
