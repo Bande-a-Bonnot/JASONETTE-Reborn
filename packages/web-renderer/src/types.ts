@@ -124,5 +124,5 @@ export interface AppState {
   /** Last network/action response ($response) */
   response?: unknown;
   /** Navigation history */
-  history: Array<{ url: string; document: JasonDocument }>;
+  history: Array<{ url: string; document: JasonDocument; params: Record<string, unknown> }>;
 }

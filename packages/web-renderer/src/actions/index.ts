@@ -198,11 +198,11 @@ registerAction('$network.request', async (action, state) => {
   return result;
 });
 
-registerAction('$href', async (action) => {
+registerAction('$href', async (action, state) => {
   const opts = optionsObject(action.options);
   const url = opts.url;
   if (typeof url !== 'string' || !url) throw new Error('$href: missing or invalid url');
-  const parsed = new URL(url, document.baseURI);
+  const parsed = new URL(url, state.url ?? document.baseURI);
   if (parsed.protocol === 'file:' || parsed.protocol === 'javascript:') {
     throw new Error(`$href: blocked url scheme ${parsed.protocol}`);
   }

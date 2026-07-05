@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { JasonetteRenderer } from '../src/renderer.js';
 import { executeAction } from '../src/actions/index.js';
-import type { JasonDocument } from '../src/types.js';
+import type { AppState, JasonDocument } from '../src/types.js';
 
 function loadFixture(relativePath: string): JasonDocument {
   const fullPath = resolve(import.meta.dirname, '../../../Jasonpedia', relativePath);
@@ -496,6 +496,32 @@ describe('web action/render parity', () => {
 
     expect(errorSpy).toHaveBeenCalledOnce();
     expect(root.textContent).toContain('Blocked Error: $href: blocked url scheme javascript:');
+  });
+
+  it('resolves relative $href URLs against the current document URL', async () => {
+    const state: AppState = {
+      url: 'https://example.com/app/screens/index.json',
+      document: null,
+      styles: {},
+      actions: {},
+      local: {},
+      cache: {},
+      params: {},
+      response: undefined,
+      history: [],
+    };
+    let detail: { url?: string } | undefined;
+    document.addEventListener('jasonette:navigate', ((event: CustomEvent) => {
+      event.stopImmediatePropagation();
+      detail = event.detail;
+    }) as EventListener, { capture: true, once: true });
+
+    await executeAction({
+      type: '$href',
+      options: { url: '../detail.json' },
+    }, state);
+
+    expect(detail?.url).toBe('https://example.com/app/detail.json');
   });
 
   it('executes legacy component trigger via head.actions', async () => {

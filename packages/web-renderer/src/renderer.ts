@@ -15,6 +15,25 @@ function controlValue(target: HTMLInputElement | HTMLTextAreaElement | HTMLSelec
   return target.value;
 }
 
+function cloneParams(params: Record<string, unknown>): Record<string, unknown> {
+  return { ...params };
+}
+
+function paramsFromNavigationOptions(options?: Record<string, unknown>): Record<string, unknown> {
+  const params = options?.options;
+  return params && typeof params === 'object' && !Array.isArray(params)
+    ? cloneParams(params as Record<string, unknown>)
+    : {};
+}
+
+function resolveNavigationUrl(url: string, baseUrl: string | null): string {
+  const parsed = new URL(url, baseUrl ?? document.baseURI);
+  if (parsed.protocol === 'file:' || parsed.protocol === 'javascript:') {
+    throw new Error(`navigation: blocked url scheme ${parsed.protocol}`);
+  }
+  return parsed.href;
+}
+
 /**
  * Jasonette Web Renderer.
  * Fetches a $jason document, applies templates, and renders to DOM.
@@ -55,13 +74,21 @@ export class JasonetteRenderer {
     this.root.addEventListener('jasonette:navigate', ((e: CustomEvent) => {
       e.stopPropagation();
       const href = e.detail;
-      if (href.url) this.navigate(href.url, href);
+      if (href.url) {
+        this.navigate(href.url, href).catch((err) =>
+          console.error('[jasonette] navigation error:', err),
+        );
+      }
     }) as EventListener);
 
     // Navigation events emitted by actions such as $href.
     document.addEventListener('jasonette:navigate', ((e: CustomEvent) => {
       const href = e.detail;
-      if (href.url) this.navigate(href.url, href);
+      if (href.url) {
+        this.navigate(href.url, href).catch((err) =>
+          console.error('[jasonette] navigation error:', err),
+        );
+      }
     }) as EventListener);
 
     // Render events from actions
@@ -75,7 +102,11 @@ export class JasonetteRenderer {
 
     // Reload events
     document.addEventListener('jasonette:reload', () => {
-      if (this.state.url) this.load(this.state.url);
+      if (this.state.url) {
+        this.load(this.state.url, { params: this.state.params }).catch((err) =>
+          console.error('[jasonette] reload error:', err),
+        );
+      }
     });
 
     document.addEventListener('jasonette:back', () => this.back());
@@ -103,7 +134,10 @@ export class JasonetteRenderer {
     // Browser back button
     window.addEventListener('popstate', (e) => {
       if (e.state?.jasonetteUrl) {
-        this.load(e.state.jasonetteUrl, { pushHistory: false });
+        this.load(e.state.jasonetteUrl, {
+          pushHistory: false,
+          params: cloneParams(e.state.jasonetteParams ?? {}),
+        });
       }
     });
 
@@ -150,16 +184,19 @@ export class JasonetteRenderer {
   /**
    * Load and render a $jason document from a URL.
    */
-  async load(url: string, options?: { pushHistory?: boolean }): Promise<void> {
+  async load(url: string, options?: { pushHistory?: boolean; params?: Record<string, unknown> }): Promise<void> {
     this.state.url = url;
+    this.state.params = cloneParams(options?.params ?? {});
 
     try {
       const response = await fetch(url);
       const doc = await response.json() as JasonDocument;
+      const loadedUrl = response.url || url;
+      this.state.url = loadedUrl;
       this.state.document = doc;
 
       if (options?.pushHistory !== false) {
-        history.pushState({ jasonetteUrl: url }, '', `#${url}`);
+        history.pushState({ jasonetteUrl: loadedUrl, jasonetteParams: cloneParams(this.state.params) }, '', `#${loadedUrl}`);
       }
 
       this.renderDocument(doc);
@@ -352,7 +389,9 @@ export class JasonetteRenderer {
           if ((href.view as string) === 'web' && (href.url as string)?.startsWith('http')) {
             window.open(href.url as string, '_blank', 'noopener,noreferrer');
           } else if (href.url) {
-            this.navigate(href.url as string, href);
+            this.navigate(href.url as string, href).catch((err) =>
+              console.error('[jasonette] navigation error:', err),
+            );
           }
         });
       }
@@ -459,9 +498,11 @@ export class JasonetteRenderer {
     options?: Record<string, unknown>,
   ): Promise<void> {
     const transition = (options?.transition as string) ?? 'push';
+    const resolvedUrl = resolveNavigationUrl(url, this.state.url);
+    const params = paramsFromNavigationOptions(options);
 
     if (transition === 'replace') {
-      await this.load(url);
+      await this.load(resolvedUrl, { params });
     } else if (transition === 'modal') {
       // Open as modal overlay
       const modal = document.createElement('dialog');
@@ -483,7 +524,7 @@ export class JasonetteRenderer {
       modal.showModal();
 
       const childRenderer = new JasonetteRenderer(innerRoot);
-      await childRenderer.load(url);
+      await childRenderer.load(resolvedUrl, { params });
 
       modal.addEventListener('close', () => modal.remove());
     } else {
@@ -492,9 +533,10 @@ export class JasonetteRenderer {
         this.state.history.push({
           url: this.state.url,
           document: this.state.document,
+          params: cloneParams(this.state.params),
         });
       }
-      await this.load(url);
+      await this.load(resolvedUrl, { params });
     }
   }
 
@@ -505,6 +547,7 @@ export class JasonetteRenderer {
     const prev = this.state.history.pop();
     if (prev) {
       this.state.url = prev.url;
+      this.state.params = cloneParams(prev.params);
       this.renderDocument(prev.document);
     } else {
       history.back();

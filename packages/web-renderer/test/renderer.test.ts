@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { JasonetteRenderer } from '../src/renderer.js';
@@ -14,8 +14,75 @@ describe('JasonetteRenderer', () => {
     renderer = new JasonetteRenderer(root);
   });
 
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+    document.body.innerHTML = '';
+  });
+
   it('adds jasonette class to root', () => {
     expect(root.classList.contains('jasonette')).toBe(true);
+  });
+
+  it('load stores final response URL and exposes navigation params to templates', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => ({
+      url: 'https://cdn.example.com/final/detail.json',
+      json: async () => ({
+        $jason: {
+          head: {
+            templates: {
+              body: {
+                sections: [{ items: [{ type: 'label', text: 'Code {{$params.code}}' }] }],
+              },
+            },
+          },
+        },
+      }),
+    } as Response)));
+
+    await renderer.load('https://example.com/start/detail.json', { params: { code: 'abc123' } });
+
+    expect(renderer.getState().url).toBe('https://cdn.example.com/final/detail.json');
+    expect(renderer.getState().params).toEqual({ code: 'abc123' });
+    expect(root.textContent).toContain('Code abc123');
+  });
+
+  it('push navigation resolves relative URLs, carries options.options as $params, and back restores previous params', async () => {
+    const docs: Record<string, JasonDocument> = {
+      'https://example.com/app/screens/index.json': {
+        $jason: {
+          head: {
+            templates: {
+              body: { sections: [{ items: [{ type: 'label', text: 'Home {{$params.home}}' }] }] },
+            },
+          },
+        },
+      },
+      'https://example.com/app/detail.json': {
+        $jason: {
+          head: {
+            templates: {
+              body: { sections: [{ items: [{ type: 'label', text: 'Detail {{$params.code}}' }] }] },
+            },
+          },
+        },
+      },
+    };
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => ({
+      url,
+      json: async () => docs[url],
+    } as Response)));
+
+    await renderer.load('https://example.com/app/screens/index.json', { params: { home: 'yes' } });
+    await renderer.navigate('../detail.json', { options: { code: 'xyz' } });
+
+    expect(renderer.getState().params).toEqual({ code: 'xyz' });
+    expect(root.textContent).toContain('Detail xyz');
+
+    renderer.back();
+
+    expect(renderer.getState().params).toEqual({ home: 'yes' });
+    expect(root.textContent).toContain('Home yes');
   });
 
   it('renders static body', () => {
