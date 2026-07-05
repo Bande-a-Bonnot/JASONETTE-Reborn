@@ -18,14 +18,9 @@ data class JasonRoot(
 data class JasonHead(
     val title: String? = null,
     val data: JsonObject? = null,
-    val templates: JasonTemplates? = null,
+    val templates: JsonObject? = null,
     val styles: Map<String, JasonStyle>? = null,
     val actions: Map<String, JasonAction>? = null
-)
-
-@Serializable
-data class JasonTemplates(
-    val body: JsonElement? = null
 )
 
 @Serializable

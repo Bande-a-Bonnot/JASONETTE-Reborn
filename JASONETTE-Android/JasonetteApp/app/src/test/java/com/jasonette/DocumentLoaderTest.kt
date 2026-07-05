@@ -83,7 +83,7 @@ class DocumentLoaderTest {
         )
 
         val doc = testLoader.load(entryUrl)
-        val bodyTemplate = doc.jason.head?.templates?.body?.jsonObject
+        val bodyTemplate = doc.jason.head?.templates?.get("body")?.jsonObject
         val header = bodyTemplate?.get("header")?.jsonObject
         val style = bodyTemplate?.get("style")?.jsonObject
         val background = style?.get("background")?.jsonObject
@@ -111,7 +111,7 @@ class DocumentLoaderTest {
         val doc = testLoader.load(entryUrl)
         val data = doc.jason.head?.data
         val items = data?.get("items")?.jsonArray
-        val bodyTemplate = doc.jason.head?.templates?.body?.jsonObject
+        val bodyTemplate = doc.jason.head?.templates?.get("body")?.jsonObject
         val sections = bodyTemplate?.get("sections")?.jsonArray
         val repeatedTemplate = sections?.get(0)?.jsonObject?.get("items")?.jsonObject?.values?.first()?.jsonObject
         val specialItems = sections?.get(1)?.jsonObject?.get("items")?.jsonArray

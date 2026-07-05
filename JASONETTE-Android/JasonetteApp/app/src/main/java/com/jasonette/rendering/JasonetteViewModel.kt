@@ -42,9 +42,13 @@ class JasonetteViewModel(
         isLenient = true
     }
     private val documentRenderer = JasonetteDocumentRenderer(stateManager, json)
+    private val renderSelection = RenderSelection()
 
     init {
-        actionDispatcher.setRenderHandler { renderCurrentDocument() }
+        actionDispatcher.setRenderHandler { templateName, renderData, hasRenderData ->
+            renderSelection.apply(templateName, renderData, hasRenderData)
+            renderCurrentDocument()
+        }
         actionDispatcher.setReloadHandler { reload() }
         actionDispatcher.setNavigationHandler { href -> navigationHandler?.invoke(href) }
         actionDispatcher.setBackHandler { backHandler?.invoke() }
@@ -60,6 +64,7 @@ class JasonetteViewModel(
     }
 
     fun reload() {
+        renderSelection.reset()
         _uiState.value = UiState.Loading
         load()
     }
@@ -89,7 +94,14 @@ class JasonetteViewModel(
     }
 
     private fun render(doc: JasonDocument) {
-        _uiState.value = UiState.Loaded(documentRenderer.render(doc))
+        _uiState.value = UiState.Loaded(
+            documentRenderer.render(
+                doc,
+                renderSelection.templateName,
+                renderSelection.renderData,
+                renderSelection.hasRenderData
+            )
+        )
     }
 
     fun handleAction(action: JasonAction) {

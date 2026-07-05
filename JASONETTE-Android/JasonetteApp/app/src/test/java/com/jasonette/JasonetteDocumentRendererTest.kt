@@ -51,6 +51,61 @@ class JasonetteDocumentRendererTest {
     }
 
     @Test
+    fun testRenderCanSelectNamedTemplateAndExposeRenderDataAsJason() {
+        val stateManager = StateManager(context = null)
+        val document = loader.decode(
+            """
+            {
+              "${'$'}jason": {
+                "head": {
+                  "templates": {
+                    "body": {"sections": [{"items": [{"type": "label", "text": "Default"}]}]},
+                    "detail": {"sections": [{"items": [
+                      {"type": "label", "text": "{{${'$'}jason.title}}"},
+                      {"type": "label", "text": "{{title}}"}
+                    ]}]}
+                  }
+                }
+              }
+            }
+            """.trimIndent()
+        )
+
+        val rendered = JasonetteDocumentRenderer(stateManager).render(
+            document,
+            templateName = "detail",
+            renderData = mapOf("title" to "Render payload")
+        )
+        val items = rendered.body?.sections?.first()?.items
+
+        assertEquals("Render payload", items?.get(0)?.text)
+        assertEquals("Render payload", items?.get(1)?.text)
+    }
+
+    @Test
+    fun testUnknownNamedTemplateFallsBackToBodyTemplate() {
+        val stateManager = StateManager(context = null)
+        val document = loader.decode(
+            """
+            {
+              "${'$'}jason": {
+                "head": {
+                  "templates": {
+                    "body": {"sections": [{"items": [{"type": "label", "text": "Default"}]}]}
+                  }
+                }
+              }
+            }
+            """.trimIndent()
+        )
+
+        val rendered = JasonetteDocumentRenderer(stateManager).render(document, templateName = "missing")
+        val item = rendered.body?.sections?.first()?.items?.first()
+
+        assertEquals("Default", item?.text)
+    }
+
+    @Test
     fun testJasonpediaNetworkFixtureRendersResponseItemsByFieldName() {
         val stateManager = StateManager(context = null)
         stateManager.set(

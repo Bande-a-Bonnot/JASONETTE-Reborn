@@ -25,7 +25,7 @@ class ActionDispatcher(
         val text: String? = null
     )
 
-    private var renderHandler: (() -> Unit)? = null
+    private var renderHandler: ((String?, Any?, Boolean) -> Unit)? = null
     private var reloadHandler: (() -> Unit)? = null
     private var navigationHandler: ((JasonHref) -> Unit)? = null
     private var backHandler: (() -> Unit)? = null
@@ -37,7 +37,7 @@ class ActionDispatcher(
         baseUrl = url
     }
 
-    fun setRenderHandler(handler: (() -> Unit)?) {
+    fun setRenderHandler(handler: ((String?, Any?, Boolean) -> Unit)?) {
         renderHandler = handler
     }
 
@@ -105,7 +105,11 @@ class ActionDispatcher(
             "\$cache.get" -> {}
             "\$cache.reset" -> stateManager.cacheReset()
 
-            "\$render" -> renderHandler?.invoke()
+            "\$render" -> renderHandler?.invoke(
+                stringOption(options, "template"),
+                renderDataOption(options),
+                options?.containsKey("data") == true
+            )
             "\$reload" -> reloadHandler?.invoke()
 
             "\$network.request" -> {
@@ -239,6 +243,9 @@ class ActionDispatcher(
 
     private fun stringOption(options: kotlinx.serialization.json.JsonObject?, name: String): String? =
         (options?.get(name) as? JsonPrimitive)?.content
+
+    private fun renderDataOption(options: kotlinx.serialization.json.JsonObject?): Any? =
+        options?.get("data")?.let { JsonValueConverter.jsonElementToAny(it) }
 
     private fun logMessage(level: String, options: kotlinx.serialization.json.JsonObject?) {
         val message = stringOption(options, "text")

@@ -21,15 +21,21 @@ class JasonetteDocumentRenderer(
     private val stateManager: StateManager,
     private val json: Json = Json { ignoreUnknownKeys = true; isLenient = true }
 ) {
-    fun render(document: JasonDocument): JasonRoot {
+    fun render(
+        document: JasonDocument,
+        templateName: String = "body",
+        renderData: Any? = null,
+        hasRenderData: Boolean = renderData != null
+    ): JasonRoot {
         val root = document.jason
         val head = root.head
         val data = head?.data?.let { jsonObjectToMap(it) } ?: emptyMap()
-        val template = head?.templates?.body ?: return root
+        val templates = head?.templates ?: return root
+        val template = templates[templateName] ?: templates["body"] ?: return root
 
         val rendered = TemplateEngine.render(
             JsonValueConverter.jsonElementToAny(template),
-            renderContext(data)
+            renderContext(data, renderData, hasRenderData)
         )
 
         val renderedElement = JsonValueConverter.anyToJsonElement(rendered)
@@ -46,11 +52,18 @@ class JasonetteDocumentRenderer(
         }
     }
 
-    internal fun renderContext(data: Map<String, Any?>): Map<String, Any?> {
+    internal fun renderContext(
+        data: Map<String, Any?>,
+        renderData: Any? = null,
+        hasRenderData: Boolean = renderData != null
+    ): Map<String, Any?> {
         val context = (data + stateManager.local).toMutableMap()
-        if (!context.containsKey("\$jason")) {
-            context["\$jason"] = data
+        if (hasRenderData && renderData is Map<*, *>) {
+            renderData.entries.forEach { (key, value) ->
+                key?.toString()?.let { context[it] = value }
+            }
         }
+        context["\$jason"] = if (hasRenderData) renderData else context["\$jason"] ?: data
         context["\$get"] = stateManager.local.toMap()
         context["\$cache"] = stateManager.cacheGet()
         stateManager.local["\$response"]?.let { context["\$response"] = it }

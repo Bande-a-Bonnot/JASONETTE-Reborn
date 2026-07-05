@@ -85,12 +85,40 @@ class ActionDispatcherTest {
     fun testRenderCallsRegisteredHandler() = runTest {
         val (_, dispatcher) = createDispatcher()
         var renderCount = 0
-        dispatcher.setRenderHandler { renderCount++ }
+        dispatcher.setRenderHandler { _, _, _ -> renderCount++ }
         val action = makeAction("\$render")
 
         dispatcher.execute(action)
 
         assertEquals(1, renderCount)
+    }
+
+    @Test
+    fun testRenderPassesTemplatedTemplateNameAndDataToHandler() = runTest {
+        val (sm, dispatcher) = createDispatcher()
+        sm.set(mapOf("name" to "Ada"))
+        var templateName: String? = null
+        var renderData: Any? = null
+        dispatcher.setRenderHandler { template, data, hasData ->
+            templateName = template
+            renderData = data
+            assertTrue(hasData)
+        }
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$render",
+                options = JsonObject(
+                    mapOf(
+                        "template" to JsonPrimitive("detail"),
+                        "data" to JsonObject(mapOf("message" to JsonPrimitive("Hello {{\$get.name}}")))
+                    )
+                )
+            )
+        )
+
+        assertEquals("detail", templateName)
+        assertEquals(mapOf("message" to "Hello Ada"), renderData)
     }
 
     @Test

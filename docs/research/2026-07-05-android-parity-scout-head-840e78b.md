@@ -80,3 +80,8 @@ The first suggested slice was implemented immediately after this scout as
 `todos/079`: `MainActivity` now provides a simple Compose URL stack, `$href`
 navigation reaches the app, `replace` transitions swap the current stack entry,
 and `$back`/`$close` dispatch to back/finish handlers.
+
+The second suggested slice was implemented as `todos/080`: Android now decodes
+arbitrary named `head.templates`, passes `$render.options.template` and
+`$render.options.data` through the dispatcher, renders selected templates with a
+`body` fallback, and exposes render data as `$jason` plus top-level fields.
