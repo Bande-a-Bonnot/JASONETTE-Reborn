@@ -2,6 +2,8 @@ package com.jasonette.rendering
 
 import com.jasonette.core.*
 import com.jasonette.template.TemplateEngine
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -11,6 +13,10 @@ import kotlinx.serialization.json.decodeFromJsonElement
 import java.net.HttpURLConnection
 import java.net.URI
 import java.net.URL
+import java.net.URLEncoder
+import java.security.SecureRandom
+import java.util.Base64
+import java.util.UUID
 
 /**
  * Executes Jasonette actions with success/error chaining.
@@ -31,6 +37,7 @@ class ActionDispatcher(
     private val addressBookProvider: (suspend () -> List<Map<String, String>>)? = null,
     private val utilityPicker: (suspend (PickerRequest) -> PickerSelection?)? = null,
     private val datePicker: (suspend (DatePickerRequest) -> Long?)? = null,
+    private val uploadClient: (suspend (String, ByteArray, String) -> String)? = null,
     private val networkClient: (suspend (String, kotlinx.serialization.json.JsonObject?) -> String)? = null
 ) {
     data class UtilityMessage(
@@ -65,6 +72,10 @@ class ActionDispatcher(
     data class PickerSelection(val index: Int)
 
     data class DatePickerRequest(val initialValue: Long? = null)
+
+    private companion object {
+        val secureRandom = SecureRandom()
+    }
 
     private var renderHandler: ((String?, Any?, Boolean) -> Unit)? = null
     private var reloadHandler: (() -> Unit)? = null
@@ -261,6 +272,7 @@ class ActionDispatcher(
                     ?: throw ActionException("Missing URL")
                 networkRequest(urlStr, options)
             }
+            "\$network.upload" -> networkUpload(options)
 
             "\$href" -> {
                 val href = hrefFromOptions(options)
@@ -618,7 +630,7 @@ class ActionDispatcher(
         urlStr: String,
         options: kotlinx.serialization.json.JsonObject?
     ) {
-        val body = networkClient?.invoke(urlStr, options) ?: httpNetworkRequest(urlStr, options)
+        val body = networkFetch(urlStr, options)
         val responseValue = try {
             JsonValueConverter.jsonElementToAny(kotlinx.serialization.json.Json.parseToJsonElement(body))
         } catch (_: Exception) {
@@ -627,10 +639,80 @@ class ActionDispatcher(
         stateManager.set(mapOf("\$response" to responseValue, "\$jason" to responseValue))
     }
 
-    private fun httpNetworkRequest(
+    private suspend fun networkUpload(options: JsonObject?) {
+        val data = stringOption(options, "data") ?: throw ActionException("Missing upload data")
+        val contentType = uploadContentType(options)
+        val bucket = stringOption(options, "bucket") ?: throw ActionException("Missing upload bucket")
+        val signUrl = stringOption(options, "sign_url") ?: throw ActionException("Missing upload sign URL")
+        val filename = uploadFilename(stringOption(options, "path"))
+        val uploadBytes = decodeBase64UploadData(data)
+        val signerUrl = appendQuery(
+            resolveAllowedUrl(signUrl),
+            mapOf("bucket" to bucket, "path" to filename, "content-type" to contentType)
+        )
+        val signerResponse = networkFetch(signerUrl, null)
+        val signedUrl = signedUploadUrl(signerResponse)
+        uploadClient?.invoke(signedUrl, uploadBytes, contentType) ?: httpUploadPut(signedUrl, uploadBytes, contentType)
+        val payload = mapOf("filename" to filename, "file_name" to filename)
+        stateManager.set(payload + mapOf("\$jason" to payload))
+    }
+
+    private fun uploadContentType(options: JsonObject?): String =
+        stringOption(options, "content_type")
+            ?: ((stateManager.local["\$jason"] as? Map<*, *>)?.get("content_type") as? String)
+            ?: "application/octet-stream"
+
+    private fun uploadFilename(path: String?): String {
+        val id = uuidV7()
+        val prefix = path?.trimEnd('/')
+        return if (prefix.isNullOrEmpty()) "/$id" else "$prefix/$id"
+    }
+
+    private fun uuidV7(): String {
+        val millis = System.currentTimeMillis() and 0xffffffffffffL
+        val most = (millis shl 16) or 0x7000L or secureRandom.nextInt(0x1000).toLong()
+        val least = (secureRandom.nextLong() and 0x3fffffffffffffffL) or Long.MIN_VALUE
+        return UUID(most, least).toString()
+    }
+
+    private fun decodeBase64UploadData(data: String): ByteArray {
+        val base64 = data.substringAfter("base64,", data).trim()
+        return try {
+            Base64.getMimeDecoder().decode(base64)
+        } catch (e: IllegalArgumentException) {
+            throw ActionException("Invalid upload data")
+        }
+    }
+
+    private fun signedUploadUrl(response: String): String {
+        val parsed = try {
+            Json.parseToJsonElement(response) as? JsonObject
+        } catch (_: Exception) {
+            null
+        }
+        val signed = stringOption(parsed, "\$jason") ?: throw ActionException("Missing signed upload URL")
+        return resolveAllowedUrl(signed)
+    }
+
+    private fun appendQuery(url: String, params: Map<String, String>): String {
+        val separator = if (url.contains('?')) "&" else "?"
+        val query = params.entries.joinToString("&") { (key, value) ->
+            "${urlEncode(key)}=${urlEncode(value)}"
+        }
+        return url + separator + query
+    }
+
+    private fun urlEncode(value: String): String = URLEncoder.encode(value, Charsets.UTF_8.name())
+
+    private suspend fun networkFetch(
         urlStr: String,
         options: kotlinx.serialization.json.JsonObject?
-    ): String {
+    ): String = networkClient?.invoke(urlStr, options) ?: httpNetworkRequest(urlStr, options)
+
+    private suspend fun httpNetworkRequest(
+        urlStr: String,
+        options: kotlinx.serialization.json.JsonObject?
+    ): String = withContext(Dispatchers.IO) {
         val url = URL(urlStr)
         val conn = url.openConnection() as HttpURLConnection
         try {
@@ -642,7 +724,29 @@ class ActionDispatcher(
             val code = conn.responseCode
             if (code !in 200..299) throw ActionException("HTTP error: $code")
 
-            return conn.inputStream.bufferedReader().readText()
+            conn.inputStream.bufferedReader().readText()
+        } finally {
+            conn.disconnect()
+        }
+    }
+
+    private suspend fun httpUploadPut(
+        urlStr: String,
+        data: ByteArray,
+        contentType: String
+    ): String = withContext(Dispatchers.IO) {
+        val url = URL(urlStr)
+        val conn = url.openConnection() as HttpURLConnection
+        try {
+            conn.requestMethod = "PUT"
+            conn.connectTimeout = 10_000
+            conn.readTimeout = 10_000
+            conn.doOutput = true
+            conn.setRequestProperty("Content-Type", contentType)
+            conn.outputStream.use { it.write(data) }
+            val code = conn.responseCode
+            if (code !in 200..299) throw ActionException("Upload HTTP error: $code")
+            conn.inputStream.bufferedReader().readText()
         } finally {
             conn.disconnect()
         }

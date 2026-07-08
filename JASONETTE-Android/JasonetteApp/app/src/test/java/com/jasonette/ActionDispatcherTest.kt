@@ -548,6 +548,167 @@ class ActionDispatcherTest {
     }
 
     @Test
+    fun testNetworkUploadSignsPutsDataAndStoresFilenamePayload() = runTest {
+        val sm = StateManager(context = null)
+        var signerUrl: String? = null
+        var uploadedUrl: String? = null
+        var uploadedBytes: ByteArray? = null
+        var uploadedContentType: String? = null
+        val dispatcher = ActionDispatcher(
+            sm,
+            uploadClient = { url, bytes, contentType ->
+                uploadedUrl = url
+                uploadedBytes = bytes
+                uploadedContentType = contentType
+                ""
+            },
+            networkClient = { url, _ ->
+                signerUrl = url
+                "{\"${'$'}jason\":\"https://s3.example.com/signed-upload\"}"
+            }
+        )
+
+        dispatcher.execute(
+            JasonAction(
+                type = "${'$'}network.upload",
+                options = JsonObject(
+                    mapOf(
+                        "type" to JsonPrimitive("s3"),
+                        "bucket" to JsonPrimitive("photos"),
+                        "path" to JsonPrimitive("avatars"),
+                        "data" to JsonPrimitive("data:image/png;base64,aGVs\nbG8="),
+                        "content_type" to JsonPrimitive("image/png"),
+                        "sign_url" to JsonPrimitive("https://sign.example.com/sign")
+                    )
+                ),
+                success = makeAction("${'$'}set", mapOf("uploaded" to "{{${'$'}jason.filename}}"))
+            )
+        )
+
+        val filename = (sm.local["${'$'}jason"] as Map<*, *>)["filename"] as String
+        assertTrue(filename.matches(Regex("avatars/[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}")))
+        assertEquals(mapOf("filename" to filename, "file_name" to filename), sm.local["${'$'}jason"])
+        assertEquals(filename, sm.local["uploaded"])
+        assertTrue(signerUrl?.startsWith("https://sign.example.com/sign?") == true)
+        assertTrue(signerUrl?.contains("bucket=photos") == true)
+        assertTrue(signerUrl?.contains("path=${filename.replace("/", "%2F")}") == true)
+        assertTrue(signerUrl?.contains("content-type=image%2Fpng") == true)
+        assertEquals("https://s3.example.com/signed-upload", uploadedUrl)
+        assertEquals("hello", uploadedBytes?.decodeToString())
+        assertEquals("image/png", uploadedContentType)
+    }
+
+    @Test
+    fun testNetworkUploadTemplatesOptionsAndFallsBackToJasonContentType() = runTest {
+        val sm = StateManager(context = null)
+        sm.set(mapOf("folder" to "captures", "${'$'}jason" to mapOf("data" to "aGk=", "content_type" to "image/jpeg")))
+        var uploadedContentType: String? = null
+        var signerUrl: String? = null
+        val dispatcher = ActionDispatcher(
+            sm,
+            uploadClient = { _, _, contentType -> uploadedContentType = contentType; "" },
+            networkClient = { url, _ ->
+                signerUrl = url
+                "{\"${'$'}jason\":\"https://s3.example.com/upload\"}"
+            }
+        )
+
+        dispatcher.execute(
+            JasonAction(
+                type = "${'$'}network.upload",
+                options = JsonObject(
+                    mapOf(
+                        "bucket" to JsonPrimitive("photos"),
+                        "path" to JsonPrimitive("{{${'$'}get.folder}}"),
+                        "data" to JsonPrimitive("{{${'$'}jason.data}}"),
+                        "sign_url" to JsonPrimitive("https://sign.example.com/sign")
+                    )
+                )
+            )
+        )
+
+        assertEquals("image/jpeg", uploadedContentType)
+        assertTrue(signerUrl?.contains("path=captures%2F") == true)
+        assertTrue(signerUrl?.contains("content-type=image%2Fjpeg") == true)
+    }
+
+    @Test
+    fun testNetworkUploadInvalidBase64RoutesErrorBranch() = runTest {
+        val sm = StateManager(context = null)
+        val dispatcher = ActionDispatcher(sm)
+
+        dispatcher.execute(
+            JasonAction(
+                type = "${'$'}network.upload",
+                options = JsonObject(
+                    mapOf(
+                        "bucket" to JsonPrimitive("photos"),
+                        "data" to JsonPrimitive("not base64!"),
+                        "sign_url" to JsonPrimitive("https://sign.example.com/sign")
+                    )
+                ),
+                error = makeAction("${'$'}set", mapOf("upload_failed" to "true"))
+            )
+        )
+
+        assertEquals("true", sm.local["upload_failed"])
+    }
+
+    @Test
+    fun testNetworkUploadSignerMissingJasonRoutesErrorBranch() = runTest {
+        val sm = StateManager(context = null)
+        val dispatcher = ActionDispatcher(
+            sm,
+            uploadClient = { _, _, _ -> fail("Upload should not run without signed URL"); "" },
+            networkClient = { _, _ -> "{\"url\":\"https://example.com/upload\"}" }
+        )
+
+        dispatcher.execute(
+            JasonAction(
+                type = "${'$'}network.upload",
+                options = JsonObject(
+                    mapOf(
+                        "bucket" to JsonPrimitive("photos"),
+                        "data" to JsonPrimitive("aGk="),
+                        "content_type" to JsonPrimitive("image/png"),
+                        "sign_url" to JsonPrimitive("https://sign.example.com/sign")
+                    )
+                ),
+                error = makeAction("${'$'}set", mapOf("sign_failed" to "true"))
+            )
+        )
+
+        assertEquals("true", sm.local["sign_failed"])
+    }
+
+    @Test
+    fun testNetworkUploadPutFailureRoutesErrorBranch() = runTest {
+        val sm = StateManager(context = null)
+        val dispatcher = ActionDispatcher(
+            sm,
+            uploadClient = { _, _, _ -> throw ActionDispatcher.ActionException("Upload failed") },
+            networkClient = { _, _ -> "{\"${'$'}jason\":\"https://s3.example.com/upload\"}" }
+        )
+
+        dispatcher.execute(
+            JasonAction(
+                type = "${'$'}network.upload",
+                options = JsonObject(
+                    mapOf(
+                        "bucket" to JsonPrimitive("photos"),
+                        "data" to JsonPrimitive("aGk="),
+                        "content_type" to JsonPrimitive("image/png"),
+                        "sign_url" to JsonPrimitive("https://sign.example.com/sign")
+                    )
+                ),
+                error = makeAction("${'$'}set", mapOf("put_failed" to "true"))
+            )
+        )
+
+        assertEquals("true", sm.local["put_failed"])
+    }
+
+    @Test
     fun testHrefTemplatesUrlBeforeResolvingNavigation() = runTest {
         val (sm, dispatcher) = createDispatcher()
         sm.set(mapOf("next" to "detail"))
