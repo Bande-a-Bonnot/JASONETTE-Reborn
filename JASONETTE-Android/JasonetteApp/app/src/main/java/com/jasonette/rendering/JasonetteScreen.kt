@@ -1,8 +1,10 @@
 package com.jasonette.rendering
 
+import android.Manifest
 import android.app.Application
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
+import android.content.pm.PackageManager
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -18,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -25,6 +28,7 @@ import com.jasonette.components.ComponentView
 import com.jasonette.components.parseCssColor
 import com.jasonette.core.*
 import kotlinx.serialization.json.JsonPrimitive
+import java.io.File
 import java.util.Calendar
 
 /**
@@ -48,6 +52,20 @@ fun JasonetteScreen(
     var pendingVideoRequestId by rememberSaveable { mutableStateOf<String?>(null) }
     var pendingImagePickerRequestId by rememberSaveable { mutableStateOf<String?>(null) }
     var pendingVideoPickerRequestId by rememberSaveable { mutableStateOf<String?>(null) }
+    var pendingAudioRecordRequestId by remember { mutableStateOf<String?>(null) }
+    var activeAudioRecording by remember { mutableStateOf<ActiveAndroidAudioRecording?>(null) }
+
+    fun startAudioRecordRequest(request: NativeUiRequest.AudioRecord) {
+        runCatching {
+            activeAudioRecording?.cancel()
+            activeAudioRecording = null
+            activeAudioRecording = startAndroidAudioRecording(File(request.outputPath))
+        }.onFailure { error ->
+            if (pendingAudioRecordRequestId == request.id) pendingAudioRecordRequestId = null
+            viewModel.failAudioRecord(request, error)
+        }
+    }
+
     val photoCaptureLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
         val pendingId = pendingPhotoRequestId.also { pendingPhotoRequestId = null }
         val request = (currentNativeUiRequest as? NativeUiRequest.MediaCapture)?.takeIf { it.id == pendingId }
@@ -88,6 +106,19 @@ fun JasonetteScreen(
             viewModel.completeMediaCapture(request, androidMediaCapturePayload(context, request.request, uri))
         } else if (request != null) {
             viewModel.cancelNativeUiRequest(request)
+        }
+    }
+    val audioPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        val request = (currentNativeUiRequest as? NativeUiRequest.AudioRecord)
+            ?.takeIf { it.id == pendingAudioRecordRequestId }
+        if (granted && request != null) {
+            startAudioRecordRequest(request)
+        } else if (request != null) {
+            pendingAudioRecordRequestId = null
+            viewModel.failAudioRecord(
+                request,
+                ActionDispatcher.ActionException("Audio recording permission denied")
+            )
         }
     }
 
@@ -239,6 +270,83 @@ fun JasonetteScreen(
                 }
             }
         )
+    }
+
+    (nativeUiRequest as? NativeUiRequest.AudioRecord)?.let { request ->
+        val cancelRecording = {
+            activeAudioRecording?.cancel()
+            activeAudioRecording = null
+            if (pendingAudioRecordRequestId == request.id) pendingAudioRecordRequestId = null
+            viewModel.cancelNativeUiRequest(request)
+        }
+        AlertDialog(
+            onDismissRequest = cancelRecording,
+            confirmButton = {
+                TextButton(
+                    enabled = activeAudioRecording != null,
+                    onClick = {
+                        val recording = activeAudioRecording ?: return@TextButton
+                        activeAudioRecording = null
+                        if (pendingAudioRecordRequestId == request.id) pendingAudioRecordRequestId = null
+                        runCatching { recording.stopPayload() }
+                            .onSuccess { payload -> viewModel.completeAudioRecord(request, payload) }
+                            .onFailure { error -> viewModel.failAudioRecord(request, error) }
+                    }
+                ) {
+                    Text("STOP")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = cancelRecording) {
+                    Text("CANCEL")
+                }
+            },
+            title = { Text("Recording") },
+            text = {
+                Column {
+                    val color = parseCssColor(request.request.color)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(8.dp)
+                            .let { modifier -> color?.let { modifier.background(it) } ?: modifier }
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    Text(if (activeAudioRecording == null) "Preparing recorder…" else "Recording audio…")
+                }
+            }
+        )
+    }
+
+    LaunchedEffect(nativeUiRequest) {
+        val request = nativeUiRequest as? NativeUiRequest.AudioRecord ?: return@LaunchedEffect
+        if (pendingAudioRecordRequestId == request.id) return@LaunchedEffect
+        pendingAudioRecordRequestId = request.id
+        runCatching {
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
+                PackageManager.PERMISSION_GRANTED
+            ) {
+                startAudioRecordRequest(request)
+            } else {
+                audioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+            }
+        }.onFailure { error ->
+            if (pendingAudioRecordRequestId == request.id) pendingAudioRecordRequestId = null
+            viewModel.failAudioRecord(request, error)
+        }
+    }
+
+    DisposableEffect(nativeUiRequest) {
+        val request = nativeUiRequest as? NativeUiRequest.AudioRecord
+        if (request == null) return@DisposableEffect onDispose { }
+        onDispose {
+            if ((nativeUiRequest as? NativeUiRequest.AudioRecord)?.id == request.id) {
+                activeAudioRecording?.cancel()
+                activeAudioRecording = null
+                if (pendingAudioRecordRequestId == request.id) pendingAudioRecordRequestId = null
+                if (!request.deferred.isCompleted) viewModel.cancelNativeUiRequest(request)
+            }
+        }
     }
 
     LaunchedEffect(nativeUiRequest) {

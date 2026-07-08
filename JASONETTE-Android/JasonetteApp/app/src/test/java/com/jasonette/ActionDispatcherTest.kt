@@ -5,6 +5,8 @@ import com.jasonette.core.JasonHref
 import com.jasonette.core.StateManager
 import com.jasonette.rendering.ActionDispatcher
 import com.jasonette.rendering.JasonTimerScheduler
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
@@ -1410,6 +1412,127 @@ class ActionDispatcherTest {
         assertNull(sm.local["invalid_seek_error"])
         assertNull(sm.local["unavailable_seek_error"])
         assertNull(sm.local["throwing_seek_error"])
+    }
+
+    @Test
+    fun testAudioRecordStoresLegacyPayloadAndRunsSuccessChain() = runTest {
+        val sm = StateManager(context = null)
+        sm.set(mapOf("color" to "rgba(255,0,0,0.5)"))
+        val requests = mutableListOf<ActionDispatcher.AudioRecordRequest>()
+        val payload = mapOf(
+            "file_url" to "file:///tmp/recorded_audio.m4a",
+            "url" to "file:///tmp/recorded_audio.m4a",
+            "content_type" to "audio/m4a",
+            "data_uri" to "data:audio/m4a;base64,YXVkaW8="
+        )
+        val dispatcher = ActionDispatcher(
+            sm,
+            audioRecorder = { request ->
+                requests.add(request)
+                payload
+            }
+        )
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$audio.record",
+                options = JsonObject(mapOf("color" to JsonPrimitive("{{\$get.color}}"))),
+                success = makeAction("\$set", mapOf("recorded" to "{{\$jason.file_url}}"))
+            )
+        )
+
+        assertEquals(listOf(ActionDispatcher.AudioRecordRequest(color = "rgba(255,0,0,0.5)")), requests)
+        assertEquals("file:///tmp/recorded_audio.m4a", sm.local["file_url"])
+        assertEquals("file:///tmp/recorded_audio.m4a", sm.local["url"])
+        assertEquals("audio/m4a", sm.local["content_type"])
+        assertEquals("data:audio/m4a;base64,YXVkaW8=", sm.local["data_uri"])
+        assertEquals("file:///tmp/recorded_audio.m4a", sm.local["recorded"])
+        assertEquals(payload, sm.local["\$jason"])
+    }
+
+    @Test
+    fun testAudioRecordDefaultColorAndAsyncCompletion() = runTest {
+        val sm = StateManager(context = null)
+        val deferred = CompletableDeferred<Map<String, Any>?>()
+        val recorderStarted = CompletableDeferred<Unit>()
+        var requestedColor: String? = null
+        val dispatcher = ActionDispatcher(
+            sm,
+            audioRecorder = { request ->
+                requestedColor = request.color
+                recorderStarted.complete(Unit)
+                deferred.await()
+            }
+        )
+
+        val job = launch {
+            dispatcher.execute(
+                JasonAction(
+                    type = "\$audio.record",
+                    success = makeAction("\$set", mapOf("done" to "{{\$jason.content_type}}"))
+                )
+            )
+        }
+        recorderStarted.await()
+
+        assertEquals("rgba(0,0,0,0.8)", requestedColor)
+        assertNull(sm.local["done"])
+        deferred.complete(
+            mapOf(
+                "file_url" to "file:///tmp/later.m4a",
+                "url" to "file:///tmp/later.m4a",
+                "content_type" to "audio/m4a",
+                "data_uri" to "data:audio/m4a;base64,bGF0ZXI="
+            )
+        )
+        job.join()
+
+        assertEquals("audio/m4a", sm.local["done"])
+    }
+
+    @Test
+    fun testAudioRecordUnavailableCancelledAndThrownRouteErrorBranches() = runTest {
+        val sm = StateManager(context = null)
+        sm.set(
+            mapOf(
+                "file_url" to "stale-file",
+                "url" to "stale-url",
+                "content_type" to "stale-type",
+                "data_uri" to "stale-data",
+                "\$jason" to mapOf("file_url" to "stale")
+            )
+        )
+        val unavailable = ActionDispatcher(sm)
+        val cancelled = ActionDispatcher(sm, audioRecorder = { null })
+        val throwing = ActionDispatcher(sm, audioRecorder = { throw ActionDispatcher.ActionException("Mic denied") })
+
+        unavailable.execute(
+            JasonAction(
+                type = "\$audio.record",
+                error = makeAction("\$set", mapOf("record_unavailable" to "{{\$jason.file_url}}"))
+            )
+        )
+        cancelled.execute(
+            JasonAction(
+                type = "\$audio.record",
+                error = makeAction("\$set", mapOf("record_cancelled" to "{{\$jason.file_url}}"))
+            )
+        )
+        throwing.execute(
+            JasonAction(
+                type = "\$audio.record",
+                error = makeAction("\$set", mapOf("record_error" to "{{\$jason.message}}"))
+            )
+        )
+
+        assertEquals("", sm.local["record_unavailable"])
+        assertEquals("", sm.local["record_cancelled"])
+        assertEquals("Mic denied", sm.local["record_error"])
+        assertEquals("", sm.local["file_url"])
+        assertEquals("", sm.local["url"])
+        assertEquals("", sm.local["content_type"])
+        assertEquals("", sm.local["data_uri"])
+        assertEquals(mapOf("message" to "Mic denied"), sm.local["\$jason"])
     }
 
     @Test

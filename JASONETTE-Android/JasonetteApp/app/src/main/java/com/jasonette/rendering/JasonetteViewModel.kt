@@ -14,6 +14,7 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import java.io.File
 import java.security.SecureRandom
 import java.util.UUID
 
@@ -44,6 +45,13 @@ sealed class NativeUiRequest {
         val request: ActionDispatcher.MediaCaptureRequest,
         val deferred: CompletableDeferred<Map<String, Any>?>,
         val outputUri: String? = null
+    ) : NativeUiRequest()
+
+    data class AudioRecord(
+        val id: String,
+        val request: ActionDispatcher.AudioRecordRequest,
+        val deferred: CompletableDeferred<Map<String, Any>?>,
+        val outputPath: String
     ) : NativeUiRequest()
 }
 
@@ -81,6 +89,7 @@ class JasonetteViewModel(
         audioDurationProvider = audioPlayer::duration,
         audioPositionProvider = audioPlayer::position,
         audioSeeker = audioPlayer::seek,
+        audioRecorder = ::requestAudioRecord,
         mediaPlayback = mediaPlayback::play,
         mediaCapture = ::requestMediaCapture,
         shareHandler = shareHandler::share,
@@ -217,6 +226,18 @@ class JasonetteViewModel(
         }
     }
 
+    private suspend fun requestAudioRecord(request: ActionDispatcher.AudioRecordRequest): Map<String, Any>? {
+        val deferred = CompletableDeferred<Map<String, Any>?>()
+        val outputFile = createAndroidAudioRecordFile(getApplication())
+        val nativeRequest = NativeUiRequest.AudioRecord(uuidV7(), request, deferred, outputFile.absolutePath)
+        _nativeUiRequest.value = nativeRequest
+        return try {
+            deferred.await()
+        } finally {
+            if (_nativeUiRequest.value === nativeRequest) _nativeUiRequest.value = null
+        }
+    }
+
     fun selectPickerItem(index: Int) {
         val request = _nativeUiRequest.value as? NativeUiRequest.Picker ?: return
         if (!request.deferred.isCompleted) request.deferred.complete(ActionDispatcher.PickerSelection(index))
@@ -241,6 +262,21 @@ class JasonetteViewModel(
         if (request != null && !request.deferred.isCompleted) request.deferred.complete(payload)
     }
 
+    fun completeAudioRecord(request: NativeUiRequest.AudioRecord?, payload: Map<String, Any>) {
+        if (_nativeUiRequest.value !== request) return
+        if (request != null && !request.deferred.isCompleted) request.deferred.complete(payload)
+    }
+
+    fun failAudioRecord(request: NativeUiRequest.AudioRecord?, error: Throwable) {
+        if (_nativeUiRequest.value !== request) return
+        if (request != null && !request.deferred.isCompleted) {
+            val exception = error as? Exception
+                ?: ActionDispatcher.ActionException(error.message ?: "Audio recording failed")
+            request.deferred.completeExceptionally(exception)
+            runCatching { File(request.outputPath).delete() }
+        }
+    }
+
     fun cancelNativeUiRequest() {
         cancelNativeUiRequest(_nativeUiRequest.value)
     }
@@ -252,6 +288,12 @@ class JasonetteViewModel(
             is NativeUiRequest.DatePicker -> if (!request.deferred.isCompleted) request.deferred.complete(null)
             is NativeUiRequest.VisionScan -> if (!request.deferred.isCompleted) request.deferred.complete(null)
             is NativeUiRequest.MediaCapture -> if (!request.deferred.isCompleted) request.deferred.complete(null)
+            is NativeUiRequest.AudioRecord -> {
+                if (!request.deferred.isCompleted) {
+                    request.deferred.complete(null)
+                    runCatching { File(request.outputPath).delete() }
+                }
+            }
             null -> {}
         }
     }

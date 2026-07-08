@@ -34,6 +34,7 @@ class ActionDispatcher(
     private val audioDurationProvider: (suspend () -> String?)? = null,
     private val audioPositionProvider: (suspend () -> String?)? = null,
     private val audioSeeker: (suspend (Double) -> Unit)? = null,
+    private val audioRecorder: (suspend (AudioRecordRequest) -> Map<String, Any>?)? = null,
     private val shareHandler: (suspend (List<ShareItem>) -> Unit)? = null,
     private val addressBookProvider: (suspend () -> List<Map<String, String>>)? = null,
     private val utilityPicker: (suspend (PickerRequest) -> PickerSelection?)? = null,
@@ -74,6 +75,8 @@ class ActionDispatcher(
     data class PickerSelection(val index: Int)
 
     data class DatePickerRequest(val initialValue: Long? = null)
+
+    data class AudioRecordRequest(val color: String = "rgba(0,0,0,0.8)")
 
     data class MediaCaptureRequest(
         val source: String,
@@ -276,6 +279,7 @@ class ActionDispatcher(
             "\$audio.duration" -> audioDuration()
             "\$audio.position" -> audioPosition()
             "\$audio.seek" -> audioSeek(options)
+            "\$audio.record" -> audioRecord(options)
             "\$media.play" -> mediaPlay(options)
             "\$media.camera" -> mediaCamera(options)
             "\$media.picker" -> mediaPicker(options)
@@ -553,6 +557,33 @@ class ActionDispatcher(
         } catch (_: Exception) {
             // Legacy Android treats seek failures as non-fatal and still continues success chains.
         }
+    }
+
+    private suspend fun audioRecord(options: JsonObject?) {
+        val request = AudioRecordRequest(stringOption(options, "color") ?: "rgba(0,0,0,0.8)")
+        val payload = try {
+            audioRecorder?.invoke(request)
+        } catch (e: Exception) {
+            clearAudioRecordPayload(mapOf("message" to (e.message ?: "Audio recording failed")))
+            throw e
+        }
+        if (payload == null) {
+            clearAudioRecordPayload()
+            throw ActionException("Audio recording unavailable")
+        }
+        stateManager.set(payload + mapOf("\$jason" to payload))
+    }
+
+    private fun clearAudioRecordPayload(jason: Map<String, Any> = emptyMap()) {
+        stateManager.set(
+            mapOf(
+                "file_url" to "",
+                "url" to "",
+                "content_type" to "",
+                "data_uri" to "",
+                "\$jason" to jason
+            ) + jason
+        )
     }
 
     private fun failWithAudioPayload(message: String): Nothing {
