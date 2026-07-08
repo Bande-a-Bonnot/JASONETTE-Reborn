@@ -28,6 +28,7 @@ class ActionDispatcher(
     private val audioPositionProvider: (suspend () -> String?)? = null,
     private val audioSeeker: (suspend (Double) -> Unit)? = null,
     private val shareHandler: (suspend (List<ShareItem>) -> Unit)? = null,
+    private val addressBookProvider: (suspend () -> List<Map<String, String>>)? = null,
     private val networkClient: (suspend (String, kotlinx.serialization.json.JsonObject?) -> String)? = null
 ) {
     data class UtilityMessage(
@@ -269,6 +270,7 @@ class ActionDispatcher(
                 )
             )
             "\$util.share" -> share(options)
+            "\$util.addressbook" -> addressBook()
 
             "\$log", "\$log.info" -> logMessage("INFO", options)
             "\$log.debug" -> logMessage("DEBUG", options)
@@ -534,6 +536,11 @@ class ActionDispatcher(
         } ?: emptyList()
         if (items.isEmpty()) throw ActionException("Missing share items")
         shareHandler?.invoke(items) ?: throw ActionException("Share unavailable")
+    }
+
+    private suspend fun addressBook() {
+        val contacts = addressBookProvider?.invoke() ?: throw ActionException("Address book unavailable")
+        stateManager.set(mapOf("\$jason" to contacts))
     }
 
     private suspend fun networkRequest(

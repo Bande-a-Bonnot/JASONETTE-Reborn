@@ -34,6 +34,7 @@ class JasonetteViewModel(
     val stateManager = StateManager(application)
     private val timerScheduler = CoroutineJasonTimerScheduler(viewModelScope)
     private val geolocationProvider = AndroidGeolocationProvider(application)
+    private val addressBookProvider = AndroidAddressBookProvider(application)
     private val audioPlayer = AndroidAudioPlayer()
     private val mediaPlayback = AndroidMediaPlayback(application)
     private val shareHandler = AndroidShareHandler(application)
@@ -49,7 +50,8 @@ class JasonetteViewModel(
         audioPositionProvider = audioPlayer::position,
         audioSeeker = audioPlayer::seek,
         mediaPlayback = mediaPlayback::play,
-        shareHandler = shareHandler::share
+        shareHandler = shareHandler::share,
+        addressBookProvider = addressBookProvider::contacts
     )
     private var navigationHandler: ((JasonHref) -> Unit)? = null
     private var backHandler: (() -> Unit)? = null

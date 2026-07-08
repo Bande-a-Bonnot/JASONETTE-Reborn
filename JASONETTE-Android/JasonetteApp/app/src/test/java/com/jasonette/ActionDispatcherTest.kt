@@ -1499,6 +1499,59 @@ class ActionDispatcherTest {
     }
 
     @Test
+    fun testUtilAddressBookStoresContactsInJasonAndRunsSuccessChain() = runTest {
+        val sm = StateManager(context = null)
+        val contacts = listOf(
+            mapOf("name" to "Ada Lovelace", "phone" to "+15551212", "email" to "ada@example.com"),
+            mapOf("name" to "Grace Hopper", "phone" to "", "email" to "grace@example.com")
+        )
+        val dispatcher = ActionDispatcher(sm, addressBookProvider = { contacts })
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$util.addressbook",
+                success = makeAction("\$set", mapOf("contacts_loaded" to "true"))
+            )
+        )
+
+        assertEquals(contacts, sm.local["\$jason"])
+        assertEquals("true", sm.local["contacts_loaded"])
+    }
+
+    @Test
+    fun testUtilAddressBookUnavailableRunsErrorBranch() = runTest {
+        val sm = StateManager(context = null)
+        val dispatcher = ActionDispatcher(sm)
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$util.addressbook",
+                error = makeAction("\$set", mapOf("contacts_failed" to "true"))
+            )
+        )
+
+        assertEquals("true", sm.local["contacts_failed"])
+    }
+
+    @Test
+    fun testUtilAddressBookProviderFailureRoutesErrorBranch() = runTest {
+        val sm = StateManager(context = null)
+        val dispatcher = ActionDispatcher(
+            sm,
+            addressBookProvider = { throw ActionDispatcher.ActionException("Contacts permission denied") }
+        )
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$util.addressbook",
+                error = makeAction("\$set", mapOf("contacts_denied" to "true"))
+            )
+        )
+
+        assertEquals("true", sm.local["contacts_denied"])
+    }
+
+    @Test
     fun testUtilShareTemplatesItemsInvokesHandlerAndRunsSuccessChain() = runTest {
         val sm = StateManager(context = null)
         sm.set(mapOf("message" to "Hello", "link" to "https://example.com/story"))
