@@ -4,6 +4,7 @@ import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.round
+import java.util.Date
 
 /**
  * Evaluates expression ASTs against a context map.
@@ -31,12 +32,31 @@ object ExpressionEvaluator {
     fun evaluate(expression: String, context: Map<String, Any?>): Any? {
         val trimmed = expression.trim()
         if (trimmed.isEmpty()) return null
+        legacyDateToString(trimmed, context)?.let { return it }
         return try {
             val node = ExpressionParser(trimmed).parse()
             resolve(node, context)
         } catch (_: Exception) {
             null
         }
+    }
+
+    private fun legacyDateToString(expression: String, context: Map<String, Any?>): String? {
+        val inner = Regex("^\\(new\\s+Date\\((.*)\\)\\)\\.toString\\(\\)$").matchEntire(expression)
+            ?.groupValues
+            ?.getOrNull(1)
+            ?: return null
+        val millis = legacyDateMillis(inner, context) ?: return null
+        return Date(millis).toString()
+    }
+
+    private fun legacyDateMillis(expression: String, context: Map<String, Any?>): Long? {
+        val parseIntTimes = Regex("^parseInt\\((.*)\\)\\s*\\*\\s*1000$").matchEntire(expression.trim())
+        if (parseIntTimes != null) {
+            val seconds = evaluate(parseIntTimes.groupValues[1], context)?.toString()?.toLongOrNull() ?: return null
+            return seconds * 1000L
+        }
+        return evaluate(expression, context)?.toDoubleOrNull()?.toLong()
     }
 
     fun resolve(node: Node, context: Map<String, Any?>, depth: Int = 0): Any? {

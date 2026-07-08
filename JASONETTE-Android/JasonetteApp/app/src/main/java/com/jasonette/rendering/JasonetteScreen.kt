@@ -1,6 +1,8 @@
 package com.jasonette.rendering
 
 import android.app.Application
+import android.app.DatePickerDialog
+import android.app.TimePickerDialog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -18,6 +20,7 @@ import com.jasonette.components.ComponentView
 import com.jasonette.components.parseCssColor
 import com.jasonette.core.*
 import kotlinx.serialization.json.JsonPrimitive
+import java.util.Calendar
 
 /**
  * Main composable that renders a complete Jasonette document.
@@ -31,7 +34,9 @@ fun JasonetteScreen(
     onClose: (() -> Unit)? = null
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val nativeUiRequest by viewModel.nativeUiRequest.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
     var alertMessage by remember { mutableStateOf<ActionDispatcher.UtilityMessage?>(null) }
 
     LaunchedEffect(viewModel, onNavigate, onBack, onClose) {
@@ -157,6 +162,73 @@ fun JasonetteScreen(
             title = { Text(message.title ?: "Alert") },
             text = { Text(message.description ?: message.text ?: "") }
         )
+    }
+
+    (nativeUiRequest as? NativeUiRequest.Picker)?.let { picker ->
+        AlertDialog(
+            onDismissRequest = { viewModel.cancelNativeUiRequest() },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { viewModel.cancelNativeUiRequest() }) {
+                    Text("CANCEL")
+                }
+            },
+            title = { Text(picker.request.title ?: "Select") },
+            text = {
+                Column {
+                    picker.request.items.forEach { item ->
+                        TextButton(
+                            modifier = Modifier.fillMaxWidth(),
+                            onClick = { viewModel.selectPickerItem(item.index) }
+                        ) {
+                            Text(item.text.ifBlank { " " })
+                        }
+                    }
+                }
+            }
+        )
+    }
+
+    DisposableEffect(nativeUiRequest, context) {
+        val request = nativeUiRequest as? NativeUiRequest.DatePicker
+        if (request == null) return@DisposableEffect onDispose { }
+        val initial = Calendar.getInstance().apply {
+            request.request.initialValue?.let { timeInMillis = it * 1000L }
+        }
+        var activeTimeDialog: TimePickerDialog? = null
+        val dateDialog = DatePickerDialog(
+            context,
+            { _, year, month, day ->
+                activeTimeDialog = TimePickerDialog(
+                    context,
+                    { _, hour, minute ->
+                        val selected = Calendar.getInstance().apply {
+                            set(year, month, day, hour, minute, 0)
+                            set(Calendar.MILLISECOND, 0)
+                        }
+                        viewModel.completeDatePicker(selected.timeInMillis / 1000L)
+                    },
+                    initial.get(Calendar.HOUR_OF_DAY),
+                    initial.get(Calendar.MINUTE),
+                    true
+                ).apply {
+                    setTitle("Select Time")
+                    setOnCancelListener { viewModel.cancelNativeUiRequest() }
+                    show()
+                }
+            },
+            initial.get(Calendar.YEAR),
+            initial.get(Calendar.MONTH),
+            initial.get(Calendar.DAY_OF_MONTH)
+        ).apply {
+            setTitle("Select Date")
+            setOnCancelListener { viewModel.cancelNativeUiRequest() }
+            show()
+        }
+        onDispose {
+            dateDialog.dismiss()
+            activeTimeDialog?.dismiss()
+        }
     }
 
     LaunchedEffect(viewModel, snackbarHostState) {

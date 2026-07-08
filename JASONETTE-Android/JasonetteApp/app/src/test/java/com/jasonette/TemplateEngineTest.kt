@@ -132,4 +132,22 @@ class TemplateEngineTest {
     @Test fun testStringConcatenation() {
         assertEquals("John Doe", TemplateEngine.render("{{first + ' ' + last}}", mapOf("first" to "John", "last" to "Doe")))
     }
+
+    @Test fun testLegacyDateToStringCompatibility() {
+        val rendered = TemplateEngine.render(
+            "{{(new Date(parseInt(${ '$' }jason.value) * 1000)).toString()}}",
+            mapOf("${ '$' }jason" to mapOf("value" to "1700000000"))
+        ) as? String
+
+        assertTrue(rendered?.contains("2023") == true)
+    }
+
+    @Test fun testMalformedLegacyDateToStringCompatibilityRendersEmpty() {
+        val rendered = TemplateEngine.render(
+            "{{(new Date(parseInt(${ '$' }jason.value) * 1000)).toString()}}",
+            mapOf("${ '$' }jason" to mapOf("value" to "not-a-date"))
+        )
+
+        assertEquals("", rendered)
+    }
 }

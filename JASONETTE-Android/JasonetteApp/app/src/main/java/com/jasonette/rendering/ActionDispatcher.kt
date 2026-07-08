@@ -29,6 +29,8 @@ class ActionDispatcher(
     private val audioSeeker: (suspend (Double) -> Unit)? = null,
     private val shareHandler: (suspend (List<ShareItem>) -> Unit)? = null,
     private val addressBookProvider: (suspend () -> List<Map<String, String>>)? = null,
+    private val utilityPicker: (suspend (PickerRequest) -> PickerSelection?)? = null,
+    private val datePicker: (suspend (DatePickerRequest) -> Long?)? = null,
     private val networkClient: (suspend (String, kotlinx.serialization.json.JsonObject?) -> String)? = null
 ) {
     data class UtilityMessage(
@@ -46,6 +48,23 @@ class ActionDispatcher(
         val data: String? = null,
         val contentType: String? = null
     )
+
+    data class PickerItem(
+        val index: Int,
+        val text: String,
+        val value: Any?,
+        val action: JasonAction? = null,
+        val href: JasonHref? = null
+    )
+
+    data class PickerRequest(
+        val title: String? = null,
+        val items: List<PickerItem>
+    )
+
+    data class PickerSelection(val index: Int)
+
+    data class DatePickerRequest(val initialValue: Long? = null)
 
     private var renderHandler: ((String?, Any?, Boolean) -> Unit)? = null
     private var reloadHandler: (() -> Unit)? = null
@@ -271,6 +290,8 @@ class ActionDispatcher(
             )
             "\$util.share" -> share(options)
             "\$util.addressbook" -> addressBook()
+            "\$util.picker" -> picker(options)
+            "\$util.datepicker" -> utilDatePicker(options)
 
             "\$log", "\$log.info" -> logMessage("INFO", options)
             "\$log.debug" -> logMessage("DEBUG", options)
@@ -542,6 +563,56 @@ class ActionDispatcher(
         val contacts = addressBookProvider?.invoke() ?: throw ActionException("Address book unavailable")
         stateManager.set(mapOf("\$jason" to contacts))
     }
+
+    private suspend fun picker(options: JsonObject?) {
+        val items = pickerItems(options)
+        if (items.isEmpty()) throw ActionException("Missing picker items")
+        val selection = utilityPicker?.invoke(PickerRequest(stringOption(options, "title"), items))
+            ?: throw ActionException("Picker cancelled")
+        val item = items.firstOrNull { it.index == selection.index }
+            ?: items.getOrNull(selection.index)
+            ?: throw ActionException("Picker selection out of range")
+        val payload = mapOf(
+            "index" to item.index,
+            "text" to item.text,
+            "value" to (item.value ?: item.index)
+        )
+        stateManager.set(payload + mapOf("\$jason" to payload))
+        item.action?.let { executeAction(it) }
+        item.href?.let { dispatchHref(it) }
+    }
+
+    private suspend fun utilDatePicker(options: JsonObject?) {
+        val value = datePicker?.invoke(DatePickerRequest(datePickerInitialValue(options)))
+            ?: throw ActionException("Date picker cancelled")
+        val payload = mapOf("value" to value)
+        stateManager.set(payload + mapOf("\$jason" to payload))
+    }
+
+    private fun datePickerInitialValue(options: JsonObject?): Long? =
+        stringOption(options, "value")?.toLongOrNull()
+            ?: stringOption(options, "timestamp")?.toLongOrNull()
+
+    private fun pickerItems(options: JsonObject?): List<PickerItem> =
+        (options?.get("items") as? JsonArray)?.mapIndexedNotNull { index, element ->
+            when (element) {
+                is JsonPrimitive -> {
+                    val text = element.content
+                    PickerItem(index, text, JsonValueConverter.jsonElementToAny(element))
+                }
+                is JsonObject -> {
+                    val value = element["value"]?.let { JsonValueConverter.jsonElementToAny(it) }
+                    val text = stringOption(element, "text")
+                        ?: stringOption(element, "title")
+                        ?: value?.toString()
+                        ?: "Item"
+                    val action = (element["action"] as? JsonObject)?.let { decodeActionOrNull(it) }
+                    val href = (element["href"] as? JsonObject)?.let { hrefFromOptions(it) }
+                    PickerItem(index, text, value ?: index, action, href)
+                }
+                else -> null
+            }
+        } ?: emptyList()
 
     private suspend fun networkRequest(
         urlStr: String,

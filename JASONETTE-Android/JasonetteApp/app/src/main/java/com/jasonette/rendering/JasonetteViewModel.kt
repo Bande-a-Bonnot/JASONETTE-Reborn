@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.jasonette.core.*
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -18,6 +19,18 @@ sealed class UiState {
     data class Error(val message: String) : UiState()
 }
 
+sealed class NativeUiRequest {
+    data class Picker(
+        val request: ActionDispatcher.PickerRequest,
+        val deferred: CompletableDeferred<ActionDispatcher.PickerSelection?>
+    ) : NativeUiRequest()
+
+    data class DatePicker(
+        val request: ActionDispatcher.DatePickerRequest,
+        val deferred: CompletableDeferred<Long?>
+    ) : NativeUiRequest()
+}
+
 class JasonetteViewModel(
     application: Application,
     private val url: String? = null,
@@ -29,6 +42,9 @@ class JasonetteViewModel(
 
     private val _utilityMessages = MutableSharedFlow<ActionDispatcher.UtilityMessage>(extraBufferCapacity = 16)
     val utilityMessages: SharedFlow<ActionDispatcher.UtilityMessage> = _utilityMessages.asSharedFlow()
+
+    private val _nativeUiRequest = MutableStateFlow<NativeUiRequest?>(null)
+    val nativeUiRequest: StateFlow<NativeUiRequest?> = _nativeUiRequest
 
     private val loader = DocumentLoader()
     val stateManager = StateManager(application)
@@ -51,7 +67,9 @@ class JasonetteViewModel(
         audioSeeker = audioPlayer::seek,
         mediaPlayback = mediaPlayback::play,
         shareHandler = shareHandler::share,
-        addressBookProvider = addressBookProvider::contacts
+        addressBookProvider = addressBookProvider::contacts,
+        utilityPicker = ::requestPicker,
+        datePicker = ::requestDatePicker
     )
     private var navigationHandler: ((JasonHref) -> Unit)? = null
     private var backHandler: (() -> Unit)? = null
@@ -130,6 +148,46 @@ class JasonetteViewModel(
             if (action.type != "\$reload") {
                 renderCurrentDocument()
             }
+        }
+    }
+
+    private suspend fun requestPicker(request: ActionDispatcher.PickerRequest): ActionDispatcher.PickerSelection? {
+        val deferred = CompletableDeferred<ActionDispatcher.PickerSelection?>()
+        val nativeRequest = NativeUiRequest.Picker(request, deferred)
+        _nativeUiRequest.value = nativeRequest
+        return try {
+            deferred.await()
+        } finally {
+            if (_nativeUiRequest.value === nativeRequest) _nativeUiRequest.value = null
+        }
+    }
+
+    private suspend fun requestDatePicker(request: ActionDispatcher.DatePickerRequest): Long? {
+        val deferred = CompletableDeferred<Long?>()
+        val nativeRequest = NativeUiRequest.DatePicker(request, deferred)
+        _nativeUiRequest.value = nativeRequest
+        return try {
+            deferred.await()
+        } finally {
+            if (_nativeUiRequest.value === nativeRequest) _nativeUiRequest.value = null
+        }
+    }
+
+    fun selectPickerItem(index: Int) {
+        val request = _nativeUiRequest.value as? NativeUiRequest.Picker ?: return
+        if (!request.deferred.isCompleted) request.deferred.complete(ActionDispatcher.PickerSelection(index))
+    }
+
+    fun completeDatePicker(value: Long) {
+        val request = _nativeUiRequest.value as? NativeUiRequest.DatePicker ?: return
+        if (!request.deferred.isCompleted) request.deferred.complete(value)
+    }
+
+    fun cancelNativeUiRequest() {
+        when (val request = _nativeUiRequest.value) {
+            is NativeUiRequest.Picker -> if (!request.deferred.isCompleted) request.deferred.complete(null)
+            is NativeUiRequest.DatePicker -> if (!request.deferred.isCompleted) request.deferred.complete(null)
+            null -> {}
         }
     }
 

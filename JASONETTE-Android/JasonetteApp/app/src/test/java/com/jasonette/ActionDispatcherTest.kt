@@ -1499,6 +1499,219 @@ class ActionDispatcherTest {
     }
 
     @Test
+    fun testUtilPickerStoresSelectionPayloadAndRunsSuccessChain() = runTest {
+        val sm = StateManager(context = null)
+        val dispatcher = ActionDispatcher(
+            sm,
+            utilityPicker = { request ->
+                assertEquals("Choose", request.title)
+                assertEquals(listOf("First", "Second"), request.items.map { it.text })
+                assertEquals(listOf("A", "B"), request.items.map { it.value })
+                ActionDispatcher.PickerSelection(1)
+            }
+        )
+        val action = Json { ignoreUnknownKeys = true; isLenient = true }.decodeFromString<JasonAction>(
+            """
+            {
+              "type": "${'$'}util.picker",
+              "options": {
+                "title": "Choose",
+                "items": [
+                  { "text": "First", "value": "A" },
+                  { "text": "Second", "value": "B" }
+                ]
+              },
+              "success": {
+                "type": "${'$'}set",
+                "options": {
+                  "picked_text": "{{${'$'}jason.text}}",
+                  "picked_value": "{{${'$'}jason.value}}"
+                }
+              }
+            }
+            """.trimIndent()
+        )
+
+        dispatcher.execute(action)
+
+        assertEquals(mapOf("index" to 1, "text" to "Second", "value" to "B"), sm.local["${'$'}jason"])
+        assertEquals("Second", sm.local["picked_text"])
+        assertEquals("B", sm.local["picked_value"])
+    }
+
+    @Test
+    fun testUtilPickerAcceptsPrimitiveAndTitleOnlyItems() = runTest {
+        val sm = StateManager(context = null)
+        val dispatcher = ActionDispatcher(
+            sm,
+            utilityPicker = { request ->
+                assertEquals(listOf("Primitive", "Title only"), request.items.map { it.text })
+                assertEquals("Primitive", request.items[0].value)
+                assertEquals(1, request.items[1].value)
+                ActionDispatcher.PickerSelection(0)
+            }
+        )
+        val action = Json { ignoreUnknownKeys = true; isLenient = true }.decodeFromString<JasonAction>(
+            """
+            {
+              "type": "${'$'}util.picker",
+              "options": {
+                "items": [
+                  "Primitive",
+                  { "title": "Title only" }
+                ]
+              }
+            }
+            """.trimIndent()
+        )
+
+        dispatcher.execute(action)
+
+        assertEquals(mapOf("index" to 0, "text" to "Primitive", "value" to "Primitive"), sm.local["${'$'}jason"])
+    }
+
+    @Test
+    fun testUtilPickerSelectionUsesOriginalItemIndexAfterSkippedEntries() = runTest {
+        val sm = StateManager(context = null)
+        val dispatcher = ActionDispatcher(
+            sm,
+            utilityPicker = { request ->
+                assertEquals(listOf(1), request.items.map { it.index })
+                assertEquals(listOf("Only valid"), request.items.map { it.text })
+                ActionDispatcher.PickerSelection(1)
+            }
+        )
+        val action = Json { ignoreUnknownKeys = true; isLenient = true }.decodeFromString<JasonAction>(
+            """
+            {
+              "type": "${'$'}util.picker",
+              "options": {
+                "items": [
+                  [],
+                  { "text": "Only valid", "value": "kept" }
+                ]
+              }
+            }
+            """.trimIndent()
+        )
+
+        dispatcher.execute(action)
+
+        assertEquals(mapOf("index" to 1, "text" to "Only valid", "value" to "kept"), sm.local["${'$'}jason"])
+    }
+
+    @Test
+    fun testUtilPickerExecutesSelectedItemAction() = runTest {
+        val sm = StateManager(context = null)
+        val dispatcher = ActionDispatcher(sm, utilityPicker = { ActionDispatcher.PickerSelection(0) })
+        val action = Json { ignoreUnknownKeys = true; isLenient = true }.decodeFromString<JasonAction>(
+            """
+            {
+              "type": "${'$'}util.picker",
+              "options": {
+                "items": [
+                  {
+                    "text": "Set state",
+                    "action": {
+                      "type": "${'$'}set",
+                      "options": { "picked_action": "true" }
+                    }
+                  }
+                ]
+              }
+            }
+            """.trimIndent()
+        )
+
+        dispatcher.execute(action)
+
+        assertEquals("true", sm.local["picked_action"])
+    }
+
+    @Test
+    fun testUtilPickerDispatchesSelectedItemHref() = runTest {
+        val sm = StateManager(context = null)
+        val dispatcher = ActionDispatcher(sm, utilityPicker = { ActionDispatcher.PickerSelection(0) })
+        var navigated: JasonHref? = null
+        dispatcher.setNavigationHandler { navigated = it }
+        val action = Json { ignoreUnknownKeys = true; isLenient = true }.decodeFromString<JasonAction>(
+            """
+            {
+              "type": "${'$'}util.picker",
+              "options": {
+                "items": [
+                  {
+                    "text": "Open",
+                    "href": { "url": "https://example.com/detail.json" }
+                  }
+                ]
+              }
+            }
+            """.trimIndent()
+        )
+
+        dispatcher.execute(action)
+
+        assertEquals("https://example.com/detail.json", navigated?.url)
+    }
+
+    @Test
+    fun testUtilPickerCancellationRoutesErrorBranch() = runTest {
+        val sm = StateManager(context = null)
+        val dispatcher = ActionDispatcher(sm, utilityPicker = { null })
+
+        dispatcher.execute(
+            JasonAction(
+                type = "${'$'}util.picker",
+                options = JsonObject(
+                    mapOf("items" to JsonArray(listOf(JsonObject(mapOf("text" to JsonPrimitive("Cancel"))))))
+                ),
+                error = makeAction("${'$'}set", mapOf("picker_cancelled" to "true"))
+            )
+        )
+
+        assertEquals("true", sm.local["picker_cancelled"])
+    }
+
+    @Test
+    fun testUtilDatePickerStoresTimestampPayloadAndRunsSuccessChain() = runTest {
+        val sm = StateManager(context = null)
+        val dispatcher = ActionDispatcher(
+            sm,
+            datePicker = { request ->
+                assertEquals(1600000000L, request.initialValue)
+                1700000000L
+            }
+        )
+
+        dispatcher.execute(
+            JasonAction(
+                type = "${'$'}util.datepicker",
+                options = JsonObject(mapOf("value" to JsonPrimitive("1600000000"))),
+                success = makeAction("${'$'}set", mapOf("selected_time" to "{{${'$'}jason.value}}"))
+            )
+        )
+
+        assertEquals(mapOf("value" to 1700000000L), sm.local["${'$'}jason"])
+        assertEquals("1700000000", sm.local["selected_time"])
+    }
+
+    @Test
+    fun testUtilDatePickerUnavailableRoutesErrorBranch() = runTest {
+        val sm = StateManager(context = null)
+        val dispatcher = ActionDispatcher(sm)
+
+        dispatcher.execute(
+            JasonAction(
+                type = "${'$'}util.datepicker",
+                error = makeAction("${'$'}set", mapOf("datepicker_failed" to "true"))
+            )
+        )
+
+        assertEquals("true", sm.local["datepicker_failed"])
+    }
+
+    @Test
     fun testUtilAddressBookStoresContactsInJasonAndRunsSuccessChain() = runTest {
         val sm = StateManager(context = null)
         val contacts = listOf(
