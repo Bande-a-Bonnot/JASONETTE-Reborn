@@ -59,6 +59,9 @@ dependencies {
     // Networking
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
+    // Native scanning
+    implementation("com.google.android.gms:play-services-code-scanner:16.1.0")
+
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
 

@@ -37,6 +37,7 @@ class ActionDispatcher(
     private val addressBookProvider: (suspend () -> List<Map<String, String>>)? = null,
     private val utilityPicker: (suspend (PickerRequest) -> PickerSelection?)? = null,
     private val datePicker: (suspend (DatePickerRequest) -> Long?)? = null,
+    private val visionScanner: (suspend (VisionScanRequest) -> Map<String, Any>?)? = null,
     private val uploadClient: (suspend (String, ByteArray, String) -> String)? = null,
     private val networkClient: (suspend (String, kotlinx.serialization.json.JsonObject?) -> String)? = null
 ) {
@@ -72,6 +73,8 @@ class ActionDispatcher(
     data class PickerSelection(val index: Int)
 
     data class DatePickerRequest(val initialValue: Long? = null)
+
+    data class VisionScanRequest(val type: String? = null)
 
     private companion object {
         val secureRandom = SecureRandom()
@@ -266,6 +269,7 @@ class ActionDispatcher(
             "\$audio.position" -> audioPosition()
             "\$audio.seek" -> audioSeek(options)
             "\$media.play" -> mediaPlay(options)
+            "\$vision.scan" -> visionScan(options)
 
             "\$network.request" -> {
                 val urlStr = (options?.get("url") as? JsonPrimitive)?.content
@@ -550,6 +554,13 @@ class ActionDispatcher(
     private suspend fun mediaPlay(options: JsonObject?) {
         val url = stringOption(options, "url") ?: throw ActionException("Missing media URL")
         mediaPlayback?.invoke(resolveAllowedUrl(url)) ?: throw ActionException("Media playback unavailable")
+    }
+
+    private suspend fun visionScan(options: JsonObject?) {
+        val payload = visionScanner?.invoke(VisionScanRequest(stringOption(options, "type")))
+            ?: throw ActionException("Vision scanner unavailable")
+        stateManager.set(payload + mapOf("\$jason" to payload))
+        actionResolver?.invoke("\$vision.onscan")?.let { executeAction(it) }
     }
 
     private suspend fun share(options: JsonObject?) {

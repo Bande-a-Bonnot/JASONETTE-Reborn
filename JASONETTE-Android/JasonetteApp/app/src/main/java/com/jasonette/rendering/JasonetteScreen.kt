@@ -190,6 +190,18 @@ fun JasonetteScreen(
     }
 
     DisposableEffect(nativeUiRequest, context) {
+        val request = nativeUiRequest as? NativeUiRequest.VisionScan
+        if (request == null) return@DisposableEffect onDispose { }
+        startAndroidVisionScan(
+            context = context,
+            request = request.request,
+            onResult = { payload -> viewModel.completeVisionScan(request, payload) },
+            onCancel = { viewModel.cancelNativeUiRequest() }
+        )
+        onDispose { viewModel.cancelNativeUiRequest(request) }
+    }
+
+    DisposableEffect(nativeUiRequest, context) {
         val request = nativeUiRequest as? NativeUiRequest.DatePicker
         if (request == null) return@DisposableEffect onDispose { }
         val initial = Calendar.getInstance().apply {

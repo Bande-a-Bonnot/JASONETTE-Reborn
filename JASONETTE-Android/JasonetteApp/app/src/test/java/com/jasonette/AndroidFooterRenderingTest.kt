@@ -14,6 +14,7 @@ import com.jasonette.core.JasonHead
 import com.jasonette.core.JasonHeader
 import com.jasonette.core.JasonHref
 import com.jasonette.rendering.bodyBackgroundCss
+import com.jasonette.rendering.bodyHasCameraBackground
 import com.jasonette.rendering.footerTabComponent
 import com.jasonette.rendering.topBarTitle
 import kotlinx.serialization.json.JsonObject
@@ -146,6 +147,17 @@ class AndroidFooterRenderingTest {
 
         assertNull(bodyBackgroundCss(document.jason.body))
         assertEquals("Loaded", document.jason.body?.sections?.first()?.items?.first()?.text)
+    }
+
+    @Test
+    fun testBodyCameraBackgroundHelperRecognizesBackgroundAndStyleShapes() {
+        val objectCamera = JsonObject(mapOf("type" to JsonPrimitive("camera")))
+
+        assertTrue(bodyHasCameraBackground(JasonBody(background = JsonPrimitive("camera"))))
+        assertTrue(bodyHasCameraBackground(JasonBody(background = objectCamera)))
+        assertTrue(bodyHasCameraBackground(JasonBody(style = JsonObject(mapOf("background" to JsonPrimitive("camera"))))))
+        assertTrue(bodyHasCameraBackground(JasonBody(style = JsonObject(mapOf("background" to objectCamera)))))
+        assertFalse(bodyHasCameraBackground(JasonBody(background = JsonPrimitive("#112233"))))
     }
 
     @Test

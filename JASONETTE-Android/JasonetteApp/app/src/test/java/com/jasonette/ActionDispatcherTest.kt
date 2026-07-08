@@ -2087,6 +2087,110 @@ class ActionDispatcherTest {
     }
 
     @Test
+    fun testVisionScanStoresPayloadAndRunsSuccessChain() = runTest {
+        val sm = StateManager(context = null)
+        var requestedType: String? = null
+        val dispatcher = ActionDispatcher(
+            sm,
+            visionScanner = { request ->
+                requestedType = request.type
+                mapOf("content" to "hello-qr", "type" to 256, "format" to "qr")
+            }
+        )
+        sm.set(mapOf("desired" to "qrcode"))
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$vision.scan",
+                options = JsonObject(mapOf("type" to JsonPrimitive("{{\$get.desired}}"))),
+                success = makeAction("\$set", mapOf("scanned" to "{{\$jason.content}}"))
+            )
+        )
+
+        assertEquals("qrcode", requestedType)
+        assertEquals("hello-qr", sm.local["content"])
+        assertEquals(256, sm.local["type"])
+        assertEquals("hello-qr", sm.local["scanned"])
+        assertEquals(mapOf("content" to "hello-qr", "type" to 256, "format" to "qr"), sm.local["\$jason"])
+    }
+
+    @Test
+    fun testVisionScanDispatchesLegacyOnscanAction() = runTest {
+        val sm = StateManager(context = null)
+        val dispatcher = ActionDispatcher(
+            sm,
+            visionScanner = { mapOf("content" to "https://example.com", "type" to 256) }
+        )
+        dispatcher.setActionResolver { name ->
+            if (name == "\$vision.onscan") {
+                JasonAction(
+                    type = "\$set",
+                    options = JsonObject(mapOf("legacy_content" to JsonPrimitive("{{\$jason.content}}")))
+                )
+            } else null
+        }
+
+        dispatcher.execute(JasonAction(type = "\$vision.scan"))
+
+        assertEquals("https://example.com", sm.local["legacy_content"])
+        assertEquals(mapOf("content" to "https://example.com", "type" to 256), sm.local["\$jason"])
+    }
+
+    @Test
+    fun testVisionScanRunsLegacyOnscanAndOriginalSuccessChain() = runTest {
+        val sm = StateManager(context = null)
+        val dispatcher = ActionDispatcher(
+            sm,
+            visionScanner = { mapOf("content" to "combined", "type" to 256) }
+        )
+        dispatcher.setActionResolver { name ->
+            if (name == "\$vision.onscan") {
+                makeAction("\$set", mapOf("legacy" to "{{\$jason.content}}"))
+            } else null
+        }
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$vision.scan",
+                success = makeAction("\$set", mapOf("success" to "{{\$jason.content}}"))
+            )
+        )
+
+        assertEquals("combined", sm.local["legacy"])
+        assertEquals("combined", sm.local["success"])
+    }
+
+    @Test
+    fun testVisionScanUnavailableRoutesErrorBranch() = runTest {
+        val sm = StateManager(context = null)
+        val dispatcher = ActionDispatcher(sm)
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$vision.scan",
+                error = makeAction("\$set", mapOf("scan_error" to "true"))
+            )
+        )
+
+        assertEquals("true", sm.local["scan_error"])
+    }
+
+    @Test
+    fun testVisionScanCancellationRoutesErrorBranch() = runTest {
+        val sm = StateManager(context = null)
+        val dispatcher = ActionDispatcher(sm, visionScanner = { null })
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$vision.scan",
+                error = makeAction("\$set", mapOf("scan_cancelled" to "true"))
+            )
+        )
+
+        assertEquals("true", sm.local["scan_cancelled"])
+    }
+
+    @Test
     fun testLogActionsDoNotCrashAndRunSuccessChain() = runTest {
         val (sm, dispatcher) = createDispatcher()
 

@@ -12,6 +12,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 
 sealed class UiState {
     data object Loading : UiState()
@@ -28,6 +30,11 @@ sealed class NativeUiRequest {
     data class DatePicker(
         val request: ActionDispatcher.DatePickerRequest,
         val deferred: CompletableDeferred<Long?>
+    ) : NativeUiRequest()
+
+    data class VisionScan(
+        val request: ActionDispatcher.VisionScanRequest,
+        val deferred: CompletableDeferred<Map<String, Any>?>
     ) : NativeUiRequest()
 }
 
@@ -69,7 +76,8 @@ class JasonetteViewModel(
         shareHandler = shareHandler::share,
         addressBookProvider = addressBookProvider::contacts,
         utilityPicker = ::requestPicker,
-        datePicker = ::requestDatePicker
+        datePicker = ::requestDatePicker,
+        visionScanner = ::requestVisionScan
     )
     private var navigationHandler: ((JasonHref) -> Unit)? = null
     private var backHandler: (() -> Unit)? = null
@@ -125,6 +133,7 @@ class JasonetteViewModel(
                     actionDispatcher.execute(loadAction)
                     render(doc)
                 }
+                fireVisionReadyIfNeeded(doc)
             } catch (e: Exception) {
                 _uiState.value = UiState.Error(e.message ?: "Unknown error")
             }
@@ -173,6 +182,17 @@ class JasonetteViewModel(
         }
     }
 
+    private suspend fun requestVisionScan(request: ActionDispatcher.VisionScanRequest): Map<String, Any>? {
+        val deferred = CompletableDeferred<Map<String, Any>?>()
+        val nativeRequest = NativeUiRequest.VisionScan(request, deferred)
+        _nativeUiRequest.value = nativeRequest
+        return try {
+            deferred.await()
+        } finally {
+            if (_nativeUiRequest.value === nativeRequest) _nativeUiRequest.value = null
+        }
+    }
+
     fun selectPickerItem(index: Int) {
         val request = _nativeUiRequest.value as? NativeUiRequest.Picker ?: return
         if (!request.deferred.isCompleted) request.deferred.complete(ActionDispatcher.PickerSelection(index))
@@ -183,10 +203,25 @@ class JasonetteViewModel(
         if (!request.deferred.isCompleted) request.deferred.complete(value)
     }
 
+    fun completeVisionScan(payload: Map<String, Any>) {
+        completeVisionScan(_nativeUiRequest.value as? NativeUiRequest.VisionScan, payload)
+    }
+
+    fun completeVisionScan(request: NativeUiRequest.VisionScan?, payload: Map<String, Any>) {
+        if (_nativeUiRequest.value !== request) return
+        if (request != null && !request.deferred.isCompleted) request.deferred.complete(payload)
+    }
+
     fun cancelNativeUiRequest() {
-        when (val request = _nativeUiRequest.value) {
+        cancelNativeUiRequest(_nativeUiRequest.value)
+    }
+
+    fun cancelNativeUiRequest(request: NativeUiRequest?) {
+        if (_nativeUiRequest.value !== request) return
+        when (request) {
             is NativeUiRequest.Picker -> if (!request.deferred.isCompleted) request.deferred.complete(null)
             is NativeUiRequest.DatePicker -> if (!request.deferred.isCompleted) request.deferred.complete(null)
+            is NativeUiRequest.VisionScan -> if (!request.deferred.isCompleted) request.deferred.complete(null)
             null -> {}
         }
     }
@@ -215,6 +250,14 @@ class JasonetteViewModel(
         document?.let { render(it) }
     }
 
+    private suspend fun fireVisionReadyIfNeeded(doc: JasonDocument) {
+        val root = (_uiState.value as? UiState.Loaded)?.root ?: return
+        if (!bodyHasCameraBackground(root.body)) return
+        val readyAction = doc.jason.head?.actions?.get("\$vision.ready") ?: return
+        actionDispatcher.execute(readyAction)
+        render(doc)
+    }
+
     override fun onCleared() {
         timerScheduler.stop()
         audioPlayer.release()
@@ -223,3 +266,9 @@ class JasonetteViewModel(
 
     // Helpers
 }
+
+fun bodyHasCameraBackground(body: JasonBody?): Boolean =
+    (body?.background as? JsonPrimitive)?.content == "camera" ||
+        ((body?.background as? JsonObject)?.get("type") as? JsonPrimitive)?.content == "camera" ||
+        (body?.style?.get("background") as? JsonPrimitive)?.content == "camera" ||
+        ((body?.style?.get("background") as? JsonObject)?.get("type") as? JsonPrimitive)?.content == "camera"
