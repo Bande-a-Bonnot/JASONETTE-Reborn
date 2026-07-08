@@ -42,6 +42,8 @@ class JasonetteViewModel(
         timerScheduler = timerScheduler,
         geolocationProvider = geolocationProvider::currentCoordinate,
         audioPlayer = audioPlayer::play,
+        audioPauser = audioPlayer::pause,
+        audioStopper = audioPlayer::stop,
         mediaPlayback = mediaPlayback::play
     )
     private var navigationHandler: ((JasonHref) -> Unit)? = null

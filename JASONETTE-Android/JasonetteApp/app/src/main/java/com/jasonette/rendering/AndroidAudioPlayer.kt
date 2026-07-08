@@ -69,8 +69,20 @@ class AndroidAudioPlayer {
         }
     }
 
-    fun release() {
+    fun pause() {
+        try {
+            player?.pause()
+        } catch (_: IllegalStateException) {
+            // Ignore pause requests before playback reaches a pausable state.
+        }
+    }
+
+    fun stop() {
         player?.release()
         player = null
+    }
+
+    fun release() {
+        stop()
     }
 }

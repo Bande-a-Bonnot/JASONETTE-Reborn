@@ -21,6 +21,8 @@ class ActionDispatcher(
     private val timerScheduler: JasonTimerScheduler = CoroutineJasonTimerScheduler(),
     private val geolocationProvider: (suspend () -> String)? = null,
     private val audioPlayer: (suspend (String) -> Unit)? = null,
+    private val audioPauser: (() -> Unit)? = null,
+    private val audioStopper: (() -> Unit)? = null,
     private val mediaPlayback: (suspend (String) -> Unit)? = null,
     private val networkClient: (suspend (String, kotlinx.serialization.json.JsonObject?) -> String)? = null
 ) {
@@ -214,6 +216,8 @@ class ActionDispatcher(
             "\$convert.rss" -> convertRssAction(options)
             "\$geo.get" -> geoGet()
             "\$audio.play" -> audioPlay(options)
+            "\$audio.pause" -> audioPause()
+            "\$audio.stop" -> audioStop()
             "\$media.play" -> mediaPlay(options)
 
             "\$network.request" -> {
@@ -454,6 +458,14 @@ class ActionDispatcher(
     private suspend fun audioPlay(options: JsonObject?) {
         val url = stringOption(options, "url") ?: throw ActionException("Missing audio URL")
         audioPlayer?.invoke(resolveAllowedUrl(url)) ?: throw ActionException("Audio playback unavailable")
+    }
+
+    private fun audioPause() {
+        audioPauser?.invoke() ?: throw ActionException("Audio pause unavailable")
+    }
+
+    private fun audioStop() {
+        audioStopper?.invoke() ?: throw ActionException("Audio stop unavailable")
     }
 
     private suspend fun mediaPlay(options: JsonObject?) {

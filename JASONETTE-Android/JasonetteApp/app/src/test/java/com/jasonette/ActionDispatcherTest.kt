@@ -1038,6 +1038,64 @@ class ActionDispatcherTest {
     }
 
     @Test
+    fun testAudioPauseAndStopInvokeHandlersAndRunSuccessChains() = runTest {
+        val sm = StateManager(context = null)
+        val calls = mutableListOf<String>()
+        val dispatcher = ActionDispatcher(
+            sm,
+            audioPauser = { calls.add("pause") },
+            audioStopper = { calls.add("stop") }
+        )
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$audio.pause",
+                success = makeAction("\$set", mapOf("paused" to "true"))
+            )
+        )
+        dispatcher.execute(
+            JasonAction(
+                type = "\$audio.stop",
+                success = makeAction("\$set", mapOf("stopped" to "true"))
+            )
+        )
+
+        assertEquals(listOf("pause", "stop"), calls)
+        assertEquals("true", sm.local["paused"])
+        assertEquals("true", sm.local["stopped"])
+    }
+
+    @Test
+    fun testAudioPauseUnavailableRunsErrorBranch() = runTest {
+        val sm = StateManager(context = null)
+        val dispatcher = ActionDispatcher(sm)
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$audio.pause",
+                error = makeAction("\$set", mapOf("pause_failed" to "true"))
+            )
+        )
+
+        assertEquals("true", sm.local["pause_failed"])
+    }
+
+    @Test
+    fun testAudioStopUnavailableRunsErrorBranch() = runTest {
+        val sm = StateManager(context = null)
+        val dispatcher = ActionDispatcher(sm)
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$audio.stop",
+                error = makeAction("\$set", mapOf("stop_failed" to "true"))
+            )
+        )
+
+        assertEquals("true", sm.local["stop_failed"])
+    }
+
+    @Test
     fun testMediaPlayResolvesUrlAndRunsSuccessChain() = runTest {
         val sm = StateManager(context = null)
         val played = mutableListOf<String>()
