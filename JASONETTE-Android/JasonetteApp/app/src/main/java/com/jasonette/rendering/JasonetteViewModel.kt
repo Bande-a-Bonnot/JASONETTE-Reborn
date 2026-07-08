@@ -36,6 +36,7 @@ class JasonetteViewModel(
     private val geolocationProvider = AndroidGeolocationProvider(application)
     private val audioPlayer = AndroidAudioPlayer()
     private val mediaPlayback = AndroidMediaPlayback(application)
+    private val shareHandler = AndroidShareHandler(application)
     val actionDispatcher = ActionDispatcher(
         stateManager,
         baseUrl = url,
@@ -47,7 +48,8 @@ class JasonetteViewModel(
         audioDurationProvider = audioPlayer::duration,
         audioPositionProvider = audioPlayer::position,
         audioSeeker = audioPlayer::seek,
-        mediaPlayback = mediaPlayback::play
+        mediaPlayback = mediaPlayback::play,
+        shareHandler = shareHandler::share
     )
     private var navigationHandler: ((JasonHref) -> Unit)? = null
     private var backHandler: (() -> Unit)? = null

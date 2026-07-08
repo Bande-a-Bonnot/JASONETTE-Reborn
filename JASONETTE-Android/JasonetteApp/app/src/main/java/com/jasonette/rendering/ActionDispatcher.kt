@@ -27,6 +27,7 @@ class ActionDispatcher(
     private val audioDurationProvider: (suspend () -> String?)? = null,
     private val audioPositionProvider: (suspend () -> String?)? = null,
     private val audioSeeker: (suspend (Double) -> Unit)? = null,
+    private val shareHandler: (suspend (List<ShareItem>) -> Unit)? = null,
     private val networkClient: (suspend (String, kotlinx.serialization.json.JsonObject?) -> String)? = null
 ) {
     data class UtilityMessage(
@@ -34,6 +35,15 @@ class ActionDispatcher(
         val title: String? = null,
         val description: String? = null,
         val text: String? = null
+    )
+
+    data class ShareItem(
+        val type: String,
+        val text: String? = null,
+        val url: String? = null,
+        val fileUrl: String? = null,
+        val data: String? = null,
+        val contentType: String? = null
     )
 
     private var renderHandler: ((String?, Any?, Boolean) -> Unit)? = null
@@ -258,6 +268,7 @@ class ActionDispatcher(
                     text = stringOption(options, "text")
                 )
             )
+            "\$util.share" -> share(options)
 
             "\$log", "\$log.info" -> logMessage("INFO", options)
             "\$log.debug" -> logMessage("DEBUG", options)
@@ -504,6 +515,25 @@ class ActionDispatcher(
     private suspend fun mediaPlay(options: JsonObject?) {
         val url = stringOption(options, "url") ?: throw ActionException("Missing media URL")
         mediaPlayback?.invoke(resolveAllowedUrl(url)) ?: throw ActionException("Media playback unavailable")
+    }
+
+    private suspend fun share(options: JsonObject?) {
+        val items = (options?.get("items") as? JsonArray)?.mapNotNull { item ->
+            val obj = item as? JsonObject ?: return@mapNotNull null
+            val type = stringOption(obj, "type") ?: return@mapNotNull null
+            ShareItem(
+                type = type,
+                text = stringOption(obj, "text"),
+                url = stringOption(obj, "url"),
+                fileUrl = stringOption(obj, "file_url"),
+                data = stringOption(obj, "data"),
+                contentType = stringOption(obj, "content_type")
+            )
+        }?.filter { item ->
+            item.text != null || item.url != null || item.fileUrl != null || item.data != null
+        } ?: emptyList()
+        if (items.isEmpty()) throw ActionException("Missing share items")
+        shareHandler?.invoke(items) ?: throw ActionException("Share unavailable")
     }
 
     private suspend fun networkRequest(

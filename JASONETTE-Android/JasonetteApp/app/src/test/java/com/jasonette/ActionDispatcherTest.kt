@@ -1499,6 +1499,166 @@ class ActionDispatcherTest {
     }
 
     @Test
+    fun testUtilShareTemplatesItemsInvokesHandlerAndRunsSuccessChain() = runTest {
+        val sm = StateManager(context = null)
+        sm.set(mapOf("message" to "Hello", "link" to "https://example.com/story"))
+        val shared = mutableListOf<List<ActionDispatcher.ShareItem>>()
+        val dispatcher = ActionDispatcher(sm, shareHandler = { shared.add(it) })
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$util.share",
+                options = JsonObject(
+                    mapOf(
+                        "items" to JsonArray(
+                            listOf(
+                                JsonObject(
+                                    mapOf(
+                                        "type" to JsonPrimitive("text"),
+                                        "text" to JsonPrimitive("{{\$get.message}}")
+                                    )
+                                ),
+                                JsonObject(
+                                    mapOf(
+                                        "type" to JsonPrimitive("url"),
+                                        "url" to JsonPrimitive("{{\$get.link}}")
+                                    )
+                                )
+                            )
+                        )
+                    )
+                ),
+                success = makeAction("\$set", mapOf("shared" to "true"))
+            )
+        )
+
+        assertEquals("true", sm.local["shared"])
+        assertEquals(
+            listOf(
+                ActionDispatcher.ShareItem(type = "text", text = "Hello"),
+                ActionDispatcher.ShareItem(type = "url", url = "https://example.com/story")
+            ),
+            shared.single()
+        )
+    }
+
+    @Test
+    fun testUtilShareImageDataItemReachesHandler() = runTest {
+        val sm = StateManager(context = null)
+        val shared = mutableListOf<List<ActionDispatcher.ShareItem>>()
+        val dispatcher = ActionDispatcher(sm, shareHandler = { shared.add(it) })
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$util.share",
+                options = JsonObject(
+                    mapOf(
+                        "items" to JsonArray(
+                            listOf(
+                                JsonObject(
+                                    mapOf(
+                                        "type" to JsonPrimitive("image"),
+                                        "data" to JsonPrimitive("aGVsbG8="),
+                                        "content_type" to JsonPrimitive("image/png")
+                                    )
+                                )
+                            )
+                        )
+                    )
+                ),
+                success = makeAction("\$set", mapOf("image_shared" to "true"))
+            )
+        )
+
+        assertEquals(
+            listOf(ActionDispatcher.ShareItem(type = "image", data = "aGVsbG8=", contentType = "image/png")),
+            shared.single()
+        )
+        assertEquals("true", sm.local["image_shared"])
+    }
+
+    @Test
+    fun testUtilShareFileUrlItemAndProviderFailureRoutesErrorBranch() = runTest {
+        val sm = StateManager(context = null)
+        val shared = mutableListOf<List<ActionDispatcher.ShareItem>>()
+        val failingDispatcher = ActionDispatcher(
+            sm,
+            shareHandler = { items ->
+                shared.add(items)
+                throw ActionDispatcher.ActionException("Share failed")
+            }
+        )
+
+        failingDispatcher.execute(
+            JasonAction(
+                type = "\$util.share",
+                options = JsonObject(
+                    mapOf(
+                        "items" to JsonArray(
+                            listOf(
+                                JsonObject(
+                                    mapOf(
+                                        "type" to JsonPrimitive("audio"),
+                                        "file_url" to JsonPrimitive("file:///tmp/recorded.m4a")
+                                    )
+                                )
+                            )
+                        )
+                    )
+                ),
+                error = makeAction("\$set", mapOf("share_failed" to "true"))
+            )
+        )
+
+        assertEquals(listOf(ActionDispatcher.ShareItem(type = "audio", fileUrl = "file:///tmp/recorded.m4a")), shared.single())
+        assertEquals("true", sm.local["share_failed"])
+    }
+
+    @Test
+    fun testUtilShareMissingItemsRunsErrorBranch() = runTest {
+        val sm = StateManager(context = null)
+        val dispatcher = ActionDispatcher(sm, shareHandler = {})
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$util.share",
+                error = makeAction("\$set", mapOf("missing_share" to "true"))
+            )
+        )
+
+        assertEquals("true", sm.local["missing_share"])
+    }
+
+    @Test
+    fun testUtilShareUnavailableRunsErrorBranch() = runTest {
+        val sm = StateManager(context = null)
+        val dispatcher = ActionDispatcher(sm)
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$util.share",
+                options = JsonObject(
+                    mapOf(
+                        "items" to JsonArray(
+                            listOf(
+                                JsonObject(
+                                    mapOf(
+                                        "type" to JsonPrimitive("text"),
+                                        "text" to JsonPrimitive("Hello")
+                                    )
+                                )
+                            )
+                        )
+                    )
+                ),
+                error = makeAction("\$set", mapOf("share_unavailable" to "true"))
+            )
+        )
+
+        assertEquals("true", sm.local["share_unavailable"])
+    }
+
+    @Test
     fun testLogActionsDoNotCrashAndRunSuccessChain() = runTest {
         val (sm, dispatcher) = createDispatcher()
 
