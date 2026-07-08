@@ -44,6 +44,9 @@ class JasonetteViewModel(
         audioPlayer = audioPlayer::play,
         audioPauser = audioPlayer::pause,
         audioStopper = audioPlayer::stop,
+        audioDurationProvider = audioPlayer::duration,
+        audioPositionProvider = audioPlayer::position,
+        audioSeeker = audioPlayer::seek,
         mediaPlayback = mediaPlayback::play
     )
     private var navigationHandler: ((JasonHref) -> Unit)? = null

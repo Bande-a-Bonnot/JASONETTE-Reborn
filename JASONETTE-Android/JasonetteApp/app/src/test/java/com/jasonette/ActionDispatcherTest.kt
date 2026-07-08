@@ -1096,6 +1096,162 @@ class ActionDispatcherTest {
     }
 
     @Test
+    fun testAudioDurationAndPositionStoreValuePayloadsAndRunSuccessChains() = runTest {
+        val sm = StateManager(context = null)
+        val dispatcher = ActionDispatcher(
+            sm,
+            audioDurationProvider = { "42" },
+            audioPositionProvider = { "0.25" }
+        )
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$audio.duration",
+                success = makeAction("\$set", mapOf("duration_read" to "true"))
+            )
+        )
+
+        assertEquals("42", sm.local["value"])
+        assertEquals(mapOf("value" to "42"), sm.local["\$jason"])
+        assertEquals("true", sm.local["duration_read"])
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$audio.position",
+                success = makeAction("\$set", mapOf("position_read" to "true"))
+            )
+        )
+
+        assertEquals("0.25", sm.local["value"])
+        assertEquals(mapOf("value" to "0.25"), sm.local["\$jason"])
+        assertEquals("true", sm.local["position_read"])
+    }
+
+    @Test
+    fun testAudioDurationAndPositionUnavailableRunErrorBranches() = runTest {
+        val sm = StateManager(context = null)
+        val dispatcher = ActionDispatcher(
+            sm,
+            audioDurationProvider = { null },
+            audioPositionProvider = { null }
+        )
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$audio.duration",
+                error = makeAction("\$set", mapOf("duration_failed" to "true"))
+            )
+        )
+        dispatcher.execute(
+            JasonAction(
+                type = "\$audio.position",
+                error = makeAction("\$set", mapOf("position_failed" to "true"))
+            )
+        )
+
+        assertEquals("player doesn't exist", sm.local["message"])
+        assertEquals(mapOf("message" to "player doesn't exist"), sm.local["\$jason"])
+        assertEquals("true", sm.local["duration_failed"])
+        assertEquals("true", sm.local["position_failed"])
+    }
+
+    @Test
+    fun testAudioDurationAndPositionDefaultUnavailablePayloads() = runTest {
+        val sm = StateManager(context = null)
+        val dispatcher = ActionDispatcher(sm)
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$audio.duration",
+                error = makeAction("\$set", mapOf("default_duration_failed" to "true"))
+            )
+        )
+        assertEquals("player doesn't exist", sm.local["message"])
+        assertEquals(mapOf("message" to "player doesn't exist"), sm.local["\$jason"])
+        assertEquals("true", sm.local["default_duration_failed"])
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$audio.position",
+                error = makeAction("\$set", mapOf("default_position_failed" to "true"))
+            )
+        )
+        assertEquals("player doesn't exist", sm.local["message"])
+        assertEquals(mapOf("message" to "player doesn't exist"), sm.local["\$jason"])
+        assertEquals("true", sm.local["default_position_failed"])
+    }
+
+    @Test
+    fun testAudioSeekParsesRatioPositionAndRunsSuccessChain() = runTest {
+        val sm = StateManager(context = null)
+        val sought = mutableListOf<Double>()
+        val dispatcher = ActionDispatcher(sm, audioSeeker = { sought.add(it) })
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$audio.seek",
+                options = JsonObject(mapOf("position" to JsonPrimitive("0.25"))),
+                success = makeAction("\$set", mapOf("seeked" to "true"))
+            )
+        )
+
+        assertEquals(listOf(0.25), sought)
+        assertEquals("true", sm.local["seeked"])
+    }
+
+    @Test
+    fun testAudioSeekMissingInvalidUnavailableOrThrowingPositionIsNoOpSuccess() = runTest {
+        val sm = StateManager(context = null)
+        val sought = mutableListOf<Double>()
+        val dispatcher = ActionDispatcher(sm, audioSeeker = { sought.add(it) })
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$audio.seek",
+                success = makeAction("\$set", mapOf("missing_seek_success" to "true")),
+                error = makeAction("\$set", mapOf("missing_seek_error" to "true"))
+            )
+        )
+        dispatcher.execute(
+            JasonAction(
+                type = "\$audio.seek",
+                options = JsonObject(mapOf("position" to JsonPrimitive("not-a-number"))),
+                success = makeAction("\$set", mapOf("invalid_seek_success" to "true")),
+                error = makeAction("\$set", mapOf("invalid_seek_error" to "true"))
+            )
+        )
+        ActionDispatcher(sm).execute(
+            JasonAction(
+                type = "\$audio.seek",
+                options = JsonObject(mapOf("position" to JsonPrimitive("0.5"))),
+                success = makeAction("\$set", mapOf("unavailable_seek_success" to "true")),
+                error = makeAction("\$set", mapOf("unavailable_seek_error" to "true"))
+            )
+        )
+        ActionDispatcher(
+            sm,
+            audioSeeker = { throw ActionDispatcher.ActionException("Seek failed") }
+        ).execute(
+            JasonAction(
+                type = "\$audio.seek",
+                options = JsonObject(mapOf("position" to JsonPrimitive("0.75"))),
+                success = makeAction("\$set", mapOf("throwing_seek_success" to "true")),
+                error = makeAction("\$set", mapOf("throwing_seek_error" to "true"))
+            )
+        )
+
+        assertTrue(sought.isEmpty())
+        assertEquals("true", sm.local["missing_seek_success"])
+        assertEquals("true", sm.local["invalid_seek_success"])
+        assertEquals("true", sm.local["unavailable_seek_success"])
+        assertEquals("true", sm.local["throwing_seek_success"])
+        assertNull(sm.local["missing_seek_error"])
+        assertNull(sm.local["invalid_seek_error"])
+        assertNull(sm.local["unavailable_seek_error"])
+        assertNull(sm.local["throwing_seek_error"])
+    }
+
+    @Test
     fun testMediaPlayResolvesUrlAndRunsSuccessChain() = runTest {
         val sm = StateManager(context = null)
         val played = mutableListOf<String>()

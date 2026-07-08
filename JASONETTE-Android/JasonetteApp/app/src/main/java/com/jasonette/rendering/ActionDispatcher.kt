@@ -24,6 +24,9 @@ class ActionDispatcher(
     private val audioPauser: (suspend () -> Unit)? = null,
     private val audioStopper: (suspend () -> Unit)? = null,
     private val mediaPlayback: (suspend (String) -> Unit)? = null,
+    private val audioDurationProvider: (suspend () -> String?)? = null,
+    private val audioPositionProvider: (suspend () -> String?)? = null,
+    private val audioSeeker: (suspend (Double) -> Unit)? = null,
     private val networkClient: (suspend (String, kotlinx.serialization.json.JsonObject?) -> String)? = null
 ) {
     data class UtilityMessage(
@@ -218,6 +221,9 @@ class ActionDispatcher(
             "\$audio.play" -> audioPlay(options)
             "\$audio.pause" -> audioPause()
             "\$audio.stop" -> audioStop()
+            "\$audio.duration" -> audioDuration()
+            "\$audio.position" -> audioPosition()
+            "\$audio.seek" -> audioSeek(options)
             "\$media.play" -> mediaPlay(options)
 
             "\$network.request" -> {
@@ -466,6 +472,33 @@ class ActionDispatcher(
 
     private suspend fun audioStop() {
         audioStopper?.invoke() ?: throw ActionException("Audio stop unavailable")
+    }
+
+    private suspend fun audioDuration() {
+        val value = audioDurationProvider?.invoke() ?: failWithAudioPayload("player doesn't exist")
+        val payload = mapOf("value" to value)
+        stateManager.set(payload + mapOf("\$jason" to payload))
+    }
+
+    private suspend fun audioPosition() {
+        val value = audioPositionProvider?.invoke() ?: failWithAudioPayload("player doesn't exist")
+        val payload = mapOf("value" to value)
+        stateManager.set(payload + mapOf("\$jason" to payload))
+    }
+
+    private suspend fun audioSeek(options: JsonObject?) {
+        val position = stringOption(options, "position")?.toDoubleOrNull() ?: return
+        try {
+            audioSeeker?.invoke(position)
+        } catch (_: Exception) {
+            // Legacy Android treats seek failures as non-fatal and still continues success chains.
+        }
+    }
+
+    private fun failWithAudioPayload(message: String): Nothing {
+        val payload = mapOf("message" to message)
+        stateManager.set(payload + mapOf("\$jason" to payload))
+        throw ActionException(message)
     }
 
     private suspend fun mediaPlay(options: JsonObject?) {

@@ -2,6 +2,8 @@ package com.jasonette.rendering
 
 import android.media.AudioAttributes
 import android.media.MediaPlayer
+import android.os.Handler
+import android.os.Looper
 import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -13,6 +15,7 @@ import kotlin.coroutines.resumeWithException
 class AndroidAudioPlayer {
     private var player: MediaPlayer? = null
     private var activeContinuation: CancellableContinuation<Unit>? = null
+    private val mainHandler = Handler(Looper.getMainLooper())
 
     suspend fun play(url: String): Unit = withContext(Dispatchers.Main) {
         val next = MediaPlayer()
@@ -96,8 +99,41 @@ class AndroidAudioPlayer {
         stopInternal(ActionDispatcher.ActionException("Audio playback stopped"))
     }
 
+    suspend fun duration(): String? = withContext(Dispatchers.Main) {
+        try {
+            player?.duration?.div(1000)?.toString()
+        } catch (_: IllegalStateException) {
+            null
+        }
+    }
+
+    suspend fun position(): String? = withContext(Dispatchers.Main) {
+        try {
+            val mediaPlayer = player ?: return@withContext null
+            val duration = mediaPlayer.duration.takeIf { it > 0 } ?: return@withContext null
+            (mediaPlayer.currentPosition.toDouble() / duration.toDouble()).coerceIn(0.0, 1.0).toString()
+        } catch (_: IllegalStateException) {
+            null
+        }
+    }
+
+    suspend fun seek(position: Double): Unit = withContext(Dispatchers.Main) {
+        try {
+            val mediaPlayer = player ?: return@withContext
+            val duration = mediaPlayer.duration.takeIf { it > 0 } ?: return@withContext
+            mediaPlayer.seekTo((position.coerceIn(0.0, 1.0) * duration).toInt())
+        } catch (_: IllegalStateException) {
+            // Match legacy behavior: failed seeks are non-fatal and still continue.
+        }
+    }
+
     fun release() {
-        stopInternal(ActionDispatcher.ActionException("Audio playback released"))
+        val reason = ActionDispatcher.ActionException("Audio playback released")
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            stopInternal(reason)
+        } else {
+            mainHandler.post { stopInternal(reason) }
+        }
     }
 
     private fun stopInternal(reason: Exception) {
