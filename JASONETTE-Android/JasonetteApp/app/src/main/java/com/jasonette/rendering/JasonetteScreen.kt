@@ -3,12 +3,17 @@ package com.jasonette.rendering
 import android.app.Application
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -35,9 +40,56 @@ fun JasonetteScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val nativeUiRequest by viewModel.nativeUiRequest.collectAsState()
+    val currentNativeUiRequest by rememberUpdatedState(nativeUiRequest)
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
     var alertMessage by remember { mutableStateOf<ActionDispatcher.UtilityMessage?>(null) }
+    var pendingPhotoRequestId by rememberSaveable { mutableStateOf<String?>(null) }
+    var pendingVideoRequestId by rememberSaveable { mutableStateOf<String?>(null) }
+    var pendingImagePickerRequestId by rememberSaveable { mutableStateOf<String?>(null) }
+    var pendingVideoPickerRequestId by rememberSaveable { mutableStateOf<String?>(null) }
+    val photoCaptureLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
+        val pendingId = pendingPhotoRequestId.also { pendingPhotoRequestId = null }
+        val request = (currentNativeUiRequest as? NativeUiRequest.MediaCapture)?.takeIf { it.id == pendingId }
+        val uri = request?.outputUri?.let(Uri::parse)
+        if (success && request != null && uri != null) {
+            runCatching { androidMediaCapturePayload(context, request.request, uri) }
+                .onSuccess { viewModel.completeMediaCapture(request, it) }
+                .onFailure { viewModel.cancelNativeUiRequest(request) }
+        } else if (request != null) {
+            viewModel.cancelNativeUiRequest(request)
+        }
+    }
+    val videoCaptureLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CaptureVideo()) { success ->
+        val pendingId = pendingVideoRequestId.also { pendingVideoRequestId = null }
+        val request = (currentNativeUiRequest as? NativeUiRequest.MediaCapture)?.takeIf { it.id == pendingId }
+        val uri = request?.outputUri?.let(Uri::parse)
+        if (success && request != null && uri != null) {
+            viewModel.completeMediaCapture(request, androidMediaCapturePayload(context, request.request, uri))
+        } else if (request != null) {
+            viewModel.cancelNativeUiRequest(request)
+        }
+    }
+    val imagePickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        val pendingId = pendingImagePickerRequestId.also { pendingImagePickerRequestId = null }
+        val request = (currentNativeUiRequest as? NativeUiRequest.MediaCapture)?.takeIf { it.id == pendingId }
+        if (request != null && uri != null) {
+            runCatching { androidMediaCapturePayload(context, request.request, uri) }
+                .onSuccess { viewModel.completeMediaCapture(request, it) }
+                .onFailure { viewModel.cancelNativeUiRequest(request) }
+        } else if (request != null) {
+            viewModel.cancelNativeUiRequest(request)
+        }
+    }
+    val videoPickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        val pendingId = pendingVideoPickerRequestId.also { pendingVideoPickerRequestId = null }
+        val request = (currentNativeUiRequest as? NativeUiRequest.MediaCapture)?.takeIf { it.id == pendingId }
+        if (request != null && uri != null) {
+            viewModel.completeMediaCapture(request, androidMediaCapturePayload(context, request.request, uri))
+        } else if (request != null) {
+            viewModel.cancelNativeUiRequest(request)
+        }
+    }
 
     LaunchedEffect(viewModel, onNavigate, onBack, onClose) {
         viewModel.setNavigationHandler(onNavigate)
@@ -189,6 +241,44 @@ fun JasonetteScreen(
         )
     }
 
+    LaunchedEffect(nativeUiRequest) {
+        val request = nativeUiRequest as? NativeUiRequest.MediaCapture ?: return@LaunchedEffect
+        val route = request.request.source to request.request.mediaType
+        val alreadyPending = when (route) {
+            "camera" to "video" -> pendingVideoRequestId == request.id
+            "camera" to "image" -> pendingPhotoRequestId == request.id
+            "picker" to "video" -> pendingVideoPickerRequestId == request.id
+            else -> pendingImagePickerRequestId == request.id
+        }
+        if (alreadyPending) return@LaunchedEffect
+        runCatching {
+            when (route) {
+                "camera" to "video" -> {
+                    pendingVideoRequestId = request.id
+                    videoCaptureLauncher.launch(Uri.parse(requireNotNull(request.outputUri)))
+                }
+                "camera" to "image" -> {
+                    pendingPhotoRequestId = request.id
+                    photoCaptureLauncher.launch(Uri.parse(requireNotNull(request.outputUri)))
+                }
+                "picker" to "video" -> {
+                    pendingVideoPickerRequestId = request.id
+                    videoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly))
+                }
+                else -> {
+                    pendingImagePickerRequestId = request.id
+                    imagePickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                }
+            }
+        }.onFailure {
+            if (pendingPhotoRequestId == request.id) pendingPhotoRequestId = null
+            if (pendingVideoRequestId == request.id) pendingVideoRequestId = null
+            if (pendingImagePickerRequestId == request.id) pendingImagePickerRequestId = null
+            if (pendingVideoPickerRequestId == request.id) pendingVideoPickerRequestId = null
+            viewModel.cancelNativeUiRequest(request)
+        }
+    }
+
     DisposableEffect(nativeUiRequest, context) {
         val request = nativeUiRequest as? NativeUiRequest.VisionScan
         if (request == null) return@DisposableEffect onDispose { }
@@ -196,7 +286,7 @@ fun JasonetteScreen(
             context = context,
             request = request.request,
             onResult = { payload -> viewModel.completeVisionScan(request, payload) },
-            onCancel = { viewModel.cancelNativeUiRequest() }
+            onCancel = { viewModel.cancelNativeUiRequest(request) }
         )
         onDispose { viewModel.cancelNativeUiRequest(request) }
     }

@@ -1487,6 +1487,143 @@ class ActionDispatcherTest {
     }
 
     @Test
+    fun testMediaCameraPhotoStoresLegacyImagePayloadAndRunsSuccessChain() = runTest {
+        val sm = StateManager(context = null)
+        val requests = mutableListOf<ActionDispatcher.MediaCaptureRequest>()
+        val payload = mapOf(
+            "data" to "aW1hZ2U=",
+            "data_uri" to "data:image/jpeg;base64,aW1hZ2U=",
+            "content_type" to "image/jpeg"
+        )
+        val dispatcher = ActionDispatcher(
+            sm,
+            mediaCapture = { request ->
+                requests.add(request)
+                payload
+            }
+        )
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$media.camera",
+                options = JsonObject(
+                    mapOf(
+                        "edit" to JsonPrimitive("true"),
+                        "quality" to JsonPrimitive("low")
+                    )
+                ),
+                success = makeAction("\$set", mapOf("captured" to "{{\$jason.data}}"))
+            )
+        )
+
+        assertEquals(
+            listOf(ActionDispatcher.MediaCaptureRequest(source = "camera", mediaType = "image", allowsEditing = true, quality = "low")),
+            requests
+        )
+        assertEquals("aW1hZ2U=", sm.local["data"])
+        assertEquals("data:image/jpeg;base64,aW1hZ2U=", sm.local["data_uri"])
+        assertEquals("image/jpeg", sm.local["content_type"])
+        assertEquals(payload, sm.local["\$jason"])
+        assertEquals("aW1hZ2U=", sm.local["captured"])
+    }
+
+    @Test
+    fun testMediaCameraVideoStoresLegacyFilePayload() = runTest {
+        val sm = StateManager(context = null)
+        var request: ActionDispatcher.MediaCaptureRequest? = null
+        val payload = mapOf("file_url" to "content://media/video.mp4", "content_type" to "video/mp4")
+        val dispatcher = ActionDispatcher(
+            sm,
+            mediaCapture = {
+                request = it
+                payload
+            }
+        )
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$media.camera",
+                options = JsonObject(mapOf("type" to JsonPrimitive("video"))),
+                success = makeAction("\$set", mapOf("video_url" to "{{\$jason.file_url}}"))
+            )
+        )
+
+        assertEquals(ActionDispatcher.MediaCaptureRequest(source = "camera", mediaType = "video"), request)
+        assertEquals("content://media/video.mp4", sm.local["file_url"])
+        assertEquals("video/mp4", sm.local["content_type"])
+        assertEquals("content://media/video.mp4", sm.local["video_url"])
+        assertEquals(payload, sm.local["\$jason"])
+    }
+
+    @Test
+    fun testMediaPickerDefaultsToImageAndTemplatedVideoType() = runTest {
+        val sm = StateManager(context = null)
+        val requests = mutableListOf<ActionDispatcher.MediaCaptureRequest>()
+        val dispatcher = ActionDispatcher(
+            sm,
+            mediaCapture = { request ->
+                requests.add(request)
+                if (request.mediaType == "video") {
+                    mapOf("file_url" to "content://picked/video.mp4", "content_type" to "video/mp4")
+                } else {
+                    mapOf("data" to "cGljaw==", "data_uri" to "data:image/jpeg;base64,cGljaw==", "content_type" to "image/jpeg")
+                }
+            }
+        )
+        sm.set(mapOf("wanted" to "video"))
+
+        dispatcher.execute(JasonAction(type = "\$media.picker"))
+        dispatcher.execute(
+            JasonAction(
+                type = "\$media.picker",
+                options = JsonObject(mapOf("type" to JsonPrimitive("{{\$get.wanted}}")))
+            )
+        )
+
+        assertEquals(
+            listOf(
+                ActionDispatcher.MediaCaptureRequest(source = "picker", mediaType = "image"),
+                ActionDispatcher.MediaCaptureRequest(source = "picker", mediaType = "video")
+            ),
+            requests
+        )
+        assertEquals("content://picked/video.mp4", sm.local["file_url"])
+    }
+
+    @Test
+    fun testMediaCaptureUnavailableCancelledAndThrownRouteErrorBranches() = runTest {
+        val sm = StateManager(context = null)
+        sm.set(mapOf("\$jason" to mapOf("data" to "stale")))
+        val unavailable = ActionDispatcher(sm)
+        val cancelled = ActionDispatcher(sm, mediaCapture = { null })
+        val throwing = ActionDispatcher(sm, mediaCapture = { throw ActionDispatcher.ActionException("Capture failed") })
+
+        unavailable.execute(
+            JasonAction(
+                type = "\$media.camera",
+                error = makeAction("\$set", mapOf("camera_unavailable" to "{{\$jason.data}}"))
+            )
+        )
+        cancelled.execute(
+            JasonAction(
+                type = "\$media.picker",
+                error = makeAction("\$set", mapOf("picker_cancelled_media" to "{{\$jason.data}}"))
+            )
+        )
+        throwing.execute(
+            JasonAction(
+                type = "\$media.camera",
+                error = makeAction("\$set", mapOf("camera_failed" to "{{\$jason.data}}"))
+            )
+        )
+
+        assertEquals("", sm.local["camera_unavailable"])
+        assertEquals("", sm.local["picker_cancelled_media"])
+        assertEquals("", sm.local["camera_failed"])
+        assertEquals(emptyMap<String, Any>(), sm.local["\$jason"])
+    }
+
+    @Test
     fun testConvertCsvStoresRowsInJasonAndRunsSuccessChain() = runTest {
         val (sm, dispatcher) = createDispatcher()
         var renderCount = 0

@@ -30,6 +30,7 @@ class ActionDispatcher(
     private val audioPauser: (suspend () -> Unit)? = null,
     private val audioStopper: (suspend () -> Unit)? = null,
     private val mediaPlayback: (suspend (String) -> Unit)? = null,
+    private val mediaCapture: (suspend (MediaCaptureRequest) -> Map<String, Any>?)? = null,
     private val audioDurationProvider: (suspend () -> String?)? = null,
     private val audioPositionProvider: (suspend () -> String?)? = null,
     private val audioSeeker: (suspend (Double) -> Unit)? = null,
@@ -73,6 +74,13 @@ class ActionDispatcher(
     data class PickerSelection(val index: Int)
 
     data class DatePickerRequest(val initialValue: Long? = null)
+
+    data class MediaCaptureRequest(
+        val source: String,
+        val mediaType: String,
+        val allowsEditing: Boolean = false,
+        val quality: String? = null
+    )
 
     data class VisionScanRequest(val type: String? = null)
 
@@ -269,6 +277,8 @@ class ActionDispatcher(
             "\$audio.position" -> audioPosition()
             "\$audio.seek" -> audioSeek(options)
             "\$media.play" -> mediaPlay(options)
+            "\$media.camera" -> mediaCamera(options)
+            "\$media.picker" -> mediaPicker(options)
             "\$vision.scan" -> visionScan(options)
 
             "\$network.request" -> {
@@ -555,6 +565,37 @@ class ActionDispatcher(
         val url = stringOption(options, "url") ?: throw ActionException("Missing media URL")
         mediaPlayback?.invoke(resolveAllowedUrl(url)) ?: throw ActionException("Media playback unavailable")
     }
+
+    private suspend fun mediaCamera(options: JsonObject?) {
+        mediaCapture(MediaCaptureRequest(
+            source = "camera",
+            mediaType = mediaCaptureType(options),
+            allowsEditing = stringOption(options, "edit")?.toBooleanStrictOrNull() ?: false,
+            quality = stringOption(options, "quality")
+        ))
+    }
+
+    private suspend fun mediaPicker(options: JsonObject?) {
+        mediaCapture(MediaCaptureRequest(
+            source = "picker",
+            mediaType = mediaCaptureType(options),
+            allowsEditing = stringOption(options, "edit")?.toBooleanStrictOrNull() ?: false,
+            quality = stringOption(options, "quality")
+        ))
+    }
+
+    private suspend fun mediaCapture(request: MediaCaptureRequest) {
+        val payload = try {
+            mediaCapture?.invoke(request) ?: throw ActionException("Media capture unavailable")
+        } catch (e: Exception) {
+            setJasonPayload(emptyMap<String, Any>())
+            throw e
+        }
+        stateManager.set(payload + mapOf("\$jason" to payload))
+    }
+
+    private fun mediaCaptureType(options: JsonObject?): String =
+        if (stringOption(options, "type").equals("video", ignoreCase = true)) "video" else "image"
 
     private suspend fun visionScan(options: JsonObject?) {
         val payload = visionScanner?.invoke(VisionScanRequest(stringOption(options, "type")))

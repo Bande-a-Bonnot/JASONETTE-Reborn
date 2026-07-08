@@ -14,6 +14,8 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import java.security.SecureRandom
+import java.util.UUID
 
 sealed class UiState {
     data object Loading : UiState()
@@ -35,6 +37,13 @@ sealed class NativeUiRequest {
     data class VisionScan(
         val request: ActionDispatcher.VisionScanRequest,
         val deferred: CompletableDeferred<Map<String, Any>?>
+    ) : NativeUiRequest()
+
+    data class MediaCapture(
+        val id: String,
+        val request: ActionDispatcher.MediaCaptureRequest,
+        val deferred: CompletableDeferred<Map<String, Any>?>,
+        val outputUri: String? = null
     ) : NativeUiRequest()
 }
 
@@ -73,6 +82,7 @@ class JasonetteViewModel(
         audioPositionProvider = audioPlayer::position,
         audioSeeker = audioPlayer::seek,
         mediaPlayback = mediaPlayback::play,
+        mediaCapture = ::requestMediaCapture,
         shareHandler = shareHandler::share,
         addressBookProvider = addressBookProvider::contacts,
         utilityPicker = ::requestPicker,
@@ -193,6 +203,20 @@ class JasonetteViewModel(
         }
     }
 
+    private suspend fun requestMediaCapture(request: ActionDispatcher.MediaCaptureRequest): Map<String, Any>? {
+        val deferred = CompletableDeferred<Map<String, Any>?>()
+        val outputUri = if (request.source == "camera") {
+            createAndroidMediaOutputUri(getApplication(), request.mediaType).toString()
+        } else null
+        val nativeRequest = NativeUiRequest.MediaCapture(uuidV7(), request, deferred, outputUri)
+        _nativeUiRequest.value = nativeRequest
+        return try {
+            deferred.await()
+        } finally {
+            if (_nativeUiRequest.value === nativeRequest) _nativeUiRequest.value = null
+        }
+    }
+
     fun selectPickerItem(index: Int) {
         val request = _nativeUiRequest.value as? NativeUiRequest.Picker ?: return
         if (!request.deferred.isCompleted) request.deferred.complete(ActionDispatcher.PickerSelection(index))
@@ -212,6 +236,11 @@ class JasonetteViewModel(
         if (request != null && !request.deferred.isCompleted) request.deferred.complete(payload)
     }
 
+    fun completeMediaCapture(request: NativeUiRequest.MediaCapture?, payload: Map<String, Any>) {
+        if (_nativeUiRequest.value !== request) return
+        if (request != null && !request.deferred.isCompleted) request.deferred.complete(payload)
+    }
+
     fun cancelNativeUiRequest() {
         cancelNativeUiRequest(_nativeUiRequest.value)
     }
@@ -222,6 +251,7 @@ class JasonetteViewModel(
             is NativeUiRequest.Picker -> if (!request.deferred.isCompleted) request.deferred.complete(null)
             is NativeUiRequest.DatePicker -> if (!request.deferred.isCompleted) request.deferred.complete(null)
             is NativeUiRequest.VisionScan -> if (!request.deferred.isCompleted) request.deferred.complete(null)
+            is NativeUiRequest.MediaCapture -> if (!request.deferred.isCompleted) request.deferred.complete(null)
             null -> {}
         }
     }
@@ -262,6 +292,17 @@ class JasonetteViewModel(
         timerScheduler.stop()
         audioPlayer.release()
         super.onCleared()
+    }
+
+    private companion object {
+        val secureRandom = SecureRandom()
+
+        fun uuidV7(): String {
+            val millis = System.currentTimeMillis() and 0xffffffffffffL
+            val most = (millis shl 16) or 0x7000L or secureRandom.nextInt(0x1000).toLong()
+            val least = (secureRandom.nextLong() and 0x3fffffffffffffffL) or Long.MIN_VALUE
+            return UUID(most, least).toString()
+        }
     }
 
     // Helpers
