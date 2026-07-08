@@ -1693,7 +1693,8 @@ class ActionDispatcherTest {
         )
 
         assertEquals(mapOf("value" to 1700000000L), sm.local["${'$'}jason"])
-        assertEquals("1700000000", sm.local["selected_time"])
+        assertTrue(sm.local["selected_time"] is Number)
+        assertEquals(1700000000L, (sm.local["selected_time"] as Number).toLong())
     }
 
     @Test
