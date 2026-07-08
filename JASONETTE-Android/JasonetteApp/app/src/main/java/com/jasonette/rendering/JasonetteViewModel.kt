@@ -35,12 +35,14 @@ class JasonetteViewModel(
     private val timerScheduler = CoroutineJasonTimerScheduler(viewModelScope)
     private val geolocationProvider = AndroidGeolocationProvider(application)
     private val audioPlayer = AndroidAudioPlayer()
+    private val mediaPlayback = AndroidMediaPlayback(application)
     val actionDispatcher = ActionDispatcher(
         stateManager,
         baseUrl = url,
         timerScheduler = timerScheduler,
         geolocationProvider = geolocationProvider::currentCoordinate,
-        audioPlayer = audioPlayer::play
+        audioPlayer = audioPlayer::play,
+        mediaPlayback = mediaPlayback::play
     )
     private var navigationHandler: ((JasonHref) -> Unit)? = null
     private var backHandler: (() -> Unit)? = null

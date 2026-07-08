@@ -1038,6 +1038,80 @@ class ActionDispatcherTest {
     }
 
     @Test
+    fun testMediaPlayResolvesUrlAndRunsSuccessChain() = runTest {
+        val sm = StateManager(context = null)
+        val played = mutableListOf<String>()
+        val dispatcher = ActionDispatcher(
+            sm,
+            baseUrl = "https://example.com/video/index.json",
+            mediaPlayback = { played.add(it) }
+        )
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$media.play",
+                options = JsonObject(mapOf("url" to JsonPrimitive("clips/demo.mp4"))),
+                success = makeAction("\$set", mapOf("video_played" to "true"))
+            )
+        )
+
+        assertEquals(listOf("https://example.com/video/clips/demo.mp4"), played)
+        assertEquals("true", sm.local["video_played"])
+    }
+
+    @Test
+    fun testMediaPlayRejectsDisallowedSchemeAndRunsErrorBranch() = runTest {
+        val sm = StateManager(context = null)
+        val played = mutableListOf<String>()
+        val dispatcher = ActionDispatcher(sm, mediaPlayback = { played.add(it) })
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$media.play",
+                options = JsonObject(mapOf("url" to JsonPrimitive("file:///tmp/demo.mp4"))),
+                error = makeAction("\$set", mapOf("blocked_video" to "true"))
+            )
+        )
+
+        assertTrue(played.isEmpty())
+        assertEquals("true", sm.local["blocked_video"])
+    }
+
+    @Test
+    fun testMediaPlayProviderFailureRunsErrorBranch() = runTest {
+        val sm = StateManager(context = null)
+        val dispatcher = ActionDispatcher(
+            sm,
+            mediaPlayback = { throw ActionDispatcher.ActionException("Video unavailable") }
+        )
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$media.play",
+                options = JsonObject(mapOf("url" to JsonPrimitive("https://example.com/demo.mp4"))),
+                error = makeAction("\$set", mapOf("video_failed" to "true"))
+            )
+        )
+
+        assertEquals("true", sm.local["video_failed"])
+    }
+
+    @Test
+    fun testMediaPlayMissingUrlRunsErrorBranch() = runTest {
+        val sm = StateManager(context = null)
+        val dispatcher = ActionDispatcher(sm, mediaPlayback = {})
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$media.play",
+                error = makeAction("\$set", mapOf("missing_video" to "true"))
+            )
+        )
+
+        assertEquals("true", sm.local["missing_video"])
+    }
+
+    @Test
     fun testConvertCsvStoresRowsInJasonAndRunsSuccessChain() = runTest {
         val (sm, dispatcher) = createDispatcher()
         var renderCount = 0
