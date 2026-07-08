@@ -21,8 +21,8 @@ class ActionDispatcher(
     private val timerScheduler: JasonTimerScheduler = CoroutineJasonTimerScheduler(),
     private val geolocationProvider: (suspend () -> String)? = null,
     private val audioPlayer: (suspend (String) -> Unit)? = null,
-    private val audioPauser: (() -> Unit)? = null,
-    private val audioStopper: (() -> Unit)? = null,
+    private val audioPauser: (suspend () -> Unit)? = null,
+    private val audioStopper: (suspend () -> Unit)? = null,
     private val mediaPlayback: (suspend (String) -> Unit)? = null,
     private val networkClient: (suspend (String, kotlinx.serialization.json.JsonObject?) -> String)? = null
 ) {
@@ -460,11 +460,11 @@ class ActionDispatcher(
         audioPlayer?.invoke(resolveAllowedUrl(url)) ?: throw ActionException("Audio playback unavailable")
     }
 
-    private fun audioPause() {
+    private suspend fun audioPause() {
         audioPauser?.invoke() ?: throw ActionException("Audio pause unavailable")
     }
 
-    private fun audioStop() {
+    private suspend fun audioStop() {
         audioStopper?.invoke() ?: throw ActionException("Audio stop unavailable")
     }
 
