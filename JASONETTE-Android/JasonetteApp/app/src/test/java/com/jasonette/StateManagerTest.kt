@@ -54,4 +54,36 @@ class StateManagerTest {
         sm.cacheReset()
         assertEquals("local_val", sm.local["local_key"])
     }
+
+    @Test
+    fun testGlobalSetAndResetMaintainSeparateStore() {
+        val sm = createManager()
+
+        val first = sm.globalSet(mapOf("token" to "abc", "profile" to mapOf("name" to "Ada")))
+        val second = sm.globalSet(mapOf("count" to 2))
+        val reset = sm.globalReset(listOf("token"))
+
+        assertEquals("abc", first["token"])
+        assertEquals("Ada", (second["profile"] as Map<*, *>)["name"])
+        assertEquals(2, second["count"])
+        assertFalse(reset.containsKey("token"))
+        assertEquals(2, reset["count"])
+        assertTrue(sm.local.isEmpty())
+    }
+
+    @Test
+    fun testSessionSetAndResetMaintainDomainScopedStore() {
+        val sm = createManager()
+        val session = mapOf(
+            "header" to mapOf("Authorization" to "Bearer abc"),
+            "body" to mapOf("api_key" to "secret")
+        )
+
+        sm.sessionSet("example.com", session)
+        assertEquals(session, sm.sessionForDomain("EXAMPLE.com"))
+
+        sm.sessionReset("example.com")
+        assertNull(sm.sessionForDomain("example.com"))
+        assertTrue(sm.globalGet().isEmpty())
+    }
 }

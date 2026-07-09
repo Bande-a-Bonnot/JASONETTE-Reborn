@@ -146,6 +146,8 @@ class ActionDispatcher(
             executeContinuations(action, success = true)
         } catch (ret: LambdaReturn) {
             throw ret
+        } catch (_: AbortAction) {
+            return
         } catch (_: Exception) {
             executeContinuations(action, success = false)
         }
@@ -255,6 +257,10 @@ class ActionDispatcher(
 
             "\$cache.get" -> {}
             "\$cache.reset" -> stateManager.cacheReset()
+            "\$global.set" -> globalSet(options)
+            "\$global.reset" -> globalReset(options)
+            "\$session.set" -> sessionSet(options)
+            "\$session.reset" -> sessionReset(options)
 
             "\$render" -> renderHandler?.invoke(
                 stringOption(options, "template"),
@@ -418,6 +424,50 @@ class ActionDispatcher(
         is JsonObject -> options
         is JsonArray -> options.firstOrNull { it is JsonObject } as? JsonObject
         else -> null
+    }
+
+    private fun globalSet(options: JsonObject?) {
+        val obj = options ?: throw AbortAction()
+        val values = obj.entries.associate { (key, value) ->
+            key to JsonValueConverter.jsonElementToAny(value)
+        }
+        val payload = stateManager.globalSet(values)
+        stateManager.set(mapOf("\$jason" to payload))
+    }
+
+    private fun globalReset(options: JsonObject?) {
+        val obj = options ?: throw AbortAction()
+        val rawItems = obj["items"]
+        if (rawItems != null && rawItems !is JsonArray) throw AbortAction()
+        val items = (rawItems as? JsonArray)?.mapNotNull { (it as? JsonPrimitive)?.content }
+            ?: emptyList()
+        val payload = stateManager.globalReset(items)
+        stateManager.set(mapOf("\$jason" to payload))
+    }
+
+    private fun sessionSet(options: JsonObject?) {
+        val domain = sessionDomain(options) ?: throw AbortAction()
+        val values = options?.entries?.associate { (key, value) ->
+            key to JsonValueConverter.jsonElementToAny(value)
+        } ?: emptyMap()
+        stateManager.sessionSet(domain, values)
+        setJasonPayload(emptyMap<String, Any>())
+    }
+
+    private fun sessionReset(options: JsonObject?) {
+        val domain = sessionDomain(options) ?: throw AbortAction()
+        stateManager.sessionReset(domain)
+        setJasonPayload(emptyMap<String, Any>())
+    }
+
+    private fun sessionDomain(options: JsonObject?): String? {
+        val raw = stringOption(options, "domain") ?: stringOption(options, "url") ?: return null
+        val withScheme = if (raw.startsWith("http", ignoreCase = true)) raw else "https://$raw"
+        return try {
+            URI(withScheme).host?.lowercase()
+        } catch (_: Exception) {
+            null
+        }
     }
 
     private fun convertCsvAction(options: JsonObject?) {
@@ -713,7 +763,8 @@ class ActionDispatcher(
         urlStr: String,
         options: kotlinx.serialization.json.JsonObject?
     ) {
-        val body = networkFetch(urlStr, options)
+        val (requestUrl, requestOptions) = applySessionToNetworkRequest(urlStr, options)
+        val body = networkFetch(requestUrl, requestOptions)
         val responseValue = try {
             JsonValueConverter.jsonElementToAny(kotlinx.serialization.json.Json.parseToJsonElement(body))
         } catch (_: Exception) {
@@ -777,7 +828,49 @@ class ActionDispatcher(
         return resolveAllowedUrl(signed)
     }
 
+    private fun applySessionToNetworkRequest(
+        urlStr: String,
+        options: JsonObject?
+    ): Pair<String, JsonObject?> {
+        val domain = try {
+            URI(urlStr).host?.lowercase()
+        } catch (_: Exception) {
+            null
+        } ?: return urlStr to options
+        val session = stateManager.sessionForDomain(domain) ?: return urlStr to options
+        val sessionHeader = stringMap(session["header"])
+        val sessionBody = stringMap(session["body"])
+        if (sessionHeader.isEmpty() && sessionBody.isEmpty()) return urlStr to options
+
+        val method = stringOption(options, "method")?.uppercase() ?: "GET"
+        val merged = options?.toMutableMap() ?: mutableMapOf()
+        if (sessionHeader.isNotEmpty()) {
+            val existing = (merged["header"] as? JsonObject)?.let { stringMap(JsonValueConverter.jsonElementToAny(it)) }
+                ?: emptyMap()
+            merged["header"] = JsonValueConverter.anyToJsonElement(sessionHeader + existing)
+        }
+        val requestUrl = if (method == "GET" && sessionBody.isNotEmpty()) {
+            appendQuery(urlStr, sessionBody)
+        } else {
+            if (sessionBody.isNotEmpty()) {
+                val existing = (merged["data"] as? JsonObject)?.let { stringMap(JsonValueConverter.jsonElementToAny(it)) }
+                    ?: emptyMap()
+                merged["data"] = JsonValueConverter.anyToJsonElement(sessionBody + existing)
+            }
+            urlStr
+        }
+        return requestUrl to JsonObject(merged)
+    }
+
+    private fun stringMap(value: Any?): Map<String, String> = when (value) {
+        is Map<*, *> -> value.entries.mapNotNull { (key, raw) ->
+            key?.toString()?.let { it to (raw?.toString() ?: "") }
+        }.toMap()
+        else -> emptyMap()
+    }
+
     private fun appendQuery(url: String, params: Map<String, String>): String {
+        if (params.isEmpty()) return url
         val separator = if (url.contains('?')) "&" else "?"
         val query = params.entries.joinToString("&") { (key, value) ->
             "${urlEncode(key)}=${urlEncode(value)}"
@@ -796,13 +889,24 @@ class ActionDispatcher(
         urlStr: String,
         options: kotlinx.serialization.json.JsonObject?
     ): String = withContext(Dispatchers.IO) {
-        val url = URL(urlStr)
-        val conn = url.openConnection() as HttpURLConnection
+        val method = (options?.get("method") as? JsonPrimitive)?.content?.uppercase() ?: "GET"
+        val data = (options?.get("data") as? JsonObject)?.let { jsonObjectStringMap(it) } ?: emptyMap()
+        val requestUrl = if (method == "GET" && data.isNotEmpty()) appendQuery(urlStr, data) else urlStr
+        val conn = URL(requestUrl).openConnection() as HttpURLConnection
         try {
-            conn.requestMethod =
-                (options?.get("method") as? JsonPrimitive)?.content?.uppercase() ?: "GET"
+            conn.requestMethod = method
             conn.connectTimeout = 10_000
             conn.readTimeout = 10_000
+            (options?.get("header") as? JsonObject)?.let { header ->
+                jsonObjectStringMap(header).forEach { (key, value) -> conn.setRequestProperty(key, value) }
+            }
+            if (method != "GET" && data.isNotEmpty()) {
+                conn.doOutput = true
+                conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded")
+                conn.outputStream.use { output ->
+                    output.write(formEncode(data).toByteArray(Charsets.UTF_8))
+                }
+            }
 
             val code = conn.responseCode
             if (code !in 200..299) throw ActionException("HTTP error: $code")
@@ -812,6 +916,12 @@ class ActionDispatcher(
             conn.disconnect()
         }
     }
+
+    private fun jsonObjectStringMap(obj: JsonObject): Map<String, String> =
+        stringMap(JsonValueConverter.jsonElementToAny(obj))
+
+    private fun formEncode(params: Map<String, String>): String =
+        params.entries.joinToString("&") { (key, value) -> "${urlEncode(key)}=${urlEncode(value)}" }
 
     private suspend fun httpUploadPut(
         urlStr: String,
@@ -852,6 +962,7 @@ class ActionDispatcher(
         val context = local.toMutableMap()
         context["\$get"] = local
         context["\$cache"] = stateManager.cacheGet()
+        context["\$global"] = stateManager.globalGet()
         local["\$response"]?.let { context["\$response"] = it }
         if (!context.containsKey("\$jason")) {
             context["\$jason"] = local
@@ -904,6 +1015,7 @@ class ActionDispatcher(
     }
 
     private class LambdaReturn(val success: Boolean, val payload: Any?) : RuntimeException()
+    private class AbortAction : RuntimeException()
 
     class ActionException(message: String) : Exception(message)
 }

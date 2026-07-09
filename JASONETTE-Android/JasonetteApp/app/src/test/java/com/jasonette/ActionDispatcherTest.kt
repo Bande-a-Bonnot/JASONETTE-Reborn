@@ -385,6 +385,197 @@ class ActionDispatcherTest {
     }
 
     @Test
+    fun testGlobalSetStoresPayloadAndExposesGlobalContext() = runTest {
+        val sm = StateManager(context = null)
+        val dispatcher = ActionDispatcher(sm)
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$global.set",
+                options = JsonObject(
+                    mapOf(
+                        "token" to JsonPrimitive("abc"),
+                        "profile" to JsonObject(mapOf("name" to JsonPrimitive("Ada")))
+                    )
+                ),
+                success = makeAction("\$set", mapOf("saved" to "{{\$global.profile.name}}"))
+            )
+        )
+
+        assertEquals("Ada", sm.local["saved"])
+        assertEquals("abc", sm.globalGet()["token"])
+        assertEquals(mapOf("token" to "abc", "profile" to mapOf("name" to "Ada")), sm.local["\$jason"])
+    }
+
+    @Test
+    fun testGlobalResetRemovesOnlyListedItemsAndReturnsUpdatedPayload() = runTest {
+        val sm = StateManager(context = null)
+        sm.globalSet(mapOf("token" to "abc", "theme" to "dark"))
+        val dispatcher = ActionDispatcher(sm)
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$global.reset",
+                options = JsonObject(mapOf("items" to JsonArray(listOf(JsonPrimitive("token"))))),
+                success = makeAction("\$set", mapOf("remaining_theme" to "{{\$jason.theme}}"))
+            )
+        )
+
+        assertFalse(sm.globalGet().containsKey("token"))
+        assertEquals("dark", sm.globalGet()["theme"])
+        assertEquals("dark", sm.local["remaining_theme"])
+        assertEquals(mapOf("theme" to "dark"), sm.local["\$jason"])
+    }
+
+    @Test
+    fun testGlobalMissingOrMalformedOptionsDoNotRunContinuations() = runTest {
+        val sm = StateManager(context = null)
+        val dispatcher = ActionDispatcher(sm)
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$global.set",
+                success = makeAction("\$set", mapOf("global_set_success" to "true")),
+                error = makeAction("\$set", mapOf("global_set_error" to "true"))
+            )
+        )
+        dispatcher.execute(
+            JasonAction(
+                type = "\$global.reset",
+                options = JsonObject(mapOf("items" to JsonPrimitive("token"))),
+                success = makeAction("\$set", mapOf("global_reset_success" to "true")),
+                error = makeAction("\$set", mapOf("global_reset_error" to "true"))
+            )
+        )
+
+        assertNull(sm.local["global_set_success"])
+        assertNull(sm.local["global_set_error"])
+        assertNull(sm.local["global_reset_success"])
+        assertNull(sm.local["global_reset_error"])
+    }
+
+    @Test
+    fun testSessionSetDecoratesNetworkRequestAndResetRemovesSession() = runTest {
+        val sm = StateManager(context = null)
+        val observedUrls = mutableListOf<String>()
+        val observedOptions = mutableListOf<JsonObject?>()
+        val dispatcher = ActionDispatcher(sm) { url, options ->
+            observedUrls.add(url)
+            observedOptions.add(options)
+            "{}"
+        }
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$session.set",
+                options = JsonObject(
+                    mapOf(
+                        "domain" to JsonPrimitive("api.example.com"),
+                        "header" to JsonObject(mapOf("Authorization" to JsonPrimitive("Bearer abc"))),
+                        "body" to JsonObject(mapOf("api_key" to JsonPrimitive("secret")))
+                    )
+                )
+            )
+        )
+        dispatcher.execute(
+            JasonAction(
+                type = "\$network.request",
+                options = JsonObject(mapOf("url" to JsonPrimitive("https://api.example.com/items?existing=1")))
+            )
+        )
+        dispatcher.execute(
+            JasonAction(
+                type = "\$session.reset",
+                options = JsonObject(mapOf("url" to JsonPrimitive("https://api.example.com/logout")))
+            )
+        )
+        dispatcher.execute(
+            JasonAction(
+                type = "\$network.request",
+                options = JsonObject(mapOf("url" to JsonPrimitive("https://api.example.com/items")))
+            )
+        )
+
+        assertEquals("https://api.example.com/items?existing=1&api_key=secret", observedUrls[0])
+        val header = observedOptions[0]?.get("header") as JsonObject
+        assertEquals("Bearer abc", (header["Authorization"] as JsonPrimitive).content)
+        assertEquals("https://api.example.com/items", observedUrls[1])
+        assertNull(observedOptions[1]?.get("header"))
+    }
+
+    @Test
+    fun testSessionSetMergesNonGetBodyDataAndAuthoredHeadersWin() = runTest {
+        val sm = StateManager(context = null)
+        var observedOptions: JsonObject? = null
+        val dispatcher = ActionDispatcher(sm) { _, options ->
+            observedOptions = options
+            "{}"
+        }
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$session.set",
+                options = JsonObject(
+                    mapOf(
+                        "url" to JsonPrimitive("https://api.example.com/login"),
+                        "header" to JsonObject(
+                            mapOf(
+                                "Authorization" to JsonPrimitive("Bearer session"),
+                                "X-Session" to JsonPrimitive("yes")
+                            )
+                        ),
+                        "body" to JsonObject(
+                            mapOf(
+                                "api_key" to JsonPrimitive("secret"),
+                                "locale" to JsonPrimitive("en")
+                            )
+                        )
+                    )
+                )
+            )
+        )
+        dispatcher.execute(
+            JasonAction(
+                type = "\$network.request",
+                options = JsonObject(
+                    mapOf(
+                        "url" to JsonPrimitive("https://api.example.com/items"),
+                        "method" to JsonPrimitive("POST"),
+                        "header" to JsonObject(mapOf("Authorization" to JsonPrimitive("Bearer authored"))),
+                        "data" to JsonObject(mapOf("locale" to JsonPrimitive("fr"), "page" to JsonPrimitive("1")))
+                    )
+                )
+            )
+        )
+
+        val header = observedOptions?.get("header") as JsonObject
+        val data = observedOptions?.get("data") as JsonObject
+        assertEquals("Bearer authored", (header["Authorization"] as JsonPrimitive).content)
+        assertEquals("yes", (header["X-Session"] as JsonPrimitive).content)
+        assertEquals("secret", (data["api_key"] as JsonPrimitive).content)
+        assertEquals("fr", (data["locale"] as JsonPrimitive).content)
+        assertEquals("1", (data["page"] as JsonPrimitive).content)
+    }
+
+    @Test
+    fun testSessionSetWithoutDomainDoesNotRunContinuations() = runTest {
+        val sm = StateManager(context = null)
+        val dispatcher = ActionDispatcher(sm)
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$session.set",
+                options = JsonObject(mapOf("header" to JsonObject(mapOf("Authorization" to JsonPrimitive("Bearer abc"))))),
+                success = makeAction("\$set", mapOf("session_success" to "true")),
+                error = makeAction("\$set", mapOf("session_error" to "true"))
+            )
+        )
+
+        assertNull(sm.local["session_success"])
+        assertNull(sm.local["session_error"])
+    }
+
+    @Test
     fun testNetworkRequestTemplatesUrlBeforeExecution() = runTest {
         val sm = StateManager(context = null)
         sm.set(mapOf("postId" to "1"))

@@ -51,6 +51,32 @@ class JasonetteDocumentRendererTest {
     }
 
     @Test
+    fun testRenderContextExposesGlobalStore() {
+        val stateManager = StateManager(context = null)
+        stateManager.globalSet(mapOf("user" to mapOf("name" to "Ada")))
+        val document = loader.decode(
+            """
+            {
+              "${'$'}jason": {
+                "head": {
+                  "templates": {
+                    "body": {"sections": [{"items": [
+                      {"type": "label", "text": "{{${'$'}global.user.name}}"}
+                    ]}]}
+                  }
+                }
+              }
+            }
+            """.trimIndent()
+        )
+
+        val rendered = JasonetteDocumentRenderer(stateManager).render(document)
+        val item = rendered.body?.sections?.first()?.items?.first()
+
+        assertEquals("Ada", item?.text)
+    }
+
+    @Test
     fun testRenderCanSelectNamedTemplateAndExposeRenderDataAsJason() {
         val stateManager = StateManager(context = null)
         val document = loader.decode(

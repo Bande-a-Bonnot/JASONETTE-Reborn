@@ -66,6 +66,7 @@ class JasonetteDocumentRenderer(
         context["\$jason"] = if (hasRenderData) renderData else context["\$jason"] ?: data
         context["\$get"] = stateManager.local.toMap()
         context["\$cache"] = stateManager.cacheGet()
+        context["\$global"] = stateManager.globalGet()
         stateManager.local["\$response"]?.let { context["\$response"] = it }
         return context
     }
