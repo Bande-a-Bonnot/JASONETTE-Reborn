@@ -2,7 +2,10 @@ package com.jasonette.rendering
 
 import com.jasonette.core.*
 import com.jasonette.template.TemplateEngine
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
@@ -14,6 +17,7 @@ import java.net.HttpURLConnection
 import java.net.URI
 import java.net.URL
 import java.net.URLEncoder
+import java.util.ArrayDeque
 import java.security.SecureRandom
 import java.util.Base64
 import java.util.UUID
@@ -41,6 +45,7 @@ class ActionDispatcher(
     private val datePicker: (suspend (DatePickerRequest) -> Long?)? = null,
     private val visionScanner: (suspend (VisionScanRequest) -> Map<String, Any>?)? = null,
     private val uploadClient: (suspend (String, ByteArray, String) -> String)? = null,
+    private val webSocketClient: WebSocketClient? = null,
     private val networkClient: (suspend (String, kotlinx.serialization.json.JsonObject?) -> String)? = null
 ) {
     data class UtilityMessage(
@@ -87,6 +92,19 @@ class ActionDispatcher(
 
     data class VisionScanRequest(val type: String? = null)
 
+    interface WebSocketEvents {
+        suspend fun onOpen()
+        suspend fun onMessage(message: String, type: String)
+        suspend fun onClose()
+        suspend fun onError(message: String?)
+    }
+
+    interface WebSocketClient {
+        suspend fun open(url: String, events: WebSocketEvents)
+        suspend fun send(message: String)
+        suspend fun close()
+    }
+
     private companion object {
         val secureRandom = SecureRandom()
     }
@@ -99,6 +117,9 @@ class ActionDispatcher(
     private var actionResolver: ((String) -> JasonAction?)? = null
     private var utilityHandler: ((UtilityMessage) -> Unit)? = null
     private val actionJson = Json { ignoreUnknownKeys = true; isLenient = true }
+    private val webSocketEventQueue = ArrayDeque<WebSocketEvent>()
+    private val webSocketEventMutex = Mutex()
+    private var webSocketEventDraining = false
 
     fun setBaseUrl(url: String?) {
         baseUrl = url
@@ -297,6 +318,10 @@ class ActionDispatcher(
                 networkRequest(urlStr, options)
             }
             "\$network.upload" -> networkUpload(options)
+
+            "\$websocket.open" -> webSocketOpen(options)
+            "\$websocket.send" -> webSocketSend(options)
+            "\$websocket.close" -> webSocketClose()
 
             "\$href" -> {
                 val href = hrefFromOptions(options)
@@ -759,6 +784,106 @@ class ActionDispatcher(
             }
         } ?: emptyList()
 
+    private suspend fun webSocketOpen(options: JsonObject?) {
+        val rawUrl = stringOption(options, "url") ?: return
+        val url = try {
+            resolveAllowedWebSocketUrl(rawUrl)
+        } catch (e: Exception) {
+            triggerWebSocketEvent("\$websocket.onerror", mapOf("error" to (e.message ?: "Invalid websocket URL")))
+            return
+        }
+        try {
+            webSocketClient?.open(url, webSocketEvents())
+        } catch (e: Exception) {
+            triggerWebSocketEvent("\$websocket.onerror", mapOf("error" to (e.message ?: "WebSocket open failed")))
+        }
+    }
+
+    private suspend fun webSocketSend(options: JsonObject?) {
+        val message = stringOption(options, "message") ?: return
+        try {
+            webSocketClient?.send(message)
+        } catch (e: Exception) {
+            triggerWebSocketEvent("\$websocket.onerror", mapOf("error" to (e.message ?: "WebSocket send failed")))
+        }
+    }
+
+    private suspend fun webSocketClose() {
+        try {
+            webSocketClient?.close()
+        } catch (e: Exception) {
+            triggerWebSocketEvent("\$websocket.onerror", mapOf("error" to (e.message ?: "WebSocket close failed")))
+        }
+    }
+
+    private fun webSocketEvents(): WebSocketEvents = object : WebSocketEvents {
+        override suspend fun onOpen() {
+            triggerWebSocketEvent("\$websocket.onopen", emptyMap<String, Any>())
+        }
+
+        override suspend fun onMessage(message: String, type: String) {
+            triggerWebSocketEvent("\$websocket.onmessage", mapOf("message" to message, "type" to type))
+        }
+
+        override suspend fun onClose() {
+            triggerWebSocketEvent("\$websocket.onclose", emptyMap<String, Any>())
+        }
+
+        override suspend fun onError(message: String?) {
+            triggerWebSocketEvent("\$websocket.onerror", mapOf("error" to (message ?: "WebSocket error")))
+        }
+    }
+
+    private suspend fun triggerWebSocketEvent(name: String, payload: Map<String, Any>) {
+        val shouldDrain = webSocketEventMutex.withLock {
+            webSocketEventQueue.addLast(WebSocketEvent(name, payload))
+            if (webSocketEventDraining) {
+                false
+            } else {
+                webSocketEventDraining = true
+                true
+            }
+        }
+        if (!shouldDrain) return
+
+        while (true) {
+            val event = webSocketEventMutex.withLock {
+                if (webSocketEventQueue.isEmpty()) {
+                    webSocketEventDraining = false
+                    null
+                } else {
+                    webSocketEventQueue.removeFirst()
+                }
+            } ?: return
+            try {
+                executeWebSocketEvent(event)
+            } catch (e: CancellationException) {
+                webSocketEventMutex.withLock { webSocketEventDraining = false }
+                throw e
+            } catch (_: Throwable) {
+                // Legacy websocket service treats event callbacks as asynchronous
+                // notifications; one failing event must not poison later events.
+            }
+        }
+    }
+
+    private suspend fun executeWebSocketEvent(event: WebSocketEvent) {
+        var returned: LambdaReturn? = null
+        withTemporaryJason(event.payload) {
+            actionResolver?.invoke(event.name)?.let { action ->
+                try {
+                    executeAction(action)
+                } catch (ret: LambdaReturn) {
+                    returned = ret
+                }
+            }
+        }
+        returned?.let { ret ->
+            setJasonPayload(ret.payload)
+            if (!ret.success) throw ActionException("WebSocket event returned error")
+        }
+    }
+
     private suspend fun networkRequest(
         urlStr: String,
         options: kotlinx.serialization.json.JsonObject?
@@ -993,18 +1118,28 @@ class ActionDispatcher(
     }
 
     private fun resolveAllowedUrl(url: String): String {
-        val resolved = try {
-            val uri = URI(url)
-            if (uri.isAbsolute) uri else baseUrl?.let { URI(it).resolve(uri) }
-        } catch (_: Exception) {
-            null
-        } ?: throw ActionException("Invalid URL")
-
+        val resolved = resolveUrl(url) ?: throw ActionException("Invalid URL")
         val scheme = resolved.scheme?.lowercase()
         if (scheme !in setOf("http", "https")) {
             throw ActionException("URL scheme not allowed")
         }
         return resolved.toString()
+    }
+
+    private fun resolveAllowedWebSocketUrl(url: String): String {
+        val resolved = resolveUrl(url) ?: throw ActionException("Invalid websocket URL")
+        val scheme = resolved.scheme?.lowercase()
+        if (scheme !in setOf("ws", "wss")) {
+            throw ActionException("WebSocket URL scheme not allowed")
+        }
+        return resolved.toString()
+    }
+
+    private fun resolveUrl(url: String): URI? = try {
+        val uri = URI(url)
+        if (uri.isAbsolute) uri else baseUrl?.let { URI(it).resolve(uri) }
+    } catch (_: Exception) {
+        null
     }
 
     private fun jsonElementToString(element: kotlinx.serialization.json.JsonElement): String {
@@ -1013,6 +1148,8 @@ class ActionDispatcher(
             else -> element.toString()
         }
     }
+
+    private data class WebSocketEvent(val name: String, val payload: Map<String, Any>)
 
     private class LambdaReturn(val success: Boolean, val payload: Any?) : RuntimeException()
     private class AbortAction : RuntimeException()

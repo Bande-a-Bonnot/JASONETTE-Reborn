@@ -43,6 +43,26 @@ class ActionDispatcherTest {
         }
     }
 
+    private class FakeWebSocketClient : ActionDispatcher.WebSocketClient {
+        var openedUrl: String? = null
+        var events: ActionDispatcher.WebSocketEvents? = null
+        val sent = mutableListOf<String>()
+        var closeCount = 0
+
+        override suspend fun open(url: String, events: ActionDispatcher.WebSocketEvents) {
+            openedUrl = url
+            this.events = events
+        }
+
+        override suspend fun send(message: String) {
+            sent.add(message)
+        }
+
+        override suspend fun close() {
+            closeCount++
+        }
+    }
+
     private fun createDispatcher(): Pair<StateManager, ActionDispatcher> {
         val sm = StateManager(context = null)
         return sm to ActionDispatcher(sm)
@@ -1002,6 +1022,193 @@ class ActionDispatcherTest {
         dispatcher.execute(JasonAction(trigger = "send"))
 
         assertEquals("true", sm.local["sent"])
+    }
+
+    @Test
+    fun testWebSocketOpenForwardsUrlAndContinuesSuccessBeforeEvents() = runTest {
+        val sm = StateManager(context = null)
+        val webSocket = FakeWebSocketClient()
+        val dispatcher = ActionDispatcher(sm, webSocketClient = webSocket)
+        dispatcher.setActionResolver { name ->
+            if (name == "\$websocket.onopen") makeAction("\$set", mapOf("opened_event" to "true")) else null
+        }
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$websocket.open",
+                options = JsonObject(mapOf("url" to JsonPrimitive("wss://example.com/socket"))),
+                success = makeAction("\$set", mapOf("open_success" to "true"))
+            )
+        )
+
+        assertEquals("wss://example.com/socket", webSocket.openedUrl)
+        assertEquals("true", sm.local["open_success"])
+        assertNull(sm.local["opened_event"])
+
+        webSocket.events?.onOpen()
+
+        assertEquals("true", sm.local["opened_event"])
+    }
+
+    @Test
+    fun testWebSocketMessageAndErrorEventsExposeLegacyJasonPayloads() = runTest {
+        val sm = StateManager(context = null)
+        val webSocket = FakeWebSocketClient()
+        val dispatcher = ActionDispatcher(sm, webSocketClient = webSocket)
+        dispatcher.setActionResolver { name ->
+            when (name) {
+                "\$websocket.onmessage" -> makeAction(
+                    "\$set",
+                    mapOf(
+                        "message" to "{{\$jason.message}}",
+                        "message_type" to "{{\$jason.type}}"
+                    )
+                )
+                "\$websocket.onerror" -> makeAction("\$set", mapOf("socket_error" to "{{\$jason.error}}"))
+                else -> null
+            }
+        }
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$websocket.open",
+                options = JsonObject(mapOf("url" to JsonPrimitive("wss://example.com/socket")))
+            )
+        )
+
+        webSocket.events?.onMessage("hello", "string")
+        webSocket.events?.onError("boom")
+
+        assertEquals("hello", sm.local["message"])
+        assertEquals("string", sm.local["message_type"])
+        assertEquals("boom", sm.local["socket_error"])
+        assertFalse(sm.local.containsKey("\$jason"))
+    }
+
+    @Test
+    fun testWebSocketSendAndCloseForwardAndContinueSuccessChains() = runTest {
+        val sm = StateManager(context = null)
+        val webSocket = FakeWebSocketClient()
+        val dispatcher = ActionDispatcher(sm, webSocketClient = webSocket)
+        dispatcher.setActionResolver { name ->
+            if (name == "\$websocket.onclose") makeAction("\$set", mapOf("closed_event" to "true")) else null
+        }
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$websocket.open",
+                options = JsonObject(mapOf("url" to JsonPrimitive("wss://example.com/socket")))
+            )
+        )
+        dispatcher.execute(
+            JasonAction(
+                type = "\$websocket.send",
+                options = JsonObject(mapOf("message" to JsonPrimitive("ping"))),
+                success = makeAction("\$set", mapOf("send_success" to "true"))
+            )
+        )
+        dispatcher.execute(
+            JasonAction(
+                type = "\$websocket.close",
+                success = makeAction("\$set", mapOf("close_success" to "true"))
+            )
+        )
+
+        assertEquals(listOf("ping"), webSocket.sent)
+        assertEquals(1, webSocket.closeCount)
+        assertEquals("true", sm.local["send_success"])
+        assertEquals("true", sm.local["close_success"])
+
+        webSocket.events?.onClose()
+
+        assertEquals("true", sm.local["closed_event"])
+    }
+
+    @Test
+    fun testWebSocketInvalidUrlTriggersErrorEventButStillContinuesSuccess() = runTest {
+        val sm = StateManager(context = null)
+        val webSocket = FakeWebSocketClient()
+        val dispatcher = ActionDispatcher(sm, webSocketClient = webSocket)
+        dispatcher.setActionResolver { name ->
+            if (name == "\$websocket.onerror") makeAction("\$set", mapOf("error" to "{{\$jason.error}}")) else null
+        }
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$websocket.open",
+                options = JsonObject(mapOf("url" to JsonPrimitive("https://example.com/not-websocket"))),
+                success = makeAction("\$set", mapOf("success" to "true"))
+            )
+        )
+
+        assertNull(webSocket.openedUrl)
+        assertEquals("true", sm.local["success"])
+        assertEquals("WebSocket URL scheme not allowed", sm.local["error"])
+    }
+
+    @Test
+    fun testNestedWebSocketEventsAreQueuedUntilCurrentEventCompletes() = runTest {
+        val sm = StateManager(context = null)
+        val webSocket = FakeWebSocketClient()
+        val dispatcher = ActionDispatcher(sm, webSocketClient = webSocket)
+        dispatcher.setActionResolver { name ->
+            when (name) {
+                "\$websocket.onopen" -> JasonAction(
+                    type = "\$websocket.open",
+                    options = JsonObject(mapOf("url" to JsonPrimitive("https://example.com/not-websocket"))),
+                    success = makeAction("\$set", mapOf("after_open" to "done"))
+                )
+                "\$websocket.onerror" -> makeAction(
+                    "\$set",
+                    mapOf(
+                        "error" to "{{\$jason.error}}",
+                        "error_after_open" to "{{\$get.after_open}}"
+                    )
+                )
+                else -> null
+            }
+        }
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$websocket.open",
+                options = JsonObject(mapOf("url" to JsonPrimitive("wss://example.com/socket")))
+            )
+        )
+        webSocket.events?.onOpen()
+
+        assertEquals("done", sm.local["after_open"])
+        assertEquals("WebSocket URL scheme not allowed", sm.local["error"])
+        assertEquals("done", sm.local["error_after_open"])
+    }
+
+    @Test
+    fun testFailingWebSocketEventDoesNotPoisonLaterEvents() = runTest {
+        val sm = StateManager(context = null)
+        val webSocket = FakeWebSocketClient()
+        val dispatcher = ActionDispatcher(sm, webSocketClient = webSocket)
+        dispatcher.setActionResolver { name ->
+            when (name) {
+                "\$websocket.onmessage" -> JasonAction(
+                    type = "\$return.error",
+                    options = JsonObject(mapOf("message" to JsonPrimitive("stop")))
+                )
+                "\$websocket.onclose" -> makeAction("\$set", mapOf("closed_after_failure" to "true"))
+                else -> null
+            }
+        }
+
+        dispatcher.execute(
+            JasonAction(
+                type = "\$websocket.open",
+                options = JsonObject(mapOf("url" to JsonPrimitive("wss://example.com/socket")))
+            )
+        )
+
+        webSocket.events?.onMessage("ignored", "string")
+        webSocket.events?.onClose()
+
+        assertEquals("true", sm.local["closed_after_failure"])
     }
 
     @Test

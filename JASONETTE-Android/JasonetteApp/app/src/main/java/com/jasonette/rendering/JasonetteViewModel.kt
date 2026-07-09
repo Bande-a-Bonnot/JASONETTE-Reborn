@@ -78,6 +78,7 @@ class JasonetteViewModel(
     private val audioPlayer = AndroidAudioPlayer()
     private val mediaPlayback = AndroidMediaPlayback(application)
     private val shareHandler = AndroidShareHandler(application)
+    private val webSocketClient = AndroidWebSocketClient(viewModelScope)
     val actionDispatcher = ActionDispatcher(
         stateManager,
         baseUrl = url,
@@ -96,7 +97,8 @@ class JasonetteViewModel(
         addressBookProvider = addressBookProvider::contacts,
         utilityPicker = ::requestPicker,
         datePicker = ::requestDatePicker,
-        visionScanner = ::requestVisionScan
+        visionScanner = ::requestVisionScan,
+        webSocketClient = webSocketClient
     )
     private var navigationHandler: ((JasonHref) -> Unit)? = null
     private var backHandler: (() -> Unit)? = null
@@ -333,6 +335,7 @@ class JasonetteViewModel(
     override fun onCleared() {
         timerScheduler.stop()
         audioPlayer.release()
+        webSocketClient.release()
         super.onCleared()
     }
 
