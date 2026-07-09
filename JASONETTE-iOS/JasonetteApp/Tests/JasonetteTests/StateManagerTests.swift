@@ -80,4 +80,52 @@ final class StateManagerTests: XCTestCase {
         XCTAssertEqual(sm.cacheGet()["b"] as? String, "second")
         XCTAssertNil(sm.cacheGet()["bad"])
     }
+
+    func testGlobalStorePersistsSeparatelyFromLocalAndCache() {
+        let suiteName = "StateManagerTests.global"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defaults.removePersistentDomain(forName: suiteName)
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let first = StateManager(defaults: defaults)
+        first.set(["local": "only here"])
+        first.cacheSet(["cached": "cache"])
+        let payload = first.globalSet(["token": "abc", "profile": ["name": "Ada"]])
+
+        XCTAssertEqual(payload["token"] as? String, "abc")
+        XCTAssertNil(first.get()["token"])
+        XCTAssertNil(first.cacheGet()["token"])
+
+        let second = StateManager(defaults: defaults)
+        XCTAssertEqual(second.globalGet()["token"] as? String, "abc")
+        XCTAssertEqual((second.globalGet()["profile"] as? [String: Any])?["name"] as? String, "Ada")
+
+        let reset = second.globalReset(items: ["token"])
+        XCTAssertNil(reset["token"])
+        XCTAssertNil(first.globalGet()["token"])
+    }
+
+    func testSessionStorePersistsAndNormalizesNestedDictionaries() {
+        let suiteName = "StateManagerTests.session"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defaults.removePersistentDomain(forName: suiteName)
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let first = StateManager(defaults: defaults)
+        first.sessionSet(
+            domain: "EXAMPLE.com",
+            values: [
+                "header": ["Authorization": "Bearer abc"],
+                "body": ["api_key": "secret"],
+            ]
+        )
+
+        let second = StateManager(defaults: defaults)
+        let session = second.session(forDomain: "example.COM")
+        XCTAssertEqual((session?["header"] as? [String: Any])?["Authorization"] as? String, "Bearer abc")
+        XCTAssertEqual((session?["body"] as? [String: Any])?["api_key"] as? String, "secret")
+
+        second.sessionReset(domain: "example.com")
+        XCTAssertNil(first.session(forDomain: "example.com"))
+    }
 }

@@ -254,6 +254,7 @@ public final class JasonetteViewModel: ObservableObject {
         }
         context["$get"] = stateManager.local
         context["$cache"] = stateManager.cache
+        context["$global"] = stateManager.globalGet()
 
         if let template = head?.templates?[activeTemplateName] {
             let rendered = TemplateEngine.render(template.unwrapped, context: context)

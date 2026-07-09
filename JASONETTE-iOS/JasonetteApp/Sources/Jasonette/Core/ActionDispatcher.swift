@@ -328,6 +328,8 @@ public final class ActionDispatcher: ObservableObject {
                 chainedPayload = await execute(success, baseURL: baseURL, payload: chainedPayload) ?? chainedPayload
             }
             return chainedPayload
+        } catch is AbortAction {
+            return payload
         } catch {
             let errorActions = continuationActions(action.errorActions, fallback: action.error)
             guard !errorActions.isEmpty else {
@@ -375,6 +377,36 @@ public final class ActionDispatcher: ObservableObject {
         case "$cache.reset", "$flush":
             stateManager.cacheReset()
             return [:]
+
+        // Global/session
+        case "$global.set":
+            guard let globalOptions = renderedDictionaryOptions(for: action, payload: payload) else { throw AbortAction() }
+            let values = unwrapDictionary(globalOptions)
+            let payload = stateManager.globalSet(values)
+            stateManager.set(["$jason": payload])
+            return payload
+
+        case "$global.reset":
+            guard let globalOptions = renderedDictionaryOptions(for: action, payload: payload) else { throw AbortAction() }
+            guard globalOptions["items"] == nil || globalOptions["items"]?.array != nil else { throw AbortAction() }
+            let items = globalOptions["items"]?.array?.compactMap(\.string) ?? []
+            let payload = stateManager.globalReset(items: items)
+            stateManager.set(["$jason": payload])
+            return payload
+
+        case "$session.set":
+            guard let domain = sessionDomain(from: options) else { throw AbortAction() }
+            stateManager.sessionSet(domain: domain, values: unwrapDictionary(options))
+            let payload: [String: Any] = [:]
+            stateManager.set(["$jason": payload])
+            return payload
+
+        case "$session.reset":
+            guard let domain = sessionDomain(from: options) else { throw AbortAction() }
+            stateManager.sessionReset(domain: domain)
+            let payload: [String: Any] = [:]
+            stateManager.set(["$jason": payload])
+            return payload
 
         // Render
         case "$render":
@@ -570,17 +602,22 @@ public final class ActionDispatcher: ObservableObject {
         }
         context["$get"] = stateManager.local
         context["$cache"] = stateManager.cache
+        context["$global"] = stateManager.globalGet()
         context["$root"] = context["$jason"] ?? context
         return context
     }
 
     private func renderedOptions(for action: JasonAction, payload: Any?) -> [String: AnyCodable] {
+        renderedDictionaryOptions(for: action, payload: payload) ?? [:]
+    }
+
+    private func renderedDictionaryOptions(for action: JasonAction, payload: Any?) -> [String: AnyCodable]? {
         let context = actionContext(payload: payload)
         if let options = action.options {
             return options.mapValues { wrapAsAnyCodable(TemplateEngine.render($0.unwrapped, context: context)) }
         }
-        guard let rawOptions = action.rawOptions else { return [:] }
-        return dictionaryFromAny(TemplateEngine.render(rawOptions.unwrapped, context: context)) ?? [:]
+        guard let rawOptions = action.rawOptions else { return nil }
+        return dictionaryFromAny(TemplateEngine.render(rawOptions.unwrapped, context: context))
     }
 
     private func payloadFromOptions(_ action: JasonAction, fallback: Any?) -> Any? {
@@ -940,7 +977,7 @@ public final class ActionDispatcher: ObservableObject {
 
     private func networkRequest(_ options: [String: AnyCodable], baseURL: URL?) async throws -> Any? {
         guard let urlStr = options["url"]?.string,
-              let url = JasonURL.resolve(urlStr, against: baseURL) else {
+              var url = JasonURL.resolve(urlStr, against: baseURL) else {
             throw ActionError.invalidURL
         }
 
@@ -949,16 +986,22 @@ public final class ActionDispatcher: ObservableObject {
             throw ActionError.blockedURL
         }
 
-        var request = URLRequest(url: url)
-        request.httpMethod = options["method"]?.string?.uppercased() ?? "GET"
+        let method = options["method"]?.string?.uppercased() ?? "GET"
+        let sessionOptions = sessionOptions(for: url)
+        let requestData = requestData(sessionOptions: sessionOptions, options: options)
+        if ["GET", "HEAD", "DELETE"].contains(method), !requestData.isEmpty {
+            url = urlByAppendingQuery(requestData, to: url)
+        }
 
-        if let headers = options["headers"]?.dictionary {
-            for (key, value) in headers {
-                guard !Self.blockedHeaders.contains(key.lowercased()) else { continue }
-                if let str = value.string {
-                    request.setValue(str, forHTTPHeaderField: key)
-                }
-            }
+        var request = URLRequest(url: url)
+        request.httpMethod = method
+
+        let authoredHeaders = options["header"]?.unwrapped ?? options["headers"]?.unwrapped
+        for (key, value) in stringDictionary(authoredHeaders) where !Self.blockedHeaders.contains(key.lowercased()) {
+            request.setValue(value, forHTTPHeaderField: key)
+        }
+        for (key, value) in stringDictionary(sessionOptions["header"]) {
+            request.setValue(value, forHTTPHeaderField: key)
         }
 
         if let body = options["body"] {
@@ -969,6 +1012,11 @@ public final class ActionDispatcher: ObservableObject {
                 if request.value(forHTTPHeaderField: "Content-Type") == nil {
                     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
                 }
+            }
+        } else if !["GET", "HEAD", "DELETE"].contains(method), !requestData.isEmpty {
+            request.httpBody = formEncode(requestData).data(using: .utf8)
+            if request.value(forHTTPHeaderField: "Content-Type") == nil {
+                request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
             }
         }
 
@@ -988,6 +1036,53 @@ public final class ActionDispatcher: ObservableObject {
         }
         return nil
     }
+
+    private func sessionDomain(from options: [String: AnyCodable]) -> String? {
+        guard let raw = options["domain"]?.string ?? options["url"]?.string else { return nil }
+        let withScheme = raw.contains("://") ? raw : "https://\(raw)"
+        return URL(string: withScheme)?.host?.lowercased()
+    }
+
+    private func sessionOptions(for url: URL) -> [String: Any] {
+        guard let host = url.host?.lowercased() else { return [:] }
+        return stateManager.session(forDomain: host) ?? [:]
+    }
+
+    private func requestData(sessionOptions: [String: Any], options: [String: AnyCodable]) -> [String: String] {
+        if options["data"] != nil {
+            return stringDictionary(options["data"]?.unwrapped)
+        }
+        return stringDictionary(sessionOptions["body"])
+    }
+
+    private func stringDictionary(_ value: Any?) -> [String: String] {
+        guard let dictionary = value as? [String: Any] else { return [:] }
+        return dictionary.reduce(into: [:]) { result, element in
+            result[element.key] = String(describing: element.value)
+        }
+    }
+
+    private func urlByAppendingQuery(_ params: [String: String], to url: URL) -> URL {
+        guard var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return url }
+        var items = components.queryItems ?? []
+        items.append(contentsOf: params.map { URLQueryItem(name: $0.key, value: $0.value) })
+        components.queryItems = items
+        return components.url ?? url
+    }
+
+    private func formEncode(_ params: [String: String]) -> String {
+        params.map { key, value in
+            "\(urlEncode(key))=\(urlEncode(value))"
+        }.joined(separator: "&")
+    }
+
+    private func urlEncode(_ value: String) -> String {
+        var allowed = CharacterSet.urlQueryAllowed
+        allowed.remove(charactersIn: "&+=?")
+        return value.addingPercentEncoding(withAllowedCharacters: allowed) ?? value
+    }
+
+    private struct AbortAction: Error {}
 
     // MARK: - Conversion
 

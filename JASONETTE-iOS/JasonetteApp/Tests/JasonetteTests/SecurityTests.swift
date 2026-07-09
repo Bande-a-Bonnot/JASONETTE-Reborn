@@ -23,7 +23,7 @@ final class SecurityTests: XCTestCase {
 
     override func tearDown() {
         StubURLProtocol.requestHandler = nil
-        UserDefaults.standard.removePersistentDomain(forName: suiteName)
+        UserDefaults(suiteName: suiteName)?.removePersistentDomain(forName: suiteName)
         super.tearDown()
     }
 
@@ -194,6 +194,43 @@ final class SecurityTests: XCTestCase {
             ]
         ])
         await dispatcher.execute(action)
+        await fulfillment(of: [expectation], timeout: 2.0)
+    }
+
+    func testAuthoredBlockedHeadersCannotBypassViaSessionHeaderProvenance() async {
+        let expectation = expectation(description: "request received")
+        StubURLProtocol.requestHandler = { request in
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer session")
+            XCTAssertNil(request.value(forHTTPHeaderField: "Cookie"))
+            XCTAssertNil(request.value(forHTTPHeaderField: "Host"))
+            XCTAssertEqual(request.value(forHTTPHeaderField: "X-Custom"), "hello")
+            expectation.fulfill()
+            let response = HTTPURLResponse(
+                url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil
+            )!
+            return (response, Data("{}".utf8))
+        }
+
+        await dispatcher.execute(decodeAction([
+            "type": "$session.set",
+            "options": [
+                "domain": "example.com",
+                "header": ["Authorization": "Bearer session"],
+            ],
+        ]))
+        await dispatcher.execute(decodeAction([
+            "type": "$network.request",
+            "options": [
+                "url": "https://example.com/api",
+                "headers": [
+                    "Authorization": "Bearer authored",
+                    "Cookie": "session=abc",
+                    "Host": "evil.com",
+                    "X-Custom": "hello",
+                ],
+            ],
+        ]))
+
         await fulfillment(of: [expectation], timeout: 2.0)
     }
 

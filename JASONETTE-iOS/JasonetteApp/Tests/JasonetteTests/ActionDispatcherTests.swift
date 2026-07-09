@@ -20,7 +20,7 @@ final class ActionDispatcherTests: XCTestCase {
         dispatcher.invalidateAllTimers()
         StubURLProtocol.requestHandler = nil
         StubURLProtocol.redirectHandler = nil
-        UserDefaults.standard.removePersistentDomain(forName: suiteName)
+        UserDefaults(suiteName: suiteName)?.removePersistentDomain(forName: suiteName)
         super.tearDown()
     }
 
@@ -1250,6 +1250,226 @@ final class ActionDispatcherTests: XCTestCase {
                                       httpVersion: nil, headerFields: nil)!
             return (resp, data)
         }
+    }
+
+    func testGlobalSetStoresPayloadAndExposesGlobalContext() async {
+        let action = decodeAction([
+            "type": "$global.set",
+            "options": [
+                "token": "abc",
+                "profile": ["name": "Ada"],
+            ],
+            "success": [
+                "type": "$set",
+                "options": ["saved": "{{$global.profile.name}}"]
+            ]
+        ])
+
+        await dispatcher.execute(action)
+
+        XCTAssertEqual(stateManager.globalGet()["token"] as? String, "abc")
+        XCTAssertEqual(stateManager.get()["saved"] as? String, "Ada")
+        XCTAssertEqual((stateManager.get()["$jason"] as? [String: Any])?["token"] as? String, "abc")
+    }
+
+    func testGlobalResetRemovesOnlyListedItemsAndReturnsUpdatedPayload() async {
+        stateManager.globalSet(["token": "abc", "theme": "dark"])
+        let action = decodeAction([
+            "type": "$global.reset",
+            "options": ["items": ["token"]],
+            "success": [
+                "type": "$set",
+                "options": ["remaining_theme": "{{$jason.theme}}"]
+            ]
+        ])
+
+        await dispatcher.execute(action)
+
+        XCTAssertNil(stateManager.globalGet()["token"])
+        XCTAssertEqual(stateManager.globalGet()["theme"] as? String, "dark")
+        XCTAssertEqual(stateManager.get()["remaining_theme"] as? String, "dark")
+    }
+
+    func testGlobalAndSessionMissingOptionsAbortWithoutContinuations() async {
+        let actions = [
+            decodeAction([
+                "type": "$global.set",
+                "success": ["type": "$set", "options": ["global_success": true]],
+                "error": ["type": "$set", "options": ["global_error": true]],
+            ]),
+            decodeAction([
+                "type": "$global.set",
+                "options": ["bad"],
+                "success": ["type": "$set", "options": ["global_malformed_success": true]],
+                "error": ["type": "$set", "options": ["global_malformed_error": true]],
+            ]),
+            decodeAction([
+                "type": "$session.set",
+                "options": ["header": ["Authorization": "Bearer abc"]],
+                "success": ["type": "$set", "options": ["session_success": true]],
+                "error": ["type": "$set", "options": ["session_error": true]],
+            ]),
+        ]
+
+        for action in actions { await dispatcher.execute(action) }
+
+        XCTAssertNil(stateManager.get()["global_success"])
+        XCTAssertNil(stateManager.get()["global_error"])
+        XCTAssertNil(stateManager.get()["global_malformed_success"])
+        XCTAssertNil(stateManager.get()["global_malformed_error"])
+        XCTAssertNil(stateManager.get()["session_success"])
+        XCTAssertNil(stateManager.get()["session_error"])
+    }
+
+    func testSessionSetDecoratesGetNetworkRequestAndResetRemovesIt() async {
+        let expectation = expectation(description: "requests received")
+        expectation.expectedFulfillmentCount = 2
+        var urls: [URL] = []
+        var authHeaders: [String?] = []
+        StubURLProtocol.requestHandler = { request in
+            urls.append(request.url!)
+            authHeaders.append(request.value(forHTTPHeaderField: "Authorization"))
+            expectation.fulfill()
+            let resp = HTTPURLResponse(url: request.url!, statusCode: 200,
+                                      httpVersion: nil, headerFields: nil)!
+            return (resp, Data("{}".utf8))
+        }
+        let dispatcher = makeStubbedDispatcher()
+
+        await dispatcher.execute(decodeAction([
+            "type": "$session.set",
+            "options": [
+                "domain": "api.example.com",
+                "header": ["Authorization": "Bearer session"],
+                "body": ["api_key": "secret"],
+            ],
+        ]))
+        await dispatcher.execute(decodeAction([
+            "type": "$network.request",
+            "options": ["url": "https://api.example.com/items?existing=1"],
+        ]))
+        await dispatcher.execute(decodeAction([
+            "type": "$session.reset",
+            "options": ["url": "https://api.example.com/logout"],
+        ]))
+        await dispatcher.execute(decodeAction([
+            "type": "$network.request",
+            "options": ["url": "https://api.example.com/items"],
+        ]))
+
+        await fulfillment(of: [expectation], timeout: 1.0)
+        XCTAssertEqual(urls[0], URL(string: "https://api.example.com/items?existing=1&api_key=secret")!)
+        XCTAssertEqual(authHeaders[0], "Bearer session")
+        XCTAssertEqual(urls[1], URL(string: "https://api.example.com/items")!)
+        XCTAssertNil(authHeaders[1])
+    }
+
+    func testSessionDomainBareHostBeginningWithHttpNormalizesCorrectly() async {
+        let expectation = expectation(description: "request received")
+        StubURLProtocol.requestHandler = { request in
+            XCTAssertEqual(request.value(forHTTPHeaderField: "X-Session"), "yes")
+            expectation.fulfill()
+            let resp = HTTPURLResponse(url: request.url!, statusCode: 200,
+                                      httpVersion: nil, headerFields: nil)!
+            return (resp, Data("{}".utf8))
+        }
+        let dispatcher = makeStubbedDispatcher()
+
+        await dispatcher.execute(decodeAction([
+            "type": "$session.set",
+            "options": [
+                "domain": "httpbin.org",
+                "header": ["X-Session": "yes"],
+            ],
+        ]))
+        await dispatcher.execute(decodeAction([
+            "type": "$network.request",
+            "options": ["url": "https://httpbin.org/get"],
+        ]))
+
+        await fulfillment(of: [expectation], timeout: 1.0)
+    }
+
+    func testSessionBodyDecoratesDeleteAsQueryParameters() async {
+        let expectation = expectation(description: "delete request received")
+        StubURLProtocol.requestHandler = { request in
+            XCTAssertEqual(request.httpMethod, "DELETE")
+            XCTAssertEqual(request.url, URL(string: "https://api.example.com/items?api_key=secret")!)
+            XCTAssertNil(request.httpBody)
+            XCTAssertNil(request.httpBodyStream)
+            expectation.fulfill()
+            let resp = HTTPURLResponse(url: request.url!, statusCode: 200,
+                                      httpVersion: nil, headerFields: nil)!
+            return (resp, Data("{}".utf8))
+        }
+        let dispatcher = makeStubbedDispatcher()
+
+        await dispatcher.execute(decodeAction([
+            "type": "$session.set",
+            "options": [
+                "domain": "api.example.com",
+                "body": ["api_key": "secret"],
+            ],
+        ]))
+        await dispatcher.execute(decodeAction([
+            "type": "$network.request",
+            "options": [
+                "url": "https://api.example.com/items",
+                "method": "DELETE",
+            ],
+        ]))
+
+        await fulfillment(of: [expectation], timeout: 1.0)
+    }
+
+    func testSessionDecoratesNonGetAndAuthoredDataReplacesSessionBody() async {
+        let expectation = expectation(description: "post request received")
+        StubURLProtocol.requestHandler = { request in
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer session")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "X-Session"), "yes")
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Content-Type"), "application/x-www-form-urlencoded")
+            let bodyData = request.httpBody ?? {
+                guard let stream = request.httpBodyStream else { return Data() }
+                stream.open()
+                defer { stream.close() }
+                var data = Data()
+                var buffer = [UInt8](repeating: 0, count: 1024)
+                while stream.hasBytesAvailable {
+                    let count = stream.read(&buffer, maxLength: buffer.count)
+                    if count <= 0 { break }
+                    data.append(buffer, count: count)
+                }
+                return data
+            }()
+            let body = String(data: bodyData, encoding: .utf8)
+            let pairs = Set(body?.split(separator: "&").map(String.init) ?? [])
+            XCTAssertEqual(pairs, ["locale=fr", "page=1"])
+            expectation.fulfill()
+            let resp = HTTPURLResponse(url: request.url!, statusCode: 200,
+                                      httpVersion: nil, headerFields: nil)!
+            return (resp, Data("{}".utf8))
+        }
+        let dispatcher = makeStubbedDispatcher()
+
+        await dispatcher.execute(decodeAction([
+            "type": "$session.set",
+            "options": [
+                "url": "https://api.example.com/login",
+                "header": ["Authorization": "Bearer session", "X-Session": "yes"],
+                "body": ["api_key": "secret", "locale": "en"],
+            ],
+        ]))
+        await dispatcher.execute(decodeAction([
+            "type": "$network.request",
+            "options": [
+                "url": "https://api.example.com/items",
+                "method": "POST",
+                "header": ["Authorization": "Bearer authored", "X-Session": "authored"],
+                "data": ["locale": "fr", "page": "1"],
+            ],
+        ]))
+
+        await fulfillment(of: [expectation], timeout: 1.0)
     }
 
     func testNetworkRequestResolvesRelativeURLAgainstDocumentURL() async {

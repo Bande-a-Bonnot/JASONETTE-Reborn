@@ -685,6 +685,30 @@ final class ViewModelTests: XCTestCase {
         XCTAssertEqual(resultLabel, "[0,1,2,3,4,5,6,7,8,9]")
     }
 
+    func testRenderContextExposesGlobalStore() async throws {
+        let doc = makeDocument([
+            "$jason": [
+                "head": [
+                    "templates": [
+                        "body": [
+                            "sections": [[
+                                "items": [["type": "label", "text": "{{$global.user.name}}"]]
+                            ]]
+                        ]
+                    ]
+                ]
+            ]
+        ])
+        let vm = JasonetteViewModel(document: doc)
+        vm.stateManager.globalSet(["user": ["name": "Ada"]])
+        defer { vm.stateManager.globalReset(items: ["user"]) }
+
+        await vm.load()
+
+        let item = try XCTUnwrap(vm.renderedRoot?.body?.sections?.first?.items?.first)
+        XCTAssertEqual(item.text, "Ada")
+    }
+
     func testJasonpediaTemplateCSVFixtureRendersConvertedRows() throws {
         let doc = try loadJasonpediaDocument("Jasonpedia/template/csv.json")
         let body = try renderBodyTemplate(doc, context: [

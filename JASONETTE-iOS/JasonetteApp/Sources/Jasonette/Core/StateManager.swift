@@ -1,7 +1,7 @@
 import Foundation
 import SwiftUI
 
-/// Manages Jasonette state: local ($set/$get), cache (UserDefaults).
+/// Manages Jasonette state: local ($set/$get), cache, global, and session stores.
 @MainActor
 public final class StateManager: ObservableObject {
     @Published public var local: [String: Any] = [:]
@@ -10,7 +10,11 @@ public final class StateManager: ObservableObject {
     }
 
     private let cacheKey = "jasonette:cache"
+    private let globalKey = "jasonette:global"
+    private let sessionKey = "jasonette:session"
     private let defaults: UserDefaults
+    private var global: [String: Any]
+    private var sessions: [String: [String: Any]]
 
     public init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -20,6 +24,13 @@ public final class StateManager: ObservableObject {
         } else {
             cache = [:]
         }
+        if let data = defaults.data(forKey: globalKey),
+           let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+            global = dict
+        } else {
+            global = [:]
+        }
+        sessions = Self.loadSessions(from: defaults, key: sessionKey)
     }
 
     // MARK: - Local state ($set / $get)
@@ -90,7 +101,52 @@ public final class StateManager: ObservableObject {
         cache = [:]
     }
 
-    // MARK: - Flush (clear everything)
+    // MARK: - Global ($global.set / $global.reset)
+
+    @discardableResult
+    public func globalSet(_ values: [String: Any]) -> [String: Any] {
+        _ = globalGet()
+        global.merge(values) { _, new in new }
+        persistGlobal()
+        return globalGet()
+    }
+
+    @discardableResult
+    public func globalReset(items: [String]) -> [String: Any] {
+        _ = globalGet()
+        for item in items { global.removeValue(forKey: item) }
+        persistGlobal()
+        return globalGet()
+    }
+
+    public func globalGet() -> [String: Any] {
+        if let data = defaults.data(forKey: globalKey),
+           let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+            global = dict
+        }
+        return global
+    }
+
+    // MARK: - Session ($session.set / $session.reset)
+
+    public func sessionSet(domain: String, values: [String: Any]) {
+        sessions = Self.loadSessions(from: defaults, key: sessionKey)
+        sessions[domain.lowercased()] = values
+        persistSessions()
+    }
+
+    public func sessionReset(domain: String) {
+        sessions = Self.loadSessions(from: defaults, key: sessionKey)
+        sessions.removeValue(forKey: domain.lowercased())
+        persistSessions()
+    }
+
+    public func session(forDomain domain: String) -> [String: Any]? {
+        sessions = Self.loadSessions(from: defaults, key: sessionKey)
+        return sessions[domain.lowercased()]
+    }
+
+    // MARK: - Flush (clear local + cache)
 
     public func flush() {
         local = [:]
@@ -100,9 +156,30 @@ public final class StateManager: ObservableObject {
     // MARK: - Persistence
 
     private func persistCache() {
-        guard JSONSerialization.isValidJSONObject(cache) else { return }
-        if let data = try? JSONSerialization.data(withJSONObject: cache) {
-            defaults.set(data, forKey: cacheKey)
+        persist(cache, key: cacheKey)
+    }
+
+    private func persistGlobal() {
+        persist(global, key: globalKey)
+    }
+
+    private func persistSessions() {
+        persist(sessions, key: sessionKey)
+    }
+
+    private func persist(_ value: Any, key: String) {
+        guard JSONSerialization.isValidJSONObject(value),
+              let data = try? JSONSerialization.data(withJSONObject: value) else { return }
+        defaults.set(data, forKey: key)
+    }
+
+    private static func loadSessions(from defaults: UserDefaults, key: String) -> [String: [String: Any]] {
+        guard let data = defaults.data(forKey: key),
+              let raw = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return [:] }
+        return raw.reduce(into: [:]) { result, element in
+            if let session = element.value as? [String: Any] {
+                result[element.key.lowercased()] = session
+            }
         }
     }
 }
