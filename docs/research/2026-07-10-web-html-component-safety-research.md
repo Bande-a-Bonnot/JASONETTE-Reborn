@@ -158,7 +158,8 @@ the value whose resolved key is `text` and transform all other values normally.
 The Web renderer enables this mode only for body templates, so generic action
 option/data transforms retain existing behavior. Set the iframe sandbox to
 exactly `allow-scripts` for inline and URL-backed HTML before assigning either
-`srcdoc` or `src`.
+`srcdoc` or `src`. Apply the same sandbox to HTML body backgrounds because the
+same document author controls both equivalent raw-HTML paths.
 
 Benefits: closes the protocol violation before interpolation, handles dynamic
 component types without changing generic transforms, maintains ordinary
@@ -195,10 +196,10 @@ or escape meaningful sandbox protections and access parent-origin data.
 - **Should scripts run?** Yes, inside an opaque origin for legacy fixture parity.
 - **Should URL-backed HTML be sandboxed too?** Yes; the HTML component boundary
   is consistent regardless of source.
-- **Should body-background webcontainers change in this slice?** Their raw
-  `html.text` values participate in body-template protection because they are
-  inside the body tree. Their structurally separate iframe creation/sandbox
-  policy does not change and needs its own compatibility/security review.
+- **Should body-background webcontainers change in this slice?** Yes. Their raw
+  `html.text` values participate in body-template protection, and their iframes
+  receive the same opaque script sandbox. Leaving this equivalent author-owned
+  path unsandboxed would bypass the component boundary.
 
 ### Deferred
 

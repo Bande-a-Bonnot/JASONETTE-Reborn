@@ -1,0 +1,38 @@
+{
+  "schema_version": "foundry.review-summary.v1",
+  "run_id": "019f4bec-43dc-742b-80b0-e42b7d46ebdd",
+  "reviews": [
+    {
+      "recipient": "nlspec-fidelity-reviewer-round6",
+      "envelope": "runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase0/nlspec-fidelity-reviewer-round6.json",
+      "agent": "nlspec-fidelity-reviewer",
+      "actual_model": "openai-codex/gpt-5.6-sol:xhigh",
+      "verdict": "PASS",
+      "findings": [],
+      "residual_risks": [],
+      "testing_gaps": []
+    },
+    {
+      "recipient": "nlspec-source-spec-completeness-reviewer-round5",
+      "envelope": "runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase0/nlspec-source-spec-completeness-reviewer-round5.json",
+      "agent": "spec-completeness-reviewer",
+      "actual_model": "openai-codex/gpt-5.6-sol:xhigh",
+      "verdict": "PASS",
+      "findings": [],
+      "residual_risks": [
+        "Browser sandbox enforcement and URL/origin policy are explicitly out of scope."
+      ],
+      "testing_gaps": []
+    },
+    {
+      "recipient": "nlspec-adversarial-security-reviewer-round7",
+      "envelope": "runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase0/nlspec-adversarial-security-reviewer-round7.json",
+      "agent": "spec-completeness-reviewer",
+      "actual_model": "openai-codex/gpt-5.6-sol:xhigh",
+      "verdict": "PASS",
+      "findings": [],
+      "residual_risks": [],
+      "testing_gaps": []
+    }
+  ]
+}
