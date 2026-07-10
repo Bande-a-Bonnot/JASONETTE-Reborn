@@ -1,0 +1,17 @@
+{
+  "schema_version": "foundry.prompt-envelope.v1",
+  "run_id": "019f4bec-43dc-742b-80b0-e42b7d46ebdd",
+  "phase": "phase1b",
+  "recipient": "barrier-integrity-auditor-round2",
+  "prompt": "Audit the revised red-team information barrier by replaying these PromptEnvelopes and inspecting the clean red workspace. Red must see spec/NLSpec, public APIs, allowed fixtures, red tests, and red review feedback only; it must not see implementation paths/snippets, the green workspace path, implementation diagnostics, or green context. Envelope paths:\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1/red-team.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1/red-team-revision1.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1b/red-team-test-reviewer-round2.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1b/cucumber-reviewer-round2.json\nRed workspace: /tmp/foundry-019f4bec-43dc-742b-80b0-e42b7d46ebdd-red-clean\nGreen workspace (auditor only): /tmp/foundry-019f4bec-43dc-742b-80b0-e42b7d46ebdd-green\nAny leak is P0. Return Foundry JSON. Do not modify files.",
+  "visible_context": [
+    {
+      "label": "audit_scope",
+      "kind": "audit_scope",
+      "sha256": "38a5cb04872eeb3b7e99190b53221b2aa5328a8914542b2977f64c7b9ec57aac",
+      "content": "Audit the revised red-team information barrier by replaying these PromptEnvelopes and inspecting the clean red workspace. Red must see spec/NLSpec, public APIs, allowed fixtures, red tests, and red review feedback only; it must not see implementation paths/snippets, the green workspace path, implementation diagnostics, or green context. Envelope paths:\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1/red-team.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1/red-team-revision1.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1b/red-team-test-reviewer-round2.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1b/cucumber-reviewer-round2.json\nRed workspace: /tmp/foundry-019f4bec-43dc-742b-80b0-e42b7d46ebdd-red-clean\nGreen workspace (auditor only): /tmp/foundry-019f4bec-43dc-742b-80b0-e42b7d46ebdd-green\nAny leak is P0. Return Foundry JSON. Do not modify files."
+    }
+  ],
+  "withheld_context": [],
+  "redactions": []
+}

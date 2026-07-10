@@ -1,0 +1,17 @@
+{
+  "schema_version": "foundry.prompt-envelope.v1",
+  "run_id": "019f4bec-43dc-742b-80b0-e42b7d46ebdd",
+  "phase": "phase1b",
+  "recipient": "barrier-integrity-auditor-restart2",
+  "prompt": "Audit only restarted red lineage after revision. Replay:\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1/red-team-restart1.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1/red-team-restart-revision1.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1b/red-team-test-reviewer-restart2.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1b/cucumber-reviewer-restart2.json\nInspect /tmp/foundry-019f4bec-43dc-742b-80b0-e42b7d46ebdd-red-restart. No implementation worktree existed during red dispatch. Verify no implementation path/snippet/context leaked; withheld samples absent; any actual leak P0. Ignore invalidated old red lineages. Return JSON. Do not modify.",
+  "visible_context": [
+    {
+      "label": "audit_scope",
+      "kind": "audit_scope",
+      "sha256": "195e8ce201e539d684f8bda5fddeb734f63b3a4c083ac2e48090b90fae7b92e0",
+      "content": "Audit only restarted red lineage after revision. Replay:\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1/red-team-restart1.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1/red-team-restart-revision1.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1b/red-team-test-reviewer-restart2.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1b/cucumber-reviewer-restart2.json\nInspect /tmp/foundry-019f4bec-43dc-742b-80b0-e42b7d46ebdd-red-restart. No implementation worktree existed during red dispatch. Verify no implementation path/snippet/context leaked; withheld samples absent; any actual leak P0. Ignore invalidated old red lineages. Return JSON. Do not modify."
+    }
+  ],
+  "withheld_context": [],
+  "redactions": []
+}

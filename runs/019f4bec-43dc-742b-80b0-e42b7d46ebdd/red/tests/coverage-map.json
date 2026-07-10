@@ -1,0 +1,1116 @@
+{
+  "version": 1,
+  "suite": {
+    "framework": "Vitest",
+    "environment": "jsdom",
+    "publicImportsOnly": true,
+    "reportedTestCount": 277,
+    "gherkinScenarioCount": 277,
+    "gherkinConcreteness": {
+      "schema": "setup-action-expected-v1",
+      "catalog": "tests/case-catalog.mjs#GHERKIN_CONTRACTS",
+      "expandedCaseCount": 277,
+      "outlineExampleCount": 242,
+      "literalScenarioCount": 35
+    },
+    "requiredTypecheck": {
+      "command": "npx tsc --project tests/tsconfig.public-types.json",
+      "config": "tests/tsconfig.public-types.json",
+      "entrypoint": "tests/public-types.test.ts",
+      "publicImport": "@jasonette/template-engine"
+    }
+  },
+  "requirements": {
+    "6.1-1": {
+      "status": "automated",
+      "description": "preserveHtmlText exists in the real public RenderOptions type under required tsc compilation, and omission and explicit false preserve generic behavior",
+      "compileEvidence": [
+        "CMD-9"
+      ],
+      "tests": [
+        "transform exact: body mode preserves HTML text and transforms nested style",
+        "transform exact: resolved type and text keys preserve HTML text",
+        "transform exact: resolved type key classifies authored text",
+        "transform exact: duplicate resolved text uses the authored last value",
+        "transform exact: label text interpolates in body mode",
+        "transform exact: omitted body option interpolates HTML text",
+        "transform exact: explicit false option interpolates HTML text",
+        "explicit false option preserves per-entry key-then-value getter ordering",
+        "public RenderOptions type accepts preserveHtmlText",
+        "standalone transform with an unrelated option remains generic"
+      ]
+    },
+    "6.1-2": {
+      "status": "automated",
+      "description": "source selections and observer events match the normative values",
+      "tests": [
+        "background canonical matrix: inline",
+        "background canonical matrix: URL",
+        "background canonical matrix: dual source text precedence",
+        "background canonical matrix: whitespace inline source",
+        "background canonical matrix: empty sources",
+        "background canonical matrix: non-string coercion sentinels",
+        "background canonical matrix: one-space CSS",
+        "background canonical matrix: repeated mixed-case CSS escape",
+        "background canonical matrix: inherited-only source fields",
+        "background canonical matrix: inherited text with own URL",
+        "background canonical matrix: inherited URL with own text",
+        "background canonical matrix: inherited CSS with own text",
+        "background canonical matrix: missing type",
+        "background canonical matrix: non-string type",
+        "background canonical matrix: non-HTML type",
+        "background canonical matrix: __proto__ type collision",
+        "background canonical matrix: constructor type collision",
+        "background canonical matrix: prototype type collision",
+        "background canonical matrix: toString type collision",
+        "background canonical matrix: HTML type without source",
+        "background legacy matrix: inline",
+        "background legacy matrix: URL",
+        "background legacy matrix: dual source text precedence",
+        "background legacy matrix: whitespace inline source",
+        "background legacy matrix: empty sources",
+        "background legacy matrix: non-string coercion sentinels",
+        "background legacy matrix: one-space CSS",
+        "background legacy matrix: repeated mixed-case CSS escape",
+        "background legacy matrix: inherited-only source fields",
+        "background legacy matrix: inherited text with own URL",
+        "background legacy matrix: inherited URL with own text",
+        "background legacy matrix: inherited CSS with own text",
+        "background legacy matrix: missing type",
+        "background legacy matrix: non-string type",
+        "background legacy matrix: non-HTML type",
+        "background legacy matrix: __proto__ type collision",
+        "background legacy matrix: constructor type collision",
+        "background legacy matrix: prototype type collision",
+        "background legacy matrix: toString type collision",
+        "background legacy matrix: HTML type without source",
+        "component source: inline text wins over a URL",
+        "component source: whitespace text is a valid inline source",
+        "component source: empty text falls back to a URL",
+        "component source: numeric text and object URL are not coerced",
+        "component source: inherited-only text and URL are ignored",
+        "component source: inherited text yields to an own URL",
+        "component source: inherited URL yields to own text",
+        "component source: missing text and URL creates no iframe",
+        "component source: invalid HTML is assigned byte-for-byte",
+        "component inline iframe trace installs sandbox before source insertion and return",
+        "component URL iframe trace installs sandbox before source insertion and return",
+        "background canonical matrix: empty own text with valid URL fallback",
+        "background canonical matrix: non-string own text with valid URL fallback",
+        "background canonical matrix: invalid inline HTML exact preservation",
+        "background legacy matrix: empty own text with valid URL fallback",
+        "background legacy matrix: non-string own text with valid URL fallback",
+        "background legacy matrix: invalid inline HTML exact preservation"
+      ]
+    },
+    "6.1-3": {
+      "status": "automated",
+      "description": "html text and allow-scripts constants are exact at outputs",
+      "tests": [
+        "transform exact: body mode preserves HTML text and transforms nested style",
+        "component inline iframe trace installs sandbox before source insertion and return",
+        "emitted iframe policy is exact and makes no browser-enforcement assertion"
+      ]
+    },
+    "6.2-1": {
+      "status": "automated",
+      "description": "initial and render-action pipelines transform safely and sandbox both paths",
+      "tests": [
+        "integration smoke: initial render actual $render generic action and all iframe traces stay live",
+        "actual $render replaces a background iframe while old and new sandbox endpoints remain exact"
+      ]
+    },
+    "6.2-2": {
+      "status": "automated",
+      "description": "all body recursion locations inherit body mode",
+      "tests": [
+        "body recursion path: root HTML shape preserves raw text",
+        "body recursion path: header HTML shape preserves raw text",
+        "body recursion path: footer HTML shape preserves raw text",
+        "body recursion path: section HTML shape preserves raw text",
+        "body recursion path: layout HTML shape preserves raw text",
+        "body recursion path: layer HTML shape preserves raw text",
+        "body recursion path: background HTML shape preserves raw text",
+        "body recursion path: nested array HTML shape preserves raw text",
+        "body recursion path: action options HTML shape preserves raw text",
+        "body recursion path: action payload HTML shape preserves raw text",
+        "directive recursion: #if result preserves HTML text",
+        "directive recursion: #elseif result preserves HTML text",
+        "directive recursion: #else result preserves HTML text",
+        "directive recursion: #each results preserve HTML text"
+      ]
+    },
+    "6.2-3": {
+      "status": "automated",
+      "description": "generic actions and omitted or explicit-false direct transforms preserve off-mode output and ordering",
+      "tests": [
+        "transform exact: omitted body option interpolates HTML text",
+        "transform exact: explicit false option interpolates HTML text",
+        "off mode preserves per-entry key-then-value getter ordering",
+        "explicit false option preserves per-entry key-then-value getter ordering",
+        "production $set action options use generic interpolation at action time",
+        "successful continuation interpolates HTML-shaped options generically in exact order"
+      ]
+    },
+    "6.2-4": {
+      "status": "automated",
+      "description": "safe properties cover transforms state and sessions",
+      "tests": [
+        "safe state sink: $set retains dangerous own descriptors",
+        "safe state sink: $cache.set retains dangerous own descriptors",
+        "safe state sink: $global.set retains dangerous own descriptors",
+        "session registry: reachable __proto__ domain is an inert own property",
+        "session registry: reachable constructor domain is an inert own property",
+        "session registry: reachable prototype domain is an inert own property",
+        "session storage safely copies dangerous option keys into a fresh ordinary object",
+        "session storage accepts null-prototype transformed options",
+        "dangerous transform: body mode defines inert own __proto__",
+        "dangerous transform: off mode defines inert own __proto__",
+        "dangerous transform: body mode defines inert own constructor",
+        "dangerous transform: off mode defines inert own constructor",
+        "dangerous transform: body mode defines inert own prototype",
+        "dangerous transform: off mode defines inert own prototype"
+      ]
+    },
+    "6.2-5": {
+      "status": "automated",
+      "description": "component action trigger and lambda dispatch are own-only including authored named-action array order",
+      "tests": [
+        "action type: missing type with no trigger returns undefined",
+        "action type: inherited handler type is ignored",
+        "action type: non-string type returns undefined",
+        "action type: own __proto__ type returns undefined without continuation",
+        "action type: own constructor type returns undefined without continuation",
+        "action type: own prototype type returns undefined without continuation",
+        "action type: own toString type returns undefined without continuation",
+        "named trigger: own toString entry executes",
+        "named trigger: inherited toString entry is ignored",
+        "named lambda: own toString entry executes",
+        "named lambda: inherited toString entry is ignored",
+        "named trigger: own constructor entry executes",
+        "named trigger: inherited constructor entry is ignored",
+        "named lambda: own constructor entry executes",
+        "named lambda: inherited constructor entry is ignored",
+        "named trigger: own __proto__ entry executes",
+        "named trigger: inherited __proto__ entry is ignored",
+        "named lambda: own __proto__ entry executes",
+        "named lambda: inherited __proto__ entry is ignored",
+        "component registry never invokes an inherited callable renderer",
+        "action type: own unknown non-HTML type returns undefined",
+        "non-string action type with own toString trigger executes",
+        "non-string action type with own constructor trigger executes",
+        "non-string action type with own __proto__ trigger executes",
+        "non-string action type with own prototype trigger executes",
+        "inherited toString trigger is ignored",
+        "inherited constructor trigger is ignored",
+        "inherited __proto__ trigger is ignored",
+        "inherited prototype trigger is ignored",
+        "component registry inherited callable: redInheritedComponentCallable is not invoked and exact unknown oracle is returned",
+        "component registry inherited callable: toString is not invoked and exact unknown oracle is returned",
+        "component registry inherited callable: constructor is not invoked and exact unknown oracle is returned",
+        "component registry inherited callable: __proto__ is not invoked and exact unknown oracle is returned",
+        "component registry inherited callable: prototype is not invoked and exact unknown oracle is returned",
+        "own named action arrays execute async non-commutative authored order through trigger",
+        "own named action arrays execute async non-commutative authored order through lambda",
+        "action type: own custom type with only an inherited callable returns undefined"
+      ]
+    },
+    "6.2-6": {
+      "status": "automated",
+      "description": "prototype-name own and inherited dispatch vectors have exact outcomes",
+      "tests": [
+        "action type: missing type with no trigger returns undefined",
+        "action type: inherited handler type is ignored",
+        "action type: non-string type returns undefined",
+        "action type: own __proto__ type returns undefined without continuation",
+        "action type: own constructor type returns undefined without continuation",
+        "action type: own prototype type returns undefined without continuation",
+        "action type: own toString type returns undefined without continuation",
+        "named trigger: own toString entry executes",
+        "named trigger: inherited toString entry is ignored",
+        "named lambda: own toString entry executes",
+        "named lambda: inherited toString entry is ignored",
+        "named trigger: own constructor entry executes",
+        "named trigger: inherited constructor entry is ignored",
+        "named lambda: own constructor entry executes",
+        "named lambda: inherited constructor entry is ignored",
+        "named trigger: own __proto__ entry executes",
+        "named trigger: inherited __proto__ entry is ignored",
+        "named lambda: own __proto__ entry executes",
+        "named lambda: inherited __proto__ entry is ignored",
+        "component type: missing type uses the label default without an iframe",
+        "component type: inherited HTML type uses the label default without an iframe",
+        "component type: non-string type uses the label default without an iframe",
+        "component type: own label type renders without an iframe",
+        "component type: own __proto__ type is a visible unknown component",
+        "component type: own constructor type is a visible unknown component",
+        "component type: own prototype type is a visible unknown component",
+        "component type: own toString type is a visible unknown component",
+        "action type: own unknown non-HTML type returns undefined",
+        "background canonical matrix: inherited HTML type",
+        "background legacy matrix: inherited HTML type",
+        "action type: own custom type with only an inherited callable returns undefined"
+      ]
+    },
+    "6.3-1": {
+      "status": "automated",
+      "description": "final resolved type and text classify protection",
+      "tests": [
+        "classification collision: final label type disables raw text protection",
+        "classification collision: final HTML type enables raw text protection",
+        "classification negative: missing type does not protect text",
+        "classification negative: unresolved type does not protect text",
+        "classification negative: non-string type does not protect text",
+        "duplicate raw text entries are never evaluated and the last authored value wins"
+      ]
+    },
+    "6.3-2": {
+      "status": "automated",
+      "description": "safe output and own source fields are evidenced",
+      "tests": [
+        "component source: inherited-only text and URL are ignored",
+        "component source: inherited text yields to an own URL",
+        "component source: inherited URL yields to own text",
+        "transform-to-render ownership: inherited text URL and CSS create no iframe",
+        "transform-to-render ownership: inherited text plus own URL selects URL",
+        "transform-to-render ownership: inherited URL plus own text selects inline",
+        "transform-to-render ownership: inherited CSS plus own text omits CSS",
+        "dangerous transform: body mode defines inert own __proto__",
+        "dangerous transform: off mode defines inert own __proto__",
+        "dangerous transform: body mode defines inert own constructor",
+        "dangerous transform: off mode defines inert own constructor",
+        "dangerous transform: body mode defines inert own prototype",
+        "dangerous transform: off mode defines inert own prototype"
+      ]
+    },
+    "6.3-3": {
+      "status": "automated",
+      "description": "sandbox and finite observation windows are exact: direct calls mark actual return, integrated calls mark wrapper data completion and reject later events through public return",
+      "tests": [
+        "background RETURN is captured at the runtime-wrapped renderBodyBackground method boundary",
+        "component inline iframe trace installs sandbox before source insertion and return",
+        "component URL iframe trace installs sandbox before source insertion and return",
+        "component RETURN observer self-test marks only after direct renderComponent returns",
+        "actual $render replaces a background iframe while old and new sandbox endpoints remain exact",
+        "integrated component marker completes before public return and later iframe events are rejected"
+      ]
+    },
+    "6.4-1": {
+      "status": "automated",
+      "description": "initial template rendering enables body mode",
+      "tests": [
+        "integration smoke: initial render actual $render generic action and all iframe traces stay live"
+      ]
+    },
+    "6.4-2": {
+      "status": "automated",
+      "description": "actual render action enables body mode",
+      "tests": [
+        "integration smoke: initial render actual $render generic action and all iframe traces stay live",
+        "actual $render replaces a background iframe while old and new sandbox endpoints remain exact"
+      ]
+    },
+    "6.4-3": {
+      "status": "automated",
+      "description": "arrays nested objects and directives propagate mode",
+      "tests": [
+        "body recursion path: root HTML shape preserves raw text",
+        "body recursion path: header HTML shape preserves raw text",
+        "body recursion path: footer HTML shape preserves raw text",
+        "body recursion path: section HTML shape preserves raw text",
+        "body recursion path: layout HTML shape preserves raw text",
+        "body recursion path: layer HTML shape preserves raw text",
+        "body recursion path: background HTML shape preserves raw text",
+        "body recursion path: nested array HTML shape preserves raw text",
+        "body recursion path: action options HTML shape preserves raw text",
+        "body recursion path: action payload HTML shape preserves raw text",
+        "directive recursion: #if result preserves HTML text",
+        "directive recursion: #elseif result preserves HTML text",
+        "directive recursion: #else result preserves HTML text",
+        "directive recursion: #each results preserve HTML text"
+      ]
+    },
+    "6.4-4": {
+      "status": "automated",
+      "description": "production set direct and unrelated transforms stay generic",
+      "tests": [
+        "production $set action options use generic interpolation at action time",
+        "standalone transform with an unrelated option remains generic",
+        "transform exact: omitted body option interpolates HTML text"
+      ]
+    },
+    "6.4-5": {
+      "status": "automated",
+      "description": "embedded body action is raw then action-time generic",
+      "tests": [
+        "embedded body action options are raw immediately after body transformation",
+        "an embedded raw body action interpolates when its separate action phase executes"
+      ]
+    },
+    "6.5-1": {
+      "status": "automated",
+      "description": "all authoritative transform vectors are exact",
+      "tests": [
+        "transform exact: body mode preserves HTML text and transforms nested style",
+        "transform exact: resolved type and text keys preserve HTML text",
+        "transform exact: resolved type key classifies authored text",
+        "transform exact: duplicate resolved text uses the authored last value",
+        "transform exact: label text interpolates in body mode",
+        "transform exact: omitted body option interpolates HTML text",
+        "transform exact: explicit false option interpolates HTML text"
+      ]
+    },
+    "6.5-2": {
+      "status": "automated",
+      "description": "protected string equality and object identity are exact",
+      "tests": [
+        "protected raw string output is strictly equal to its input",
+        "protected raw object output retains the identical reference without recursion"
+      ]
+    },
+    "6.5-3": {
+      "status": "automated",
+      "description": "flat nested off and numeric getter orders are exact and once-only",
+      "tests": [
+        "body mode resolves all flat keys before type and ordinary value expressions exactly once",
+        "body mode applies all-keys-first ordering independently in each nested frame",
+        "off mode preserves per-entry key-then-value getter ordering",
+        "explicit false option preserves per-entry key-then-value getter ordering",
+        "numeric own keys transform in ECMAScript order 1 then 2 then alpha"
+      ]
+    },
+    "6.5-4": {
+      "status": "automated",
+      "description": "final type and duplicate text collisions use last-write-wins",
+      "tests": [
+        "transform exact: duplicate resolved text uses the authored last value",
+        "classification collision: final label type disables raw text protection",
+        "classification collision: final HTML type enables raw text protection",
+        "duplicate raw text entries are never evaluated and the last authored value wins"
+      ]
+    },
+    "6.5-5": {
+      "status": "automated",
+      "description": "missing unresolved and non-string types do not protect",
+      "tests": [
+        "classification negative: missing type does not protect text",
+        "classification negative: unresolved type does not protect text",
+        "classification negative: non-string type does not protect text"
+      ]
+    },
+    "6.5-6": {
+      "status": "automated",
+      "description": "directives arrays and every named body location protect",
+      "tests": [
+        "body recursion path: root HTML shape preserves raw text",
+        "body recursion path: header HTML shape preserves raw text",
+        "body recursion path: footer HTML shape preserves raw text",
+        "body recursion path: section HTML shape preserves raw text",
+        "body recursion path: layout HTML shape preserves raw text",
+        "body recursion path: layer HTML shape preserves raw text",
+        "body recursion path: background HTML shape preserves raw text",
+        "body recursion path: nested array HTML shape preserves raw text",
+        "body recursion path: action options HTML shape preserves raw text",
+        "body recursion path: action payload HTML shape preserves raw text",
+        "directive recursion: #if result preserves HTML text",
+        "directive recursion: #elseif result preserves HTML text",
+        "directive recursion: #else result preserves HTML text",
+        "directive recursion: #each results preserve HTML text"
+      ]
+    },
+    "6.5-7": {
+      "status": "automated",
+      "description": "embedded action shape and separate generic transform differ",
+      "tests": [
+        "embedded body action options are raw immediately after body transformation",
+        "an embedded raw body action interpolates when its separate action phase executes"
+      ]
+    },
+    "6.5-8": {
+      "status": "automated",
+      "description": "dangerous keys are inert in both modes with error ordering",
+      "tests": [
+        "dangerous transform: body mode defines inert own __proto__",
+        "dangerous transform: off mode defines inert own __proto__",
+        "dangerous transform: body mode defines inert own constructor",
+        "dangerous transform: off mode defines inert own constructor",
+        "dangerous transform: body mode defines inert own prototype",
+        "dangerous transform: off mode defines inert own prototype",
+        "dangerous ordering: body mode __proto__ getters stop at the thrown error",
+        "dangerous ordering: off mode __proto__ getters stop at the thrown error",
+        "dangerous ordering: body mode constructor getters stop at the thrown error",
+        "dangerous ordering: off mode constructor getters stop at the thrown error",
+        "dangerous ordering: body mode prototype getters stop at the thrown error",
+        "dangerous ordering: off mode prototype getters stop at the thrown error"
+      ]
+    },
+    "6.5-9": {
+      "status": "automated",
+      "description": "set cache and global destinations retain safe descriptors",
+      "tests": [
+        "safe state sink: $set retains dangerous own descriptors",
+        "safe state sink: $cache.set retains dangerous own descriptors",
+        "safe state sink: $global.set retains dangerous own descriptors"
+      ]
+    },
+    "6.5-10": {
+      "status": "automated",
+      "description": "two-level sessions cover dangerous domains null prototype and lookup rejection",
+      "tests": [
+        "session registry: reachable __proto__ domain is an inert own property",
+        "session registry: reachable constructor domain is an inert own property",
+        "session registry: reachable prototype domain is an inert own property",
+        "session storage safely copies dangerous option keys into a fresh ordinary object",
+        "session storage accepts null-prototype transformed options",
+        "inherited session domain cannot decorate request headers or body"
+      ]
+    },
+    "6.5-11": {
+      "status": "automated",
+      "description": "enumeration is own enumerable strings only",
+      "tests": [
+        "transformation enumerates only own enumerable string keys"
+      ]
+    },
+    "6.5-12": {
+      "status": "automated",
+      "description": "direct type matrices do not invoke inherited handlers",
+      "tests": [
+        "action type: missing type with no trigger returns undefined",
+        "action type: inherited handler type is ignored",
+        "action type: non-string type returns undefined",
+        "action type: own __proto__ type returns undefined without continuation",
+        "action type: own constructor type returns undefined without continuation",
+        "action type: own prototype type returns undefined without continuation",
+        "action type: own toString type returns undefined without continuation",
+        "background canonical matrix: missing type",
+        "background canonical matrix: non-string type",
+        "background canonical matrix: non-HTML type",
+        "background canonical matrix: __proto__ type collision",
+        "background canonical matrix: constructor type collision",
+        "background canonical matrix: prototype type collision",
+        "background canonical matrix: toString type collision",
+        "component type: missing type uses the label default without an iframe",
+        "component type: inherited HTML type uses the label default without an iframe",
+        "component type: non-string type uses the label default without an iframe",
+        "component type: own label type renders without an iframe",
+        "component type: own __proto__ type is a visible unknown component",
+        "component type: own constructor type is a visible unknown component",
+        "component type: own prototype type is a visible unknown component",
+        "component type: own toString type is a visible unknown component",
+        "component registry never invokes an inherited callable renderer",
+        "action type: own unknown non-HTML type returns undefined",
+        "background canonical matrix: inherited HTML type",
+        "background legacy matrix: inherited HTML type",
+        "action type: own custom type with only an inherited callable returns undefined"
+      ]
+    },
+    "6.5-13": {
+      "status": "automated",
+      "description": "transform-to-render inherited and mixed source fields are own-only",
+      "tests": [
+        "transform-to-render ownership: inherited text URL and CSS create no iframe",
+        "transform-to-render ownership: inherited text plus own URL selects URL",
+        "transform-to-render ownership: inherited URL plus own text selects inline",
+        "transform-to-render ownership: inherited CSS plus own text omits CSS"
+      ]
+    },
+    "6.5-14": {
+      "status": "automated",
+      "description": "unresolved output remains exact",
+      "tests": [
+        "unresolved expression output remains the exact authored string"
+      ]
+    },
+    "6.6-1": {
+      "status": "automated",
+      "description": "all string source selection rows are exact",
+      "tests": [
+        "background canonical matrix: inline",
+        "background canonical matrix: URL",
+        "background canonical matrix: dual source text precedence",
+        "background canonical matrix: whitespace inline source",
+        "background canonical matrix: empty sources",
+        "background canonical matrix: inherited-only source fields",
+        "background canonical matrix: inherited text with own URL",
+        "background canonical matrix: inherited URL with own text",
+        "background canonical matrix: inherited CSS with own text",
+        "background legacy matrix: inline",
+        "background legacy matrix: URL",
+        "background legacy matrix: dual source text precedence",
+        "background legacy matrix: whitespace inline source",
+        "background legacy matrix: empty sources",
+        "background legacy matrix: inherited-only source fields",
+        "background legacy matrix: inherited text with own URL",
+        "background legacy matrix: inherited URL with own text",
+        "background legacy matrix: inherited CSS with own text",
+        "component source: inline text wins over a URL",
+        "component source: whitespace text is a valid inline source",
+        "component source: empty text falls back to a URL",
+        "component source: numeric text and object URL are not coerced",
+        "component source: inherited-only text and URL are ignored",
+        "component source: inherited text yields to an own URL",
+        "component source: inherited URL yields to own text",
+        "component source: missing text and URL creates no iframe",
+        "component source: invalid HTML is assigned byte-for-byte",
+        "background canonical matrix: empty own text with valid URL fallback",
+        "background canonical matrix: non-string own text with valid URL fallback",
+        "background canonical matrix: invalid inline HTML exact preservation",
+        "background legacy matrix: empty own text with valid URL fallback",
+        "background legacy matrix: non-string own text with valid URL fallback",
+        "background legacy matrix: invalid inline HTML exact preservation"
+      ]
+    },
+    "6.6-2": {
+      "status": "automated",
+      "description": "non-string source values are never coerced",
+      "tests": [
+        "component source: numeric text and object URL are not coerced",
+        "background canonical matrix: non-string coercion sentinels",
+        "background legacy matrix: non-string coercion sentinels",
+        "background canonical matrix: non-string own text with valid URL fallback",
+        "background legacy matrix: non-string own text with valid URL fallback"
+      ]
+    },
+    "6.6-3": {
+      "status": "automated",
+      "description": "all CSS vectors preserve exact code units",
+      "tests": [
+        "component CSS: absent CSS leaves srcdoc unchanged",
+        "component CSS: empty CSS leaves srcdoc unchanged",
+        "component CSS: null CSS leaves srcdoc unchanged",
+        "component CSS: undefined CSS leaves srcdoc unchanged",
+        "component CSS: non-string CSS is not coerced",
+        "component CSS: inherited CSS is ignored",
+        "component CSS: one space is retained exactly",
+        "component CSS: tab and newline are retained exactly",
+        "component CSS: mixed-case closing style is escaped with U+005C",
+        "component CSS: repeated closing styles are escaped with U+005C",
+        "background canonical matrix: empty CSS",
+        "background canonical matrix: null CSS",
+        "background canonical matrix: undefined CSS",
+        "background canonical matrix: non-string CSS coercion sentinel",
+        "background canonical matrix: tab-newline CSS",
+        "background canonical matrix: mixed-case CSS escape",
+        "background legacy matrix: empty CSS",
+        "background legacy matrix: null CSS",
+        "background legacy matrix: undefined CSS",
+        "background legacy matrix: non-string CSS coercion sentinel",
+        "background legacy matrix: tab-newline CSS",
+        "background legacy matrix: mixed-case CSS escape"
+      ]
+    },
+    "6.6-4": {
+      "status": "automated",
+      "description": "mixed and repeated style escapes contain U+005C",
+      "tests": [
+        "component CSS: mixed-case closing style is escaped with U+005C",
+        "component CSS: repeated closing styles are escaped with U+005C",
+        "background canonical matrix: repeated mixed-case CSS escape",
+        "background legacy matrix: repeated mixed-case CSS escape",
+        "background canonical matrix: mixed-case CSS escape",
+        "background legacy matrix: mixed-case CSS escape"
+      ]
+    },
+    "6.6-5": {
+      "status": "automated",
+      "description": "invalid HTML is assigned unchanged",
+      "tests": [
+        "component source: invalid HTML is assigned byte-for-byte",
+        "background canonical matrix: invalid inline HTML exact preservation",
+        "background legacy matrix: invalid inline HTML exact preservation"
+      ]
+    },
+    "6.6-6": {
+      "status": "automated",
+      "description": "source attributes are exact and coercion is excluded",
+      "tests": [
+        "background canonical matrix: inline",
+        "background canonical matrix: URL",
+        "background canonical matrix: dual source text precedence",
+        "background canonical matrix: whitespace inline source",
+        "background canonical matrix: empty sources",
+        "background canonical matrix: non-string coercion sentinels",
+        "background canonical matrix: one-space CSS",
+        "background canonical matrix: repeated mixed-case CSS escape",
+        "background canonical matrix: inherited-only source fields",
+        "background canonical matrix: inherited text with own URL",
+        "background canonical matrix: inherited URL with own text",
+        "background canonical matrix: inherited CSS with own text",
+        "background canonical matrix: missing type",
+        "background canonical matrix: non-string type",
+        "background canonical matrix: non-HTML type",
+        "background canonical matrix: __proto__ type collision",
+        "background canonical matrix: constructor type collision",
+        "background canonical matrix: prototype type collision",
+        "background canonical matrix: toString type collision",
+        "background canonical matrix: HTML type without source",
+        "background legacy matrix: inline",
+        "background legacy matrix: URL",
+        "background legacy matrix: dual source text precedence",
+        "background legacy matrix: whitespace inline source",
+        "background legacy matrix: empty sources",
+        "background legacy matrix: non-string coercion sentinels",
+        "background legacy matrix: one-space CSS",
+        "background legacy matrix: repeated mixed-case CSS escape",
+        "background legacy matrix: inherited-only source fields",
+        "background legacy matrix: inherited text with own URL",
+        "background legacy matrix: inherited URL with own text",
+        "background legacy matrix: inherited CSS with own text",
+        "background legacy matrix: missing type",
+        "background legacy matrix: non-string type",
+        "background legacy matrix: non-HTML type",
+        "background legacy matrix: __proto__ type collision",
+        "background legacy matrix: constructor type collision",
+        "background legacy matrix: prototype type collision",
+        "background legacy matrix: toString type collision",
+        "background legacy matrix: HTML type without source",
+        "component source: inline text wins over a URL",
+        "component source: whitespace text is a valid inline source",
+        "component source: empty text falls back to a URL",
+        "component source: numeric text and object URL are not coerced",
+        "component source: inherited-only text and URL are ignored",
+        "component source: inherited text yields to an own URL",
+        "component source: inherited URL yields to own text",
+        "component source: missing text and URL creates no iframe",
+        "component source: invalid HTML is assigned byte-for-byte",
+        "component CSS: non-string CSS is not coerced",
+        "background canonical matrix: empty CSS",
+        "background canonical matrix: null CSS",
+        "background canonical matrix: undefined CSS",
+        "background canonical matrix: non-string CSS coercion sentinel",
+        "background canonical matrix: tab-newline CSS",
+        "background canonical matrix: mixed-case CSS escape",
+        "background legacy matrix: empty CSS",
+        "background legacy matrix: null CSS",
+        "background legacy matrix: undefined CSS",
+        "background legacy matrix: non-string CSS coercion sentinel",
+        "background legacy matrix: tab-newline CSS",
+        "background legacy matrix: mixed-case CSS escape",
+        "background canonical matrix: empty own text with valid URL fallback",
+        "background canonical matrix: non-string own text with valid URL fallback",
+        "background canonical matrix: invalid inline HTML exact preservation",
+        "background legacy matrix: empty own text with valid URL fallback",
+        "background legacy matrix: non-string own text with valid URL fallback",
+        "background legacy matrix: invalid inline HTML exact preservation"
+      ]
+    },
+    "6.7-1": {
+      "status": "automated",
+      "description": "direct component traces use public return and integrated component traces use wrapper data completion with exact RETURN and no later event",
+      "tests": [
+        "component inline iframe trace installs sandbox before source insertion and return",
+        "component URL iframe trace installs sandbox before source insertion and return",
+        "integrated component marker completes before public return and later iframe events are rejected"
+      ]
+    },
+    "6.7-2": {
+      "status": "automated",
+      "description": "background inline and URL traces are exact",
+      "tests": [
+        "background canonical matrix: inline",
+        "background canonical matrix: URL",
+        "background legacy matrix: inline",
+        "background legacy matrix: URL",
+        "background canonical matrix: empty own text with valid URL fallback",
+        "background canonical matrix: non-string own text with valid URL fallback",
+        "background canonical matrix: invalid inline HTML exact preservation",
+        "background legacy matrix: empty own text with valid URL fallback",
+        "background legacy matrix: non-string own text with valid URL fallback",
+        "background legacy matrix: invalid inline HTML exact preservation"
+      ]
+    },
+    "6.7-3": {
+      "status": "automated",
+      "description": "sandbox precedes every source and insertion route",
+      "tests": [
+        "observer insertion self-test: detects Element appendChild before sandbox",
+        "observer insertion self-test: detects DocumentFragment appendChild before sandbox",
+        "observer insertion self-test: detects insertBefore before sandbox",
+        "observer insertion self-test: detects replaceChild before sandbox",
+        "observer insertion self-test: detects Element append before sandbox",
+        "observer insertion self-test: detects Element prepend before sandbox",
+        "observer insertion self-test: detects replaceChildren before sandbox",
+        "observer insertion self-test: detects before before sandbox",
+        "observer insertion self-test: detects after before sandbox",
+        "observer insertion self-test: detects replaceWith before sandbox",
+        "observer sandbox self-test: detects setAttribute mutation",
+        "observer sandbox self-test: detects setAttributeNS mutation",
+        "observer sandbox self-test: detects removeAttribute mutation",
+        "observer sandbox self-test: detects removeAttributeNS mutation",
+        "observer sandbox self-test: detects toggleAttribute mutation",
+        "observer sandbox self-test: detects setAttributeNode mutation",
+        "observer sandbox self-test: detects setAttributeNodeNS mutation",
+        "observer sandbox self-test: detects removeAttributeNode mutation",
+        "observer sandbox self-test: detects NamedNodeMap setNamedItem mutation",
+        "observer sandbox self-test: detects NamedNodeMap setNamedItemNS mutation",
+        "observer sandbox self-test: detects NamedNodeMap removeNamedItem mutation",
+        "observer sandbox self-test: detects NamedNodeMap removeNamedItemNS mutation",
+        "observer sandbox self-test: detects Attr value mutation",
+        "observer sandbox self-test: detects Attr nodeValue mutation",
+        "observer sandbox self-test: detects Attr textContent mutation",
+        "observer sandbox self-test: detects sandbox value mutation",
+        "observer sandbox self-test: detects sandbox add mutation",
+        "observer sandbox self-test: detects sandbox remove mutation",
+        "observer sandbox self-test: detects sandbox toggle mutation",
+        "observer sandbox self-test: detects sandbox replace mutation",
+        "observer source self-test: detects src property mutation",
+        "observer source self-test: detects srcdoc property mutation",
+        "observer source self-test: detects setAttribute src mutation",
+        "observer source self-test: detects setAttribute srcdoc mutation",
+        "observer source self-test: detects setAttributeNS src mutation",
+        "observer source self-test: detects setAttributeNode srcdoc mutation",
+        "observer source self-test: detects NamedNodeMap setNamedItem src mutation",
+        "observer source self-test: detects Attr value srcdoc mutation",
+        "observer source self-test: detects removeAttribute src mutation",
+        "observer source self-test: detects removeAttributeNode srcdoc mutation",
+        "observer source self-test: detects removeAttributeNS srcdoc mutation",
+        "observer source self-test: detects toggleAttribute srcdoc mutation",
+        "observer source self-test: detects setAttributeNodeNS src mutation",
+        "observer source self-test: detects NamedNodeMap setNamedItemNS srcdoc mutation",
+        "observer source self-test: detects NamedNodeMap removeNamedItem src mutation",
+        "observer source self-test: detects NamedNodeMap removeNamedItemNS srcdoc mutation",
+        "observer source self-test: detects Attr nodeValue src mutation",
+        "observer source self-test: detects Attr textContent srcdoc mutation",
+        "observer creation self-test: detects createElementNS exactly",
+        "observer creation self-test: detects Element innerHTML parser exactly",
+        "observer creation self-test: detects template fragment parser exactly",
+        "observer creation self-test: detects insertAdjacentHTML parser exactly",
+        "observer creation self-test: detects Range contextual fragment exactly",
+        "observer creation self-test: detects DOMParser document exactly",
+        "observer parser self-test: rejects source before sandbox in authored parser order",
+        "observer insertion self-test: detects insertAdjacentElement before sandbox"
+      ]
+    },
+    "6.7-4": {
+      "status": "automated",
+      "description": "single sandbox event, integrated completion with later-event rejection, and old/new endpoints are exact",
+      "tests": [
+        "integration smoke: initial render actual $render generic action and all iframe traces stay live",
+        "actual $render replaces a background iframe while old and new sandbox endpoints remain exact",
+        "integrated component marker completes before public return and later iframe events are rejected"
+      ]
+    },
+    "6.7-5": {
+      "status": "automated",
+      "description": "source attributes are mutually exclusive",
+      "tests": [
+        "background canonical matrix: inline",
+        "background canonical matrix: URL",
+        "background legacy matrix: inline",
+        "background legacy matrix: URL",
+        "component source: inline text wins over a URL",
+        "component source: whitespace text is a valid inline source",
+        "component source: empty text falls back to a URL",
+        "component source: numeric text and object URL are not coerced",
+        "component source: inherited-only text and URL are ignored",
+        "component source: inherited text yields to an own URL",
+        "component source: inherited URL yields to own text",
+        "component source: missing text and URL creates no iframe",
+        "component source: invalid HTML is assigned byte-for-byte",
+        "background canonical matrix: empty own text with valid URL fallback",
+        "background canonical matrix: non-string own text with valid URL fallback",
+        "background canonical matrix: invalid inline HTML exact preservation",
+        "background legacy matrix: empty own text with valid URL fallback",
+        "background legacy matrix: non-string own text with valid URL fallback",
+        "background legacy matrix: invalid inline HTML exact preservation"
+      ]
+    },
+    "6.7-6": {
+      "status": "automated",
+      "description": "no-source and inherited source rows create no trace",
+      "tests": [
+        "background canonical matrix: empty sources",
+        "background canonical matrix: inherited-only source fields",
+        "background canonical matrix: HTML type without source",
+        "background legacy matrix: empty sources",
+        "background legacy matrix: inherited-only source fields",
+        "background legacy matrix: HTML type without source",
+        "malformed selected background never creates a transient iframe",
+        "component source: inherited-only text and URL are ignored",
+        "component source: missing text and URL creates no iframe",
+        "background canonical matrix: inherited HTML type",
+        "background legacy matrix: inherited HTML type"
+      ]
+    },
+    "6.7-7": {
+      "status": "automated",
+      "description": "component and background topology class ARIA size and placement are exact",
+      "tests": [
+        "component wrapper return topology and legacy class size border contract remain exact",
+        "background authored path: static canonical inline source and CSS render exactly"
+      ]
+    },
+    "6.8-1": {
+      "status": "automated",
+      "description": "initial DOM selectors and values are exact",
+      "tests": [
+        "integration smoke: initial render actual $render generic action and all iframe traces stay live"
+      ]
+    },
+    "6.8-2": {
+      "status": "automated",
+      "description": "actual render changes iframe height and label",
+      "tests": [
+        "integration smoke: initial render actual $render generic action and all iframe traces stay live"
+      ]
+    },
+    "6.8-3": {
+      "status": "automated",
+      "description": "replacement keeps raw braces and both sandbox endpoints",
+      "tests": [
+        "integration smoke: initial render actual $render generic action and all iframe traces stay live"
+      ]
+    },
+    "6.8-4": {
+      "status": "automated",
+      "description": "Jasonpedia is rendered and actual srcdoc is inspected",
+      "tests": [
+        "Jasonpedia fixture renders actual iframe srcdoc with authored CSS and Nexus content"
+      ]
+    },
+    "6.8-5": {
+      "status": "automated",
+      "description": "canonical and legacy precedence and independent full matrices are exact",
+      "tests": [
+        "background authored path: static canonical inline source and CSS render exactly",
+        "background authored path: static legacy URL renders exclusively",
+        "background authored path: templated canonical keeps text raw and transforms CSS",
+        "background authored path: templated legacy transforms its URL",
+        "background authored path: selected HTML without a source creates no iframe",
+        "background precedence: false canonical blocks a valid legacy fallback",
+        "background precedence: malformed canonical blocks a valid legacy fallback",
+        "background precedence: source-less canonical blocks a valid legacy fallback",
+        "background precedence: null canonical selects own legacy background",
+        "background precedence: undefined canonical selects own legacy background",
+        "background precedence: inherited canonical selects own legacy background",
+        "background precedence: inherited style is ignored without canonical",
+        "background precedence: inherited legacy background inside own style is ignored",
+        "background precedence: inherited canonical without fallback selects nothing",
+        "background precedence: missing canonical and legacy selects nothing",
+        "background canonical matrix: inline",
+        "background canonical matrix: URL",
+        "background canonical matrix: dual source text precedence",
+        "background canonical matrix: whitespace inline source",
+        "background canonical matrix: empty sources",
+        "background canonical matrix: non-string coercion sentinels",
+        "background canonical matrix: one-space CSS",
+        "background canonical matrix: repeated mixed-case CSS escape",
+        "background canonical matrix: inherited-only source fields",
+        "background canonical matrix: inherited text with own URL",
+        "background canonical matrix: inherited URL with own text",
+        "background canonical matrix: inherited CSS with own text",
+        "background canonical matrix: missing type",
+        "background canonical matrix: non-string type",
+        "background canonical matrix: non-HTML type",
+        "background canonical matrix: __proto__ type collision",
+        "background canonical matrix: constructor type collision",
+        "background canonical matrix: prototype type collision",
+        "background canonical matrix: toString type collision",
+        "background canonical matrix: HTML type without source",
+        "background legacy matrix: inline",
+        "background legacy matrix: URL",
+        "background legacy matrix: dual source text precedence",
+        "background legacy matrix: whitespace inline source",
+        "background legacy matrix: empty sources",
+        "background legacy matrix: non-string coercion sentinels",
+        "background legacy matrix: one-space CSS",
+        "background legacy matrix: repeated mixed-case CSS escape",
+        "background legacy matrix: inherited-only source fields",
+        "background legacy matrix: inherited text with own URL",
+        "background legacy matrix: inherited URL with own text",
+        "background legacy matrix: inherited CSS with own text",
+        "background legacy matrix: missing type",
+        "background legacy matrix: non-string type",
+        "background legacy matrix: non-HTML type",
+        "background legacy matrix: __proto__ type collision",
+        "background legacy matrix: constructor type collision",
+        "background legacy matrix: prototype type collision",
+        "background legacy matrix: toString type collision",
+        "background legacy matrix: HTML type without source",
+        "background RETURN is captured at the runtime-wrapped renderBodyBackground method boundary",
+        "malformed selected background never creates a transient iframe",
+        "background canonical matrix: inherited HTML type",
+        "background legacy matrix: inherited HTML type",
+        "background canonical matrix: empty CSS",
+        "background canonical matrix: null CSS",
+        "background canonical matrix: undefined CSS",
+        "background canonical matrix: non-string CSS coercion sentinel",
+        "background canonical matrix: tab-newline CSS",
+        "background canonical matrix: mixed-case CSS escape",
+        "background legacy matrix: empty CSS",
+        "background legacy matrix: null CSS",
+        "background legacy matrix: undefined CSS",
+        "background legacy matrix: non-string CSS coercion sentinel",
+        "background legacy matrix: tab-newline CSS",
+        "background legacy matrix: mixed-case CSS escape",
+        "background canonical matrix: empty own text with valid URL fallback",
+        "background canonical matrix: non-string own text with valid URL fallback",
+        "background canonical matrix: invalid inline HTML exact preservation",
+        "background legacy matrix: empty own text with valid URL fallback",
+        "background legacy matrix: non-string own text with valid URL fallback",
+        "background legacy matrix: invalid inline HTML exact preservation"
+      ]
+    },
+    "6.8-6": {
+      "status": "automated",
+      "description": "rendered HTML keeps authored CSS and scripts with sibling interpolation",
+      "tests": [
+        "rendered HTML keeps authored script and CSS while an ordinary sibling interpolates"
+      ]
+    },
+    "6.9-1": {
+      "status": "automated",
+      "description": "jsdom evidence covers values descriptors prototypes attributes and traces",
+      "tests": [
+        "background canonical matrix: inline",
+        "background legacy matrix: URL",
+        "component inline iframe trace installs sandbox before source insertion and return",
+        "component URL iframe trace installs sandbox before source insertion and return",
+        "dangerous transform: body mode defines inert own __proto__",
+        "dangerous transform: off mode defines inert own __proto__",
+        "dangerous transform: body mode defines inert own constructor",
+        "dangerous transform: off mode defines inert own constructor",
+        "dangerous transform: body mode defines inert own prototype",
+        "dangerous transform: off mode defines inert own prototype",
+        "protected raw object output retains the identical reference without recursion",
+        "safe state sinks accept a null-prototype options object",
+        "own session decorates a request through a concrete Headers instance",
+        "inherited action type plus own trigger falls through to the own named action",
+        "own named action arrays execute async non-commutative authored order through trigger",
+        "own named action arrays execute async non-commutative authored order through lambda",
+        "component RETURN observer self-test marks only after direct renderComponent returns",
+        "public RenderOptions type accepts preserveHtmlText",
+        "observer source self-test: detects removeAttributeNS srcdoc mutation",
+        "observer source self-test: detects toggleAttribute srcdoc mutation",
+        "observer source self-test: detects setAttributeNodeNS src mutation",
+        "observer source self-test: detects NamedNodeMap setNamedItemNS srcdoc mutation",
+        "observer source self-test: detects NamedNodeMap removeNamedItem src mutation",
+        "observer source self-test: detects NamedNodeMap removeNamedItemNS srcdoc mutation",
+        "observer source self-test: detects Attr nodeValue src mutation",
+        "observer source self-test: detects Attr textContent srcdoc mutation",
+        "action type: own unknown non-HTML type returns undefined",
+        "background canonical matrix: inherited HTML type",
+        "background legacy matrix: inherited HTML type",
+        "background canonical matrix: empty CSS",
+        "background canonical matrix: null CSS",
+        "background canonical matrix: undefined CSS",
+        "background canonical matrix: non-string CSS coercion sentinel",
+        "background canonical matrix: tab-newline CSS",
+        "background canonical matrix: mixed-case CSS escape",
+        "background legacy matrix: empty CSS",
+        "background legacy matrix: null CSS",
+        "background legacy matrix: undefined CSS",
+        "background legacy matrix: non-string CSS coercion sentinel",
+        "background legacy matrix: tab-newline CSS",
+        "background legacy matrix: mixed-case CSS escape",
+        "action type: own custom type with only an inherited callable returns undefined",
+        "background canonical matrix: empty own text with valid URL fallback",
+        "background canonical matrix: non-string own text with valid URL fallback",
+        "background canonical matrix: invalid inline HTML exact preservation",
+        "background legacy matrix: empty own text with valid URL fallback",
+        "background legacy matrix: non-string own text with valid URL fallback",
+        "background legacy matrix: invalid inline HTML exact preservation",
+        "integrated component marker completes before public return and later iframe events are rejected"
+      ]
+    },
+    "6.9-2": {
+      "status": "automated",
+      "description": "test evidence is limited to emitted policy and makes no browser enforcement claim",
+      "tests": [
+        "emitted iframe policy is exact and makes no browser-enforcement assertion"
+      ]
+    },
+    "6.9-3": {
+      "status": "external-pending",
+      "description": "the nine exact local commands, including the dedicated public-package tsc contract, require workspace evidence",
+      "external": [
+        "CMD-1",
+        "CMD-2",
+        "CMD-3",
+        "CMD-4",
+        "CMD-5",
+        "CMD-6",
+        "CMD-7",
+        "CMD-8",
+        "CMD-9"
+      ]
+    },
+    "6.9-4": {
+      "status": "external-pending",
+      "description": "acceptance truth-table and exact implementation-SHA Web CI require external evidence",
+      "external": [
+        "CI-1"
+      ]
+    },
+    "6.10-1": {
+      "status": "automated",
+      "description": "integration smoke covers initial render render-action generic defaults production set and traces",
+      "tests": [
+        "integration smoke: initial render actual $render generic action and all iframe traces stay live"
+      ]
+    }
+  },
+  "external": [
+    {
+      "id": "CMD-1",
+      "type": "command",
+      "status": "pending",
+      "obligation": "npm run test --workspace=@jasonette/template-engine -- transformer.test.ts"
+    },
+    {
+      "id": "CMD-2",
+      "type": "command",
+      "status": "pending",
+      "obligation": "npm run test --workspace=@jasonette/web -- components.test.ts integration.test.ts actions-parity.test.ts renderer.test.ts"
+    },
+    {
+      "id": "CMD-3",
+      "type": "command",
+      "status": "pending",
+      "obligation": "npm run typecheck --workspace=@jasonette/template-engine"
+    },
+    {
+      "id": "CMD-4",
+      "type": "command",
+      "status": "pending",
+      "obligation": "npm run typecheck --workspace=@jasonette/web"
+    },
+    {
+      "id": "CMD-5",
+      "type": "command",
+      "status": "pending",
+      "obligation": "npm run build --workspace=@jasonette/template-engine"
+    },
+    {
+      "id": "CMD-6",
+      "type": "command",
+      "status": "pending",
+      "obligation": "npm run build --workspace=@jasonette/web"
+    },
+    {
+      "id": "CMD-7",
+      "type": "command",
+      "status": "pending",
+      "obligation": "npm run test --workspace=@jasonette/template-engine"
+    },
+    {
+      "id": "CMD-8",
+      "type": "command",
+      "status": "pending",
+      "obligation": "npm run test --workspace=@jasonette/web"
+    },
+    {
+      "id": "CMD-9",
+      "type": "command",
+      "status": "pending",
+      "obligation": "npx tsc --project tests/tsconfig.public-types.json"
+    },
+    {
+      "id": "CI-1",
+      "type": "ci",
+      "status": "pending",
+      "obligation": "Exact implementation-SHA Web CI must pass; if local full Web has only a CLI timeout, isolated cli.test.ts must also pass and the timeout must be documented."
+    }
+  ]
+}

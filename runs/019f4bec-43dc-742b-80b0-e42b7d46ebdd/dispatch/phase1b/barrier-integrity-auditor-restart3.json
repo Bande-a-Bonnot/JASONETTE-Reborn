@@ -1,0 +1,17 @@
+{
+  "schema_version": "foundry.prompt-envelope.v1",
+  "run_id": "019f4bec-43dc-742b-80b0-e42b7d46ebdd",
+  "phase": "phase1b",
+  "recipient": "barrier-integrity-auditor-restart3",
+  "prompt": "Final barrier audit of restarted red lineage through revision2. Replay:\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1/red-team-restart1.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1/red-team-restart-revision1.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1/red-team-restart-revision2.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1b/red-team-test-reviewer-restart3.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1b/cucumber-reviewer-restart3.json\nInspect /tmp/foundry-019f4bec-43dc-742b-80b0-e42b7d46ebdd-red-restart. Verify no implementation leakage; no implementation worktree existed. Ignore invalidated old lineage. Any leak P0. Return JSON.",
+  "visible_context": [
+    {
+      "label": "audit_scope",
+      "kind": "audit_scope",
+      "sha256": "07881691f059ac245707f96577880b532964ca729c4149c95bbcc9e4c9611f9a",
+      "content": "Final barrier audit of restarted red lineage through revision2. Replay:\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1/red-team-restart1.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1/red-team-restart-revision1.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1/red-team-restart-revision2.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1b/red-team-test-reviewer-restart3.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1b/cucumber-reviewer-restart3.json\nInspect /tmp/foundry-019f4bec-43dc-742b-80b0-e42b7d46ebdd-red-restart. Verify no implementation leakage; no implementation worktree existed. Ignore invalidated old lineage. Any leak P0. Return JSON."
+    }
+  ],
+  "withheld_context": [],
+  "redactions": []
+}

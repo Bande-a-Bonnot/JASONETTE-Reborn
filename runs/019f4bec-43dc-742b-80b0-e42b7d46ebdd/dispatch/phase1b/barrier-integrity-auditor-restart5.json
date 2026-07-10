@@ -1,0 +1,17 @@
+{
+  "schema_version": "foundry.prompt-envelope.v1",
+  "run_id": "019f4bec-43dc-742b-80b0-e42b7d46ebdd",
+  "phase": "phase1b",
+  "recipient": "barrier-integrity-auditor-restart5",
+  "prompt": "Final restarted-red barrier audit. Replay:\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1/red-team-restart1.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1/red-team-restart-revision1.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1/red-team-restart-revision2.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1/red-team-restart-revision3.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1/red-team-restart-revision4.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1b/red-team-test-reviewer-restart5.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1b/cucumber-reviewer-restart5.json\nInspect /tmp/foundry-019f4bec-43dc-742b-80b0-e42b7d46ebdd-red-restart. Verify implementation/raw diagnostics withheld, no implementation worktree existed, and no leak. Ignore invalidated old lineages. Return JSON; actual leak P0.",
+  "visible_context": [
+    {
+      "label": "audit_scope",
+      "kind": "audit_scope",
+      "sha256": "65d857bab56ddc1dc6345d67c9fd8a42d82635dc3ebbe2dfdc56a6bd0ac60377",
+      "content": "Final restarted-red barrier audit. Replay:\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1/red-team-restart1.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1/red-team-restart-revision1.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1/red-team-restart-revision2.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1/red-team-restart-revision3.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1/red-team-restart-revision4.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1b/red-team-test-reviewer-restart5.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1b/cucumber-reviewer-restart5.json\nInspect /tmp/foundry-019f4bec-43dc-742b-80b0-e42b7d46ebdd-red-restart. Verify implementation/raw diagnostics withheld, no implementation worktree existed, and no leak. Ignore invalidated old lineages. Return JSON; actual leak P0."
+    }
+  ],
+  "withheld_context": [],
+  "redactions": []
+}

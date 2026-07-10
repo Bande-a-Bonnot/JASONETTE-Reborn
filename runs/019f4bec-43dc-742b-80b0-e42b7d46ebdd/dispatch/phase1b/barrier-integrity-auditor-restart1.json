@@ -1,0 +1,17 @@
+{
+  "schema_version": "foundry.prompt-envelope.v1",
+  "run_id": "019f4bec-43dc-742b-80b0-e42b7d46ebdd",
+  "phase": "phase1b",
+  "recipient": "barrier-integrity-auditor-restart1",
+  "prompt": "Audit only the fresh restarted red lineage for information-barrier integrity. Inspect envelope `runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1/red-team-restart1.json`, review envelopes `runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1b/red-team-test-reviewer-restart1.json` and `runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1b/cucumber-reviewer-restart1.json`, and isolated red cwd `/tmp/foundry-019f4bec-43dc-742b-80b0-e42b7d46ebdd-red-restart`. Verify no implementation path/snippet/context leaked in prompts, visible context, or red files; verify the withheld implementation samples are absent; verify no implementation worktree existed at red dispatch. Ignore invalidated prior red lineages. Any actual leak is P0. Return Foundry JSON. Do not modify files.",
+  "visible_context": [
+    {
+      "label": "audit_scope",
+      "kind": "audit_scope",
+      "sha256": "99a3a596894e79d7bffcdd851c2b4938d68d5a3d27860ce2e930f03a8887054b",
+      "content": "Audit only the fresh restarted red lineage for information-barrier integrity. Inspect envelope `runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1/red-team-restart1.json`, review envelopes `runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1b/red-team-test-reviewer-restart1.json` and `runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1b/cucumber-reviewer-restart1.json`, and isolated red cwd `/tmp/foundry-019f4bec-43dc-742b-80b0-e42b7d46ebdd-red-restart`. Verify no implementation path/snippet/context leaked in prompts, visible context, or red files; verify the withheld implementation samples are absent; verify no implementation worktree existed at red dispatch. Ignore invalidated prior red lineages. Any actual leak is P0. Return Foundry JSON. Do not modify files."
+    }
+  ],
+  "withheld_context": [],
+  "redactions": []
+}

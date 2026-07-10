@@ -239,7 +239,10 @@ Security trace observer records only:
 - `SANDBOX(value)` for sandbox set/remove/replace operations;
 - `SOURCE(name)` for `srcdoc` or `src` assignment;
 - `APPEND` for every insertion of that iframe into any parent;
-- `RETURN` when the component wrapper or background render call returns.
+- `RETURN` as the observable completion boundary: actual public
+  `renderComponent()` return for direct calls; in integrated renderer flows, the
+  wrapper's `data-jasonette-type="html"` assignment after all iframe operations;
+  actual `renderBodyBackground()` return for backgrounds.
 
 Pure computation, property reads, class/ARIA operations, and individual style
 reads/writes are excluded. The required creation trace is exactly:
@@ -249,11 +252,14 @@ CREATE(kind) -> SANDBOX("allow-scripts") -> SOURCE("srcdoc"|"src")
 -> APPEND -> RETURN
 ```
 
-For component mode, `RETURN` means `renderComponent()` returned its wrapper. For
-background mode, it means `renderBodyBackground()` returned. Events are grouped
-per created iframe. Each created iframe has one sandbox event: the required
-initial set. No additional sandbox event occurs before return. `RETURN` belongs
-only to a created-iframe trace; no-source calls create no per-iframe trace.
+For direct component calls, `RETURN` is actual `renderComponent()` return. For
+integrated component rendering, the data-type completion marker is the normative
+publicly observable equivalent: all iframe operations precede it, and tests keep
+observing through the containing public render/action return to prove no later
+iframe operation occurs. For backgrounds, `RETURN` is actual runtime-wrapped
+`renderBodyBackground()` return. Events are grouped per iframe. Each iframe has
+one initial sandbox event and no additional event before its completion boundary.
+No-source calls create no per-iframe trace.
 Endpoint assertions check exact sandbox state after initial render and after
 `$render`; they do not claim continuous post-return observation.
 

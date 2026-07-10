@@ -1,0 +1,17 @@
+{
+  "schema_version": "foundry.prompt-envelope.v1",
+  "run_id": "019f4bec-43dc-742b-80b0-e42b7d46ebdd",
+  "phase": "phase1b",
+  "recipient": "barrier-integrity-auditor-final",
+  "prompt": "Final barrier audit for restarted red lineage and reviewed marker amendment. Replay:\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1/red-team-restart1.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1/red-team-restart-revision1.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1/red-team-restart-revision2.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1/red-team-restart-revision3.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1/red-team-restart-revision4.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1/red-team-restart-revision5.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1b/red-team-test-reviewer-final.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1b/cucumber-reviewer-final.json\nInspect /tmp/foundry-019f4bec-43dc-742b-80b0-e42b7d46ebdd-red-restart. Verify no implementation/raw output leakage and no implementation worktree existed. Ignore invalidated old lineage. Return JSON; actual leak P0.",
+  "visible_context": [
+    {
+      "label": "scope",
+      "kind": "audit_scope",
+      "sha256": "812c7f3f29249171e66d162afa4b19fe670583b90c33d21b65e268d223804a5c",
+      "content": "Final barrier audit for restarted red lineage and reviewed marker amendment. Replay:\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1/red-team-restart1.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1/red-team-restart-revision1.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1/red-team-restart-revision2.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1/red-team-restart-revision3.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1/red-team-restart-revision4.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1/red-team-restart-revision5.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1b/red-team-test-reviewer-final.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1b/cucumber-reviewer-final.json\nInspect /tmp/foundry-019f4bec-43dc-742b-80b0-e42b7d46ebdd-red-restart. Verify no implementation/raw output leakage and no implementation worktree existed. Ignore invalidated old lineage. Return JSON; actual leak P0."
+    }
+  ],
+  "withheld_context": [],
+  "redactions": []
+}

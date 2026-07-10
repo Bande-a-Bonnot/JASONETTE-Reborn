@@ -1,0 +1,101 @@
+Feature: Finite iframe security observer self-tests
+  Public-package black-box evidence only; no browser-enforcement claim is made.
+
+  Scenario: component RETURN observer self-test marks only after direct renderComponent returns
+    Given direct component {type:"html", text:"<p>timing</p>"} and a markComponentReturn interception
+    When render through the direct component boundary
+    Then before the one return mark events are [CREATE(component), SANDBOX("allow-scripts"), SOURCE("srcdoc"), APPEND]; afterward events are [CREATE(component), SANDBOX("allow-scripts"), SOURCE("srcdoc"), APPEND, RETURN]
+
+  Scenario: integrated component marker completes before public return and later iframe events are rejected
+    Given integrated wrapper iframe receives sandbox, source, append, data-jasonette-type="html", then a later source mutation before the containing public return
+    When run the containing integrated component boundary
+    Then trace equals [CREATE(component), SANDBOX("allow-scripts"), SOURCE("srcdoc"), APPEND, RETURN, SOURCE("srcdoc")] and the boundary rejects "iframe event occurred after integrated component completion"
+
+  Scenario Outline: <title>
+    Given <setup>
+    When <action>
+    Then <expected>
+
+    Examples: concrete insertion_observer_cases vectors
+      | title | setup | action | expected |
+      | observer insertion self-test: detects Element appendChild before sandbox | a tracked unsandboxed iframe and insertion route "Element appendChild" | insert the iframe using Element appendChild | the sole trace is ["CREATE(self-test)","APPEND"] and safety assertion throws "source/insertion occurred before exact sandbox" |
+      | observer insertion self-test: detects DocumentFragment appendChild before sandbox | a tracked unsandboxed iframe and insertion route "DocumentFragment appendChild" | insert the iframe using DocumentFragment appendChild | the sole trace is ["CREATE(self-test)","APPEND"] and safety assertion throws "source/insertion occurred before exact sandbox" |
+      | observer insertion self-test: detects insertBefore before sandbox | a tracked unsandboxed iframe and insertion route "insertBefore" | insert the iframe using insertBefore | the sole trace is ["CREATE(self-test)","APPEND"] and safety assertion throws "source/insertion occurred before exact sandbox" |
+      | observer insertion self-test: detects replaceChild before sandbox | a tracked unsandboxed iframe and insertion route "replaceChild" | insert the iframe using replaceChild | the sole trace is ["CREATE(self-test)","APPEND"] and safety assertion throws "source/insertion occurred before exact sandbox" |
+      | observer insertion self-test: detects Element append before sandbox | a tracked unsandboxed iframe and insertion route "Element append" | insert the iframe using Element append | the sole trace is ["CREATE(self-test)","APPEND"] and safety assertion throws "source/insertion occurred before exact sandbox" |
+      | observer insertion self-test: detects Element prepend before sandbox | a tracked unsandboxed iframe and insertion route "Element prepend" | insert the iframe using Element prepend | the sole trace is ["CREATE(self-test)","APPEND"] and safety assertion throws "source/insertion occurred before exact sandbox" |
+      | observer insertion self-test: detects replaceChildren before sandbox | a tracked unsandboxed iframe and insertion route "replaceChildren" | insert the iframe using replaceChildren | the sole trace is ["CREATE(self-test)","APPEND"] and safety assertion throws "source/insertion occurred before exact sandbox" |
+      | observer insertion self-test: detects before before sandbox | a tracked unsandboxed iframe and insertion route "before" | insert the iframe using before | the sole trace is ["CREATE(self-test)","APPEND"] and safety assertion throws "source/insertion occurred before exact sandbox" |
+      | observer insertion self-test: detects after before sandbox | a tracked unsandboxed iframe and insertion route "after" | insert the iframe using after | the sole trace is ["CREATE(self-test)","APPEND"] and safety assertion throws "source/insertion occurred before exact sandbox" |
+      | observer insertion self-test: detects replaceWith before sandbox | a tracked unsandboxed iframe and insertion route "replaceWith" | insert the iframe using replaceWith | the sole trace is ["CREATE(self-test)","APPEND"] and safety assertion throws "source/insertion occurred before exact sandbox" |
+      | observer insertion self-test: detects insertAdjacentElement before sandbox | a tracked unsandboxed iframe and insertion route "insertAdjacentElement" | insert the iframe using insertAdjacentElement | the sole trace is ["CREATE(self-test)","APPEND"] and safety assertion throws "source/insertion occurred before exact sandbox" |
+
+  Scenario Outline: <title>
+    Given <setup>
+    When <action>
+    Then <expected>
+
+    Examples: concrete observer_creation_cases vectors
+      | title | setup | action | expected |
+      | observer creation self-test: detects createElementNS exactly | observer kind "self-test" and XHTML namespace createElementNS("iframe") | create an iframe using createElementNS | one trace equals [CREATE(self-test)] and passes the no-source-before-sandbox assertion |
+      | observer creation self-test: detects Element innerHTML parser exactly | observer kind "self-test", route "Element innerHTML", and markup <iframe sandbox="allow-scripts" srcdoc="<p>a</p>"></iframe> | create an iframe using Element innerHTML | one trace equals [CREATE(self-test), SANDBOX("allow-scripts"), SOURCE("srcdoc"), APPEND] and passes the safety assertion |
+      | observer creation self-test: detects template fragment parser exactly | observer kind "self-test", route "template innerHTML", and markup <iframe sandbox="allow-scripts" srcdoc="<p>a</p>"></iframe> | create an iframe using template innerHTML | one trace equals [CREATE(self-test), SANDBOX("allow-scripts"), SOURCE("srcdoc"), APPEND] and passes the safety assertion |
+      | observer creation self-test: detects insertAdjacentHTML parser exactly | observer kind "self-test", route "insertAdjacentHTML", and markup <iframe sandbox="allow-scripts" srcdoc="<p>a</p>"></iframe> | create an iframe using insertAdjacentHTML | one trace equals [CREATE(self-test), SANDBOX("allow-scripts"), SOURCE("srcdoc"), APPEND] and passes the safety assertion |
+      | observer creation self-test: detects Range contextual fragment exactly | observer kind "self-test", route "Range contextual fragment", and markup <iframe sandbox="allow-scripts" srcdoc="<p>a</p>"></iframe> | create an iframe using Range contextual fragment | one trace equals [CREATE(self-test), SANDBOX("allow-scripts"), SOURCE("srcdoc"), APPEND] and passes the safety assertion |
+      | observer creation self-test: detects DOMParser document exactly | observer kind "self-test", route "DOMParser", and markup <iframe sandbox="allow-scripts" srcdoc="<p>a</p>"></iframe> | create an iframe using DOMParser | one trace equals [CREATE(self-test), SANDBOX("allow-scripts"), SOURCE("srcdoc"), APPEND] and passes the safety assertion |
+      | observer parser self-test: rejects source before sandbox in authored parser order | observer kind "self-test" and parser markup <iframe srcdoc="<p>a</p>" sandbox="allow-scripts"></iframe> | create an iframe using source-first innerHTML | one trace equals [CREATE(self-test), SOURCE("srcdoc"), SANDBOX("allow-scripts"), APPEND] and safety assertion throws "source/insertion occurred before exact sandbox" |
+
+  Scenario Outline: <title>
+    Given <setup>
+    When <action>
+    Then <expected>
+
+    Examples: concrete sandbox_observer_cases vectors
+      | title | setup | action | expected |
+      | observer sandbox self-test: detects setAttribute mutation | a tracked iframe prepared for setAttribute("sandbox","allow-scripts") | apply setAttribute("sandbox","allow-scripts") | the sole post-reset event is SANDBOX("allow-scripts") |
+      | observer sandbox self-test: detects setAttributeNS mutation | a tracked iframe prepared for setAttributeNS(null,"sandbox","allow-scripts") | apply setAttributeNS(null,"sandbox","allow-scripts") | the sole post-reset event is SANDBOX("allow-scripts") |
+      | observer sandbox self-test: detects removeAttribute mutation | a tracked iframe prepared for prepare sandbox="allow-scripts", reset events, then removeAttribute("sandbox") | apply prepare sandbox="allow-scripts", reset events, then removeAttribute("sandbox") | the sole post-reset event is SANDBOX(null) |
+      | observer sandbox self-test: detects removeAttributeNS mutation | a tracked iframe prepared for prepare sandbox="allow-scripts", reset events, then removeAttributeNS(null,"sandbox") | apply prepare sandbox="allow-scripts", reset events, then removeAttributeNS(null,"sandbox") | the sole post-reset event is SANDBOX(null) |
+      | observer sandbox self-test: detects toggleAttribute mutation | a tracked iframe prepared for toggleAttribute("sandbox",true) | apply toggleAttribute("sandbox",true) | the sole post-reset event is SANDBOX("") |
+      | observer sandbox self-test: detects setAttributeNode mutation | a tracked iframe prepared for setAttributeNode of sandbox="allow-scripts" | apply setAttributeNode of sandbox="allow-scripts" | the sole post-reset event is SANDBOX("allow-scripts") |
+      | observer sandbox self-test: detects setAttributeNodeNS mutation | a tracked iframe prepared for setAttributeNodeNS of sandbox="allow-scripts" | apply setAttributeNodeNS of sandbox="allow-scripts" | the sole post-reset event is SANDBOX("allow-scripts") |
+      | observer sandbox self-test: detects removeAttributeNode mutation | a tracked iframe prepared for prepare sandbox="allow-scripts", reset events, then removeAttributeNode | apply prepare sandbox="allow-scripts", reset events, then removeAttributeNode | the sole post-reset event is SANDBOX(null) |
+      | observer sandbox self-test: detects NamedNodeMap setNamedItem mutation | a tracked iframe prepared for attributes.setNamedItem sandbox="allow-scripts" | apply attributes.setNamedItem sandbox="allow-scripts" | the sole post-reset event is SANDBOX("allow-scripts") |
+      | observer sandbox self-test: detects NamedNodeMap setNamedItemNS mutation | a tracked iframe prepared for attributes.setNamedItemNS sandbox="allow-scripts" | apply attributes.setNamedItemNS sandbox="allow-scripts" | the sole post-reset event is SANDBOX("allow-scripts") |
+      | observer sandbox self-test: detects NamedNodeMap removeNamedItem mutation | a tracked iframe prepared for prepare sandbox="allow-scripts", reset events, then attributes.removeNamedItem | apply prepare sandbox="allow-scripts", reset events, then attributes.removeNamedItem | the sole post-reset event is SANDBOX(null) |
+      | observer sandbox self-test: detects NamedNodeMap removeNamedItemNS mutation | a tracked iframe prepared for prepare sandbox="allow-scripts", reset events, then attributes.removeNamedItemNS | apply prepare sandbox="allow-scripts", reset events, then attributes.removeNamedItemNS | the sole post-reset event is SANDBOX(null) |
+      | observer sandbox self-test: detects Attr value mutation | a tracked iframe prepared for change prepared sandbox Attr from "allow-forms" to "allow-scripts" after reset | apply change prepared sandbox Attr from "allow-forms" to "allow-scripts" after reset | the sole post-reset event is SANDBOX("allow-scripts") |
+      | observer sandbox self-test: detects Attr nodeValue mutation | a tracked iframe prepared for change prepared sandbox Attr.nodeValue from "allow-forms" to "allow-scripts" after reset | apply change prepared sandbox Attr.nodeValue from "allow-forms" to "allow-scripts" after reset | the sole post-reset event is SANDBOX("allow-scripts") |
+      | observer sandbox self-test: detects Attr textContent mutation | a tracked iframe prepared for change prepared sandbox Attr.textContent from "allow-forms" to "allow-scripts" after reset | apply change prepared sandbox Attr.textContent from "allow-forms" to "allow-scripts" after reset | the sole post-reset event is SANDBOX("allow-scripts") |
+      | observer sandbox self-test: detects sandbox value mutation | a tracked iframe prepared for set sandbox.value="allow-scripts" | apply set sandbox.value="allow-scripts" | the sole post-reset event is SANDBOX("allow-scripts") |
+      | observer sandbox self-test: detects sandbox add mutation | a tracked iframe prepared for sandbox.add("allow-scripts") | apply sandbox.add("allow-scripts") | the sole post-reset event is SANDBOX("allow-scripts") |
+      | observer sandbox self-test: detects sandbox remove mutation | a tracked iframe prepared for add allow-scripts, reset events, then sandbox.remove("allow-scripts") | apply add allow-scripts, reset events, then sandbox.remove("allow-scripts") | the sole post-reset event is SANDBOX("") |
+      | observer sandbox self-test: detects sandbox toggle mutation | a tracked iframe prepared for sandbox.toggle("allow-scripts") | apply sandbox.toggle("allow-scripts") | the sole post-reset event is SANDBOX("allow-scripts") |
+      | observer sandbox self-test: detects sandbox replace mutation | a tracked iframe prepared for add allow-forms, reset events, then sandbox.replace("allow-forms","allow-scripts") | apply add allow-forms, reset events, then sandbox.replace("allow-forms","allow-scripts") | the sole post-reset event is SANDBOX("allow-scripts") |
+
+  Scenario Outline: <title>
+    Given <setup>
+    When <action>
+    Then <expected>
+
+    Examples: concrete source_observer_cases vectors
+      | title | setup | action | expected |
+      | observer source self-test: detects src property mutation | a tracked unsandboxed iframe prepared to set src="https://example.com/a" | apply mutation: set src="https://example.com/a" | the sole post-reset event is SOURCE("src") and safety assertion throws "source/insertion occurred before exact sandbox" |
+      | observer source self-test: detects srcdoc property mutation | a tracked unsandboxed iframe prepared to set srcdoc="<p>a</p>" | apply mutation: set srcdoc="<p>a</p>" | the sole post-reset event is SOURCE("srcdoc") and safety assertion throws "source/insertion occurred before exact sandbox" |
+      | observer source self-test: detects setAttribute src mutation | a tracked unsandboxed iframe prepared to setAttribute src="https://example.com/a" | apply mutation: setAttribute src="https://example.com/a" | the sole post-reset event is SOURCE("src") and safety assertion throws "source/insertion occurred before exact sandbox" |
+      | observer source self-test: detects setAttribute srcdoc mutation | a tracked unsandboxed iframe prepared to setAttribute srcdoc="<p>a</p>" | apply mutation: setAttribute srcdoc="<p>a</p>" | the sole post-reset event is SOURCE("srcdoc") and safety assertion throws "source/insertion occurred before exact sandbox" |
+      | observer source self-test: detects setAttributeNS src mutation | a tracked unsandboxed iframe prepared to setAttributeNS src="https://example.com/a" | apply mutation: setAttributeNS src="https://example.com/a" | the sole post-reset event is SOURCE("src") and safety assertion throws "source/insertion occurred before exact sandbox" |
+      | observer source self-test: detects removeAttribute src mutation | a tracked unsandboxed iframe prepared to prepare src="https://example.com/a", reset, then remove it | apply mutation: prepare src="https://example.com/a", reset, then remove it | the sole post-reset event is SOURCE("src") and safety assertion throws "source/insertion occurred before exact sandbox" |
+      | observer source self-test: detects removeAttributeNS srcdoc mutation | a tracked unsandboxed iframe prepared to prepare srcdoc="<p>a</p>", reset, then remove it with namespace null | apply mutation: prepare srcdoc="<p>a</p>", reset, then remove it with namespace null | the sole post-reset event is SOURCE("srcdoc") and safety assertion throws "source/insertion occurred before exact sandbox" |
+      | observer source self-test: detects toggleAttribute srcdoc mutation | a tracked unsandboxed iframe prepared to toggleAttribute("srcdoc",true) | apply mutation: toggleAttribute("srcdoc",true) | the sole post-reset event is SOURCE("srcdoc") and safety assertion throws "source/insertion occurred before exact sandbox" |
+      | observer source self-test: detects setAttributeNode srcdoc mutation | a tracked unsandboxed iframe prepared to setAttributeNode srcdoc="<p>a</p>" | apply mutation: setAttributeNode srcdoc="<p>a</p>" | the sole post-reset event is SOURCE("srcdoc") and safety assertion throws "source/insertion occurred before exact sandbox" |
+      | observer source self-test: detects setAttributeNodeNS src mutation | a tracked unsandboxed iframe prepared to setAttributeNodeNS src="https://example.com/a" | apply mutation: setAttributeNodeNS src="https://example.com/a" | the sole post-reset event is SOURCE("src") and safety assertion throws "source/insertion occurred before exact sandbox" |
+      | observer source self-test: detects removeAttributeNode srcdoc mutation | a tracked unsandboxed iframe prepared to prepare srcdoc="<p>a</p>", reset, then remove its Attr | apply mutation: prepare srcdoc="<p>a</p>", reset, then remove its Attr | the sole post-reset event is SOURCE("srcdoc") and safety assertion throws "source/insertion occurred before exact sandbox" |
+      | observer source self-test: detects NamedNodeMap setNamedItem src mutation | a tracked unsandboxed iframe prepared to attributes.setNamedItem src="https://example.com/a" | apply mutation: attributes.setNamedItem src="https://example.com/a" | the sole post-reset event is SOURCE("src") and safety assertion throws "source/insertion occurred before exact sandbox" |
+      | observer source self-test: detects NamedNodeMap setNamedItemNS srcdoc mutation | a tracked unsandboxed iframe prepared to attributes.setNamedItemNS srcdoc="<p>a</p>" | apply mutation: attributes.setNamedItemNS srcdoc="<p>a</p>" | the sole post-reset event is SOURCE("srcdoc") and safety assertion throws "source/insertion occurred before exact sandbox" |
+      | observer source self-test: detects NamedNodeMap removeNamedItem src mutation | a tracked unsandboxed iframe prepared to prepare src="https://example.com/a", reset, then removeNamedItem | apply mutation: prepare src="https://example.com/a", reset, then removeNamedItem | the sole post-reset event is SOURCE("src") and safety assertion throws "source/insertion occurred before exact sandbox" |
+      | observer source self-test: detects NamedNodeMap removeNamedItemNS srcdoc mutation | a tracked unsandboxed iframe prepared to prepare srcdoc="<p>a</p>", reset, then removeNamedItemNS | apply mutation: prepare srcdoc="<p>a</p>", reset, then removeNamedItemNS | the sole post-reset event is SOURCE("srcdoc") and safety assertion throws "source/insertion occurred before exact sandbox" |
+      | observer source self-test: detects Attr value srcdoc mutation | a tracked unsandboxed iframe prepared to change srcdoc Attr.value from "<p>before</p>" to "<p>after</p>" after reset | apply mutation: change srcdoc Attr.value from "<p>before</p>" to "<p>after</p>" after reset | the sole post-reset event is SOURCE("srcdoc") and safety assertion throws "source/insertion occurred before exact sandbox" |
+      | observer source self-test: detects Attr nodeValue src mutation | a tracked unsandboxed iframe prepared to change src Attr.nodeValue from "https://example.com/before" to "https://example.com/after" after reset | apply mutation: change src Attr.nodeValue from "https://example.com/before" to "https://example.com/after" after reset | the sole post-reset event is SOURCE("src") and safety assertion throws "source/insertion occurred before exact sandbox" |
+      | observer source self-test: detects Attr textContent srcdoc mutation | a tracked unsandboxed iframe prepared to change srcdoc Attr.textContent from "<p>before</p>" to "<p>after</p>" after reset | apply mutation: change srcdoc Attr.textContent from "<p>before</p>" to "<p>after</p>" after reset | the sole post-reset event is SOURCE("srcdoc") and safety assertion throws "source/insertion occurred before exact sandbox" |
+

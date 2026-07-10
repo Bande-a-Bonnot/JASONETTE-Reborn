@@ -1,0 +1,36 @@
+{
+  "schema_version": "foundry.review-summary.v1",
+  "run_id": "019f4bec-43dc-742b-80b0-e42b7d46ebdd",
+  "suite_sha256": "a5f49f8c0eeeb82882ca898a639da5ff43b2fd3d12e8949109d407c82d41909b",
+  "vitest_cases": 277,
+  "gherkin_scenarios": 277,
+  "dod_checkboxes": 55,
+  "external_pending": 10,
+  "reviews": [
+    {
+      "recipient": "red-team-test-reviewer-final",
+      "envelope": "runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1b/red-team-test-reviewer-final.json",
+      "actual_model": "openai-codex/gpt-5.6-sol:xhigh",
+      "verdict": "PASS",
+      "findings": [],
+      "testing_gaps": []
+    },
+    {
+      "recipient": "cucumber-reviewer-final",
+      "envelope": "runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1b/cucumber-reviewer-final.json",
+      "actual_model": "openai-codex/gpt-5.6-sol:xhigh",
+      "verdict": "PASS",
+      "findings": [],
+      "testing_gaps": []
+    },
+    {
+      "recipient": "barrier-integrity-auditor-final",
+      "envelope": "runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1b/barrier-integrity-auditor-final.json",
+      "actual_model": "openai-codex/gpt-5.6-sol:xhigh",
+      "verdict": "PASS",
+      "findings": [],
+      "residual_risks": [],
+      "testing_gaps": []
+    }
+  ]
+}

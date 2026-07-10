@@ -1,0 +1,17 @@
+{
+  "schema_version": "foundry.prompt-envelope.v1",
+  "run_id": "019f4bec-43dc-742b-80b0-e42b7d46ebdd",
+  "phase": "phase1b",
+  "recipient": "barrier-integrity-auditor-restart4",
+  "prompt": "Final barrier audit of restarted red lineage. Replay:\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1/red-team-restart1.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1/red-team-restart-revision1.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1/red-team-restart-revision2.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1/red-team-restart-revision3.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1b/red-team-test-reviewer-restart4.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1b/cucumber-reviewer-restart4.json\nInspect /tmp/foundry-019f4bec-43dc-742b-80b0-e42b7d46ebdd-red-restart. Verify raw diagnostics and implementation context were withheld and no implementation worktree existed. Ignore invalidated old lineage. Any leak P0.",
+  "visible_context": [
+    {
+      "label": "audit_scope",
+      "kind": "audit_scope",
+      "sha256": "f805a9e47a98117350d0d8bf04ff48f9077384a79178d79c062691cf117b23aa",
+      "content": "Final barrier audit of restarted red lineage. Replay:\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1/red-team-restart1.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1/red-team-restart-revision1.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1/red-team-restart-revision2.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1/red-team-restart-revision3.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1b/red-team-test-reviewer-restart4.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1b/cucumber-reviewer-restart4.json\nInspect /tmp/foundry-019f4bec-43dc-742b-80b0-e42b7d46ebdd-red-restart. Verify raw diagnostics and implementation context were withheld and no implementation worktree existed. Ignore invalidated old lineage. Any leak P0."
+    }
+  ],
+  "withheld_context": [],
+  "redactions": []
+}

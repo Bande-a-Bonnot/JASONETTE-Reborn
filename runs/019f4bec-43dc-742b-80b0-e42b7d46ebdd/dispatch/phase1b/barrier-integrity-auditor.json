@@ -1,0 +1,23 @@
+{
+  "schema_version": "foundry.prompt-envelope.v1",
+  "run_id": "019f4bec-43dc-742b-80b0-e42b7d46ebdd",
+  "phase": "phase1b",
+  "recipient": "barrier-integrity-auditor",
+  "prompt": "Audit the serialized Foundry PromptEnvelope artifacts for information-barrier violations. Inspect:\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1/red-team.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1b/red-team-test-reviewer.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1b/cucumber-reviewer.json\nRed workspace: /tmp/foundry-019f4bec-43dc-742b-80b0-e42b7d46ebdd-red-clean. Green workspace: /tmp/foundry-019f4bec-43dc-742b-80b0-e42b7d46ebdd-green. Verify red prompts/workspace expose the full reviewed test criteria and public APIs but no implementation code, paths, snippets, green workspace path, raw implementation diagnostics, or green conversation. Verify withheld samples are absent from dispatched prompts. Return Foundry findings JSON; any leak is P0. Do not modify files.",
+  "visible_context": [
+    {
+      "label": "envelope_paths",
+      "kind": "audit_scope",
+      "sha256": "b4be492d49a38ae73a39cc780d451b34fe8ecaac4fdcce8ca8b6268bcf645420",
+      "content": "Audit the serialized Foundry PromptEnvelope artifacts for information-barrier violations. Inspect:\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1/red-team.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1b/red-team-test-reviewer.json\n- runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/phase1b/cucumber-reviewer.json\nRed workspace: /tmp/foundry-019f4bec-43dc-742b-80b0-e42b7d46ebdd-red-clean. Green workspace: /tmp/foundry-019f4bec-43dc-742b-80b0-e42b7d46ebdd-green. Verify red prompts/workspace expose the full reviewed test criteria and public APIs but no implementation code, paths, snippets, green workspace path, raw implementation diagnostics, or green conversation. Verify withheld samples are absent from dispatched prompts. Return Foundry findings JSON; any leak is P0. Do not modify files."
+    },
+    {
+      "label": "red_file_list",
+      "kind": "red_test_paths",
+      "sha256": "032a58faae25f238c8111342229aa5662bd86e42d2d0330d95f45ff86585fb58",
+      "content": "/tmp/foundry-019f4bec-43dc-742b-80b0-e42b7d46ebdd-red-clean/features/web-html-safety.feature\n/tmp/foundry-019f4bec-43dc-742b-80b0-e42b7d46ebdd-red-clean/tests/coverage-map.json\n/tmp/foundry-019f4bec-43dc-742b-80b0-e42b7d46ebdd-red-clean/tests/evidence-boundary.test.ts\n/tmp/foundry-019f4bec-43dc-742b-80b0-e42b7d46ebdd-red-clean/tests/template-engine-safety.test.ts\n/tmp/foundry-019f4bec-43dc-742b-80b0-e42b7d46ebdd-red-clean/tests/web-action-state-safety.test.ts\n/tmp/foundry-019f4bec-43dc-742b-80b0-e42b7d46ebdd-red-clean/tests/web-component-safety.test.ts\n/tmp/foundry-019f4bec-43dc-742b-80b0-e42b7d46ebdd-red-clean/tests/web-renderer-safety.test.ts"
+    }
+  ],
+  "withheld_context": [],
+  "redactions": []
+}

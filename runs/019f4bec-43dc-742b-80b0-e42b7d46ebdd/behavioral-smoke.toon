@@ -1,0 +1,14 @@
+schema_version: foundry.behavioral-smoke.v1
+run_id: 019f4bec-43dc-742b-80b0-e42b7d46ebdd
+requires_divergence_restart: false
+requires_distinct_model_lanes: true
+
+test_results[1]{example,passed,total,expected_passed,expected_total}:
+  web-html-template-iframe-safety,0,277,277,277
+
+model_lanes[3]{recipient,planned_model,actual_model}:
+  red-team,openai-codex/gpt-5.6-sol:xhigh,openai-codex/gpt-5.6-sol:xhigh
+  green-team,openai-codex/gpt-5.6-sol:high,pending
+  orchestrator,openai-codex/gpt-5.6-sol:xhigh,openai-codex/gpt-5.6-sol:xhigh
+
+divergence_restarts[0]{phase,outcome,revision_history_count}:

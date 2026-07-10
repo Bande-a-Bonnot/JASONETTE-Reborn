@@ -444,7 +444,9 @@ The security observer records only:
 - `SANDBOX(value)` for sandbox set/remove/replace;
 - `SOURCE(name)` for `srcdoc`/`src` assignment;
 - `APPEND` for every insertion of the iframe into any parent;
-- `RETURN` when `renderComponent()` wrapper creation or background render returns.
+- `RETURN` as observable completion: actual public `renderComponent()` return in
+  direct calls; integrated wrapper `data-jasonette-type="html"` assignment after
+  all iframe operations; actual runtime-wrapped background render return.
 
 Pure computation, property reads, wrapper creation, class/ARIA operations, and
 style reads/writes are excluded. Exact creation traces:
@@ -457,9 +459,12 @@ CREATE(background) -> SANDBOX("allow-scripts") -> SOURCE("srcdoc"|"src")
 -> APPEND -> RETURN
 ```
 
-Events are grouped per created iframe, not per function call. Each created
-iframe records exactly one sandbox event before return: the initial required set.
-No additional sandbox event occurs in that observation window. Endpoint checks
+Direct component tests use actual public function return. Integrated component
+flows use the data-type completion marker and continue observing through the
+containing public render/action return to prove no later iframe operation occurs.
+Backgrounds use the runtime-wrapped `renderBodyBackground()` return. Events are
+grouped per iframe. Each iframe records one initial sandbox event and no
+additional event before its completion boundary. Endpoint checks
 after initial render and `$render` assert exact sandbox state; the disconnected
 old iframe object also retains its attribute. This is not a continuous
 post-return mutation claim. No-source calls emit no per-iframe trace.
@@ -768,7 +773,9 @@ security-enforcement oracle.
 
 ### 6.7 Iframe Creation and Lifetime (mirrors 3.4)
 
-- [ ] Component inline and URL traces match the exact observer alphabet/order.
+- [ ] Direct component traces use actual public return; integrated component
+      traces use the data-type completion marker and prove no later iframe event
+      through public render/action return. Inline/URL order remains exact.
 - [ ] Background inline and URL traces match the exact observer alphabet/order.
 - [ ] Sandbox is each iframe's first security-observed operation, precedes every
       parent insertion/source event, and is exact `allow-scripts`.
