@@ -119,6 +119,10 @@ export interface AppState {
   local: Record<string, unknown>;
   /** Cache state ($cache) */
   cache: Record<string, unknown>;
+  /** Global state ($global) */
+  global: Record<string, unknown>;
+  /** Domain-scoped session state ($session) */
+  sessions: Record<string, Record<string, unknown>>;
   /** Navigation params ($params) */
   params: Record<string, unknown>;
   /** Last network/action response ($response) */

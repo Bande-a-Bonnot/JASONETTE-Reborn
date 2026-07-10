@@ -72,6 +72,7 @@ export async function executeAction(
 
     return result;
   } catch (err) {
+    if (err instanceof AbortAction) return data;
     console.error(`[jasonette] Action error (${normalizedAction.type}):`, err);
 
     // Chain error handler
@@ -113,7 +114,8 @@ function collectConditionalChain(action: JasonAction[], start: number): JasonAct
 }
 
 const arraySideEffectActionTypes = new Set([
-  '$set', '$cache.set', '$cache.reset', '$flush', '$render', '$reload', '$href', '$back', '$close',
+  '$set', '$cache.set', '$cache.reset', '$flush', '$global.set', '$global.reset', '$session.set', '$session.reset',
+  '$render', '$reload', '$href', '$back', '$close',
   '$util.alert', '$util.toast', '$util.banner', '$timer.start', '$timer.stop', '$log',
 ]);
 
@@ -146,9 +148,52 @@ function actionContext(state: AppState, data?: unknown): RenderContext {
     $jason: data ?? {},
     $get: state.local,
     $cache: state.cache,
+    $global: state.global,
     $params: state.params,
     $response: state.response,
   };
+}
+
+class AbortAction extends Error {}
+
+function requireObject(options: unknown): Record<string, unknown> {
+  if (!options || typeof options !== 'object' || Array.isArray(options)) throw new AbortAction();
+  return options as Record<string, unknown>;
+}
+
+function stringMap(value: unknown): Record<string, string> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>).map(([key, raw]) => [key, String(raw ?? '')]),
+  );
+}
+
+function persistGlobal(state: AppState): void {
+  try { localStorage.setItem('jasonette:global', JSON.stringify(state.global)); } catch { /* ignore */ }
+}
+
+function persistSessions(state: AppState): void {
+  try { localStorage.setItem('jasonette:session', JSON.stringify(state.sessions)); } catch { /* ignore */ }
+}
+
+function sessionDomain(options: Record<string, unknown>): string | undefined {
+  const raw = typeof options.domain === 'string'
+    ? options.domain
+    : (typeof options.url === 'string' ? options.url : undefined);
+  if (!raw) return undefined;
+  try {
+    return new URL(raw.includes('://') ? raw : `https://${raw}`).hostname.toLowerCase();
+  } catch {
+    return undefined;
+  }
+}
+
+function requestSession(state: AppState, url: URL): Record<string, unknown> {
+  return state.sessions?.[url.hostname.toLowerCase()] ?? {};
+}
+
+function formEncode(data: Record<string, string>): string {
+  return new URLSearchParams(data).toString();
 }
 
 // --- Built-in Actions ---
@@ -170,25 +215,40 @@ registerAction('$reload', async (action, state) => {
 
 registerAction('$network.request', async (action, state) => {
   const opts = optionsObject(action.options);
-  const url = opts.url;
-  if (typeof url !== 'string' || !url) throw new Error('$network.request: missing or invalid url');
+  const rawUrl = opts.url;
+  if (typeof rawUrl !== 'string' || !rawUrl) throw new Error('$network.request: missing or invalid url');
 
-  const headers = { ...((opts.headers as Record<string, string> | undefined) ?? {}) };
-  const fetchOpts: RequestInit = {
-    method: (opts.method as string)?.toUpperCase() ?? 'GET',
-    headers,
-  };
+  const parsed = new URL(rawUrl, state.url ?? document.baseURI);
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    throw new Error(`$network.request: blocked url scheme ${parsed.protocol}`);
+  }
+  const method = (opts.method as string)?.toUpperCase() ?? 'GET';
+  const session = requestSession(state, parsed);
+  const sessionHeaders = stringMap(session.header);
+  const authoredHeaders = stringMap(opts.header ?? opts.headers);
+  const headers = { ...authoredHeaders, ...sessionHeaders };
+  const fetchOpts: RequestInit = { method, headers };
 
-  if (opts.body && fetchOpts.method !== 'GET') {
-    if (typeof opts.body === 'object') {
+  const hasAuthoredBody = Object.prototype.hasOwnProperty.call(opts, 'body');
+  const data = opts.data !== undefined ? stringMap(opts.data) : (hasAuthoredBody ? {} : stringMap(session.body));
+  if (['GET', 'HEAD', 'DELETE'].includes(method)) {
+    for (const [key, value] of Object.entries(data)) parsed.searchParams.append(key, value);
+  }
+
+  if (hasAuthoredBody && !['GET', 'HEAD', 'DELETE'].includes(method)) {
+    if (opts.body !== null && typeof opts.body === 'object') {
       fetchOpts.body = JSON.stringify(opts.body);
       headers['Content-Type'] ??= 'application/json';
     } else {
-      fetchOpts.body = String(opts.body);
+      fetchOpts.body = String(opts.body ?? '');
     }
+  } else if (!['GET', 'HEAD', 'DELETE'].includes(method) && Object.keys(data).length > 0) {
+    fetchOpts.body = formEncode(data);
+    headers['Content-Type'] ??= 'application/x-www-form-urlencoded';
   }
 
-  const response = await fetch(url, fetchOpts);
+  const response = await fetch(parsed.href, fetchOpts);
+  if (!response.ok) throw new Error(`$network.request: HTTP ${response.status}`);
   const contentType = response.headers.get('content-type') ?? '';
 
   const result = contentType.includes('json')
@@ -229,6 +289,45 @@ registerAction('$set', async (action, state) => {
     Object.assign(state.local, opts);
   }
   return state.local;
+});
+
+registerAction('$global.set', async (action, state) => {
+  const opts = requireObject(action.options);
+  Object.assign(state.global, opts);
+  persistGlobal(state);
+  state.local.$jason = state.global;
+  return state.global;
+});
+
+registerAction('$global.reset', async (action, state) => {
+  const opts = requireObject(action.options);
+  if (opts.items !== undefined && !Array.isArray(opts.items)) throw new AbortAction();
+  for (const item of (opts.items as unknown[] | undefined) ?? []) {
+    if (typeof item === 'string') delete state.global[item];
+  }
+  persistGlobal(state);
+  state.local.$jason = state.global;
+  return state.global;
+});
+
+registerAction('$session.set', async (action, state) => {
+  const opts = requireObject(action.options);
+  const domain = sessionDomain(opts);
+  if (!domain) throw new AbortAction();
+  state.sessions[domain] = { ...opts };
+  persistSessions(state);
+  state.local.$jason = {};
+  return {};
+});
+
+registerAction('$session.reset', async (action, state) => {
+  const opts = requireObject(action.options);
+  const domain = sessionDomain(opts);
+  if (!domain) throw new AbortAction();
+  delete state.sessions[domain];
+  persistSessions(state);
+  state.local.$jason = {};
+  return {};
 });
 
 registerAction('$get', async (_action, state) => {

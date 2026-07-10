@@ -9,6 +9,8 @@ export interface RenderContext {
   $env?: Record<string, unknown>;
   /** Cache data ($cache) */
   $cache?: Record<string, unknown>;
+  /** Global data ($global) */
+  $global?: Record<string, unknown>;
   /** Last network/action response ($response) */
   $response?: unknown;
   /** Config keys ($keys) */

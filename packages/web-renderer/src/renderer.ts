@@ -88,6 +88,8 @@ export class JasonetteRenderer {
       actions: {},
       local: {},
       cache: this.loadCache(),
+      global: this.loadGlobal(),
+      sessions: this.loadSessions(),
       params: {},
       response: undefined,
       history: [],
@@ -97,9 +99,27 @@ export class JasonetteRenderer {
   }
 
   private loadCache(): Record<string, unknown> {
+    return this.loadObject('jasonette:cache');
+  }
+
+  private loadGlobal(): Record<string, unknown> {
+    return this.loadObject('jasonette:global');
+  }
+
+  private loadSessions(): Record<string, Record<string, unknown>> {
+    const sessions = this.loadObject('jasonette:session');
+    return Object.fromEntries(
+      Object.entries(sessions).filter((entry): entry is [string, Record<string, unknown>] => (
+        !!entry[1] && typeof entry[1] === 'object' && !Array.isArray(entry[1])
+      )).map(([domain, session]) => [domain.toLowerCase(), session]),
+    );
+  }
+
+  private loadObject(key: string): Record<string, unknown> {
     try {
-      const cached = localStorage.getItem('jasonette:cache');
-      return cached ? JSON.parse(cached) : {};
+      const cached = localStorage.getItem(key);
+      const parsed = cached ? JSON.parse(cached) : {};
+      return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed as Record<string, unknown> : {};
     } catch {
       return {};
     }
@@ -327,6 +347,7 @@ export class JasonetteRenderer {
       $jason: data ?? this.state.document?.$jason?.head?.data ?? {},
       $get: this.state.local,
       $cache: this.state.cache,
+      $global: this.state.global,
       $params: this.state.params,
       $response: this.state.response,
     };

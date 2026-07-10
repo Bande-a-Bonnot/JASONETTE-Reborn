@@ -15,6 +15,13 @@ describe('web action/render parity', () => {
   let renderer: JasonetteRenderer;
 
   beforeEach(() => {
+    const storage = new Map<string, string>();
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => { storage.set(key, value); },
+      removeItem: (key: string) => { storage.delete(key); },
+      clear: () => { storage.clear(); },
+    });
     root = document.createElement('div');
     document.body.appendChild(root);
     renderer = new JasonetteRenderer(root);
@@ -22,6 +29,7 @@ describe('web action/render parity', () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
     document.body.innerHTML = '';
   });
 
@@ -92,6 +100,171 @@ describe('web action/render parity', () => {
     await Promise.resolve();
 
     expect(document.body.querySelector('.jasonette-banner')?.textContent).toContain('Touched top');
+  });
+
+  it('exposes $global to action and render contexts', async () => {
+    const doc: JasonDocument = {
+      $jason: {
+        head: {
+          templates: {
+            body: {
+              sections: [{ items: [{ type: 'label', text: '{{$global.profile.name}} {{$get.saved}}' }] }],
+            },
+          },
+        },
+      },
+    };
+
+    renderer.renderDocument(doc);
+    await executeAction({
+      type: '$global.set',
+      options: { token: 'abc', profile: { name: 'Ada' } },
+      success: [
+        { type: '$set', options: { saved: '{{$global.profile.name}}' } },
+        { type: '$render' },
+      ],
+    }, renderer.getState());
+
+    expect(renderer.getState().global.token).toBe('abc');
+    expect(renderer.getState().local.$jason).toEqual(renderer.getState().global);
+    expect(root.textContent).toContain('Ada Ada');
+
+    const second = new JasonetteRenderer(document.createElement('div'));
+    expect(second.getState().global.token).toBe('abc');
+  });
+
+  it('resets only listed $global items and aborts malformed global actions', async () => {
+    await executeAction({ type: '$global.set', options: { token: 'abc', theme: 'dark' } }, renderer.getState());
+    await executeAction({
+      type: '$global.reset',
+      options: { items: ['token'] },
+      success: { type: '$set', options: { remaining: '{{$jason.theme}}' } },
+    }, renderer.getState());
+    await executeAction({
+      type: '$global.set',
+      options: ['bad'],
+      success: { type: '$set', options: { malformed_success: true } },
+      error: { type: '$set', options: { malformed_error: true } },
+    }, renderer.getState());
+
+    expect(renderer.getState().global.token).toBeUndefined();
+    expect(renderer.getState().global.theme).toBe('dark');
+    expect(renderer.getState().local.remaining).toBe('dark');
+    expect(renderer.getState().local.malformed_success).toBeUndefined();
+    expect(renderer.getState().local.malformed_error).toBeUndefined();
+  });
+
+  it('decorates network requests with session headers and query data', async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ ok: true }), {
+      headers: { 'content-type': 'application/json' },
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await executeAction({
+      type: '$session.set',
+      options: {
+        domain: 'api.example.com',
+        header: { Authorization: 'Bearer session', 'X-Session': 'yes' },
+        body: { api_key: 'secret' },
+      },
+    }, renderer.getState());
+    await executeAction({
+      type: '$network.request',
+      options: {
+        url: 'https://api.example.com/items?existing=1',
+        headers: { Authorization: 'Bearer authored' },
+      },
+    }, renderer.getState());
+
+    expect(fetchMock).toHaveBeenCalledWith('https://api.example.com/items?existing=1&api_key=secret', expect.objectContaining({
+      headers: expect.objectContaining({ Authorization: 'Bearer session', 'X-Session': 'yes' }),
+    }));
+    expect(renderer.getState().response).toEqual({ ok: true });
+  });
+
+  it('uses authored network data instead of session body for form requests and reset clears session', async () => {
+    const fetchMock = vi.fn(async () => new Response('{}', { headers: { 'content-type': 'application/json' } }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await executeAction({
+      type: '$session.set',
+      options: {
+        url: 'https://api.example.com/login',
+        header: { 'X-Session': 'yes' },
+        body: { api_key: 'secret', locale: 'en' },
+      },
+    }, renderer.getState());
+    await executeAction({
+      type: '$network.request',
+      options: {
+        url: 'https://api.example.com/items',
+        method: 'POST',
+        header: { 'X-Session': 'authored' },
+        data: { locale: 'fr', page: '1' },
+      },
+    }, renderer.getState());
+    await executeAction({ type: '$session.reset', options: { domain: 'api.example.com' } }, renderer.getState());
+    await executeAction({ type: '$network.request', options: { url: 'https://api.example.com/items' } }, renderer.getState());
+
+    expect(fetchMock).toHaveBeenNthCalledWith(1, 'https://api.example.com/items', expect.objectContaining({
+      method: 'POST',
+      body: 'locale=fr&page=1',
+      headers: expect.objectContaining({ 'X-Session': 'yes' }),
+    }));
+    expect(fetchMock).toHaveBeenNthCalledWith(2, 'https://api.example.com/items', expect.objectContaining({
+      headers: {},
+    }));
+  });
+
+  it('does not apply session body data when an explicit network body is authored', async () => {
+    const fetchMock = vi.fn(async () => new Response('{}', { headers: { 'content-type': 'application/json' } }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    await executeAction({
+      type: '$session.set',
+      options: {
+        domain: 'api.example.com',
+        body: { api_key: 'secret' },
+      },
+    }, renderer.getState());
+    await executeAction({
+      type: '$network.request',
+      options: { url: 'https://api.example.com/items', method: 'POST', body: '' },
+    }, renderer.getState());
+    await executeAction({
+      type: '$network.request',
+      options: { url: 'https://api.example.com/delete', method: 'DELETE', body: 'ignored-by-fetch' },
+    }, renderer.getState());
+
+    expect(fetchMock).toHaveBeenNthCalledWith(1, 'https://api.example.com/items', expect.objectContaining({
+      body: '',
+    }));
+    expect(fetchMock.mock.calls[1]?.[0]).toBe('https://api.example.com/delete');
+    expect(fetchMock.mock.calls[1]?.[1]).not.toHaveProperty('body');
+  });
+
+  it('handles handcrafted action state without initialized session storage', async () => {
+    const fetchMock = vi.fn(async () => new Response('{}', { headers: { 'content-type': 'application/json' } }));
+    vi.stubGlobal('fetch', fetchMock);
+    const state = renderer.getState();
+    delete (state as Partial<typeof state>).sessions;
+
+    await executeAction({ type: '$network.request', options: { url: 'https://api.example.com/items' } }, state);
+
+    expect(fetchMock).toHaveBeenCalledWith('https://api.example.com/items', expect.objectContaining({ headers: {} }));
+  });
+
+  it('keeps network responses as the sequential array payload', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ title: 'from network' }), {
+      headers: { 'content-type': 'application/json' },
+    })));
+
+    await executeAction([
+      { type: '$network.request', options: { url: 'https://api.example.com/items' } },
+      { type: '$set', options: { title: '{{$jason.title}}' } },
+    ], renderer.getState(), { title: 'stale' });
+
+    expect(renderer.getState().local.title).toBe('from network');
   });
 
   it('passes $lambda options as $jason payload to named actions', async () => {
