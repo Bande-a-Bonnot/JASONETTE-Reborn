@@ -1,0 +1,55 @@
+{
+  "schema_version": "foundry.prompt-envelope.v1",
+  "run_id": "019f4bec-43dc-742b-80b0-e42b7d46ebdd",
+  "phase": "phase1b",
+  "recipient": "red-team",
+  "prompt": "You are an isolated RED TEAM infrastructure-repair lane. You have only the frozen red acceptance corpus, jsdom 25.0.1/Vitest dependencies, and a public-API stub; no product implementation is present or permitted.\n\nRepair only the security observer/test infrastructure so its self-tests are valid in the repository's jsdom 25.0.1 environment. Confirmed environment facts:\n1. jsdom 25.0.1 has no HTMLIFrameElement.prototype.sandbox accessor, while the NLSpec observer/tests need iterable sandbox-token behavior and mutation-route observation. Add a test-only, restorable compatibility layer in red support (never production code) that reflects the `sandbox` content attribute and supports value/iteration/add/remove/toggle/replace sufficiently for the exact observer routes. Ensure observer restore removes any installed compatibility descriptor/state.\n2. Sandbox/source mutation self-tests create an iframe, then expect a mutation-only event vector. Reset the initial CREATE event before performing each mutation, while preserving each route's own preparation reset behavior.\n\nInspect `red/tests/security-observer.ts`, `red/tests/observer-self-test.test.ts`, and `red/tests/case-catalog.mjs`. Make the smallest principled test-only changes. Do not weaken exact traces, source-before-sandbox detection, completion boundaries, or the 277 acceptance contract count. Run `npm test`; iterate until observer self-tests pass. Do not inspect parent directories, external repositories, or any product implementation. Report changed red files and validation.",
+  "visible_context": [
+    {
+      "label": "red_repair_scope",
+      "kind": "task",
+      "sha256": "5e36329db2444c83b6c983361b7bdf66aad933f873a7a746580bdeb0ffbd3748",
+      "content": "Observer-only jsdom 25 repair; red corpus is present in isolated cwd."
+    }
+  ],
+  "withheld_context": [
+    {
+      "label": "product_implementation",
+      "kind": "implementation",
+      "sha256": "ced2128f3bc92a5720f7abd73b8babcc1515866551349b15db52736553e30f8f",
+      "content": "withheld product implementation",
+      "samples": [
+        "packages/web-renderer/src/components/index.ts",
+        "packages/template-engine/src/transformer.ts"
+      ]
+    },
+    {
+      "label": "green_workspace",
+      "kind": "green_implementation",
+      "sha256": "ba4788b226aa8dc2e6dc74248bb9f618cfa8c959e0c26c147be48f6839a0b088",
+      "content": "withheld green workspace",
+      "samples": [
+        "/tmp/foundry-019f4bec-43dc-742b-80b0-e42b7d46ebdd-green-isolated",
+        "phase2-iteration3-raw.json"
+      ]
+    }
+  ],
+  "redactions": [
+    {
+      "source": "product_implementation",
+      "action": "withhold",
+      "removed": [
+        "source_code",
+        "implementation_details"
+      ]
+    },
+    {
+      "source": "green_workspace",
+      "action": "withhold",
+      "removed": [
+        "green_source",
+        "raw_green_results"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "schema_version": "foundry.prompt-envelope.v1",
+  "run_id": "019f4bec-43dc-742b-80b0-e42b7d46ebdd",
+  "phase": "phase1b",
+  "recipient": "red-team-test-reviewer",
+  "prompt": "You are the independent RED TEST REVIEWER re-reviewing the observer-only correction, with no product implementation access. Inspect current `red/tests/security-observer.ts` and `red/tests/observer-self-test.test.ts` against `baseline/` and your prior medium finding. Verify: sandbox tokens are a first-occurrence ordered set; duplicate input cannot break length/iteration/toggle/replace; cached-list reflection is live; the synthetic descriptor is fully restored; mutation-only resets are sound; removeNamedItemNS is observed; no exact trace/source-before-sandbox/completion assertion was weakened; no new acceptance cases were added. Run `npm test`, strict TypeScript no-emit checking, and coverage verification. Return JSON-like PASS/FAIL with severity/confidence and exact file/line findings. Do not inspect parent directories or implementation.",
+  "visible_context": [
+    {
+      "label": "rereview_scope",
+      "kind": "review",
+      "sha256": "2f8a389cb334ad1b2091916da9b061b178abd51d236225fd9e50df37646d938e",
+      "content": "Embedded in prompt."
+    }
+  ],
+  "withheld_context": [
+    {
+      "label": "implementation",
+      "kind": "implementation",
+      "sha256": "b7237b04e2feb7c9477f4868a8344132e709de23d220f66e739f3cd3fdeebc17",
+      "content": "withheld implementation",
+      "samples": [
+        "packages/web-renderer/src",
+        "green-team-revision3"
+      ]
+    }
+  ],
+  "redactions": [
+    {
+      "source": "implementation",
+      "action": "withhold",
+      "removed": [
+        "source_code",
+        "green_results"
+      ]
+    }
+  ]
+}

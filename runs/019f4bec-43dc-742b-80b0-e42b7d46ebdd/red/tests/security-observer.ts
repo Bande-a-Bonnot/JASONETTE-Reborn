@@ -26,6 +26,95 @@ export function installSecurityObserver() {
   const tokenOwner = new WeakMap<DOMTokenList, HTMLIFrameElement>();
   const datasetProxies = new WeakMap<DOMStringMap, DOMStringMap>();
   const restores: Array<() => void> = [];
+
+  // jsdom 25 does not expose the iframe sandbox DOMTokenList. Keep this
+  // compatibility surface local to the observer window and reflect every
+  // change through the content attribute so the normal mutation routes see it.
+  if (!Object.getOwnPropertyDescriptor(HTMLIFrameElement.prototype, "sandbox")) {
+    const sandboxLists = new Map<HTMLIFrameElement, DOMTokenList>();
+    const tokensFor = (iframe: HTMLIFrameElement) =>
+      Array.from(new Set(
+        (iframe.getAttribute("sandbox") ?? "").split(/[\t\n\f\r ]+/).filter(Boolean),
+      ));
+    const validateToken = (token: string) => {
+      if (token === "") throw new DOMException("The token provided must not be empty.", "SyntaxError");
+      if (/[\t\n\f\r ]/.test(token)) {
+        throw new DOMException("The token provided contains HTML space characters.", "InvalidCharacterError");
+      }
+    };
+    const createSandboxList = (iframe: HTMLIFrameElement) => ({
+      get value() { return iframe.getAttribute("sandbox") ?? ""; },
+      set value(value: string) { iframe.setAttribute("sandbox", String(value)); },
+      get length() { return tokensFor(iframe).length; },
+      item(index: number) { return tokensFor(iframe)[index] ?? null; },
+      contains(token: string) {
+        token = String(token);
+        validateToken(token);
+        return tokensFor(iframe).includes(token);
+      },
+      add(...values: string[]) {
+        const additions = values.map(String);
+        additions.forEach(validateToken);
+        const tokens = tokensFor(iframe);
+        for (const token of additions) if (!tokens.includes(token)) tokens.push(token);
+        iframe.setAttribute("sandbox", tokens.join(" "));
+      },
+      remove(...values: string[]) {
+        const removals = values.map(String);
+        removals.forEach(validateToken);
+        iframe.setAttribute("sandbox", tokensFor(iframe).filter((token) => !removals.includes(token)).join(" "));
+      },
+      toggle(value: string, force?: boolean) {
+        const token = String(value);
+        validateToken(token);
+        const tokens = tokensFor(iframe);
+        const index = tokens.indexOf(token);
+        if (index >= 0) {
+          if (force === true) return true;
+          tokens.splice(index, 1);
+          iframe.setAttribute("sandbox", tokens.join(" "));
+          return false;
+        }
+        if (force === false) return false;
+        tokens.push(token);
+        iframe.setAttribute("sandbox", tokens.join(" "));
+        return true;
+      },
+      replace(oldValue: string, newValue: string) {
+        const oldToken = String(oldValue);
+        const newToken = String(newValue);
+        validateToken(oldToken);
+        validateToken(newToken);
+        const tokens = tokensFor(iframe);
+        const index = tokens.indexOf(oldToken);
+        if (index < 0) return false;
+        const existing = tokens.indexOf(newToken);
+        if (existing >= 0 && existing !== index) tokens.splice(existing, 1);
+        tokens[tokens.indexOf(oldToken)] = newToken;
+        iframe.setAttribute("sandbox", tokens.join(" "));
+        return true;
+      },
+      *[Symbol.iterator]() { yield* tokensFor(iframe); },
+      toString() { return iframe.getAttribute("sandbox") ?? ""; },
+    }) as unknown as DOMTokenList;
+    Object.defineProperty(HTMLIFrameElement.prototype, "sandbox", {
+      configurable: true,
+      enumerable: true,
+      get(this: HTMLIFrameElement) {
+        let list = sandboxLists.get(this);
+        if (!list) {
+          list = createSandboxList(this);
+          sandboxLists.set(this, list);
+        }
+        return list;
+      },
+    });
+    restores.push(() => {
+      sandboxLists.clear();
+      delete (HTMLIFrameElement.prototype as any).sandbox;
+    });
+  }
+
   let currentKind: IframeKind = "self-test";
   let integratedComponentDepth = 0;
 
@@ -203,8 +292,11 @@ export function installSecurityObserver() {
     const original = NamedNodeMap.prototype[key];
     if (typeof original !== "function") continue;
     patchValue(NamedNodeMap.prototype, key, function observedNamedNodeMap(this: NamedNodeMap, ...args: unknown[]) {
-      const owner = attributesOwner.get(this) ?? ((args[0] as Attr | undefined)?.ownerElement ?? null);
-      const name = typeof args[0] === "string" ? args[0] : (args[0] as Attr).name;
+      const attribute = args[0] instanceof Attr ? args[0] : null;
+      const owner = attributesOwner.get(this) ?? attribute?.ownerElement ?? null;
+      const name = key === "removeNamedItemNS"
+        ? String(args[1])
+        : typeof args[0] === "string" ? args[0] : attribute!.name;
       const result = (original as Function).apply(this, args);
       recordAttributeMutation(owner, name);
       if (owner) markIntegratedComponentCompletion(owner, name);

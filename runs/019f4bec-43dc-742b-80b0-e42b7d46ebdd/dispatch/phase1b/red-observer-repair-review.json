@@ -1,0 +1,54 @@
+{
+  "schema_version": "foundry.prompt-envelope.v1",
+  "run_id": "019f4bec-43dc-742b-80b0-e42b7d46ebdd",
+  "phase": "phase1b",
+  "recipient": "red-team-test-reviewer",
+  "prompt": "You are an independent RED TEST REVIEWER with no product implementation access. Review the observer-only correction in this isolated red workspace. Compare `baseline/security-observer.ts` and `baseline/observer-self-test.test.ts` to `red/tests/security-observer.ts` and `red/tests/observer-self-test.test.ts`.\n\nAssess for correctness under jsdom 25.0.1 (which lacks HTMLIFrameElement.prototype.sandbox), faithful content-attribute reflection/iteration/token mutation behavior, complete restoration, no duplicate/missed security events, proper mutation-only self-test reset, and no weakening of exact trace/source-before-sandbox/completion assertions. Confirm changes are test-only and acceptance count stays 277. Run `npm test` and the coverage verifier. Return a concise PASS/FAIL verdict with severity-ranked findings and exact file/line references. Do not inspect parent directories or any implementation.\n\nRelevant NLSpec How for review:\n\nThe component registry MUST dispatch only an own registered renderer whose value\nis a function; prototype-colliding type strings follow unknown-component behavior\nwithout throwing. The background path enters HTML only for an own exact string\n`type: \"html\"`.\n\nThe following helper is conceptual pseudocode; component and background paths\nmay implement it separately but MUST have identical observable policy/source\nbehavior. At `renderComponent()` return, the component wrapper is detached from\nthe live document, has class `jasonette-html` and `data-jasonette-type=\"html\"`,\nand owns its iframe child; the iframe keeps width `100%` and border `none`. A\nbackground iframe is a direct child of the renderer root, has class\n`jasonette-background-web` and `aria-hidden=\"true\"`, and remains before\nforeground sections.\n\n```text\nFUNCTION create_html_iframe(component) -> Iframe OPTIONAL:\n    IF Object.hasOwn(component, \"type\") == false OR component.type != \"html\":\n        RETURN NONE\n    selection = select_source(component)\n    IF selection.kind == NONE:\n        RETURN NONE\n\n    iframe = document.createElement(\"iframe\")\n    iframe.setAttribute(\"sandbox\", \"allow-scripts\")\n\n    IF selection.kind == INLINE:\n        iframe.srcdoc = compose_srcdoc(component, selection.value)\n        ASSERT iframe.hasAttribute(\"srcdoc\") == true\n        ASSERT iframe.hasAttribute(\"src\") == false\n    ELSE:\n        iframe.src = selection.value\n        ASSERT iframe.hasAttribute(\"src\") == true\n        ASSERT iframe.hasAttribute(\"srcdoc\") == false\n\n    RETURN iframe\n```\n\nThe security observer records only:\n\n- `CREATE(kind)` for iframe creation (`component` or `background`);\n- `SANDBOX(value)` for sandbox set/remove/replace;\n- `SOURCE(name)` for `srcdoc`/`src` assignment;\n- `APPEND` for every insertion of the iframe into any parent;\n- `RETURN` as observable completion: actual public `renderComponent()` return in\n  direct calls; integrated wrapper `data-jasonette-type=\"html\"` assignment after\n  all iframe operations; actual runtime-wrapped background render return.\n\nPure computation, property reads, wrapper creation, class/ARIA operations, and\nstyle reads/writes are excluded. Exact creation traces:\n\n```text\nCREATE(component) -> SANDBOX(\"allow-scripts\") -> SOURCE(\"srcdoc\"|\"src\")\n-> APPEND -> RETURN\n\nCREATE(background) -> SANDBOX(\"allow-scripts\") -> SOURCE(\"srcdoc\"|\"src\")\n-> APPEND -> RETURN\n```\n\nDirect component tests use actual public function return. Integrated component\nflows use the data-type completion marker and continue observing through the\ncontaining public render/action return to prove no later iframe operation occurs.\nBackgrounds use the runtime-wrapped `renderBodyBackground()` return. Events are\ngrouped per iframe. Each iframe records one initial sandbox event and no\nadditional event before its completion boundary. Endpoint checks\nafter initial render and `$render` assert exact sandbox state; the disconnected\nold iframe object also retains its attribute. This is not a continuous\npost-return mutation claim. No-source calls emit no per-iframe trace.\n\nInline mode has no `src` attribute. URL mode has no `srcdoc` attribute. Every\niframe has exact sandbox value `allow-scripts`, with no other token.",
+  "visible_context": [
+    {
+      "label": "observer_how",
+      "kind": "nlspec_how",
+      "sha256": "afc2077b173a85460abe5d37eab1a45b81547397d85040594c6b5c6ff5046319",
+      "content": "Embedded verbatim in prompt."
+    }
+  ],
+  "withheld_context": [
+    {
+      "label": "product_implementation",
+      "kind": "implementation",
+      "sha256": "311da3efc0a98ba409d66885886fe882672b6aea282a22bc28e32e0f7dbca7c8",
+      "content": "withheld product implementation",
+      "samples": [
+        "packages/web-renderer/src/components/index.ts",
+        "packages/template-engine/src/transformer.ts"
+      ]
+    },
+    {
+      "label": "green_results",
+      "kind": "green_implementation",
+      "sha256": "507e5c22115bd02c3491c0a3c08f323703f570ffd7fb7b497783c57e3defaf5c",
+      "content": "withheld green results",
+      "samples": [
+        "phase2-corrected-iteration3-raw.json",
+        "green-isolated"
+      ]
+    }
+  ],
+  "redactions": [
+    {
+      "source": "product_implementation",
+      "action": "withhold",
+      "removed": [
+        "source_code"
+      ]
+    },
+    {
+      "source": "green_results",
+      "action": "withhold",
+      "removed": [
+        "green_source",
+        "green_diagnostics"
+      ]
+    }
+  ]
+}

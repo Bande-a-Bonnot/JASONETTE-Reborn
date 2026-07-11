@@ -1,0 +1,37 @@
+{
+  "schema_version": "foundry.prompt-envelope.v1",
+  "run_id": "019f4bec-43dc-742b-80b0-e42b7d46ebdd",
+  "phase": "phase1b",
+  "recipient": "red-team",
+  "prompt": "You are the isolated RED TEAM observer-repair revision lane. No product implementation is present or permitted. Address the independent reviewer finding in the current test-only shim:\n\nMEDIUM: `red/tests/security-observer.ts` sandbox compatibility `tokensFor()` preserves duplicate tokens instead of DOMTokenList ordered-set semantics. Deduplicate tokens in first-occurrence order so length/iteration/toggle/replace match native behavior even when the reflected attribute contains duplicates.\n\nAlso close the reviewer\u2019s low-risk test gaps without adding acceptance cases: strengthen existing observer self-test bodies to exercise duplicate-token normalization, cached-list reflection after direct attribute changes, and explicit restoration of the absent pre-install `HTMLIFrameElement.prototype.sandbox` descriptor. Do not add new `it`/scenario cases, weaken assertions, or change the 277 contract count. Keep changes test-only. Run `npm test`, TypeScript checking, and coverage verification. Do not inspect parent directories or any implementation. Report exact files, behavior, and counts.",
+  "visible_context": [
+    {
+      "label": "review_finding",
+      "kind": "review",
+      "sha256": "0ef9883dd4aa64ebafa571f2676dcf1f102110d3e6d39d7fe12577c9bc48ed4d",
+      "content": "Embedded verbatim in prompt."
+    }
+  ],
+  "withheld_context": [
+    {
+      "label": "product_implementation",
+      "kind": "implementation",
+      "sha256": "b62ec24475c860ba5c7c730c7d0e109ef13931fa538c16c2fcf5463907b4af7c",
+      "content": "withheld implementation",
+      "samples": [
+        "packages/web-renderer/src/components/index.ts",
+        "green-team-revision3"
+      ]
+    }
+  ],
+  "redactions": [
+    {
+      "source": "product_implementation",
+      "action": "withhold",
+      "removed": [
+        "source_code",
+        "green_results"
+      ]
+    }
+  ]
+}

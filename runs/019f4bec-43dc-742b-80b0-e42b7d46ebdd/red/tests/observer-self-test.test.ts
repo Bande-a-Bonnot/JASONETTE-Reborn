@@ -118,8 +118,29 @@ function performCreation(route: string) {
   throw new Error(`unknown creation route ${route}`);
 }
 
+function assertSandboxCompatibility(iframe: HTMLIFrameElement) {
+  const sandbox = iframe.sandbox;
+  iframe.setAttribute(
+    "sandbox",
+    "allow-scripts allow-forms allow-scripts allow-popups allow-forms",
+  );
+
+  expect(iframe.sandbox).toBe(sandbox);
+  expect(sandbox.length).toBe(3);
+  expect(Array.from(sandbox)).toEqual(["allow-scripts", "allow-forms", "allow-popups"]);
+  expect(sandbox.toggle("allow-scripts")).toBe(false);
+  expect(iframe.getAttribute("sandbox")).toBe("allow-forms allow-popups");
+
+  iframe.setAttribute("sandbox", "allow-modals allow-forms allow-modals");
+  expect(sandbox.length).toBe(2);
+  expect(Array.from(sandbox)).toEqual(["allow-modals", "allow-forms"]);
+  expect(sandbox.replace("allow-modals", "allow-forms")).toBe(true);
+  expect(iframe.getAttribute("sandbox")).toBe("allow-forms");
+}
+
 describe("security observer self-tests", () => {
   it("component RETURN observer self-test marks only after direct renderComponent returns", () => {
+    expect(Object.getOwnPropertyDescriptor(HTMLIFrameElement.prototype, "sandbox")).toBeUndefined();
     const observer = installSecurityObserver();
     const markComponentReturn = observer.markComponentReturn.bind(observer);
     let marks = 0;
@@ -141,7 +162,10 @@ describe("security observer self-tests", () => {
       const iframe = wrapper.querySelector("iframe")!;
       expect(marks).toBe(1);
       observer.assertExactTraceSet([{ iframe, kind: "component", source: "srcdoc" }]);
-    } finally { observer.restore(); }
+    } finally {
+      observer.restore();
+      expect(Object.getOwnPropertyDescriptor(HTMLIFrameElement.prototype, "sandbox")).toBeUndefined();
+    }
   });
 
   it("integrated component marker completes before public return and later iframe events are rejected", () => {
@@ -207,11 +231,13 @@ describe("security observer self-tests", () => {
     try {
       const iframe = observer.withKind("self-test", () => document.createElement("iframe"));
       const reset = () => observer.resetEvents(iframe);
+      reset();
       performSandboxMutation(route, iframe, reset);
       expect(observer.traces).toHaveLength(1);
       expect(observer.traceFor(iframe).events).toEqual([
         `SANDBOX(${JSON.stringify(iframe.getAttribute("sandbox"))})`,
       ]);
+      assertSandboxCompatibility(iframe);
     } finally { observer.restore(); }
   });
 
@@ -220,6 +246,7 @@ describe("security observer self-tests", () => {
     try {
       const iframe = observer.withKind("self-test", () => document.createElement("iframe"));
       const reset = () => observer.resetEvents(iframe);
+      reset();
       performSourceMutation(route, iframe, reset);
       const name = route.includes("srcdoc") ? "srcdoc" : "src";
       expect(observer.traces).toHaveLength(1);
