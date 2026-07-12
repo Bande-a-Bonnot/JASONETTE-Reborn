@@ -84,7 +84,10 @@ describe("public HTML component renderer", () => {
       expect(wrapper.getAttribute("data-jasonette-type")).toBe("html");
       expect(iframe.parentNode).toBe(wrapper);
       expect(iframe.style.width).toBe("100%");
-      expect(iframe.style.borderStyle).toBe("none");
+      expect(iframe.style.borderTopStyle).toBe("none");
+      expect(iframe.style.borderRightStyle).toBe("none");
+      expect(iframe.style.borderBottomStyle).toBe("none");
+      expect(iframe.style.borderLeftStyle).toBe("none");
     } finally { observer.restore(); }
   });
 

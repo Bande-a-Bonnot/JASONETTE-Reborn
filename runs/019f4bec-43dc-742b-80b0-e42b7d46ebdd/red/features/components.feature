@@ -90,7 +90,7 @@ Feature: HTML component source and iframe policy
   Scenario: component wrapper return topology and legacy class size border contract remain exact
     Given component {type:"html", text:"<p>x</p>"}
     When render through the directly observed component boundary
-    Then detached wrapper class list contains "jasonette-html", data type is "html", iframe parent is wrapper, width is "100%", CSSOM borderStyle is "none", and events are [CREATE(component), SANDBOX("allow-scripts"), SOURCE("srcdoc"), APPEND, RETURN]
+    Then detached wrapper class list contains "jasonette-html", data type is "html", iframe parent is wrapper, width is "100%", CSSOM borderTopStyle, borderRightStyle, borderBottomStyle, and borderLeftStyle are each "none", and events are [CREATE(component), SANDBOX("allow-scripts"), SOURCE("srcdoc"), APPEND, RETURN]
 
   Scenario: component registry never invokes an inherited callable renderer
     Given Object.prototype.redInheritedComponent is an observable iframe renderer and component owns that type

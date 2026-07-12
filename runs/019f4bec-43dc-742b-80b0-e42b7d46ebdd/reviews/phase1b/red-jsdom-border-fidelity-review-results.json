@@ -1,0 +1,11 @@
+{
+  "run_id": "019f4bec-43dc-742b-80b0-e42b7d46ebdd",
+  "scope": "semantic four-side iframe border-none oracle under jsdom 25",
+  "red_tree_sha256_relative_paths": "84e4d54b780842604ae47d3902ecff78263497d611d8fd77c1e2e571cc26b03d",
+  "repair_model": "openai-codex/gpt-5.6-sol:xhigh",
+  "review_model": "openai-codex/gpt-5.6-sol:xhigh",
+  "verdict": "PASS",
+  "confidence": 0.99,
+  "findings": [],
+  "verification": ["58/58 observer tests", "strict observer TypeScript PASS", "strict verifier 277/277 PASS", "verifier SHA-256 5192aa9e8a3d1ee375bf842a14ccfa3944f4a83475540fc556ee1e1d896c9cb9"]
+}

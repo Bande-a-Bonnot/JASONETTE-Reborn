@@ -1,0 +1,52 @@
+{
+  "schema_version": "foundry.prompt-envelope.v1",
+  "run_id": "019f4bec-43dc-742b-80b0-e42b7d46ebdd",
+  "phase": "phase1b",
+  "recipient": "red-team-test-reviewer",
+  "prompt": "You are the independent RED TEAM TEST REVIEWER for the jsdom border-fidelity correction, with no implementation access. Compare `pre-border/` to current `red/` for components-black-box, case-catalog, components.feature, coverage-map, and verifier. Verify the change only replaces a dropped shorthand serialization oracle with four semantic side-style assertions, all equal none; width/topology/class/data/source/sandbox/trace requirements remain; catalog and authored Gherkin mirror exactly; verifier remains byte-identical and strict; counts remain 277/277. Run npm observer tests, strict observer TypeScript, and strict verifier. Return PASS/FAIL with severity/confidence/evidence. Do not edit or inspect parents/implementation.",
+  "visible_context": [
+    {
+      "label": "review_scope",
+      "kind": "review",
+      "sha256": "50b93c1e1bc7aa631d8ab70784a3ea072d180e0673872533ead86c21f381a388",
+      "content": "Embedded."
+    }
+  ],
+  "withheld_context": [
+    {
+      "label": "implementation",
+      "kind": "implementation",
+      "sha256": "c23a314c825ae196703ab646aa172b6b459e2fe899a198cfd1a5721d7565add0",
+      "content": "withheld implementation",
+      "samples": [
+        "packages/web-renderer/src",
+        "green-isolated"
+      ]
+    },
+    {
+      "label": "green",
+      "kind": "green_implementation",
+      "sha256": "a77a6ec84b17ff4df079a396beda388eef624ac327bb596065f0fb9d09a529b0",
+      "content": "withheld green",
+      "samples": [
+        "phase2-iteration7-raw.json"
+      ]
+    }
+  ],
+  "redactions": [
+    {
+      "source": "implementation",
+      "action": "withhold",
+      "removed": [
+        "source_code"
+      ]
+    },
+    {
+      "source": "green",
+      "action": "withhold",
+      "removed": [
+        "green_results"
+      ]
+    }
+  ]
+}

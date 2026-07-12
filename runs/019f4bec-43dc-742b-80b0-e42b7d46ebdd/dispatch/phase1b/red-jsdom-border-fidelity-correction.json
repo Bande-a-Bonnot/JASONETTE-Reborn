@@ -1,0 +1,52 @@
+{
+  "schema_version": "foundry.prompt-envelope.v1",
+  "run_id": "019f4bec-43dc-742b-80b0-e42b7d46ebdd",
+  "phase": "phase1b",
+  "recipient": "red-team",
+  "prompt": "You are the isolated RED TEAM jsdom-fidelity correction lane, with no product implementation access. The reviewed requirement is semantic iframe border none. In jsdom 25/cssstyle, assigning single-token borderStyle `none` is dropped, while a standards-valid four-value `none none none none` declaration exposes borderTopStyle, borderRightStyle, borderBottomStyle, and borderLeftStyle as `none`. Change the component topology oracle to assert all four semantic side styles are none rather than requiring shorthand serialization. Synchronize `case-catalog.mjs`, authored `features/components.feature`, and `coverage-map.json` wording under the unchanged strict verifier. Preserve width 100%, topology, class/data type, traces, counts, and every security requirement. Do not add/remove tests/scenarios/rows or weaken verifier. Run npm observer tests, strict observer TypeScript, and strict 277/277 verifier. Do not inspect parents or implementation.",
+  "visible_context": [
+    {
+      "label": "jsdom_fidelity",
+      "kind": "review",
+      "sha256": "a83339f390c14bb79f20357829d97ff66d5f97d6eb0887492133b8945a752dc1",
+      "content": "Embedded."
+    }
+  ],
+  "withheld_context": [
+    {
+      "label": "implementation",
+      "kind": "implementation",
+      "sha256": "08c27195723421c3d93b52fed2ca789b82f96ae3b7e75b7ced99c904cc2cded6",
+      "content": "withheld implementation",
+      "samples": [
+        "packages/web-renderer/src",
+        "green-isolated"
+      ]
+    },
+    {
+      "label": "green",
+      "kind": "green_implementation",
+      "sha256": "0791dc0dd8871782cadbc77be716df95d65112b30219bced75295879279576cd",
+      "content": "withheld green",
+      "samples": [
+        "phase2-iteration7-raw.json"
+      ]
+    }
+  ],
+  "redactions": [
+    {
+      "source": "implementation",
+      "action": "withhold",
+      "removed": [
+        "source_code"
+      ]
+    },
+    {
+      "source": "green",
+      "action": "withhold",
+      "removed": [
+        "green_results"
+      ]
+    }
+  ]
+}
