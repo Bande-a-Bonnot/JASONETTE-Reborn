@@ -1,0 +1,15 @@
+workspace=/tmp/foundry-019f56af-218a-7288-9330-2f812aa31d96-green-isolated
+run_id=019f56af-218a-7288-9330-2f812aa31d96
+baseline_commit=6e1c015fb4bec6755b2064e80d6c019b9e6eb49c
+package_lock_sha256=be5e32a2919773e4340614e5e6812526dc25c80a8f4b3e908809af111a70f5fc
+source_tree_sha256=16a988f6f88189c07f265e5ad1f5e1e10a7c2cf6dbb969b6373702decc656a9f
+forbidden .git=absent
+forbidden runs=absent
+forbidden docs=absent
+forbidden spec=absent
+vite_cache=absent
+external_symlinks=0
+workspace_internal_package_symlinks=3
+multiply_linked_regular_files=0
+red_workspaces=0
+raw_runner_files=0
