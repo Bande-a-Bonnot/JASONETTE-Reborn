@@ -1,0 +1,17 @@
+{
+  "schema_version": "foundry.prompt-envelope.v1",
+  "run_id": "019f56af-218a-7288-9330-2f812aa31d96",
+  "phase": "phase1b",
+  "recipient": "barrier-integrity-auditor",
+  "prompt": "You are the independent BARRIER INTEGRITY AUDITOR for replacement run 019f56af-218a-7288-9330-2f812aa31d96. Inspect every PromptEnvelope under `runs/019f56af-218a-7288-9330-2f812aa31d96/dispatch/`, the Red workspace manifest at `runs/019f56af-218a-7288-9330-2f812aa31d96/phase0/red-workspace-manifest.txt`, and the actual Red workspace `/tmp/foundry-019f56af-218a-7288-9330-2f812aa31d96-red-isolated`. Verify exact SHA-256 metadata over every serialized visible/withheld content field, withheld-sample absence from prompts, prompt/barrier matrix compliance, UUIDv7 consistency, no product implementation or Green paths/files in Red workspace, and no stale references to invalidated run IDs. Run the public envelope validator at `/Users/thomas/.pi/agent/git/github.com/Lightless-Labs/foundry/tests/validate-barrier-envelopes.sh`. Any leak is P0. Return PASS/FAIL with evidence and confidence.",
+  "visible_context": [
+    {
+      "label": "dispatch_scope",
+      "kind": "audit_scope",
+      "sha256": "a3272e25215745579686383c79f9c6e17707d84914020b1710d688d5d13f4ff8",
+      "content": "runs/019f56af-218a-7288-9330-2f812aa31d96/dispatch"
+    }
+  ],
+  "withheld_context": [],
+  "redactions": []
+}

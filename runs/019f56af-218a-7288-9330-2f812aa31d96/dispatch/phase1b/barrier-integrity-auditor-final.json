@@ -1,0 +1,23 @@
+{
+  "schema_version": "foundry.prompt-envelope.v1",
+  "run_id": "019f56af-218a-7288-9330-2f812aa31d96",
+  "phase": "phase1b",
+  "recipient": "barrier-integrity-auditor",
+  "prompt": "You are the final Phase 1b BARRIER INTEGRITY AUDITOR for run 019f56af-218a-7288-9330-2f812aa31d96. Audit every envelope, exact content hashes, UUID consistency, no stale invalidated IDs, public validator, and archived/isolated Red trees both matching pinned hash e54aa2f9bb0cf6a5b3be4b601c1e3a2002e730453a5d294b05078f5a59ff7a98  red-tree-relative-paths. Verify no product implementation/Green path or side channel in Red workspace. Any leak P0. Return PASS/FAIL.",
+  "visible_context": [
+    {
+      "label": "dispatch_scope",
+      "kind": "audit_scope",
+      "sha256": "a3272e25215745579686383c79f9c6e17707d84914020b1710d688d5d13f4ff8",
+      "content": "runs/019f56af-218a-7288-9330-2f812aa31d96/dispatch"
+    },
+    {
+      "label": "corpus_hash",
+      "kind": "artifact_hash",
+      "sha256": "050be742088096ee77027b3e7a94462ad7ad16ed4403aa4bd9e61f7d24a84148",
+      "content": "e54aa2f9bb0cf6a5b3be4b601c1e3a2002e730453a5d294b05078f5a59ff7a98  red-tree-relative-paths"
+    }
+  ],
+  "withheld_context": [],
+  "redactions": []
+}

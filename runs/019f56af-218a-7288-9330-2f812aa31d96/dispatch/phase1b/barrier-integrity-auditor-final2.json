@@ -1,0 +1,23 @@
+{
+  "schema_version": "foundry.prompt-envelope.v1",
+  "run_id": "019f56af-218a-7288-9330-2f812aa31d96",
+  "phase": "phase1b",
+  "recipient": "barrier-integrity-auditor",
+  "prompt": "You are the final Phase 1b BARRIER AUDITOR. Audit all run 019f56af-218a-7288-9330-2f812aa31d96 envelopes and content hashes; final archived/isolated Red hash 4a3229bd65b2c6e4eee8202ebef8f9221f9e945f7b4cc4472002f947fb72cb94  red-tree-relative-paths; independently installed dependency lock and pinned public stub; absence of old run workspaces, stale run UUIDs, caches, external hardlinks/symlinks, implementation and Green paths; UUID consistency; and public validator. Any leak P0. Return evidence PASS/FAIL.",
+  "visible_context": [
+    {
+      "label": "scope",
+      "kind": "audit_scope",
+      "sha256": "a3272e25215745579686383c79f9c6e17707d84914020b1710d688d5d13f4ff8",
+      "content": "runs/019f56af-218a-7288-9330-2f812aa31d96/dispatch"
+    },
+    {
+      "label": "corpus",
+      "kind": "artifact_hash",
+      "sha256": "c6b4edaa9306ed3345ec60fc3df8ee4ac8bf5f6393d1aabc47991efcd89307a8",
+      "content": "4a3229bd65b2c6e4eee8202ebef8f9221f9e945f7b4cc4472002f947fb72cb94  red-tree-relative-paths"
+    }
+  ],
+  "withheld_context": [],
+  "redactions": []
+}

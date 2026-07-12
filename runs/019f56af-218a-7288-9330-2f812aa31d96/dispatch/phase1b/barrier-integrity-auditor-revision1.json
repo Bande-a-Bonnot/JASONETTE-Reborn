@@ -1,0 +1,23 @@
+{
+  "schema_version": "foundry.prompt-envelope.v1",
+  "run_id": "019f56af-218a-7288-9330-2f812aa31d96",
+  "phase": "phase1b",
+  "recipient": "barrier-integrity-auditor",
+  "prompt": "You are the replacement-run BARRIER INTEGRITY AUDITOR re-review. Audit every envelope in runs/019f56af-218a-7288-9330-2f812aa31d96/dispatch, all exact visible/withheld content hashes, UUIDv7 consistency, stale-run references, and the synchronized 297-contract Red workspace `/tmp/foundry-019f56af-218a-7288-9330-2f812aa31d96-red-isolated` against manifest/hash `4f3fa9472b2292080fad464782849d111bb67a1c202f5f0cca0777510c5bdf93  red-tree-relative-paths`. Verify no implementation or Green side channel. Run the public validator. Any leak P0. Return PASS/FAIL evidence.",
+  "visible_context": [
+    {
+      "label": "dispatch_scope",
+      "kind": "audit_scope",
+      "sha256": "a3272e25215745579686383c79f9c6e17707d84914020b1710d688d5d13f4ff8",
+      "content": "runs/019f56af-218a-7288-9330-2f812aa31d96/dispatch"
+    },
+    {
+      "label": "corpus_hash",
+      "kind": "artifact_hash",
+      "sha256": "ce80ac6bccc55ab0df8d0a9e7d52f3a2a20655532947b90f732dc8de21b6e37c",
+      "content": "4f3fa9472b2292080fad464782849d111bb67a1c202f5f0cca0777510c5bdf93  red-tree-relative-paths"
+    }
+  ],
+  "withheld_context": [],
+  "redactions": []
+}

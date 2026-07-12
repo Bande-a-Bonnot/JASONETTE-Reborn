@@ -1,0 +1,29 @@
+{
+  "schema_version": "foundry.prompt-envelope.v1",
+  "run_id": "019f56af-218a-7288-9330-2f812aa31d96",
+  "phase": "phase1b",
+  "recipient": "barrier-integrity-auditor",
+  "prompt": "You are the authoritative restarted Phase 1b BARRIER AUDITOR. Audit every envelope/content hash and public validator for run 019f56af-218a-7288-9330-2f812aa31d96; pinned Red hash 4a3229bd65b2c6e4eee8202ebef8f9221f9e945f7b4cc4472002f947fb72cb94  red-tree-relative-paths; current restart workspace and manifest below; absence of stale raw files, caches, prior-run checkout/workspaces, hard links, external symlinks, implementation, and Green paths. Distinguish internal .bin symlinks from external links. Any real leak P0. Return exact PASS/FAIL evidence.\nworkspace=/tmp/foundry-019f56af-218a-7288-9330-2f812aa31d96-red-restart-isolated\nrun_id=019f56af-218a-7288-9330-2f812aa31d96\nred_tree_sha256=4a3229bd65b2c6e4eee8202ebef8f9221f9e945f7b4cc4472002f947fb72cb94\npackage_lock_sha256=446c5091f57c013f53f1228c2fe3278afb1e20d09d8b7ab13199d21b3567812d\npublic_stub_sha256=ff131f7657c39cfd7c70c87022514425a098912255d22625b5abcde5cf393cf0\nforbidden .git=absent\nforbidden packages=absent\nforbidden runs=absent\nvite_cache=absent\nexternal_symlinks=0\nmultiply_linked_regular_files=0\nstale_raw_tmp_files=0\nprior_run_checkout=absent\n",
+  "visible_context": [
+    {
+      "label": "scope",
+      "kind": "audit_scope",
+      "sha256": "a3272e25215745579686383c79f9c6e17707d84914020b1710d688d5d13f4ff8",
+      "content": "runs/019f56af-218a-7288-9330-2f812aa31d96/dispatch"
+    },
+    {
+      "label": "corpus",
+      "kind": "artifact_hash",
+      "sha256": "c6b4edaa9306ed3345ec60fc3df8ee4ac8bf5f6393d1aabc47991efcd89307a8",
+      "content": "4a3229bd65b2c6e4eee8202ebef8f9221f9e945f7b4cc4472002f947fb72cb94  red-tree-relative-paths"
+    },
+    {
+      "label": "manifest",
+      "kind": "workspace_manifest",
+      "sha256": "c22eb3659e56da7d85cb59e311165eb1b3b440ed83a420bb396d52fef88915cf",
+      "content": "workspace=/tmp/foundry-019f56af-218a-7288-9330-2f812aa31d96-red-restart-isolated\nrun_id=019f56af-218a-7288-9330-2f812aa31d96\nred_tree_sha256=4a3229bd65b2c6e4eee8202ebef8f9221f9e945f7b4cc4472002f947fb72cb94\npackage_lock_sha256=446c5091f57c013f53f1228c2fe3278afb1e20d09d8b7ab13199d21b3567812d\npublic_stub_sha256=ff131f7657c39cfd7c70c87022514425a098912255d22625b5abcde5cf393cf0\nforbidden .git=absent\nforbidden packages=absent\nforbidden runs=absent\nvite_cache=absent\nexternal_symlinks=0\nmultiply_linked_regular_files=0\nstale_raw_tmp_files=0\nprior_run_checkout=absent\n"
+    }
+  ],
+  "withheld_context": [],
+  "redactions": []
+}

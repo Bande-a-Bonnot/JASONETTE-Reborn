@@ -1,0 +1,37 @@
+{
+  "run_id": "019f56af-218a-7288-9330-2f812aa31d96",
+  "status": "PASS",
+  "frozen_red_tree_sha256": "4a3229bd65b2c6e4eee8202ebef8f9221f9e945f7b4cc4472002f947fb72cb94",
+  "contracts": {
+    "vitest": 298,
+    "gherkin": 298,
+    "outline_rows": 263,
+    "literal_scenarios": 35,
+    "dod_items": 55,
+    "automated_dod_items": 53,
+    "external_pending_dod_items": 2
+  },
+  "models": {
+    "red_restart": "openai-codex/gpt-5.6-sol:xhigh",
+    "red_team_test_reviewer": "openai-codex/gpt-5.6-sol:xhigh",
+    "cucumber_reviewer": "openai-codex/gpt-5.6-sol:xhigh",
+    "barrier_integrity_auditor": "openai-codex/gpt-5.6-sol:xhigh"
+  },
+  "final_reviews": {
+    "red_team_test_reviewer": {"status": "PASS", "p0": 0, "p1": 0, "findings": []},
+    "cucumber_reviewer": {"status": "PASS", "p0": 0, "p1": 0, "p2": 2},
+    "barrier_integrity_auditor": {"status": "PASS", "confidence": 0.99, "findings": []}
+  },
+  "barrier_evidence": {
+    "envelopes_validated": 20,
+    "context_hashes_validated": 70,
+    "withheld_sample_prompt_matches": 0,
+    "dependency_lock_sha256": "446c5091f57c013f53f1228c2fe3278afb1e20d09d8b7ab13199d21b3567812d",
+    "public_stub_sha256": "ff131f7657c39cfd7c70c87022514425a098912255d22625b5abcde5cf393cf0",
+    "external_symlinks": 0,
+    "multiply_linked_regular_files": 0,
+    "workflow_caches": 0,
+    "stale_raw_files": 0
+  },
+  "external_pending": ["CMD-1", "CMD-2", "CMD-3", "CMD-4", "CMD-5", "CMD-6", "CMD-7", "CMD-8", "CMD-9", "CI-1"]
+}
