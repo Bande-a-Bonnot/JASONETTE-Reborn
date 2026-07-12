@@ -1,0 +1,21 @@
+{
+  "schema_version": "foundry.test-failure-tracker.v1",
+  "run_id": "019f56af-218a-7288-9330-2f812aa31d96",
+  "test_id": "body template transformation boundary unresolved expression output remains the exact authored string",
+  "canonical_contract_title": "unresolved expression output remains the exact authored string",
+  "consecutive_fails": 0,
+  "threshold": 3,
+  "trigger_strategy": "adaptive_with_fixed_floor",
+  "test_content_hash": "400598312703224e3dd94b1e3577884aeb0181a70f3975098daf12cf28319ca4",
+  "implementation_attempt_hashes": [],
+  "outcome_evidence": [
+    "outcomes/phase2-iteration1.txt",
+    "outcomes/phase2-iteration2.txt",
+    "outcomes/phase2-iteration3.txt",
+    "outcomes/phase2-iteration4.txt",
+    "outcomes/phase2-iteration5.txt"
+  ],
+  "trigger_reason": "fixed fallback threshold",
+  "status": "resolved-not-valuable",
+  "resolution": "rationale sent to Green"
+}
