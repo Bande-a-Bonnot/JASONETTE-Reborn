@@ -1,0 +1,17 @@
+{
+  "schema_version": "foundry.prompt-envelope.v1",
+  "run_id": "019f4bec-43dc-742b-80b0-e42b7d46ebdd",
+  "phase": "phase3",
+  "recipient": "barrier-integrity-auditor",
+  "prompt": "You are the final BARRIER INTEGRITY AUDITOR. Inspect every serialized PromptEnvelope under `runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch/` and all run artifacts. Replay the barrier matrix: red/red reviewers may see full spec/DoD/tests but no implementation; green/green reviewers may see only Data Model + How + PASS/FAIL labels and implementation, never red tests, raw diagnostics, or DoD; arbiters if any must be single-dispute scoped. Verify prompts (not merely visible_context metadata), withheld samples, redactions, actual isolated workspace paths, and absence of filesystem side channels at dispatch time as evidenced by artifacts. Inspect the final Green source workspace `/tmp/foundry-019f4bec-43dc-742b-80b0-e42b7d46ebdd-green-isolated` and Red workspace `/tmp/foundry-019f4bec-43dc-742b-80b0-e42b7d46ebdd-red-observer-repair` only as needed for barrier audit. Run the public envelope validator. Any leak is P0. Return JSON-like PASS/FAIL with exact envelope/file evidence and confidence.",
+  "visible_context": [
+    {
+      "label": "all_envelopes",
+      "kind": "audit_scope",
+      "sha256": "8d9586c7080bdf9fcada612ba7e3a0b0d7a9bdec724bf8c6fa16f0ab73e58e06",
+      "content": "runs/019f4bec-43dc-742b-80b0-e42b7d46ebdd/dispatch"
+    }
+  ],
+  "withheld_context": [],
+  "redactions": []
+}

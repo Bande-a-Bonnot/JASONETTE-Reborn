@@ -1,0 +1,66 @@
+{
+  "run_id": "019f4bec-43dc-742b-80b0-e42b7d46ebdd",
+  "status": "INVALIDATED",
+  "acceptance_outcome_before_review": "277 PASS / 0 FAIL",
+  "models": {
+    "green_team_reviewer": "openai-codex/gpt-5.6-sol:xhigh",
+    "typescript_reviewer": "openai-codex/gpt-5.6-sol:xhigh",
+    "correctness_reviewer": "openai-codex/gpt-5.6-sol:xhigh",
+    "reliability_reviewer": "openai-codex/gpt-5.6-sol:xhigh",
+    "red_team_test_reviewer": "openai-codex/gpt-5.6-sol:xhigh",
+    "barrier_integrity_auditor": "openai-codex/gpt-5.6-sol:xhigh"
+  },
+  "barrier_verdict": "FAIL",
+  "barrier_findings": [
+    {
+      "severity": "P0",
+      "envelope": "dispatch/phase2/green-team-revision7.json",
+      "issue": "Red jsdom border-oracle diagnosis and exact remediation were forwarded to Green."
+    },
+    {
+      "severity": "P0",
+      "envelope": "dispatch/phase2/green-team-revision5.json",
+      "issue": "Red-review assertion categories and review status were forwarded to Green."
+    },
+    {
+      "severity": "P0",
+      "envelope": "dispatch/phase2/green-team-revision6.json",
+      "issue": "Green was told a named failure was a Red harness defect."
+    },
+    {
+      "severity": "P0",
+      "envelope": "dispatch/phase1b/red-observer-repair.json",
+      "issue": "visible_context SHA-256 metadata did not hash its serialized content."
+    }
+  ],
+  "implementation_review_findings": [
+    {
+      "severity": "P1",
+      "source": "green-team-reviewer",
+      "issue": "Legacy include resolution used prototype-sensitive assignment and inherited include lookup."
+    },
+    {
+      "severity": "P1",
+      "source": "typescript-reviewer",
+      "issue": "Public HTML background types omitted supported css."
+    },
+    {
+      "severity": "P1",
+      "source": "reliability-reviewer",
+      "issue": "Untargeted global listeners/timers lacked deterministic renderer teardown."
+    },
+    {
+      "severity": "P1",
+      "source": "reliability-reviewer",
+      "issue": "Concurrent loads could commit stale responses out of order."
+    },
+    {
+      "severity": "P1",
+      "source": "reliability-reviewer",
+      "issue": "Failed loads left inconsistent stale state."
+    }
+  ],
+  "red_review_verdict": "FAIL",
+  "red_review_summary": "Final review identified P1 coverage gaps; these are retained as restart review input, not forwarded to Green.",
+  "required_action": "Discard the contaminated Green implementation lineage and restart from the untouched product baseline in a fresh run with hash-valid envelopes and physical workspace cleanup."
+}
