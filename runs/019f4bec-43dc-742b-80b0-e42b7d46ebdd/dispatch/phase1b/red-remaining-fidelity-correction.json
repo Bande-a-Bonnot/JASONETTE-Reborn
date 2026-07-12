@@ -1,0 +1,55 @@
+{
+  "schema_version": "foundry.prompt-envelope.v1",
+  "run_id": "019f4bec-43dc-742b-80b0-e42b7d46ebdd",
+  "phase": "phase1b",
+  "recipient": "red-team",
+  "prompt": "You are the isolated RED TEAM fidelity-correction lane. No product implementation is present or permitted. Modify only `red/tests/` to address the independent NLSpec-fidelity findings below while preserving the 277 test/Gherkin contract count and every valid HTML safety requirement.\n\nRequired corrections:\n1. Unknown component contracts: keep no-throw, no inherited callable invocation, no iframe/trace, data type, and a non-empty visible fallback. Remove exact English wording `Unknown component: <type>` and rename catalog titles that say `exact unknown oracle`.\n2. Replace the unsupported `$set` success-payload/timing oracle with a focused continuation generic-transform test using a test-registered action whose success payload is explicitly controlled by that handler. Preserve generic key/value getter-order and HTML-shaped options interpolation coverage without assuming `$set` forwards original caller data.\n3. In inherited-session rejection, remove exact JSON body serialization. Keep own-header control and prove inherited header/body sentinels never decorate the request.\n4. Replace exact singleton `className` checks for `jasonette-html` and `jasonette-background-web` with class membership checks.\n5. Prove border-none using semantic CSSOM `borderStyle === \"none\"` rather than exact shorthand serialization; retain width 100%, detached topology, class/data type, ownership, and trace assertions.\n6. In `security-observer.ts`, make `assertExactTraceSet` match expected traces by iframe identity rather than array index. Retain exact trace count, kind, source, and per-iframe event sequence, and keep separate DOM-order assertions.\n\nDo not weaken: templated background raw-text/transformed-CSS/URL expectations; exact sandbox and exclusive source attributes; finite per-iframe ordering; old/new iframe replacement and endpoint checks; literal script preservation; background-before-foreground DOM placement; safe own-property/state/session/registry requirements. Do not add/remove `it` or scenario rows. Update coverage metadata only if its integrity format requires it. Run `npm test`, strict TypeScript checking for observer/test files as possible, and `node red/tests/verify-coverage-map.mjs`. Report changed files, counts, and any limitation. Do not inspect parent directories or implementation.",
+  "visible_context": [
+    {
+      "label": "fidelity_findings",
+      "kind": "review",
+      "sha256": "7ae70f3b4e3967f2a891a7400e536808bd92911b7c443a294316296954ed32e3",
+      "content": "Embedded verbatim in prompt."
+    }
+  ],
+  "withheld_context": [
+    {
+      "label": "product_implementation",
+      "kind": "implementation",
+      "sha256": "b233b75766bec7f56df438c3d64b5648777e7c7aec63efbe051ee890c7d5f5f1",
+      "content": "withheld product implementation",
+      "samples": [
+        "packages/web-renderer/src",
+        "packages/template-engine/src",
+        "green-isolated"
+      ]
+    },
+    {
+      "label": "green_results",
+      "kind": "green_implementation",
+      "sha256": "a702b25fea53bcea91873fb42eab645060265d422fa850ad70bd95f3b20eb5e8",
+      "content": "withheld green results",
+      "samples": [
+        "phase2-iteration5-raw.json",
+        "green-team-revision5"
+      ]
+    }
+  ],
+  "redactions": [
+    {
+      "source": "product_implementation",
+      "action": "withhold",
+      "removed": [
+        "source_code"
+      ]
+    },
+    {
+      "source": "green_results",
+      "action": "withhold",
+      "removed": [
+        "green_diagnostics",
+        "green_source"
+      ]
+    }
+  ]
+}

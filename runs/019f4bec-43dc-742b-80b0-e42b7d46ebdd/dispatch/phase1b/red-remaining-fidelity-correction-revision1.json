@@ -1,0 +1,52 @@
+{
+  "schema_version": "foundry.prompt-envelope.v1",
+  "run_id": "019f4bec-43dc-742b-80b0-e42b7d46ebdd",
+  "phase": "phase1b",
+  "recipient": "red-team",
+  "prompt": "You are the isolated RED TEAM fidelity-correction revision lane. No product implementation is present or permitted. The independent reviewer rejected your first revision because the verifier canonicalized stale Gherkin. Correct it properly.\n\nMandatory work:\n1. Restore `red/tests/verify-coverage-map.mjs` to strict pre-fidelity behavior from `pre-fidelity/verify-coverage-map.mjs`: no correctedFeatureContracts, no canonicalFeatureTitle, no title rewriting, no expected-step substitution, and no catalog-value substitution for authored Examples cells.\n2. Update authored `red/features/actions-state.feature`, `red/features/components.feature`, and every affected `red/features/backgrounds.feature` row/scenario so titles, setup/action/expected text exactly mirror corrected `red/tests/case-catalog.mjs` contracts. Preserve scenario/example counts.\n3. Ensure component contracts express non-empty visible fallback, class-list membership, semantic CSSOM borderStyle, and controlled success-payload continuation. Session rejection must use inherited sentinel absence without exact body encoding.\n4. Change the catalog background outcome and every iframe-producing background Gherkin outcome from exact singleton class wording to membership in the `jasonette-background-web` class list, while retaining ARIA, placement, sandbox, source exclusivity, and exact per-iframe traces.\n5. Update `coverage-map.json` mappings/descriptions only to truthfully reference the corrected authored contracts; do not alter required totals or automate away mismatches.\n6. Preserve the already-correct Vitest changes and 277 test/Gherkin contracts. Do not add/remove `it`, scenarios, or Examples rows.\n\nRun `npm test`, strict observer TypeScript check, and the restored strict `node red/tests/verify-coverage-map.mjs`. Also prove the old strict verifier logic no longer reports mirror errors because authored features now match, not due to normalization. Report exact changed files and counts. Do not inspect parent directories or implementation.",
+  "visible_context": [
+    {
+      "label": "review_findings",
+      "kind": "review",
+      "sha256": "05cbd77bec701445cb331ec432f03d59b8535977fa2307dde42f41dc86bc735f",
+      "content": "Embedded verbatim."
+    }
+  ],
+  "withheld_context": [
+    {
+      "label": "implementation",
+      "kind": "implementation",
+      "sha256": "a43629ca34757e76155c22ae99387245cfed793832f18de93e14a4a6b38c3b2a",
+      "content": "withheld implementation",
+      "samples": [
+        "packages/web-renderer/src",
+        "green-isolated"
+      ]
+    },
+    {
+      "label": "green",
+      "kind": "green_implementation",
+      "sha256": "aa767960873bc80a7e18668c37b1110f213b777604145423806e068550117975",
+      "content": "withheld green results",
+      "samples": [
+        "phase2-iteration5-raw.json"
+      ]
+    }
+  ],
+  "redactions": [
+    {
+      "source": "implementation",
+      "action": "withhold",
+      "removed": [
+        "source_code"
+      ]
+    },
+    {
+      "source": "green",
+      "action": "withhold",
+      "removed": [
+        "green_results"
+      ]
+    }
+  ]
+}

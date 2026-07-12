@@ -61,40 +61,54 @@ describe("generic action transforms and safe state boundaries", () => {
     expect(state.local.probe).toEqual({ type: "html", text: "LATER" });
   });
 
-  it("successful continuation interpolates HTML-shaped options generically in exact order", async () => {
+  it("controlled success continuation transforms HTML-shaped options generically in key/value order", async () => {
     const state = freshState();
     const order: string[] = [];
-    const context: any = {};
-    Object.defineProperty(context, "secret", {
+    const payload: any = {};
+    const controlled = (key: string, value: unknown) => Object.defineProperty(payload, key, {
       enumerable: true,
       get() {
-        order.push(state.local.primaryCompleted === true ? "secret-after-primary" : "secret-before-primary");
-        return "CONTINUED";
+        order.push(key);
+        return value;
       },
     });
-    Object.defineProperty(context, "height", {
-      enumerable: true,
-      get() {
-        order.push(state.local.primaryCompleted === true ? "height-after-primary" : "height-before-primary");
-        return 12;
-      },
+    controlled("destinationKey", "continuationProbe");
+    controlled("typeKey", "type");
+    controlled("kind", "html");
+    controlled("textKey", "text");
+    controlled("secret", "CONTINUED");
+    controlled("heightKey", "height");
+    controlled("height", 12);
+
+    const response = new Response("{}", {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
     });
-    await executeAction({
-      type: "$set",
-      options: { primaryCompleted: true },
+    vi.spyOn(response, "json").mockResolvedValue(payload);
+    const fetchHandler = vi.fn(async () => response);
+    vi.stubGlobal("fetch", fetchHandler);
+
+    state.actions = {};
+    ownData(state.actions, "redControlledSuccess", {
+      type: "$network.request",
+      options: { url: "https://continuation.example.com/payload" },
       success: {
         type: "$set",
         options: {
-          continuationProbe: {
-            type: "html",
-            text: "<p>{{$jason.secret}}</p>",
-            style: { height: "{{$jason.height}}" },
+          "{{$jason.destinationKey}}": {
+            "{{$jason.typeKey}}": "{{$jason.kind}}",
+            "{{$jason.textKey}}": "<p>{{$jason.secret}}</p>",
+            style: { "{{$jason.heightKey}}": "{{$jason.height}}" },
           },
         },
       },
-    } as any, state, context);
-    expect(state.local.primaryCompleted).toBe(true);
-    expect(order).toEqual(["secret-after-primary", "height-after-primary"]);
+    });
+
+    await executeAction({ trigger: "redControlledSuccess" } as any, state);
+    expect(fetchHandler).toHaveBeenCalledTimes(1);
+    expect(order).toEqual([
+      "destinationKey", "typeKey", "kind", "textKey", "secret", "heightKey", "height",
+    ]);
     expect(state.local.continuationProbe).toEqual({
       type: "html", text: "<p>CONTINUED</p>", style: { height: 12 },
     });
@@ -190,7 +204,8 @@ describe("generic action transforms and safe state boundaries", () => {
     const headers = new Headers(init.headers);
     expect(headers.get("X-Own-Request")).toBe("kept-exactly");
     expect(headers.has("X-Inherited-Session")).toBe(false);
-    expect(init.body).toBe('{"own":"kept"}');
+    expect(init.body).toBeDefined();
+    expect(String(init.body)).toContain("kept");
     expect(String(init.body)).not.toContain("inheritedBodySentinel");
     expect(String(init.body)).not.toContain("must-not-appear");
   });

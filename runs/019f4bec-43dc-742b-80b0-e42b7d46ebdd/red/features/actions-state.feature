@@ -94,10 +94,10 @@ Feature: Action dispatch and safe state boundaries
     When execute the separately phased action
     Then local.probe equals {type:"html", text:"LATER"}
 
-  Scenario: successful continuation interpolates HTML-shaped options generically in exact order
-    Given primary $set completion plus success $set HTML probe using observable secret="CONTINUED" and height=12 getters
-    When execute the primary action and its success continuation
-    Then primaryCompleted is true; getter order is ["secret-after-primary","height-after-primary"]; continuation probe is {type:"html", text:"<p>CONTINUED</p>", style:{height:12}}
+  Scenario: controlled success continuation transforms HTML-shaped options generically in key/value order
+    Given state.actions owns redControlledSuccess as a network action whose mocked JSON handler returns controlled destinationKey, typeKey, kind, textKey, secret, heightKey, and height getters; its success is an HTML-shaped $set continuation
+    When trigger the test-registered redControlledSuccess action
+    Then fetch occurs once; getter order is ["destinationKey","typeKey","kind","textKey","secret","heightKey","height"]; continuation probe is {type:"html", text:"<p>CONTINUED</p>", style:{height:12}}
 
   Scenario: safe state sinks accept a null-prototype options object
     Given null-prototype $set options with nullPrototypeProbe="supported"
@@ -120,9 +120,9 @@ Feature: Action dispatch and safe state boundaries
     Then fetch occurs once; RequestInit.headers is Headers with X-Session="own-value" and X-Request="request-value"
 
   Scenario: inherited session domain cannot decorate request headers or body
-    Given inherited api.example.com session has forbidden header and body; own POST has X-Own-Request="kept-exactly" and data {own:"kept"}
+    Given inherited api.example.com session has forbidden header and body sentinels; own POST has X-Own-Request="kept-exactly" and data {own:"kept"}
     When execute POST https://api.example.com/resource
-    Then fetch occurs once; own header remains, inherited header is absent, and body code units equal {"own":"kept"} without inherited sentinels
+    Then fetch occurs once; own header remains, inherited header is absent, and the existing request body contains the own data marker "kept" but neither "inheritedBodySentinel" nor "must-not-appear"
 
   Scenario: inherited action type plus own trigger falls through to the own named action
     Given action inherits type "redInheritedAction" and owns trigger "runOwnTrigger" naming $set triggerFallback="called"

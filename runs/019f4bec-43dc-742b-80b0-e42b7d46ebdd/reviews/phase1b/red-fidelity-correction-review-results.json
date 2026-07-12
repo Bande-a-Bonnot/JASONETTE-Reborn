@@ -1,0 +1,51 @@
+{
+  "run_id": "019f4bec-43dc-742b-80b0-e42b7d46ebdd",
+  "scope": "remove NLSpec-exceeding red oracles without weakening HTML/iframe safety contracts",
+  "final_red_tree_sha256_relative_paths": "d0cd26b00aabc035fc4363b9ff2460baa0898d8154d8b51e0773fdeda00324e1",
+  "strict_verifier_sha256": "5192aa9e8a3d1ee375bf842a14ccfa3944f4a83475540fc556ee1e1d896c9cb9",
+  "models": {
+    "fidelity_review": "openai-codex/gpt-5.6-sol:xhigh",
+    "red_correction": "openai-codex/gpt-5.6-sol:xhigh",
+    "independent_red_review": "openai-codex/gpt-5.6-sol:xhigh"
+  },
+  "review_history": [
+    {
+      "status": "FAIL",
+      "highest_severity": "critical",
+      "finding": "First correction weakened strict Gherkin verification through canonicalization/substitution."
+    },
+    {
+      "status": "FAIL",
+      "highest_severity": "critical",
+      "finding": "Final certification input omitted authoritative NLSpec Definition of Done."
+    },
+    {
+      "status": "PASS",
+      "confidence": 0.97,
+      "findings": []
+    }
+  ],
+  "final_verification": {
+    "strict_verifier_byte_identical_to_pre_fidelity": true,
+    "vitest_contracts": 277,
+    "gherkin_contracts": 277,
+    "outline_rows": 242,
+    "literal_scenarios": 35,
+    "dod_items": 55,
+    "automated_dod_items": 53,
+    "external_pending_dod_items": 2,
+    "observer_tests": "58/58 PASS",
+    "strict_observer_typescript": "PASS",
+    "strict_coverage_verifier": "PASS"
+  },
+  "preserved_requirements": [
+    "exact sandbox allow-scripts policy",
+    "exclusive src/srcdoc source emission",
+    "exact per-iframe create/sandbox/source/append/return order",
+    "component/background topology and background-before-foreground DOM placement",
+    "raw HTML/script preservation with ordinary sibling/CSS interpolation",
+    "old/new iframe replacement and disconnected-old endpoint checks",
+    "safe own-property state/session/registry behavior"
+  ],
+  "external_pending": ["CMD-1", "CMD-2", "CMD-3", "CMD-4", "CMD-5", "CMD-6", "CMD-7", "CMD-8", "CMD-9", "CI-1"]
+}

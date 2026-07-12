@@ -142,14 +142,14 @@
     },
     "6.2-3": {
       "status": "automated",
-      "description": "generic actions and omitted or explicit-false direct transforms preserve off-mode output and ordering",
+      "description": "generic actions, including the controlled network success-payload continuation, and omitted or explicit-false direct transforms preserve off-mode output and key/value ordering",
       "tests": [
         "transform exact: omitted body option interpolates HTML text",
         "transform exact: explicit false option interpolates HTML text",
         "off mode preserves per-entry key-then-value getter ordering",
         "explicit false option preserves per-entry key-then-value getter ordering",
         "production $set action options use generic interpolation at action time",
-        "successful continuation interpolates HTML-shaped options generically in exact order"
+        "controlled success continuation transforms HTML-shaped options generically in key/value order"
       ]
     },
     "6.2-4": {
@@ -174,7 +174,7 @@
     },
     "6.2-5": {
       "status": "automated",
-      "description": "component action trigger and lambda dispatch are own-only including authored named-action array order",
+      "description": "component, action trigger, and lambda dispatch are own-only; rejected component callables return a non-empty visible fallback, and named-action arrays retain authored order",
       "tests": [
         "action type: missing type with no trigger returns undefined",
         "action type: inherited handler type is ignored",
@@ -205,11 +205,11 @@
         "inherited constructor trigger is ignored",
         "inherited __proto__ trigger is ignored",
         "inherited prototype trigger is ignored",
-        "component registry inherited callable: redInheritedComponentCallable is not invoked and exact unknown oracle is returned",
-        "component registry inherited callable: toString is not invoked and exact unknown oracle is returned",
-        "component registry inherited callable: constructor is not invoked and exact unknown oracle is returned",
-        "component registry inherited callable: __proto__ is not invoked and exact unknown oracle is returned",
-        "component registry inherited callable: prototype is not invoked and exact unknown oracle is returned",
+        "component registry inherited callable: redInheritedComponentCallable is not invoked and a non-empty visible fallback is returned",
+        "component registry inherited callable: toString is not invoked and a non-empty visible fallback is returned",
+        "component registry inherited callable: constructor is not invoked and a non-empty visible fallback is returned",
+        "component registry inherited callable: __proto__ is not invoked and a non-empty visible fallback is returned",
+        "component registry inherited callable: prototype is not invoked and a non-empty visible fallback is returned",
         "own named action arrays execute async non-commutative authored order through trigger",
         "own named action arrays execute async non-commutative authored order through lambda",
         "action type: own custom type with only an inherited callable returns undefined"
@@ -455,7 +455,7 @@
     },
     "6.5-10": {
       "status": "automated",
-      "description": "two-level sessions cover dangerous domains null prototype and lookup rejection",
+      "description": "two-level sessions cover dangerous domains, null prototypes, and inherited lookup rejection through own header/data preservation and inherited header/body-sentinel absence without requiring an exact body encoding",
       "tests": [
         "session registry: reachable __proto__ domain is an inert own property",
         "session registry: reachable constructor domain is an inert own property",
@@ -474,7 +474,7 @@
     },
     "6.5-12": {
       "status": "automated",
-      "description": "direct type matrices do not invoke inherited handlers",
+      "description": "direct type matrices do not invoke inherited handlers and unknown component outcomes require a non-empty visible fallback",
       "tests": [
         "action type: missing type with no trigger returns undefined",
         "action type: inherited handler type is ignored",
@@ -835,7 +835,7 @@
     },
     "6.7-7": {
       "status": "automated",
-      "description": "component and background topology class ARIA size and placement are exact",
+      "description": "component and background topology, class-list membership, ARIA, placement, width, and semantic CSSOM borderStyle are covered",
       "tests": [
         "component wrapper return topology and legacy class size border contract remain exact",
         "background authored path: static canonical inline source and CSS render exactly"

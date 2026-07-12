@@ -1,0 +1,52 @@
+{
+  "schema_version": "foundry.prompt-envelope.v1",
+  "run_id": "019f4bec-43dc-742b-80b0-e42b7d46ebdd",
+  "phase": "phase1b",
+  "recipient": "red-team-test-reviewer",
+  "prompt": "You are the independent RED TEAM TEST REVIEWER final pass, with no product implementation access. Compare `pre-fidelity/` to current `red/tests/` and inspect current `red/features/`. Re-evaluate all prior findings. Prove `red/tests/verify-coverage-map.mjs` is byte-identical to `pre-fidelity/verify-coverage-map.mjs` and contains no canonicalization/substitution. Verify authored actions-state, components, and all background feature rows exactly mirror current catalog titles/setup/action/expected values under the original strict verifier. Verify 277/277 counts, unchanged test/scenario/Examples declaration counts, meaningful controlled continuation and inherited-session oracles, non-prescriptive but visible unknown fallback, class membership, semantic borderStyle, identity-based trace matching with exact per-iframe order, and preservation of all sandbox/source/DOM-placement requirements. Run npm observer tests, strict observer TypeScript, and strict coverage verification. Return PASS/FAIL JSON-like output with severity/confidence, exact evidence, residual risks, and gaps. Do not edit or inspect parents/implementation.",
+  "visible_context": [
+    {
+      "label": "final_review_scope",
+      "kind": "review",
+      "sha256": "323f1ea3078ff3b04288850a8fe5a49cbf0bec0c64f48e923cafa5331a4336a6",
+      "content": "Embedded verbatim."
+    }
+  ],
+  "withheld_context": [
+    {
+      "label": "implementation",
+      "kind": "implementation",
+      "sha256": "8d8e0f8c31dee52af56d4cc89a1fd5055e5c8380decda24b62c92a350ef9905f",
+      "content": "withheld implementation",
+      "samples": [
+        "packages/web-renderer/src",
+        "green-isolated"
+      ]
+    },
+    {
+      "label": "green",
+      "kind": "green_implementation",
+      "sha256": "5052fd951646c74bdf829b8c8864b49b86bf332598c715533acd6747957a9f65",
+      "content": "withheld green",
+      "samples": [
+        "phase2-iteration5-raw.json"
+      ]
+    }
+  ],
+  "redactions": [
+    {
+      "source": "implementation",
+      "action": "withhold",
+      "removed": [
+        "source_code"
+      ]
+    },
+    {
+      "source": "green",
+      "action": "withhold",
+      "removed": [
+        "green_results"
+      ]
+    }
+  ]
+}

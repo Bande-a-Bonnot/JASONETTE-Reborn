@@ -118,9 +118,10 @@ describe("renderer integration", () => {
       expect(background.srcdoc).toBe("<style>body{color:red}</style><script>window.raw='{{$jason.secret}}'</script>");
       expect(component.srcdoc).toBe("<style>p{height:7px}</style><p>{{$jason.secret}}</p>");
       expect(root.querySelector(".jasonette-label")!.textContent).toBe("ordinary");
+      expect(background.compareDocumentPosition(component) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
       observer.assertExactTraceSet([
-        { iframe: background, kind: "background", source: "srcdoc" },
         { iframe: component, kind: "component", source: "srcdoc" },
+        { iframe: background, kind: "background", source: "srcdoc" },
       ]);
     } finally { unwrap(); observer.restore(); }
   });

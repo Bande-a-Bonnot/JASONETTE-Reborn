@@ -1,0 +1,52 @@
+{
+  "schema_version": "foundry.prompt-envelope.v1",
+  "run_id": "019f4bec-43dc-742b-80b0-e42b7d46ebdd",
+  "phase": "phase1b",
+  "recipient": "red-team-test-reviewer",
+  "prompt": "You are an independent RED TEAM TEST REVIEWER with no product implementation access. Review the current fidelity correction by comparing `pre-fidelity/` files to `red/tests/`. The intended corrections are: non-prescriptive visible unknown fallback; explicitly controlled success payload for continuation generic transformation; inherited-session sentinel rejection without body encoding; class membership; semantic borderStyle; and trace matching by iframe identity.\n\nAudit especially `verify-coverage-map.mjs` and `coverage-map.json`. It is NOT acceptable to canonicalize stale Gherkin titles/steps at verification time, substitute catalog values for authored feature values, or weaken one-to-one mirror checks merely because this lane was scoped to tests. If catalog contract wording/steps changed, require matching authored `red/features/*.feature` updates in a subsequent red revision and preserve strict verifier behavior. Confirm 277 tests/scenarios, unchanged test/scenario counts, meaningful failure oracles, no implementation access/coupling, and no weakening of valid HTML/sandbox requirements. Run `npm test`, strict observer TypeScript check, and coverage verification, but do not treat a passing weakened verifier as sufficient. Return PASS/FAIL JSON-like findings with severity, confidence, exact files/lines, and precise required fixes. Do not edit or inspect parent directories.",
+  "visible_context": [
+    {
+      "label": "review_scope",
+      "kind": "review",
+      "sha256": "a6354ba905618d15aefaf5e1631d913ab613aa3661676470f941f4dde61b1344",
+      "content": "Embedded verbatim."
+    }
+  ],
+  "withheld_context": [
+    {
+      "label": "implementation",
+      "kind": "implementation",
+      "sha256": "dda4172ba1f4ccdf2f2fc58b8eda02bc489e23fad7a640af7420ba741862ad79",
+      "content": "withheld implementation",
+      "samples": [
+        "packages/web-renderer/src",
+        "green-isolated"
+      ]
+    },
+    {
+      "label": "green_results",
+      "kind": "green_implementation",
+      "sha256": "f297e0b7d4cecad6de4f1f6ec1044a7d4f6fb1019e05bc1449816e3c76bb11ab",
+      "content": "withheld green",
+      "samples": [
+        "phase2-iteration5-raw.json"
+      ]
+    }
+  ],
+  "redactions": [
+    {
+      "source": "implementation",
+      "action": "withhold",
+      "removed": [
+        "source_code"
+      ]
+    },
+    {
+      "source": "green_results",
+      "action": "withhold",
+      "removed": [
+        "green_results"
+      ]
+    }
+  ]
+}

@@ -93,7 +93,7 @@ function expectBackgroundIframe(root: HTMLElement, observer: any, source: "src" 
   const iframe = root.querySelector("iframe.jasonette-background-web") as HTMLIFrameElement;
   expect(iframe).not.toBeNull();
   expect(iframe.parentNode).toBe(root);
-  expect(iframe.className).toBe("jasonette-background-web");
+  expect(iframe.classList.contains("jasonette-background-web")).toBe(true);
   expect(iframe.getAttribute("aria-hidden")).toBe("true");
   expect(iframe.getAttribute("sandbox")).toBe("allow-scripts");
   expect(Array.from(iframe.sandbox)).toEqual(["allow-scripts"]);

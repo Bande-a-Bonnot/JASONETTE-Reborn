@@ -524,13 +524,18 @@ export function installSecurityObserver() {
       if (traces.length !== expected.length) {
         throw new Error(`invalid complete iframe trace count: ${traces.length}; expected ${expected.length}`);
       }
-      expected.forEach((entry, index) => {
-        const actual = traces[index];
-        if (actual.iframe !== entry.iframe || actual.kind !== entry.kind) {
-          throw new Error(`invalid iframe trace identity/kind at ${index}`);
+      const expectedIframes = new Set<HTMLIFrameElement>();
+      for (const entry of expected) {
+        if (expectedIframes.has(entry.iframe)) {
+          throw new Error("invalid complete iframe trace set: duplicate expected iframe identity");
+        }
+        expectedIframes.add(entry.iframe);
+        const actual = byIframe.get(entry.iframe);
+        if (!actual || !traces.includes(actual) || actual.kind !== entry.kind) {
+          throw new Error("invalid iframe trace identity/kind");
         }
         api.assertCreationTrace(entry.iframe, entry.kind, entry.source);
-      });
+      }
     },
     assertNoSourceOrInsertionBeforeSandbox(iframe: HTMLIFrameElement) {
       const events = api.traceFor(iframe).events;

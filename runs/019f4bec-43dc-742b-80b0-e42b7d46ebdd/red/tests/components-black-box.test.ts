@@ -44,6 +44,11 @@ function expectIframePolicy(iframe: HTMLIFrameElement, source: "src" | "srcdoc",
   expect(iframe.hasAttribute(source === "src" ? "srcdoc" : "src")).toBe(false);
 }
 
+function expectVisibleFallback(wrapper: HTMLElement) {
+  expect(wrapper.hidden).toBe(false);
+  expect(wrapper.textContent?.trim().length).toBeGreaterThan(0);
+}
+
 beforeEach(() => document.body.replaceChildren());
 afterEach(() => delete (Object.prototype as any).redInheritedComponent);
 
@@ -76,11 +81,11 @@ describe("public HTML component renderer", () => {
       observer.assertExactTraceSet([{ iframe, kind: "component", source: "srcdoc" }]);
       expect(wrapper.parentNode).toBeNull();
       expect(wrapper.isConnected).toBe(false);
-      expect(wrapper.className).toBe("jasonette-html");
+      expect(wrapper.classList.contains("jasonette-html")).toBe(true);
       expect(wrapper.getAttribute("data-jasonette-type")).toBe("html");
       expect(iframe.parentNode).toBe(wrapper);
       expect(iframe.style.width).toBe("100%");
-      expect(iframe.style.border).toBe("none");
+      expect(iframe.style.borderStyle).toBe("none");
     } finally { observer.restore(); }
   });
 
@@ -142,7 +147,7 @@ describe("public HTML component renderer", () => {
         expect(wrapper.querySelector("iframe")).toBeNull();
         expect(observer.traces).toEqual([]);
         if (outcome === "unknown") {
-          expect(wrapper.textContent).toBe(`Unknown component: ${kind}`);
+          expectVisibleFallback(wrapper);
           expect(wrapper.getAttribute("data-jasonette-type")).toBe(kind);
         } else {
           expect(wrapper.textContent).toBe(component.text);
@@ -159,7 +164,7 @@ describe("public HTML component renderer", () => {
       const wrapper = renderComponentAtBoundary({ type: "redInheritedComponent", text: "visible unknown" }, observer) as HTMLElement;
       expect(inheritedCallable).not.toHaveBeenCalled();
       expect(wrapper.querySelector("iframe")).toBeNull();
-      expect(wrapper.textContent).toBe("Unknown component: redInheritedComponent");
+      expectVisibleFallback(wrapper);
       expect(wrapper.getAttribute("data-jasonette-type")).toBe("redInheritedComponent");
       expect(observer.traces).toEqual([]);
       delete (Object.prototype as any).redInheritedComponent;
@@ -176,7 +181,7 @@ describe("public HTML component renderer", () => {
     try {
       const wrapper = renderComponentAtBoundary({ type: name, text: "ignored" }, observer) as HTMLElement;
       expect(inheritedCallable).not.toHaveBeenCalled();
-      expect(wrapper.textContent).toBe(`Unknown component: ${name}`);
+      expectVisibleFallback(wrapper);
       expect(wrapper.getAttribute("data-jasonette-type")).toBe(name);
       expect(wrapper.querySelector("iframe")).toBeNull();
       expect(observer.traces).toEqual([]);

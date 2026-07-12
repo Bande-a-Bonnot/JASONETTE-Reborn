@@ -1,0 +1,52 @@
+{
+  "schema_version": "foundry.prompt-envelope.v1",
+  "run_id": "019f4bec-43dc-742b-80b0-e42b7d46ebdd",
+  "phase": "phase1b",
+  "recipient": "red-team",
+  "prompt": "You are the isolated RED TEAM final fidelity-correction lane. No product implementation is present or permitted. Close the independent reviewer\u2019s one remaining medium oracle gap without changing counts or other behavior.\n\nIn the inherited-session rejection contract, retain all current assertions (own header control, body existence as applicable, inherited header/body sentinels absent) and add a serialization-agnostic positive assertion that the authored own data marker `kept` survives in the emitted request body. Do not prescribe JSON vs form encoding or exact body code units. Update the matching `case-catalog.mjs` contract, authored `features/actions-state.feature` scenario, and `coverage-map.json` wording if mapped. Preserve the strict byte-original verifier, all 277 one-to-one mirrors, and all previous fidelity corrections. Do not add/remove tests/scenarios/Examples. Run npm observer tests, strict observer TypeScript, and strict coverage verification. Report exact files/counts. Do not inspect parents or implementation.",
+  "visible_context": [
+    {
+      "label": "remaining_review_gap",
+      "kind": "review",
+      "sha256": "17065d84e4977204f0dcdd64dd908314a992f023029c4facf76ee0db23c3acc0",
+      "content": "Embedded."
+    }
+  ],
+  "withheld_context": [
+    {
+      "label": "implementation",
+      "kind": "implementation",
+      "sha256": "3a81de74580f6ecf47524c1218b17309cb1923269a51c837ef6066c01fa21abd",
+      "content": "withheld implementation",
+      "samples": [
+        "packages/web-renderer/src",
+        "green-isolated"
+      ]
+    },
+    {
+      "label": "green",
+      "kind": "green_implementation",
+      "sha256": "b776073fa87561e1b8091ff05c3de3addd1b69789445c09a4f272106b051704c",
+      "content": "withheld green",
+      "samples": [
+        "phase2-iteration5-raw.json"
+      ]
+    }
+  ],
+  "redactions": [
+    {
+      "source": "implementation",
+      "action": "withhold",
+      "removed": [
+        "source_code"
+      ]
+    },
+    {
+      "source": "green",
+      "action": "withhold",
+      "removed": [
+        "green_results"
+      ]
+    }
+  ]
+}
