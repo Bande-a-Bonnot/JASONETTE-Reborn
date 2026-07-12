@@ -1,0 +1,14 @@
+{
+  "reviewer": "divergence-evaluator",
+  "run_id": "019f56af-218a-7288-9330-2f812aa31d96",
+  "test_id": "background path selection and rendering 'background authored path: templated l\u2026'",
+  "findings": [
+    {
+      "outcome": "NOT_VALUABLE",
+      "rationale": "The NLSpec explicitly requires templated legacy `head.templates.body.style.background` objects to transform `{{$jason.url}}` into the exact dynamic URL, emit it through `src`, and omit `srcdoc` (section 3.5 and DoD 6.8). It also defines body-mode propagation and ordinary non-text field transformation. Therefore the repeated failure reveals an implementation defect, not missing or ambiguous specification.",
+      "gap_description": null
+    }
+  ],
+  "residual_risks": [],
+  "testing_gaps": []
+}

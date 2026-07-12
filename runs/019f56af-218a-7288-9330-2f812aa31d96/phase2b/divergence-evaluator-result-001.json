@@ -1,0 +1,14 @@
+{
+  "reviewer": "divergence-evaluator",
+  "run_id": "019f56af-218a-7288-9330-2f812aa31d96",
+  "test_id": "background path selection and rendering 'background authored path: templated c\u2026'",
+  "findings": [
+    {
+      "outcome": "NOT_VALUABLE",
+      "rationale": "The NLSpec explicitly defines this case in section 3.5: a templated canonical body.background with type \"html\" must preserve the authored text expression while transforming CSS using the body context. Sections 3.1\u20133.3 also specify recursive body-mode propagation, protection only for the resolved text field, and normal transformation of css. The implementation is therefore failing behavior already unambiguously required by the specification; repeated failure indicates an implementation or integration issue, not a missing requirement.",
+      "gap_description": null
+    }
+  ],
+  "residual_risks": [],
+  "testing_gaps": []
+}

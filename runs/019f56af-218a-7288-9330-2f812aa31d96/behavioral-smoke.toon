@@ -4,7 +4,7 @@ requires_divergence_restart: false
 requires_distinct_model_lanes: true
 
 test_results[1]{example,passed,total,expected_passed,expected_total}:
-  web-html-template-iframe-safety,278,298,298,298
+  web-html-template-iframe-safety,279,298,298,298
 
 model_lanes[3]{recipient,planned_model,actual_model}:
   red-team,openai-codex/gpt-5.6-sol:xhigh,openai-codex/gpt-5.6-sol:xhigh

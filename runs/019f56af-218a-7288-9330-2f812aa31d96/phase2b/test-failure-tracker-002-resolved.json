@@ -1,0 +1,20 @@
+{
+  "schema_version": "foundry.test-failure-tracker.v1",
+  "run_id": "019f56af-218a-7288-9330-2f812aa31d96",
+  "test_id": "background path selection and rendering 'background authored path: templated l\u2026'",
+  "canonical_contract_title": "background authored path: templated legacy transforms its URL",
+  "consecutive_fails": 0,
+  "threshold": 3,
+  "trigger_strategy": "adaptive_with_fixed_floor",
+  "test_content_hash": "3ae1cb3d353fc78fd80af5fc614444c505014ea64d3e3d22a661b5783faed1bb",
+  "implementation_attempt_hashes": [],
+  "outcome_evidence": [
+    "outcomes/phase2-iteration1.txt",
+    "outcomes/phase2-iteration2.txt",
+    "outcomes/phase2-iteration3.txt",
+    "outcomes/phase2-iteration4.txt"
+  ],
+  "trigger_reason": "fixed fallback threshold",
+  "status": "resolved-not-valuable",
+  "resolution": "rationale sent to Green"
+}
