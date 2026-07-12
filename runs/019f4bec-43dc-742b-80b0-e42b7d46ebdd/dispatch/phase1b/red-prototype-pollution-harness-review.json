@@ -1,0 +1,52 @@
+{
+  "schema_version": "foundry.prompt-envelope.v1",
+  "run_id": "019f4bec-43dc-742b-80b0-e42b7d46ebdd",
+  "phase": "phase1b",
+  "recipient": "red-team-test-reviewer",
+  "prompt": "You are the independent RED TEAM TEST REVIEWER for a prototype-pollution harness correction, with no implementation access. Compare `pre-harness-components-black-box.test.ts` to `red/tests/components-black-box.test.ts`. Verify that temporary Object.prototype descriptors\u2014including toString\u2014are restored before any Chai/Vitest assertion that could call polluted intrinsics; all observations are captured accurately while pollution is active; restoration is guaranteed on throw; and every original oracle remains (not called, visible non-empty fallback, exact data type, no iframe, no trace, no throw). Confirm no contract/count/catalog/Gherkin drift, run npm observer tests and strict 277/277 verifier, and return PASS/FAIL with severity/confidence/evidence. Do not edit or inspect parents/implementation.",
+  "visible_context": [
+    {
+      "label": "review_scope",
+      "kind": "review",
+      "sha256": "f2234a13fef174040c546602528bc57bcbea701f591aa3cc4ff34c4df5ccbc9e",
+      "content": "Embedded."
+    }
+  ],
+  "withheld_context": [
+    {
+      "label": "implementation",
+      "kind": "implementation",
+      "sha256": "84b2cd3a1eeca317d4b24a6dca475cb84f15cc4d45c2a0251d57fb629426fe90",
+      "content": "withheld implementation",
+      "samples": [
+        "packages/web-renderer/src",
+        "green-isolated"
+      ]
+    },
+    {
+      "label": "green",
+      "kind": "green_implementation",
+      "sha256": "9bf4a3291a21824c9e90c42ef6cb1951696efc3ff748139044a96c478d763dfb",
+      "content": "withheld green",
+      "samples": [
+        "phase2-iteration6-raw.json"
+      ]
+    }
+  ],
+  "redactions": [
+    {
+      "source": "implementation",
+      "action": "withhold",
+      "removed": [
+        "source_code"
+      ]
+    },
+    {
+      "source": "green",
+      "action": "withhold",
+      "removed": [
+        "green_results"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "run_id": "019f4bec-43dc-742b-80b0-e42b7d46ebdd",
+  "scope": "restore Object.prototype before assertion-library calls in inherited-component registry tests",
+  "red_tree_sha256_relative_paths": "936e00cce43d9ca6324da87b118d818abddfe76ea637460068d0f87b539c3f0d",
+  "repair_model": "openai-codex/gpt-5.6-sol:xhigh",
+  "review_model": "openai-codex/gpt-5.6-sol:xhigh",
+  "verdict": "PASS",
+  "confidence": 0.99,
+  "findings": [],
+  "preserved_oracles": ["no throw", "inherited callable not invoked", "visible non-empty fallback", "exact data type", "no iframe", "no trace"],
+  "verification": ["58/58 observer self-tests PASS", "277 Vitest cases", "277 Gherkin contracts", "55 DoD checkboxes"]
+}

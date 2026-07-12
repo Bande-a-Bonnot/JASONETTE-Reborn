@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 // @ts-nocheck
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { transform } from "@jasonette/template-engine";
 import {
   COMPONENT_SOURCE_CASES,
@@ -50,7 +50,6 @@ function expectVisibleFallback(wrapper: HTMLElement) {
 }
 
 beforeEach(() => document.body.replaceChildren());
-afterEach(() => delete (Object.prototype as any).redInheritedComponent);
 
 describe("public HTML component renderer", () => {
   it("component inline iframe trace installs sandbox before source insertion and return", () => {
@@ -158,16 +157,41 @@ describe("public HTML component renderer", () => {
 
   it("component registry never invokes an inherited callable renderer", () => {
     const observer = installSecurityObserver();
+    const name = "redInheritedComponent";
+    const original = Object.getOwnPropertyDescriptor(Object.prototype, name);
+    const inheritedCallable = vi.fn(() => document.createElement("iframe"));
+    let publicCallThrew = false;
+    let observations: any;
     try {
-      const inheritedCallable = vi.fn(() => document.createElement("iframe"));
-      ownData(Object.prototype, "redInheritedComponent", inheritedCallable);
-      const wrapper = renderComponentAtBoundary({ type: "redInheritedComponent", text: "visible unknown" }, observer) as HTMLElement;
-      expect(inheritedCallable).not.toHaveBeenCalled();
-      expect(wrapper.querySelector("iframe")).toBeNull();
-      expectVisibleFallback(wrapper);
-      expect(wrapper.getAttribute("data-jasonette-type")).toBe("redInheritedComponent");
-      expect(observer.traces).toEqual([]);
-      delete (Object.prototype as any).redInheritedComponent;
+      ownData(Object.prototype, name, inheritedCallable);
+      try {
+        let wrapper: HTMLElement | undefined;
+        try {
+          wrapper = renderComponentAtBoundary({ type: name, text: "visible unknown" }, observer) as HTMLElement;
+        } catch {
+          publicCallThrew = true;
+        }
+        observations = {
+          publicCallThrew,
+          callableCallCount: inheritedCallable.mock.calls.length,
+          fallbackHidden: wrapper?.hidden,
+          visibleTextLength: wrapper?.textContent?.trim().length,
+          dataType: wrapper?.getAttribute("data-jasonette-type") ?? null,
+          iframeCount: wrapper?.querySelectorAll("iframe").length,
+          traceCount: observer.traces.length,
+        };
+      } finally {
+        if (original) Object.defineProperty(Object.prototype, name, original);
+        else delete (Object.prototype as any)[name];
+      }
+
+      expect(observations.publicCallThrew).toBe(false);
+      expect(observations.callableCallCount).toBe(0);
+      expect(observations.fallbackHidden).toBe(false);
+      expect(observations.visibleTextLength).toBeGreaterThan(0);
+      expect(observations.dataType).toBe(name);
+      expect(observations.iframeCount).toBe(0);
+      expect(observations.traceCount).toBe(0);
     } finally { observer.restore(); }
   });
 
@@ -175,21 +199,41 @@ describe("public HTML component renderer", () => {
     const observer = installSecurityObserver();
     const original = Object.getOwnPropertyDescriptor(Object.prototype, name);
     const inheritedCallable = vi.fn(() => document.createElement("iframe"));
-    Object.defineProperty(Object.prototype, name, {
-      value: inheritedCallable, enumerable: false, writable: true, configurable: true,
-    });
+    let publicCallThrew = false;
+    let observations: any;
     try {
-      const wrapper = renderComponentAtBoundary({ type: name, text: "ignored" }, observer) as HTMLElement;
-      expect(inheritedCallable).not.toHaveBeenCalled();
-      expectVisibleFallback(wrapper);
-      expect(wrapper.getAttribute("data-jasonette-type")).toBe(name);
-      expect(wrapper.querySelector("iframe")).toBeNull();
-      expect(observer.traces).toEqual([]);
-    } finally {
-      if (original) Object.defineProperty(Object.prototype, name, original);
-      else delete (Object.prototype as any)[name];
-      observer.restore();
-    }
+      Object.defineProperty(Object.prototype, name, {
+        value: inheritedCallable, enumerable: false, writable: true, configurable: true,
+      });
+      try {
+        let wrapper: HTMLElement | undefined;
+        try {
+          wrapper = renderComponentAtBoundary({ type: name, text: "ignored" }, observer) as HTMLElement;
+        } catch {
+          publicCallThrew = true;
+        }
+        observations = {
+          publicCallThrew,
+          callableCallCount: inheritedCallable.mock.calls.length,
+          fallbackHidden: wrapper?.hidden,
+          visibleTextLength: wrapper?.textContent?.trim().length,
+          dataType: wrapper?.getAttribute("data-jasonette-type") ?? null,
+          iframeCount: wrapper?.querySelectorAll("iframe").length,
+          traceCount: observer.traces.length,
+        };
+      } finally {
+        if (original) Object.defineProperty(Object.prototype, name, original);
+        else delete (Object.prototype as any)[name];
+      }
+
+      expect(observations.publicCallThrew).toBe(false);
+      expect(observations.callableCallCount).toBe(0);
+      expect(observations.fallbackHidden).toBe(false);
+      expect(observations.visibleTextLength).toBeGreaterThan(0);
+      expect(observations.dataType).toBe(name);
+      expect(observations.iframeCount).toBe(0);
+      expect(observations.traceCount).toBe(0);
+    } finally { observer.restore(); }
   });
 
   it.each(TRANSFORM_RENDER_INHERITANCE_CASES)("$title", ({ kind, source, expected }) => {

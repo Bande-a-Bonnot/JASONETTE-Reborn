@@ -1,0 +1,52 @@
+{
+  "schema_version": "foundry.prompt-envelope.v1",
+  "run_id": "019f4bec-43dc-742b-80b0-e42b7d46ebdd",
+  "phase": "phase1b",
+  "recipient": "red-team",
+  "prompt": "You are the isolated RED TEAM harness-correction lane. No product implementation is present or permitted. Fix only the inherited-callable component test\u2019s prototype-pollution test mechanics. For every case that temporarily defines an Object.prototype member, especially `toString`, execute the production-facing public call and capture plain observations while pollution is active, then restore the original prototype descriptor in `finally` before running Chai/Vitest assertions that may internally call Object.prototype.toString. Preserve all existing oracles: inherited callable not invoked, non-empty visible fallback, exact data type, no iframe, no trace, no throw. Keep test/catalog/Gherkin counts and contract wording unchanged unless a mechanically equivalent setup description must be synchronized under the strict verifier. Run npm observer tests, strict observer TypeScript, and strict 277/277 verifier. Do not inspect parents or implementation.",
+  "visible_context": [
+    {
+      "label": "harness_issue",
+      "kind": "review",
+      "sha256": "02e78c0f15658e12114da84fd16fc625f3dee4d09a67c205468525152060112e",
+      "content": "Embedded."
+    }
+  ],
+  "withheld_context": [
+    {
+      "label": "implementation",
+      "kind": "implementation",
+      "sha256": "5e660657a53eaa6d29bb27af61da0ddab38d12b812856f9470b2063cbe4f33b5",
+      "content": "withheld implementation",
+      "samples": [
+        "packages/web-renderer/src",
+        "green-isolated"
+      ]
+    },
+    {
+      "label": "green",
+      "kind": "green_implementation",
+      "sha256": "ac1243cdcbdfb11182ab0138dbe47fd4d48e1397fb17ec5072eae12766524c59",
+      "content": "withheld green",
+      "samples": [
+        "phase2-iteration6-raw.json"
+      ]
+    }
+  ],
+  "redactions": [
+    {
+      "source": "implementation",
+      "action": "withhold",
+      "removed": [
+        "source_code"
+      ]
+    },
+    {
+      "source": "green",
+      "action": "withhold",
+      "removed": [
+        "green_results"
+      ]
+    }
+  ]
+}
