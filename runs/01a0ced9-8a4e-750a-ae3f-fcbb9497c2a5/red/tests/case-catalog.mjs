@@ -8,6 +8,11 @@ export const TRANSFORM_EXACT_CASES = [
   { title: "transform exact: explicit false option interpolates HTML text", vector: "explicit-false" },
 ];
 
+export const SPECIAL_NAME_COLLISION_CASES = [
+  "$jason", "$get", "$params", "$env", "$root", "$index", "$cache",
+  "$response", "$keys", "this", "Math", "JSON", "undefined",
+].map((name) => ({ title: `generic $jason collision: ${name}`, name }));
+
 export const TYPE_COLLISION_CASES = [
   { title: "classification collision: final label type disables raw text protection", finalType: "label", expected: "VISIBLE" },
   { title: "classification collision: final HTML type enables raw text protection", finalType: "html", expected: "{{secret}}" },
@@ -287,6 +292,11 @@ const exactContracts = {
   "explicit-false": c('input {type:"html", text:"{{secret}}"}, context {secret:"EXPLICIT-FALSE"}, preserveHtmlText false', "transform the input through the public template API", 'output equals {type:"html", text:"EXPLICIT-FALSE"}'),
 };
 add(TRANSFORM_EXACT_CASES, ({ vector }) => exactContracts[vector]);
+add(SPECIAL_NAME_COLLISION_CASES, ({ name }) => c(
+  `generic context has $jason own ${q(name)} equal to ${q(`from-jason-${name}`)}`,
+  `transform bare {{${name}}} through the public template API with options omitted`,
+  `output strictly equals ${q(`from-jason-${name}`)}`,
+));
 add(TYPE_COLLISION_CASES, ({ finalType, expected }) => c(
   `authored type is ${q(finalType === "label" ? "html" : "label")}, resolved duplicate type is ${q(finalType)}, text is "{{secret}}", and secret is "VISIBLE" in body mode`,
   "transform the colliding type keys",
@@ -610,6 +620,7 @@ const literalContracts = {
   "body mode resolves all flat keys before type and ordinary value expressions exactly once": c("three resolved keys and context getters keyA, typeKey, keyB, kind, valueA, valueB in body mode", "transform while logging getter access", 'log equals ["keyA","typeKey","keyB","kind","valueA","valueB"] and every getter count is one'),
   "body key interpolation preserves $jason collision value precedence": c('a body-mode object with resolved key "{{key}}" and observable context getters key="contextField" and $jason={key:"jasonField"}', "transform the object", 'output equals {jasonField:"plain"}'),
   "body key interpolation reads context getter before $jason getter": c('a body-mode object with resolved key "{{key}}" and own context getters defined in order key="contextField" then $jason={key:"jasonField"}', "transform the object while logging context getter access", 'the key getter is observed before the $jason getter'),
+  "single {{key}} body key reads $jason getter before key getter when $jason is defined first": c('a body-mode object with resolved key "{{key}}" and own context getters defined in order $jason={key:"jasonField"} then key="contextField"', "transform the object while logging context getter access", 'output equals {jasonField:"plain"} and the $jason getter is observed before the key getter'),
   "body mode applies all-keys-first ordering independently in each nested frame": c("resolved outer child and tail keys plus resolved inner value and type keys in body mode", "transform while logging nested getter access", 'log equals ["outerKey","tailKey","innerKey","innerTypeKey","innerKind","innerValue","tailValue"]'),
   "off mode preserves per-entry key-then-value getter ordering": c("three resolved entries with key and value getters and options omitted", "transform while logging getter access", 'log equals ["keyA","valueA","typeKey","kind","keyB","valueB"]'),
   "explicit false option preserves per-entry key-then-value getter ordering": c("three resolved entries with context kind html and preserveHtmlText=false", "transform while logging getter access", 'log equals ["keyA","valueA","typeKey","kind","keyB","valueB"] and output equals {alpha:"A", type:"html", omega:"B"}'),

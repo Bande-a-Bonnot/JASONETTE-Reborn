@@ -4,14 +4,14 @@
     "framework": "Vitest",
     "environment": "jsdom",
     "publicImportsOnly": true,
-    "reportedTestCount": 300,
-    "gherkinScenarioCount": 300,
+    "reportedTestCount": 314,
+    "gherkinScenarioCount": 314,
     "gherkinConcreteness": {
       "schema": "setup-action-expected-v1",
       "catalog": "tests/case-catalog.mjs#GHERKIN_CONTRACTS",
-      "expandedCaseCount": 300,
-      "outlineExampleCount": 263,
-      "literalScenarioCount": 37
+      "expandedCaseCount": 314,
+      "outlineExampleCount": 276,
+      "literalScenarioCount": 38
     },
     "requiredTypecheck": {
       "command": "npx tsc --project tests/tsconfig.public-types.json",
@@ -424,7 +424,7 @@
     },
     "6.5-1": {
       "status": "automated",
-      "description": "all authoritative transform vectors are exact",
+      "description": "all authoritative transform vectors are exact, including existing generic $jason collision values",
       "tests": [
         "transform exact: body mode preserves HTML text and transforms nested style",
         "transform exact: resolved type and text keys preserve HTML text",
@@ -432,7 +432,20 @@
         "transform exact: duplicate resolved text uses the authored last value",
         "transform exact: label text interpolates in body mode",
         "transform exact: omitted body option interpolates HTML text",
-        "transform exact: explicit false option interpolates HTML text"
+        "transform exact: explicit false option interpolates HTML text",
+        "generic $jason collision: $jason",
+        "generic $jason collision: $get",
+        "generic $jason collision: $params",
+        "generic $jason collision: $env",
+        "generic $jason collision: $root",
+        "generic $jason collision: $index",
+        "generic $jason collision: $cache",
+        "generic $jason collision: $response",
+        "generic $jason collision: $keys",
+        "generic $jason collision: this",
+        "generic $jason collision: Math",
+        "generic $jason collision: JSON",
+        "generic $jason collision: undefined"
       ]
     },
     "6.5-2": {
@@ -450,6 +463,7 @@
         "body mode resolves all flat keys before type and ordinary value expressions exactly once",
         "body key interpolation preserves $jason collision value precedence",
         "body key interpolation reads context getter before $jason getter",
+        "single {{key}} body key reads $jason getter before key getter when $jason is defined first",
         "body mode applies all-keys-first ordering independently in each nested frame",
         "off mode preserves per-entry key-then-value getter ordering",
         "explicit false option preserves per-entry key-then-value getter ordering",

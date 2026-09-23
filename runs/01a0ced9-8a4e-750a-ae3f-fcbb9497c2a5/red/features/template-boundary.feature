@@ -135,6 +135,32 @@ Feature: Body-scoped HTML template transformation
     When transform the object while logging context getter access
     Then the key getter is observed before the $jason getter
 
+  Scenario: single {{key}} body key reads $jason getter before key getter when $jason is defined first
+    Given a body-mode object with resolved key "{{key}}" and own context getters defined in order $jason={key:"jasonField"} then key="contextField"
+    When transform the object while logging context getter access
+    Then output equals {jasonField:"plain"} and the $jason getter is observed before the key getter
+
+  Scenario Outline: <title>
+    Given <setup>
+    When <action>
+    Then <expected>
+
+    Examples: concrete special_name_collision_cases vectors
+      | title | setup | action | expected |
+      | generic $jason collision: $jason | generic context has $jason own "$jason" equal to "from-jason-$jason" | transform bare {{$jason}} through the public template API with options omitted | output strictly equals "from-jason-$jason" |
+      | generic $jason collision: $get | generic context has $jason own "$get" equal to "from-jason-$get" | transform bare {{$get}} through the public template API with options omitted | output strictly equals "from-jason-$get" |
+      | generic $jason collision: $params | generic context has $jason own "$params" equal to "from-jason-$params" | transform bare {{$params}} through the public template API with options omitted | output strictly equals "from-jason-$params" |
+      | generic $jason collision: $env | generic context has $jason own "$env" equal to "from-jason-$env" | transform bare {{$env}} through the public template API with options omitted | output strictly equals "from-jason-$env" |
+      | generic $jason collision: $root | generic context has $jason own "$root" equal to "from-jason-$root" | transform bare {{$root}} through the public template API with options omitted | output strictly equals "from-jason-$root" |
+      | generic $jason collision: $index | generic context has $jason own "$index" equal to "from-jason-$index" | transform bare {{$index}} through the public template API with options omitted | output strictly equals "from-jason-$index" |
+      | generic $jason collision: $cache | generic context has $jason own "$cache" equal to "from-jason-$cache" | transform bare {{$cache}} through the public template API with options omitted | output strictly equals "from-jason-$cache" |
+      | generic $jason collision: $response | generic context has $jason own "$response" equal to "from-jason-$response" | transform bare {{$response}} through the public template API with options omitted | output strictly equals "from-jason-$response" |
+      | generic $jason collision: $keys | generic context has $jason own "$keys" equal to "from-jason-$keys" | transform bare {{$keys}} through the public template API with options omitted | output strictly equals "from-jason-$keys" |
+      | generic $jason collision: this | generic context has $jason own "this" equal to "from-jason-this" | transform bare {{this}} through the public template API with options omitted | output strictly equals "from-jason-this" |
+      | generic $jason collision: Math | generic context has $jason own "Math" equal to "from-jason-Math" | transform bare {{Math}} through the public template API with options omitted | output strictly equals "from-jason-Math" |
+      | generic $jason collision: JSON | generic context has $jason own "JSON" equal to "from-jason-JSON" | transform bare {{JSON}} through the public template API with options omitted | output strictly equals "from-jason-JSON" |
+      | generic $jason collision: undefined | generic context has $jason own "undefined" equal to "from-jason-undefined" | transform bare {{undefined}} through the public template API with options omitted | output strictly equals "from-jason-undefined" |
+
   Scenario: body mode applies all-keys-first ordering independently in each nested frame
     Given resolved outer child and tail keys plus resolved inner value and type keys in body mode
     When transform while logging nested getter access

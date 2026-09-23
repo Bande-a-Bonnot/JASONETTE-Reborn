@@ -10,6 +10,7 @@ import {
   NESTED_OFF_MODE_ORDER_CASES,
   NON_PROTECTING_TYPE_CASES,
   ORDINARY_DESCRIPTOR_CASES,
+  SPECIAL_NAME_COLLISION_CASES,
   TRANSFORM_EXACT_CASES,
   TYPE_COLLISION_CASES,
 } from "./case-catalog.mjs";
@@ -244,6 +245,30 @@ describe("body template transformation boundary", () => {
     transform({ "{{key}}": "plain" }, context, bodyOptions);
     expect(log[0]).toBe("key");
     expect(log).toContain("$jason");
+  });
+
+  it("single {{key}} body key reads $jason getter before key getter when $jason is defined first", () => {
+    const log: string[] = [];
+    const context: any = {};
+    Object.defineProperty(context, "$jason", {
+      enumerable: true,
+      get() { log.push("$jason"); return { key: "jasonField" }; },
+    });
+    Object.defineProperty(context, "key", {
+      enumerable: true,
+      get() { log.push("key"); return "contextField"; },
+    });
+
+    const result = transform({ "{{key}}": "plain" }, context, bodyOptions);
+    expect(result).toEqual({ jasonField: "plain" });
+    expect(log[0]).toBe("$jason");
+    expect(log).toContain("key");
+  });
+
+  it.each(SPECIAL_NAME_COLLISION_CASES)("$title", ({ name }) => {
+    const marker = `from-jason-${name}`;
+    const context = { $jason: { [name]: marker } };
+    expect(transform(`{{${name}}}`, context)).toBe(marker);
   });
 
   it("body mode applies all-keys-first ordering independently in each nested frame", () => {
