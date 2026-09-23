@@ -13,6 +13,16 @@ export const SPECIAL_NAME_COLLISION_CASES = [
   "$response", "$keys", "this", "Math", "JSON", "undefined",
 ].map((name) => ({ title: `generic $jason collision: ${name}`, name }));
 
+export const BODY_KEY_SPECIAL_COLLISION_CASES = [
+  "$jason", "$get", "$params", "$env", "$root", "$index", "$cache",
+  "$response", "$keys", "this", "Math", "JSON", "undefined",
+].map((name) => ({ title: `body key $jason collision: ${name}`, name }));
+
+export const BODY_MEMBER_COLLISION_CASES = [
+  "$jason", "$get", "$params", "$env", "$root", "$index", "$cache",
+  "$response", "$keys", "this", "Math", "JSON", "undefined",
+].map((name) => ({ title: `body member collision: ${name}`, name }));
+
 export const TYPE_COLLISION_CASES = [
   { title: "classification collision: final label type disables raw text protection", finalType: "label", expected: "VISIBLE" },
   { title: "classification collision: final HTML type enables raw text protection", finalType: "html", expected: "{{secret}}" },
@@ -296,6 +306,16 @@ add(SPECIAL_NAME_COLLISION_CASES, ({ name }) => c(
   `generic context has $jason own ${q(name)} equal to ${q(`from-jason-${name}`)}`,
   `transform bare {{${name}}} through the public template API with options omitted`,
   `output strictly equals ${q(`from-jason-${name}`)}`,
+));
+add(BODY_KEY_SPECIAL_COLLISION_CASES, ({ name }) => c(
+  `object has one authored key {{${name}}} with value "plain" and context $jason owns ${q(name)} equal to ${q(`from-jason-${name}`)}`,
+  "transform the same key with generic options omitted and with preserveHtmlText=true",
+  `both outputs equal {${q(`from-jason-${name}`)}:"plain"}`,
+));
+add(BODY_MEMBER_COLLISION_CASES, ({ name }) => c(
+  `object has one authored key {{${name}.x}} with value "plain" and context $jason owns ${q(name)} equal to {x:${q(`from-jason-${name}`)}}`,
+  "transform the same member key with generic options omitted and with preserveHtmlText=true",
+  `both outputs equal {${q(`from-jason-${name}`)}:"plain"}`,
 ));
 add(TYPE_COLLISION_CASES, ({ finalType, expected }) => c(
   `authored type is ${q(finalType === "label" ? "html" : "label")}, resolved duplicate type is ${q(finalType)}, text is "{{secret}}", and secret is "VISIBLE" in body mode`,

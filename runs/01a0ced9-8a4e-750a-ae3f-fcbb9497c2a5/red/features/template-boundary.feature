@@ -161,6 +161,48 @@ Feature: Body-scoped HTML template transformation
       | generic $jason collision: JSON | generic context has $jason own "JSON" equal to "from-jason-JSON" | transform bare {{JSON}} through the public template API with options omitted | output strictly equals "from-jason-JSON" |
       | generic $jason collision: undefined | generic context has $jason own "undefined" equal to "from-jason-undefined" | transform bare {{undefined}} through the public template API with options omitted | output strictly equals "from-jason-undefined" |
 
+  Scenario Outline: <title>
+    Given <setup>
+    When <action>
+    Then <expected>
+
+    Examples: concrete body_key_special_collision_cases vectors
+      | title | setup | action | expected |
+      | body key $jason collision: $jason | object has one authored key {{$jason}} with value "plain" and context $jason owns "$jason" equal to "from-jason-$jason" | transform the same key with generic options omitted and with preserveHtmlText=true | both outputs equal {"from-jason-$jason":"plain"} |
+      | body key $jason collision: $get | object has one authored key {{$get}} with value "plain" and context $jason owns "$get" equal to "from-jason-$get" | transform the same key with generic options omitted and with preserveHtmlText=true | both outputs equal {"from-jason-$get":"plain"} |
+      | body key $jason collision: $params | object has one authored key {{$params}} with value "plain" and context $jason owns "$params" equal to "from-jason-$params" | transform the same key with generic options omitted and with preserveHtmlText=true | both outputs equal {"from-jason-$params":"plain"} |
+      | body key $jason collision: $env | object has one authored key {{$env}} with value "plain" and context $jason owns "$env" equal to "from-jason-$env" | transform the same key with generic options omitted and with preserveHtmlText=true | both outputs equal {"from-jason-$env":"plain"} |
+      | body key $jason collision: $root | object has one authored key {{$root}} with value "plain" and context $jason owns "$root" equal to "from-jason-$root" | transform the same key with generic options omitted and with preserveHtmlText=true | both outputs equal {"from-jason-$root":"plain"} |
+      | body key $jason collision: $index | object has one authored key {{$index}} with value "plain" and context $jason owns "$index" equal to "from-jason-$index" | transform the same key with generic options omitted and with preserveHtmlText=true | both outputs equal {"from-jason-$index":"plain"} |
+      | body key $jason collision: $cache | object has one authored key {{$cache}} with value "plain" and context $jason owns "$cache" equal to "from-jason-$cache" | transform the same key with generic options omitted and with preserveHtmlText=true | both outputs equal {"from-jason-$cache":"plain"} |
+      | body key $jason collision: $response | object has one authored key {{$response}} with value "plain" and context $jason owns "$response" equal to "from-jason-$response" | transform the same key with generic options omitted and with preserveHtmlText=true | both outputs equal {"from-jason-$response":"plain"} |
+      | body key $jason collision: $keys | object has one authored key {{$keys}} with value "plain" and context $jason owns "$keys" equal to "from-jason-$keys" | transform the same key with generic options omitted and with preserveHtmlText=true | both outputs equal {"from-jason-$keys":"plain"} |
+      | body key $jason collision: this | object has one authored key {{this}} with value "plain" and context $jason owns "this" equal to "from-jason-this" | transform the same key with generic options omitted and with preserveHtmlText=true | both outputs equal {"from-jason-this":"plain"} |
+      | body key $jason collision: Math | object has one authored key {{Math}} with value "plain" and context $jason owns "Math" equal to "from-jason-Math" | transform the same key with generic options omitted and with preserveHtmlText=true | both outputs equal {"from-jason-Math":"plain"} |
+      | body key $jason collision: JSON | object has one authored key {{JSON}} with value "plain" and context $jason owns "JSON" equal to "from-jason-JSON" | transform the same key with generic options omitted and with preserveHtmlText=true | both outputs equal {"from-jason-JSON":"plain"} |
+      | body key $jason collision: undefined | object has one authored key {{undefined}} with value "plain" and context $jason owns "undefined" equal to "from-jason-undefined" | transform the same key with generic options omitted and with preserveHtmlText=true | both outputs equal {"from-jason-undefined":"plain"} |
+
+  Scenario Outline: <title>
+    Given <setup>
+    When <action>
+    Then <expected>
+
+    Examples: concrete body_member_collision_cases vectors
+      | title | setup | action | expected |
+      | body member collision: $jason | object has one authored key {{$jason.x}} with value "plain" and context $jason owns "$jason" equal to {x:"from-jason-$jason"} | transform the same member key with generic options omitted and with preserveHtmlText=true | both outputs equal {"from-jason-$jason":"plain"} |
+      | body member collision: $get | object has one authored key {{$get.x}} with value "plain" and context $jason owns "$get" equal to {x:"from-jason-$get"} | transform the same member key with generic options omitted and with preserveHtmlText=true | both outputs equal {"from-jason-$get":"plain"} |
+      | body member collision: $params | object has one authored key {{$params.x}} with value "plain" and context $jason owns "$params" equal to {x:"from-jason-$params"} | transform the same member key with generic options omitted and with preserveHtmlText=true | both outputs equal {"from-jason-$params":"plain"} |
+      | body member collision: $env | object has one authored key {{$env.x}} with value "plain" and context $jason owns "$env" equal to {x:"from-jason-$env"} | transform the same member key with generic options omitted and with preserveHtmlText=true | both outputs equal {"from-jason-$env":"plain"} |
+      | body member collision: $root | object has one authored key {{$root.x}} with value "plain" and context $jason owns "$root" equal to {x:"from-jason-$root"} | transform the same member key with generic options omitted and with preserveHtmlText=true | both outputs equal {"from-jason-$root":"plain"} |
+      | body member collision: $index | object has one authored key {{$index.x}} with value "plain" and context $jason owns "$index" equal to {x:"from-jason-$index"} | transform the same member key with generic options omitted and with preserveHtmlText=true | both outputs equal {"from-jason-$index":"plain"} |
+      | body member collision: $cache | object has one authored key {{$cache.x}} with value "plain" and context $jason owns "$cache" equal to {x:"from-jason-$cache"} | transform the same member key with generic options omitted and with preserveHtmlText=true | both outputs equal {"from-jason-$cache":"plain"} |
+      | body member collision: $response | object has one authored key {{$response.x}} with value "plain" and context $jason owns "$response" equal to {x:"from-jason-$response"} | transform the same member key with generic options omitted and with preserveHtmlText=true | both outputs equal {"from-jason-$response":"plain"} |
+      | body member collision: $keys | object has one authored key {{$keys.x}} with value "plain" and context $jason owns "$keys" equal to {x:"from-jason-$keys"} | transform the same member key with generic options omitted and with preserveHtmlText=true | both outputs equal {"from-jason-$keys":"plain"} |
+      | body member collision: this | object has one authored key {{this.x}} with value "plain" and context $jason owns "this" equal to {x:"from-jason-this"} | transform the same member key with generic options omitted and with preserveHtmlText=true | both outputs equal {"from-jason-this":"plain"} |
+      | body member collision: Math | object has one authored key {{Math.x}} with value "plain" and context $jason owns "Math" equal to {x:"from-jason-Math"} | transform the same member key with generic options omitted and with preserveHtmlText=true | both outputs equal {"from-jason-Math":"plain"} |
+      | body member collision: JSON | object has one authored key {{JSON.x}} with value "plain" and context $jason owns "JSON" equal to {x:"from-jason-JSON"} | transform the same member key with generic options omitted and with preserveHtmlText=true | both outputs equal {"from-jason-JSON":"plain"} |
+      | body member collision: undefined | object has one authored key {{undefined.x}} with value "plain" and context $jason owns "undefined" equal to {x:"from-jason-undefined"} | transform the same member key with generic options omitted and with preserveHtmlText=true | both outputs equal {"from-jason-undefined":"plain"} |
+
   Scenario: body mode applies all-keys-first ordering independently in each nested frame
     Given resolved outer child and tail keys plus resolved inner value and type keys in body mode
     When transform while logging nested getter access

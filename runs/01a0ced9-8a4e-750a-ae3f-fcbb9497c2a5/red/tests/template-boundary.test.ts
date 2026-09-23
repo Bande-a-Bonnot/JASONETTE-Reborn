@@ -4,6 +4,8 @@ import { describe, expect, it, vi } from "vitest";
 import { renderSync, transform } from "@jasonette/template-engine";
 import {
   BODY_RECURSION_CASES,
+  BODY_KEY_SPECIAL_COLLISION_CASES,
+  BODY_MEMBER_COLLISION_CASES,
   DANGEROUS_ORDER_CASES,
   DANGEROUS_TRANSFORM_CASES,
   DIRECTIVE_CASES,
@@ -269,6 +271,24 @@ describe("body template transformation boundary", () => {
     const marker = `from-jason-${name}`;
     const context = { $jason: { [name]: marker } };
     expect(transform(`{{${name}}}`, context)).toBe(marker);
+  });
+
+  it.each(BODY_KEY_SPECIAL_COLLISION_CASES)("$title", ({ name }) => {
+    const marker = `from-jason-${name}`;
+    const context = { $jason: { [name]: marker } };
+    const input = { [`{{${name}}}`]: "plain" };
+    const expected = { [marker]: "plain" };
+    expect(transform(input, context)).toEqual(expected);
+    expect(transform(input, context, bodyOptions)).toEqual(expected);
+  });
+
+  it.each(BODY_MEMBER_COLLISION_CASES)("$title", ({ name }) => {
+    const marker = `from-jason-${name}`;
+    const context = { $jason: { [name]: { x: marker } } };
+    const input = { [`{{${name}.x}}`]: "plain" };
+    const expected = { [marker]: "plain" };
+    expect(transform(input, context)).toEqual(expected);
+    expect(transform(input, context, bodyOptions)).toEqual(expected);
   });
 
   it("body mode applies all-keys-first ordering independently in each nested frame", () => {
