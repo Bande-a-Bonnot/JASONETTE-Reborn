@@ -176,9 +176,10 @@ describe('web action/render parity', () => {
       },
     }, renderer.getState());
 
-    expect(fetchMock).toHaveBeenCalledWith('https://api.example.com/items?existing=1&api_key=secret', expect.objectContaining({
-      headers: expect.objectContaining({ Authorization: 'Bearer session', 'X-Session': 'yes' }),
-    }));
+    expect(fetchMock.mock.calls[0]?.[0]).toBe('https://api.example.com/items?existing=1&api_key=secret');
+    const headers = new Headers((fetchMock.mock.calls[0]?.[1] as RequestInit).headers);
+    expect(headers.get('Authorization')).toBe('Bearer session');
+    expect(headers.get('X-Session')).toBe('yes');
     expect(renderer.getState().response).toEqual({ ok: true });
   });
 
@@ -209,11 +210,12 @@ describe('web action/render parity', () => {
     expect(fetchMock).toHaveBeenNthCalledWith(1, 'https://api.example.com/items', expect.objectContaining({
       method: 'POST',
       body: 'locale=fr&page=1',
-      headers: expect.objectContaining({ 'X-Session': 'yes' }),
     }));
-    expect(fetchMock).toHaveBeenNthCalledWith(2, 'https://api.example.com/items', expect.objectContaining({
-      headers: {},
-    }));
+    const firstHeaders = new Headers((fetchMock.mock.calls[0]?.[1] as RequestInit).headers);
+    expect(firstHeaders.get('X-Session')).toBe('yes');
+    expect(fetchMock.mock.calls[1]?.[0]).toBe('https://api.example.com/items');
+    const resetHeaders = new Headers((fetchMock.mock.calls[1]?.[1] as RequestInit).headers);
+    expect([...resetHeaders]).toEqual([]);
   });
 
   it('does not apply session body data when an explicit network body is authored', async () => {
@@ -251,7 +253,9 @@ describe('web action/render parity', () => {
 
     await executeAction({ type: '$network.request', options: { url: 'https://api.example.com/items' } }, state);
 
-    expect(fetchMock).toHaveBeenCalledWith('https://api.example.com/items', expect.objectContaining({ headers: {} }));
+    expect(fetchMock.mock.calls[0]?.[0]).toBe('https://api.example.com/items');
+    const headers = new Headers((fetchMock.mock.calls[0]?.[1] as RequestInit).headers);
+    expect([...headers]).toEqual([]);
   });
 
   it('keeps network responses as the sequential array payload', async () => {
