@@ -4,6 +4,31 @@ Last updated: 2026-09-23
 
 **Update this file before context compaction and at the end of significant sessions.**
 
+## Active Web HTML Safety Retry (2026-09-23)
+
+The July Web TypeScript Foundry run below is historical. A new retry is active on
+branch `codex/web-html-safety-2026-09-23`, run UUIDv7
+`01a0ced9-8a4e-750a-ae3f-fcbb9497c2a5`. The user requested `gpt-6-sol`
+high for planning/review and `gpt-6-luna` xhigh for implementation. The Green
+workspace is `/private/tmp/jasonette-web-html-01a0ced9-8a4e-750a-ae3f-fcbb9497c2a5`;
+its brief contains only NLSpec sections 1–5. The final copied Red corpus has
+340 cases/scenarios, all passing against the isolated Green source. The eight
+exact local commands in NLSpec section 3.6 pass on the main checkout (template
+34 focused/141 full; Web 72 focused/102 full; both typechecks and builds).
+The public type contract compiles. Sol high review found no remaining concrete
+defect. The product source is committed as `140e762`. Do not mark the feature
+shipped or the NLSpec implemented until exact implementation-SHA Web CI passes.
+
+Run records live under `runs/01a0ced9-8a4e-750a-ae3f-fcbb9497c2a5/`;
+the plan is `docs/plans/2026-09-23-web-html-safety-retry-plan.md`. Preserve
+the strict Red/Green barrier: Green receives only test-name PASS/FAIL outcomes.
+One earlier qualitative feedback message breached that format, and the recipient
+made no later edits; subsequent evaluator work used a fresh Luna context. Keep
+that deviation in the final provenance report. The review branch has committed
+Red, plan, and product work; pre-existing user edits in
+`AGENTS.md`/`CLAUDE.md` and the July arbiter files remain untouched. The iOS
+renderer remains Swift and is separate from this Web retry.
+
 ## Previous Unfinished Work: Web HTML Safety Foundry Run
 
 The iOS renderer described below is Swift. Separately, a historical Web
