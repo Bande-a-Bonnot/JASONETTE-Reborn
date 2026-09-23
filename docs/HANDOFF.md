@@ -1,8 +1,40 @@
 # Agent Handoff Document
 
-Last updated: 2026-07-10
+Last updated: 2026-09-23
 
 **Update this file before context compaction and at the end of significant sessions.**
+
+## Previous Unfinished Work: Web HTML Safety Foundry Run
+
+The iOS renderer described below is Swift. Separately, a historical Web
+TypeScript Foundry run addressed the HTML template and iframe safety boundary
+specified in `docs/nlspecs/2026-07-10-web-html-component-safety.nlspec.md`.
+The run artifacts are in
+`runs/019f56af-218a-7288-9330-2f812aa31d96/` (UUIDv7). The run started from
+baseline `e61d64b` and has reviewed Red tests, several mediated Green iterations,
+and recorded PASS/FAIL outcomes through `outcomes/phase2-iteration6.txt` (279
+PASS, 19 FAIL). The last committed run record is dated 2026-07-12. No live run
+or separate worktree was found on 2026-09-23. The historical run did not
+converge; do not mark the NLSpec implemented or claim the Web safety boundary
+is shipped.
+
+Three repeated failures were routed through Phase 2b divergence evaluation.
+All three found no spec gap (`NOT_VALUABLE`): the existing NLSpec already
+covers templated canonical background CSS, templated legacy background URLs,
+and unchanged unresolved-expression behavior. Trackers/results live in
+`phase2b/`. The canonical background CSS case continued to fail across three
+post-reset Green iterations. An arbiter input and dispatch envelope were prepared
+at `phase2b/arbiter-input-001.json` and
+`dispatch/phase2b/arbiter-agent-001.json`; they were untracked when this handoff
+was updated, and no arbiter decision was recorded. If this Web work is resumed,
+use that checkpoint and preserve the strict Red/Green information barrier. The
+`foundry-adversarial` skill requires escalation when Green stays stuck on the
+same failure; do not send raw test output, assertions, or Red test code to Green.
+
+The working tree also had pre-existing edits to `AGENTS.md` and `CLAUDE.md`
+adding the keychain-loading Git auth instruction. Preserve those edits and the
+two untracked arbiter files. This section records historical run state only; no
+current product test or CI result was established on 2026-09-23.
 
 ## Current State
 
