@@ -4,14 +4,14 @@
     "framework": "Vitest",
     "environment": "jsdom",
     "publicImportsOnly": true,
-    "reportedTestCount": 299,
-    "gherkinScenarioCount": 299,
+    "reportedTestCount": 300,
+    "gherkinScenarioCount": 300,
     "gherkinConcreteness": {
       "schema": "setup-action-expected-v1",
       "catalog": "tests/case-catalog.mjs#GHERKIN_CONTRACTS",
-      "expandedCaseCount": 299,
+      "expandedCaseCount": 300,
       "outlineExampleCount": 263,
-      "literalScenarioCount": 36
+      "literalScenarioCount": 37
     },
     "requiredTypecheck": {
       "command": "npx tsc --project tests/tsconfig.public-types.json",
@@ -445,10 +445,11 @@
     },
     "6.5-3": {
       "status": "automated",
-      "description": "flat and nested body/off ordering is exact and once-only, including omitted and explicit-false nested frames and numeric key order",
+      "description": "flat and nested body/off ordering is exact and once-only, including omitted and explicit-false nested frames, numeric key order, and legacy $jason key collisions",
       "tests": [
         "body mode resolves all flat keys before type and ordinary value expressions exactly once",
-        "body key interpolation does not read an unrelated $jason getter",
+        "body key interpolation preserves $jason collision value precedence",
+        "body key interpolation reads context getter before $jason getter",
         "body mode applies all-keys-first ordering independently in each nested frame",
         "off mode preserves per-entry key-then-value getter ordering",
         "explicit false option preserves per-entry key-then-value getter ordering",

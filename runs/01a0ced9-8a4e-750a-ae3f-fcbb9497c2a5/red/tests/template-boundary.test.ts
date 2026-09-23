@@ -214,21 +214,36 @@ describe("body template transformation boundary", () => {
     expect(Object.fromEntries(calls)).toEqual({ keyA: 1, typeKey: 1, keyB: 1, kind: 1, valueA: 1, valueB: 1 });
   });
 
-  it("body key interpolation does not read an unrelated $jason getter", () => {
-    const log: string[] = [];
+  it("body key interpolation preserves $jason collision value precedence", () => {
     const context: any = {};
     Object.defineProperty(context, "$jason", {
       enumerable: true,
-      get() { log.push("$jason"); return { unused: "UNUSED" }; },
+      get() { return { key: "jasonField" }; },
     });
     Object.defineProperty(context, "key", {
       enumerable: true,
-      get() { log.push("key"); return "field"; },
+      get() { return "contextField"; },
     });
 
     const result = transform({ "{{key}}": "plain" }, context, bodyOptions);
-    expect(result).toEqual({ field: "plain" });
-    expect(log).toEqual(["key"]);
+    expect(result).toEqual({ jasonField: "plain" });
+  });
+
+  it("body key interpolation reads context getter before $jason getter", () => {
+    const log: string[] = [];
+    const context: any = {};
+    Object.defineProperty(context, "key", {
+      enumerable: true,
+      get() { log.push("key"); return "contextField"; },
+    });
+    Object.defineProperty(context, "$jason", {
+      enumerable: true,
+      get() { log.push("$jason"); return { key: "jasonField" }; },
+    });
+
+    transform({ "{{key}}": "plain" }, context, bodyOptions);
+    expect(log[0]).toBe("key");
+    expect(log).toContain("$jason");
   });
 
   it("body mode applies all-keys-first ordering independently in each nested frame", () => {

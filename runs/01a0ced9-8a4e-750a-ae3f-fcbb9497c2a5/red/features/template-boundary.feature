@@ -125,10 +125,15 @@ Feature: Body-scoped HTML template transformation
     When transform while logging getter access
     Then log equals ["keyA","typeKey","keyB","kind","valueA","valueB"] and every getter count is one
 
-  Scenario: body key interpolation does not read an unrelated $jason getter
-    Given a body-mode object with resolved key "{{key}}" and observable context getters key="field" and $jason={unused:"UNUSED"}
+  Scenario: body key interpolation preserves $jason collision value precedence
+    Given a body-mode object with resolved key "{{key}}" and observable context getters key="contextField" and $jason={key:"jasonField"}
+    When transform the object
+    Then output equals {jasonField:"plain"}
+
+  Scenario: body key interpolation reads context getter before $jason getter
+    Given a body-mode object with resolved key "{{key}}" and own context getters defined in order key="contextField" then $jason={key:"jasonField"}
     When transform the object while logging context getter access
-    Then output equals {field:"plain"} and the getter log equals only ["key"]
+    Then the key getter is observed before the $jason getter
 
   Scenario: body mode applies all-keys-first ordering independently in each nested frame
     Given resolved outer child and tail keys plus resolved inner value and type keys in body mode
