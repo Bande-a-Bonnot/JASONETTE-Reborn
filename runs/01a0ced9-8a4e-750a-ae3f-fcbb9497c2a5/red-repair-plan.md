@@ -23,6 +23,14 @@ the original July corpus unchanged.
 5. Embedded HTML-shaped action options/payload stay raw immediately after the
    body transform. After the action executes, the separate generic option
    transform applies. Correct click-time assertions accordingly.
+6. Deactivate renderers at the end of each integration test case so a stale
+   `jasonette:render` listener cannot create an iframe under a later test's
+   observer. Keep the active renderer's completion and trace assertions.
+7. Align the nested-array transform assertion with the template engine's
+   established array flattening. Preserve its raw HTML text assertion.
+8. The installed jsdom reads `style.border` back as empty even after receiving
+   `border = 'none'`. Observe the actual border setter in the direct component
+   test, assert that it receives `none`, and restore the descriptor afterward.
 
 ## Verification and barrier
 
