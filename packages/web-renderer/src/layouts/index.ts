@@ -6,6 +6,7 @@ import { applyStyle, applyClass } from '../style.js';
  * Check if a component is a layout (has type 'vertical' or 'horizontal').
  */
 export function isLayout(component: JasonComponent): boolean {
+  if (!Object.hasOwn(component, 'type') || typeof component.type !== 'string') return false;
   return component.type === 'vertical' || component.type === 'horizontal';
 }
 
@@ -103,6 +104,7 @@ export function renderItem(
 }
 
 function isControlComponent(component: JasonComponent): boolean {
+  if (!Object.hasOwn(component, 'type') || typeof component.type !== 'string') return false;
   return component.type === 'textfield' ||
     component.type === 'textarea' ||
     component.type === 'slider' ||

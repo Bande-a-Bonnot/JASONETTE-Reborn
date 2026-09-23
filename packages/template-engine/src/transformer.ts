@@ -1,4 +1,4 @@
-import { evaluate } from './evaluator.js';
+import { createBodyKeyEvaluator, evaluate } from './evaluator.js';
 import type { RenderContext, RenderOptions } from './types.js';
 
 const EXPR_REGEX = /\{\{([^}]+(?:\}[^}]+)*)\}\}/g;
@@ -11,18 +11,60 @@ const ELSE_REGEX = /^\{\{#else\}\}$/;
  * Interpolate template expressions in a string.
  * "Hello {{name}}" → "Hello World"
  */
-function interpolateString(str: string, context: RenderContext, options?: RenderOptions): unknown {
+function interpolateString(
+  str: string,
+  context: RenderContext,
+  options?: RenderOptions,
+  evaluateExpression: (expression: string) => unknown = expression => evaluate(expression, context, options),
+): unknown {
   // If the entire string is a single expression, return raw value (not stringified)
   const singleMatch = str.match(/^\{\{([^}]+(?:\}[^}]+)*)\}\}$/);
   if (singleMatch) {
-    return evaluate(singleMatch[1].trim(), context, options);
+    return evaluateExpression(singleMatch[1].trim());
   }
 
   // Otherwise interpolate inline expressions as strings
   return str.replace(EXPR_REGEX, (_, expr) => {
-    const val = evaluate(expr.trim(), context, options);
+    const val = evaluateExpression(expr.trim());
     if (val === undefined || val === null) return '';
     return String(val);
+  });
+}
+
+function resolveObjectKey(
+  key: string,
+  context: RenderContext,
+  options?: RenderOptions,
+  evaluateExpression?: (expression: string) => unknown,
+): string {
+  return key.includes('{{') && !key.startsWith('{{#')
+    ? String(interpolateString(key, context, options, evaluateExpression))
+    : key;
+}
+
+function memoizeBodyJason(context: RenderContext): RenderContext {
+  let hasRead = false;
+  let cachedJason: unknown;
+  return new Proxy(context, {
+    get(target, property) {
+      if (property === '$jason') {
+        if (!hasRead) {
+          cachedJason = Reflect.get(target, property, target);
+          hasRead = true;
+        }
+        return cachedJason;
+      }
+      return Reflect.get(target, property, target);
+    },
+  });
+}
+
+function defineOwnData(target: Record<string, unknown>, key: string, value: unknown): void {
+  Object.defineProperty(target, key, {
+    value,
+    enumerable: true,
+    writable: true,
+    configurable: true,
   });
 }
 
@@ -63,15 +105,56 @@ function processObject(
     return processConditionalChain(obj, keys, context, options);
   }
 
-  // Regular object — transform each value
+  // Regular object — generic transforms preserve their existing per-entry
+  // key-then-value order. Body transforms resolve every key and type first so
+  // HTML classification does not depend on where `type` appeared.
   const result: Record<string, unknown> = {};
-  for (const key of keys) {
-    // Keys themselves might be template expressions
-    const processedKey = typeof key === 'string' && key.includes('{{') && !key.startsWith('{{#')
-      ? String(interpolateString(key, context, options))
-      : key;
-    result[processedKey] = transform(obj[key], context, options);
+  if (options?.preserveHtmlText !== true) {
+    for (const key of keys) {
+      const processedKey = resolveObjectKey(key, context, options);
+      defineOwnData(result, processedKey, transform(obj[key], context, options));
+    }
+    return result;
   }
+
+  const evaluateBodyKeyExpression = createBodyKeyEvaluator(context, options);
+  const entries = keys.map(authoredKey => ({
+    authoredKey,
+    resolvedKey: resolveObjectKey(authoredKey, context, options, evaluateBodyKeyExpression),
+    authoredValue: undefined as unknown,
+    typeValue: undefined as unknown,
+    hasAuthoredValue: false,
+  }));
+
+  for (const entry of entries) {
+    if (entry.resolvedKey === 'type') {
+      entry.authoredValue = obj[entry.authoredKey];
+      entry.hasAuthoredValue = true;
+      entry.typeValue = transform(entry.authoredValue, context, options);
+    }
+  }
+
+  let finalType: unknown;
+  for (const entry of entries) {
+    if (entry.resolvedKey === 'type') finalType = entry.typeValue;
+  }
+  const preserveText = typeof finalType === 'string' && finalType === 'html';
+
+  for (const entry of entries) {
+    let output: unknown;
+    if (entry.resolvedKey === 'type') {
+      output = entry.typeValue;
+    } else {
+      const authoredValue = entry.hasAuthoredValue
+        ? entry.authoredValue
+        : obj[entry.authoredKey];
+      output = preserveText && entry.resolvedKey === 'text'
+        ? authoredValue
+        : transform(authoredValue, context, options);
+    }
+    defineOwnData(result, entry.resolvedKey, output);
+  }
+
   return result;
 }
 

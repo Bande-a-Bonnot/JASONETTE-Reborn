@@ -14,7 +14,50 @@ export type ActionDispatch = (action: JasonAction | JasonAction[], data?: unknow
 const handlers: Record<string, ActionHandler> = {};
 
 export function registerAction(type: string, handler: ActionHandler): void {
-  handlers[type] = handler;
+  Object.defineProperty(handlers, type, {
+    value: handler,
+    enumerable: true,
+    writable: true,
+    configurable: true,
+  });
+}
+
+function ownValue(source: unknown, key: string): unknown {
+  if (!source || typeof source !== 'object' || Array.isArray(source) || !Object.hasOwn(source, key)) {
+    return undefined;
+  }
+  return (source as Record<string, unknown>)[key];
+}
+
+function ownCallable<T extends (...args: never[]) => unknown>(registry: Record<string, unknown>, name: unknown): T | undefined {
+  if (typeof name !== 'string' || !Object.hasOwn(registry, name)) return undefined;
+  const candidate = registry[name];
+  return typeof candidate === 'function' ? candidate as T : undefined;
+}
+
+function lookupNamedAction(actions: unknown, name: unknown): JasonAction | JasonAction[] | undefined {
+  if (typeof name !== 'string' || !actions || typeof actions !== 'object' || Array.isArray(actions) || !Object.hasOwn(actions, name)) {
+    return undefined;
+  }
+  const candidate = (actions as Record<string, unknown>)[name];
+  if (Array.isArray(candidate)) return candidate as JasonAction[];
+  if (candidate && typeof candidate === 'object') return candidate as JasonAction;
+  return undefined;
+}
+
+function defineOwnData(target: Record<string, unknown>, key: string, value: unknown): void {
+  Object.defineProperty(target, key, {
+    value,
+    enumerable: true,
+    writable: true,
+    configurable: true,
+  });
+}
+
+function safeCopyOwn(target: Record<string, unknown>, source: Record<string, unknown>): void {
+  for (const key of Object.keys(source)) {
+    defineOwnData(target, key, source[key]);
+  }
 }
 
 /**
@@ -46,15 +89,18 @@ export async function executeAction(
 
   const normalizedAction = normalizeAction(action, state, data);
 
-  if (!normalizedAction.type) {
-    if (normalizedAction.trigger && state.actions[normalizedAction.trigger]) {
-      return executeAction(state.actions[normalizedAction.trigger], state, normalizedAction.options ?? data);
+  const actionType = ownValue(normalizedAction, 'type');
+  if (typeof actionType !== 'string') {
+    const trigger = ownValue(normalizedAction, 'trigger');
+    const namedAction = lookupNamedAction(state.actions, trigger);
+    if (namedAction) {
+      return executeAction(namedAction, state, ownValue(normalizedAction, 'options') ?? data);
     }
     return undefined;
   }
-  const handler = handlers[normalizedAction.type!];
+  const handler = ownCallable<ActionHandler>(handlers, actionType);
   if (!handler) {
-    console.warn(`[jasonette] Unknown action: ${action.type}`);
+    console.warn(`[jasonette] Unknown action: ${actionType}`);
     return undefined;
   }
 
@@ -124,8 +170,8 @@ function shouldReplaceArrayPayload(action: unknown, result: unknown): boolean {
   if (Array.isArray(action)) return true;
   if (!action || typeof action !== 'object') return true;
 
-  const type = (action as JasonAction).type;
-  return !type || !arraySideEffectActionTypes.has(type);
+  const type = ownValue(action, 'type');
+  return typeof type !== 'string' || !arraySideEffectActionTypes.has(type);
 }
 
 function normalizeAction(action: JasonAction, state: AppState, data?: unknown): JasonAction {
@@ -177,9 +223,11 @@ function persistSessions(state: AppState): void {
 }
 
 function sessionDomain(options: Record<string, unknown>): string | undefined {
-  const raw = typeof options.domain === 'string'
-    ? options.domain
-    : (typeof options.url === 'string' ? options.url : undefined);
+  const domain = ownValue(options, 'domain');
+  const url = ownValue(options, 'url');
+  const raw = typeof domain === 'string'
+    ? domain
+    : (typeof url === 'string' ? url : undefined);
   if (!raw) return undefined;
   try {
     return new URL(raw.includes('://') ? raw : `https://${raw}`).hostname.toLowerCase();
@@ -189,7 +237,10 @@ function sessionDomain(options: Record<string, unknown>): string | undefined {
 }
 
 function requestSession(state: AppState, url: URL): Record<string, unknown> {
-  return state.sessions?.[url.hostname.toLowerCase()] ?? {};
+  const domain = url.hostname.toLowerCase();
+  return state.sessions && Object.hasOwn(state.sessions, domain)
+    ? state.sessions[domain]
+    : {};
 }
 
 function formEncode(data: Record<string, string>): string {
@@ -226,7 +277,10 @@ registerAction('$network.request', async (action, state) => {
   const session = requestSession(state, parsed);
   const sessionHeaders = stringMap(session.header);
   const authoredHeaders = stringMap(opts.header ?? opts.headers);
-  const headers = { ...authoredHeaders, ...sessionHeaders };
+  const headers = new Headers(authoredHeaders);
+  for (const [key, value] of Object.entries(sessionHeaders)) {
+    headers.set(key, value);
+  }
   const fetchOpts: RequestInit = { method, headers };
 
   const hasAuthoredBody = Object.prototype.hasOwnProperty.call(opts, 'body');
@@ -238,13 +292,13 @@ registerAction('$network.request', async (action, state) => {
   if (hasAuthoredBody && !['GET', 'HEAD', 'DELETE'].includes(method)) {
     if (opts.body !== null && typeof opts.body === 'object') {
       fetchOpts.body = JSON.stringify(opts.body);
-      headers['Content-Type'] ??= 'application/json';
+      if (!headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
     } else {
       fetchOpts.body = String(opts.body ?? '');
     }
   } else if (!['GET', 'HEAD', 'DELETE'].includes(method) && Object.keys(data).length > 0) {
     fetchOpts.body = formEncode(data);
-    headers['Content-Type'] ??= 'application/x-www-form-urlencoded';
+    if (!headers.has('Content-Type')) headers.set('Content-Type', 'application/x-www-form-urlencoded');
   }
 
   const response = await fetch(parsed.href, fetchOpts);
@@ -286,14 +340,14 @@ registerAction('$close', async () => {
 registerAction('$set', async (action, state) => {
   const opts = optionsObject(action.options);
   if (Object.keys(opts).length > 0) {
-    Object.assign(state.local, opts);
+    safeCopyOwn(state.local, opts);
   }
   return state.local;
 });
 
 registerAction('$global.set', async (action, state) => {
   const opts = requireObject(action.options);
-  Object.assign(state.global, opts);
+  safeCopyOwn(state.global, opts);
   persistGlobal(state);
   state.local.$jason = state.global;
   return state.global;
@@ -314,7 +368,9 @@ registerAction('$session.set', async (action, state) => {
   const opts = requireObject(action.options);
   const domain = sessionDomain(opts);
   if (!domain) throw new AbortAction();
-  state.sessions[domain] = { ...opts };
+  const storedSession: Record<string, unknown> = {};
+  safeCopyOwn(storedSession, opts);
+  defineOwnData(state.sessions as Record<string, unknown>, domain, storedSession);
   persistSessions(state);
   state.local.$jason = {};
   return {};
@@ -337,7 +393,7 @@ registerAction('$get', async (_action, state) => {
 registerAction('$cache.set', async (action, state) => {
   const opts = optionsObject(action.options);
   if (Object.keys(opts).length > 0) {
-    Object.assign(state.cache, opts);
+    safeCopyOwn(state.cache, opts);
     try {
       localStorage.setItem('jasonette:cache', JSON.stringify(state.cache));
     } catch { /* quota exceeded, ignore */ }
@@ -442,9 +498,10 @@ registerAction('$log', async (action) => {
 registerAction('$lambda', async (action, state, dispatch, data) => {
   // $lambda calls a named action from head.actions and passes options.options as payload.
   const opts = optionsObject(action.options);
-  const name = opts.name as string;
-  if (name && state.actions[name]) {
-    return dispatch(state.actions[name], opts.options ?? data);
+  const name = ownValue(opts, 'name');
+  const namedAction = lookupNamedAction(state.actions, name);
+  if (namedAction) {
+    return dispatch(namedAction, ownValue(opts, 'options') ?? data);
   }
   return undefined;
 });

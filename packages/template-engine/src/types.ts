@@ -22,6 +22,8 @@ export interface RenderContext {
 }
 
 export interface RenderOptions {
+  /** Preserve raw text values for objects whose final resolved type is `html`. */
+  preserveHtmlText?: boolean;
   /** Maximum mixin recursion depth (default: 5) */
   maxMixinDepth?: number;
   /** Maximum expression AST depth (default: 20) */

@@ -2,8 +2,9 @@ import { renderSync } from '@jasonette/template-engine';
 import type { RenderContext } from '@jasonette/template-engine';
 import type {
   JasonDocument, JasonBody, JasonSection,
-  JasonComponent, JasonStyle, AppState,
+  JasonComponent, JasonStyle, JasonAction, AppState,
 } from './types.js';
+import { createHtmlIframe, ownValue } from './components/index.js';
 import { renderItem } from './layouts/index.js';
 import { applyStyle, generateStyleSheet } from './style.js';
 import { executeAction } from './actions/index.js';
@@ -207,12 +208,21 @@ export class JasonetteRenderer {
   }
 
   private triggerLifecycle(name: string): void {
-    const action = this.state.actions[name];
+    const action = this.ownAction(name);
     if (action) {
       executeAction(action, this.state).catch((err) =>
         console.error(`[jasonette] ${name} error:`, err),
       );
     }
+  }
+
+  private ownAction(name: string): JasonAction | JasonAction[] | undefined {
+    const actions = this.state.actions as Record<string, unknown>;
+    if (!Object.hasOwn(actions, name)) return undefined;
+    const action = actions[name];
+    if (Array.isArray(action)) return action as JasonAction[];
+    if (action && typeof action === 'object') return action as JasonAction;
+    return undefined;
   }
 
   private handleControlValueEvent(event: Event): void {
@@ -259,7 +269,7 @@ export class JasonetteRenderer {
       this.renderDocument(doc);
 
       // Trigger $load action
-      const loadAction = doc.$jason?.head?.actions?.['$load'];
+      const loadAction = this.ownAction('$load');
       if (loadAction) {
         await executeAction(loadAction, this.state);
       }
@@ -375,7 +385,7 @@ export class JasonetteRenderer {
     // Apply template if present
     let body: JasonBody | undefined;
     if (head?.templates?.body) {
-      body = renderSync(head.templates.body, this.renderContext(head.data)) as JasonBody;
+      body = renderSync(head.templates.body, this.renderContext(head.data), { preserveHtmlText: true }) as JasonBody;
     } else {
       body = doc.$jason?.body;
     }
@@ -399,7 +409,7 @@ export class JasonetteRenderer {
     let body: JasonBody | undefined;
     const template = head?.templates?.[templateName] ?? head?.templates?.body;
     if (template) {
-      body = renderSync(template, this.renderContext(data ?? head?.data)) as JasonBody;
+      body = renderSync(template, this.renderContext(data ?? head?.data), { preserveHtmlText: true }) as JasonBody;
     } else {
       body = doc.$jason?.body;
     }
@@ -431,7 +441,7 @@ export class JasonetteRenderer {
       this.root.appendChild(sectionsEl);
 
       // Pull-to-refresh ($pull)
-      if (this.state.actions['$pull']) {
+      if (this.ownAction('$pull')) {
         this.setupPullToRefresh(sectionsEl);
       }
     }
@@ -462,8 +472,15 @@ export class JasonetteRenderer {
     this.root.style.backgroundSize = '';
     this.root.style.backgroundColor = '';
 
-    const styleBackground = (body as JasonBody & { style?: JasonStyle }).style?.background;
-    const background = body.background ?? styleBackground;
+    const ownBody = body as JasonBody & Record<string, unknown>;
+    const canonicalBackground = Object.hasOwn(ownBody, 'background') ? ownBody.background : undefined;
+    let background: unknown = canonicalBackground;
+    if (background === null || background === undefined) {
+      const bodyStyle = Object.hasOwn(ownBody, 'style') ? ownBody.style : undefined;
+      background = bodyStyle && typeof bodyStyle === 'object' && !Array.isArray(bodyStyle) && Object.hasOwn(bodyStyle, 'background')
+        ? (bodyStyle as Record<string, unknown>).background
+        : undefined;
+    }
 
     if (typeof background === 'string') {
       if (/^https?:\/\//.test(background)) {
@@ -475,19 +492,12 @@ export class JasonetteRenderer {
       return;
     }
 
-    if (background && typeof background === 'object') {
-      const webBackground = background as { type?: unknown; text?: unknown; url?: unknown };
-      if (webBackground.type === 'html' && (typeof webBackground.text === 'string' || typeof webBackground.url === 'string')) {
-        const iframe = document.createElement('iframe');
-        iframe.className = 'jasonette-background-web';
-        iframe.setAttribute('aria-hidden', 'true');
-        if (typeof webBackground.text === 'string') {
-          iframe.srcdoc = webBackground.text;
-        } else if (typeof webBackground.url === 'string') {
-          iframe.src = webBackground.url;
-        }
-        this.root.appendChild(iframe);
-      }
+    if (background && typeof background === 'object' && !Array.isArray(background) && ownValue(background, 'type') === 'html') {
+      const iframe = createHtmlIframe(background);
+      if (!iframe) return;
+      iframe.className = 'jasonette-background-web';
+      iframe.setAttribute('aria-hidden', 'true');
+      this.root.appendChild(iframe);
     }
   }
 
