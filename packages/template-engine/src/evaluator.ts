@@ -213,6 +213,199 @@ function isAllowedFunction(name: string): boolean {
   return false;
 }
 
+function defineLazyValue(
+  target: Record<string, unknown>,
+  name: string,
+  read: () => unknown,
+): void {
+  let hasRead = false;
+  let cachedValue: unknown;
+  Object.defineProperty(target, name, {
+    enumerable: true,
+    configurable: true,
+    get: () => {
+      if (!hasRead) {
+        cachedValue = read();
+        hasRead = true;
+      }
+      return cachedValue;
+    },
+  });
+}
+
+function collectIdentifiers(node: jsep.Expression, identifiers: Set<string>): void {
+  switch (node.type) {
+    case 'Identifier':
+      identifiers.add((node as jsep.Identifier).name);
+      return;
+    case 'ThisExpression':
+      identifiers.add('this');
+      return;
+    case 'MemberExpression': {
+      const member = node as jsep.MemberExpression;
+      collectIdentifiers(member.object, identifiers);
+      if (member.computed) {
+        collectIdentifiers(member.property, identifiers);
+      }
+      return;
+    }
+    case 'CallExpression': {
+      const call = node as jsep.CallExpression;
+      collectIdentifiers(call.callee, identifiers);
+      for (const arg of call.arguments) {
+        collectIdentifiers(arg as jsep.Expression, identifiers);
+      }
+      return;
+    }
+    case 'BinaryExpression': {
+      const binary = node as jsep.BinaryExpression;
+      collectIdentifiers(binary.left, identifiers);
+      collectIdentifiers(binary.right, identifiers);
+      return;
+    }
+    case 'UnaryExpression':
+      collectIdentifiers((node as jsep.UnaryExpression).argument, identifiers);
+      return;
+    case 'ConditionalExpression': {
+      const conditional = node as jsep.ConditionalExpression;
+      collectIdentifiers(conditional.test, identifiers);
+      collectIdentifiers(conditional.consequent, identifiers);
+      collectIdentifiers(conditional.alternate, identifiers);
+      return;
+    }
+    case 'ArrayExpression':
+      for (const item of (node as jsep.ArrayExpression).elements) {
+        if (item) {
+          collectIdentifiers(item as jsep.Expression, identifiers);
+        }
+      }
+      return;
+    case 'Compound':
+      for (const expression of (node as jsep.Compound).body) {
+        collectIdentifiers(expression as jsep.Expression, identifiers);
+      }
+  }
+}
+
+function buildFlatContext(context: RenderContext): Record<string, unknown> {
+  const flatContext: Record<string, unknown> = {};
+  const sourceContext = context as Record<string, unknown>;
+
+  // Object spread used to read every context getter for every expression.
+  // Install lazy accessors with the same precedence so only identifiers used
+  // by this expression are observed, in AST evaluation order.
+  for (const name of Object.keys(sourceContext)) {
+    defineLazyValue(flatContext, name, () => sourceContext[name]);
+  }
+
+  for (const name of ['$jason', '$get', '$params', '$env', '$root', '$index', '$cache', '$response', '$keys']) {
+    defineLazyValue(flatContext, name, () => sourceContext[name]);
+  }
+  defineLazyValue(flatContext, 'this', () => sourceContext.$jason);
+
+  Object.defineProperty(flatContext, 'Math', { value: 'Math', enumerable: true, configurable: true, writable: true });
+  Object.defineProperty(flatContext, 'JSON', { value: 'JSON', enumerable: true, configurable: true, writable: true });
+  Object.defineProperty(flatContext, 'true', { value: true, enumerable: true, configurable: true, writable: true });
+  Object.defineProperty(flatContext, 'false', { value: false, enumerable: true, configurable: true, writable: true });
+  Object.defineProperty(flatContext, 'null', { value: null, enumerable: true, configurable: true, writable: true });
+  Object.defineProperty(flatContext, 'undefined', { value: undefined, enumerable: true, configurable: true, writable: true });
+
+  const jason = context.$jason;
+  if (jason && typeof jason === 'object' && !Array.isArray(jason)) {
+    const sourceJason = jason as Record<string, unknown>;
+    for (const name of Object.keys(sourceJason)) {
+      defineLazyValue(flatContext, name, () => sourceJason[name]);
+    }
+  }
+
+  return flatContext;
+}
+
+function buildBodyKeyContext(
+  context: RenderContext,
+  expression: jsep.Expression,
+  readJason: () => unknown,
+): Record<string, unknown> {
+  const flatContext: Record<string, unknown> = {};
+  const sourceContext = context as Record<string, unknown>;
+
+  const sourceNames = Object.keys(sourceContext);
+  for (const name of sourceNames) {
+    defineLazyValue(flatContext, name, () => sourceContext[name]);
+  }
+
+  for (const name of ['$jason', '$get', '$params', '$env', '$root', '$index', '$cache', '$response', '$keys']) {
+    defineLazyValue(flatContext, name, name === '$jason' ? readJason : () => sourceContext[name]);
+  }
+  defineLazyValue(flatContext, 'this', readJason);
+
+  Object.defineProperty(flatContext, 'Math', { value: 'Math', enumerable: true, configurable: true, writable: true });
+  Object.defineProperty(flatContext, 'JSON', { value: 'JSON', enumerable: true, configurable: true, writable: true });
+  Object.defineProperty(flatContext, 'true', { value: true, enumerable: true, configurable: true, writable: true });
+  Object.defineProperty(flatContext, 'false', { value: false, enumerable: true, configurable: true, writable: true });
+  Object.defineProperty(flatContext, 'null', { value: null, enumerable: true, configurable: true, writable: true });
+  Object.defineProperty(flatContext, 'undefined', { value: undefined, enumerable: true, configurable: true, writable: true });
+
+  const identifiers = new Set<string>();
+  collectIdentifiers(expression, identifiers);
+
+  // A bare name may come from either the render context or a flattened
+  // $jason property. Resolve that collision when the identifier is actually
+  // evaluated, preserving $jason's precedence and expression getter order.
+  for (const name of identifiers) {
+    const baseDescriptor = Object.getOwnPropertyDescriptor(flatContext, name);
+    const jasonPosition = sourceNames.indexOf('$jason');
+    const namePosition = sourceNames.indexOf(name);
+    const readJasonFirst = jasonPosition !== -1 && (
+      namePosition === -1 || jasonPosition < namePosition
+    );
+    const hasInheritedBaseValue = !baseDescriptor && name in flatContext;
+    const inheritedBaseValue = hasInheritedBaseValue ? flatContext[name] : undefined;
+    const readBaseValue = (): unknown => {
+      if (!baseDescriptor) {
+        return hasInheritedBaseValue ? inheritedBaseValue : ALLOWED_GLOBALS[name];
+      }
+      if (baseDescriptor.get) return baseDescriptor.get.call(flatContext);
+      return baseDescriptor.value;
+    };
+
+    defineLazyValue(flatContext, name, () => {
+      let baseValue: unknown;
+      let jason: unknown;
+      if (readJasonFirst) {
+        jason = readJason();
+        baseValue = readBaseValue();
+      } else {
+        baseValue = readBaseValue();
+        jason = readJason();
+      }
+      if (jason && typeof jason === 'object' && !Array.isArray(jason)) {
+        const sourceJason = jason as Record<string, unknown>;
+        if (Object.prototype.propertyIsEnumerable.call(sourceJason, name)) {
+          return sourceJason[name];
+        }
+      }
+      return baseValue;
+    });
+  }
+
+  return flatContext;
+}
+
+function parseExpression(expression: string, options?: RenderOptions): jsep.Expression | undefined {
+  let ast: jsep.Expression;
+  try {
+    ast = getCachedExpression(expression);
+  } catch {
+    return undefined;
+  }
+
+  const maxDepth = options?.maxExpressionDepth ?? 20;
+  const maxNodes = options?.maxExpressionNodes ?? 50;
+  if (countNodes(ast) > maxNodes || measureDepth(ast) > maxDepth) return undefined;
+  return ast;
+}
+
 function evalBinaryOp(op: string, left: unknown, right: unknown): unknown {
   switch (op) {
     case '+': return (left as number) + (right as number);
@@ -243,47 +436,31 @@ export function evaluate(
   context: RenderContext,
   options?: RenderOptions,
 ): unknown {
-  const maxDepth = options?.maxExpressionDepth ?? 20;
-  const maxNodes = options?.maxExpressionNodes ?? 50;
+  const ast = parseExpression(expression, options);
+  return ast ? walkAst(ast, buildFlatContext(context)) : undefined;
+}
 
-  let ast: jsep.Expression;
-  try {
-    ast = getCachedExpression(expression);
-  } catch {
-    return undefined;
-  }
-
-  // Complexity checks
-  if (countNodes(ast) > maxNodes) return undefined;
-  if (measureDepth(ast) > maxDepth) return undefined;
-
-  // Build flat context for resolution
-  const flatContext: Record<string, unknown> = {
-    ...context,
-    $jason: context.$jason,
-    $get: context.$get,
-    $params: context.$params,
-    $env: context.$env,
-    $root: context.$root,
-    $index: context.$index,
-    $cache: context.$cache,
-    $response: context.$response,
-    $keys: context.$keys,
-    // `this` is an alias for $jason (Jasonette v1 compat)
-    this: context.$jason,
-    // Allow Math and JSON as namespace identifiers
-    Math: 'Math',
-    JSON: 'JSON',
-    true: true,
-    false: false,
-    null: null,
-    undefined: undefined,
+/**
+ * Create a body-key evaluator that shares the lazy $jason read across keys in
+ * one regular-object frame, while keeping each expression's direct getters
+ * lazy and ordered by expression evaluation.
+ */
+export function createBodyKeyEvaluator(
+  context: RenderContext,
+  options?: RenderOptions,
+): (expression: string) => unknown {
+  let hasReadJason = false;
+  let cachedJason: unknown;
+  const readJason = (): unknown => {
+    if (!hasReadJason) {
+      cachedJason = context.$jason;
+      hasReadJason = true;
+    }
+    return cachedJason;
   };
 
-  // If $jason is an object, spread its properties into context for bare access
-  if (context.$jason && typeof context.$jason === 'object' && !Array.isArray(context.$jason)) {
-    Object.assign(flatContext, context.$jason as Record<string, unknown>);
-  }
-
-  return walkAst(ast, flatContext);
+  return (expression: string): unknown => {
+    const ast = parseExpression(expression, options);
+    return ast ? walkAst(ast, buildBodyKeyContext(context, ast, readJason)) : undefined;
+  };
 }

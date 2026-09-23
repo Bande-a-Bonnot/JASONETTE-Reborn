@@ -9,17 +9,58 @@ export type ComponentRenderer = (
 const renderers: Record<string, ComponentRenderer> = {};
 
 export function registerComponent(type: string, renderer: ComponentRenderer): void {
-  renderers[type] = renderer;
+  Object.defineProperty(renderers, type, {
+    value: renderer,
+    enumerable: true,
+    writable: true,
+    configurable: true,
+  });
+}
+
+export function ownValue(source: unknown, key: string): unknown {
+  if (!source || typeof source !== 'object' || Array.isArray(source) || !Object.hasOwn(source, key)) {
+    return undefined;
+  }
+  return (source as Record<string, unknown>)[key];
+}
+
+function selectHtmlSource(component: unknown): { kind: 'inline' | 'url'; value: string } | undefined {
+  const text = ownValue(component, 'text');
+  if (typeof text === 'string' && text.length > 0) return { kind: 'inline', value: text };
+
+  const url = ownValue(component, 'url');
+  if (typeof url === 'string' && url.length > 0) return { kind: 'url', value: url };
+
+  return undefined;
+}
+
+export function createHtmlIframe(component: unknown): HTMLIFrameElement | undefined {
+  if (ownValue(component, 'type') !== 'html') return undefined;
+  const source = selectHtmlSource(component);
+  if (!source) return undefined;
+
+  const iframe = document.createElement('iframe');
+  iframe.setAttribute('sandbox', 'allow-scripts');
+
+  if (source.kind === 'inline') {
+    const css = ownValue(component, 'css');
+    iframe.srcdoc = htmlSrcdoc(source.value, typeof css === 'string' && css.length > 0 ? css : undefined);
+  } else {
+    iframe.src = source.value;
+  }
+
+  return iframe;
 }
 
 export function renderComponent(
   component: JasonComponent,
   headStyles: Record<string, JasonStyle>,
 ): HTMLElement {
-  const type = component.type ?? 'label';
-  const renderer = renderers[type];
+  const authoredType = ownValue(component, 'type');
+  const type = typeof authoredType === 'string' ? authoredType : 'label';
+  const renderer = Object.hasOwn(renderers, type) ? renderers[type] : undefined;
 
-  if (!renderer) {
+  if (typeof renderer !== 'function') {
     const el = document.createElement('div');
     el.textContent = `[Unknown: ${type}]`;
     el.setAttribute('data-jasonette-type', type);
@@ -90,16 +131,8 @@ registerComponent('textarea', (c) => {
 registerComponent('html', (c) => {
   const el = document.createElement('div');
   el.className = 'jasonette-html';
-  if (c.text) {
-    // Use srcdoc iframe for sandboxing
-    const iframe = document.createElement('iframe');
-    iframe.srcdoc = htmlSrcdoc(String(c.text), typeof c.css === 'string' ? c.css : undefined);
-    iframe.style.width = '100%';
-    iframe.style.border = 'none';
-    el.appendChild(iframe);
-  } else if (c.url) {
-    const iframe = document.createElement('iframe');
-    iframe.src = c.url;
+  const iframe = createHtmlIframe(c);
+  if (iframe) {
     iframe.style.width = '100%';
     iframe.style.border = 'none';
     el.appendChild(iframe);
@@ -108,7 +141,7 @@ registerComponent('html', (c) => {
 });
 
 export function htmlSrcdoc(html: string, css?: string): string {
-  if (!css) return html;
+  if (typeof css !== 'string' || css.length === 0) return html;
   return `<style>${escapeStyleContent(css)}</style>${html}`;
 }
 

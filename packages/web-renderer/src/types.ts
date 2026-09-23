@@ -10,11 +10,20 @@ export interface JasonHead {
   data?: Record<string, unknown>;
   templates?: { body?: unknown; [key: string]: unknown };
   styles?: Record<string, JasonStyle>;
-  actions?: Record<string, JasonAction>;
+  actions?: Record<string, JasonAction | JasonAction[]>;
+}
+
+export interface JasonHtmlBackground {
+  type?: string;
+  text?: unknown;
+  url?: unknown;
+  css?: unknown;
+  [key: string]: unknown;
 }
 
 export interface JasonBody {
-  background?: string | { type: string; url: string };
+  background?: string | JasonHtmlBackground;
+  style?: Omit<JasonStyle, 'background'> & { background?: string | JasonHtmlBackground };
   header?: JasonHeader;
   sections?: JasonSection[];
   layers?: JasonComponent[];
@@ -114,7 +123,7 @@ export interface AppState {
   /** Head styles */
   styles: Record<string, JasonStyle>;
   /** Head actions */
-  actions: Record<string, JasonAction>;
+  actions: Record<string, JasonAction | JasonAction[]>;
   /** Local state ($get/$set) */
   local: Record<string, unknown>;
   /** Cache state ($cache) */
