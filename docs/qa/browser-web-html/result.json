@@ -1,0 +1,75 @@
+{
+  "errors" : [
+
+  ],
+  "frames" : [
+    {
+      "id" : "component-inline",
+      "sandbox" : "allow-scripts",
+      "src" : null,
+      "srcdoc" : true
+    },
+    {
+      "id" : "component-url",
+      "sandbox" : "allow-scripts",
+      "src" : "\/component-url.html",
+      "srcdoc" : false
+    },
+    {
+      "id" : "background-inline",
+      "sandbox" : "allow-scripts",
+      "src" : null,
+      "srcdoc" : true
+    },
+    {
+      "id" : "background-url",
+      "sandbox" : "allow-scripts",
+      "src" : "\/background-url.html",
+      "srcdoc" : false
+    }
+  ],
+  "href" : "http:\/\/127.0.0.1:8765\/index.html",
+  "parentStorage" : "parent-storage-secret",
+  "results" : {
+    "background-inline" : {
+      "childOrigin" : "null",
+      "childStorage" : "SecurityError",
+      "eventOrigin" : "null",
+      "id" : "background-inline",
+      "parentDOM" : "SecurityError",
+      "parentStorage" : "SecurityError",
+      "ran" : true,
+      "topNavigation" : "SecurityError"
+    },
+    "background-url" : {
+      "childOrigin" : "http:\/\/127.0.0.1:8765",
+      "childStorage" : "SecurityError",
+      "eventOrigin" : "null",
+      "id" : "background-url",
+      "parentDOM" : "SecurityError",
+      "parentStorage" : "SecurityError",
+      "ran" : true,
+      "topNavigation" : "SecurityError"
+    },
+    "component-inline" : {
+      "childOrigin" : "null",
+      "childStorage" : "SecurityError",
+      "eventOrigin" : "null",
+      "id" : "component-inline",
+      "parentDOM" : "SecurityError",
+      "parentStorage" : "SecurityError",
+      "ran" : true,
+      "topNavigation" : "SecurityError"
+    },
+    "component-url" : {
+      "childOrigin" : "http:\/\/127.0.0.1:8765",
+      "childStorage" : "SecurityError",
+      "eventOrigin" : "null",
+      "id" : "component-url",
+      "parentDOM" : "SecurityError",
+      "parentStorage" : "SecurityError",
+      "ran" : true,
+      "topNavigation" : "SecurityError"
+    }
+  }
+}

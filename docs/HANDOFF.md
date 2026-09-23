@@ -4,6 +4,20 @@ Last updated: 2026-09-23
 
 **Update this file before context compaction and at the end of significant sessions.**
 
+## Web HTML browser QA (2026-09-23)
+
+After PR #25 merged, the Web renderer's HTML component and HTML background
+iframes were exercised in the system macOS `WKWebView` against a freshly built
+UMD bundle. Inline and URL sources both ran child scripts while WebKit enforced
+opaque event origins, denied parent DOM/storage and child storage access, and
+blocked top-level navigation. Four of four cases passed on the final run.
+Reproduction code, the result JSON, and the note about one inconclusive
+cold-start attempt are in
+`docs/qa/2026-09-23-web-html-browser-smoke.md`. This checks WebKit on macOS;
+Chromium/Firefox and network isolation remain outside this QA pass. Safari
+WebDriver was unavailable because its remote automation setting is disabled;
+the setting was left untouched.
+
 ## Web HTML Safety Retry (2026-09-23)
 
 The July Web TypeScript Foundry run below is historical. The retry was merged
