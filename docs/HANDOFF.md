@@ -4,7 +4,7 @@ Last updated: 2026-09-23
 
 **Update this file before context compaction and at the end of significant sessions.**
 
-## Active Web HTML Safety Retry (2026-09-23)
+## Web HTML Safety Retry (2026-09-23)
 
 The July Web TypeScript Foundry run below is historical. A new retry is active on
 branch `codex/web-html-safety-2026-09-23`, run UUIDv7
@@ -16,8 +16,9 @@ its brief contains only NLSpec sections 1–5. The final copied Red corpus has
 exact local commands in NLSpec section 3.6 pass on the main checkout (template
 34 focused/141 full; Web 72 focused/102 full; both typechecks and builds).
 The public type contract compiles. Sol high review found no remaining concrete
-defect. The product source is committed as `140e762`. Do not mark the feature
-shipped or the NLSpec implemented until exact implementation-SHA Web CI passes.
+defect. The product source is committed as `140e762`. Draft PR #25 is open;
+all GitHub CI jobs passed at exact PR head `44170ef` in run `35895845382`.
+This branch is not merged or shipped.
 
 Run records live under `runs/01a0ced9-8a4e-750a-ae3f-fcbb9497c2a5/`;
 the plan is `docs/plans/2026-09-23-web-html-safety-retry-plan.md`. Preserve
