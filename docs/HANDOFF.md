@@ -1,8 +1,24 @@
 # Agent Handoff Document
 
-Last updated: 2026-09-23
+Last updated: 2026-09-24
 
 **Update this file before context compaction and at the end of significant sessions.**
+
+## iOS Luna QA (2026-09-24)
+
+GPT-6 Luna ran a focused pass on the Swift iOS renderer at `2255ed4`.
+`swift test` passed 612/612, a fresh generic Simulator Debug build succeeded,
+and that build was installed and launched on iPhone 17 Pro / iOS 26.2. Direct
+entry showed the HTML component/article and geo landing controls rendering.
+Two textarea captures reproduced a P3 button label regression: the authored
+`Done` button displays `Do...` after 14-point default horizontal padding is
+combined with its 60-point style width. The follow-up is
+`todos/103-fix-ios-fixed-width-button-label-truncation.md`.
+
+Report, commands, and screenshots are in
+`docs/qa/2026-09-24-ios-luna-qa-pass.md`. Escalated `agent-device` attached to
+the app, but `snapshot -i` timed out at 90 seconds, so text input and native
+action interactions remain unverified; `todos/065` tracks that tooling issue.
 
 ## Web HTML browser QA (2026-09-23)
 
