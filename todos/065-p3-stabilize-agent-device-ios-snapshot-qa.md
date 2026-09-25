@@ -135,6 +135,21 @@ the reliability of future exploratory UI QA.
   one-shot `open`, while `open` itself has no exposed timeout/startup-budget flag
   and can kill the runner before XCTest reaches `RunnerTests.testCommand`.
 
+### 2026-09-25 retry: agent-device 0.21.12 and CoreSimulator migration
+
+The planned whole-app navigation pass used `agent-device` 0.21.12 from
+`/private/tmp/jasonette-agent-device-0.21.12/node_modules/.bin/agent-device`,
+with state directory
+`/private/tmp/jasonette-agent-device-qa-01a0d8fc-d8a1-7381-b687-04a62d5892cc`
+and UUIDv7 session `01a0d8fc-d8a1-7381-b687-04a62d5892cc`.
+
+- `prepare ios-runner --platform ios --udid 61EA0147-56E4-4399-8D51-F98A93B708A6 --state-dir /private/tmp/jasonette-agent-device-qa-01a0d8fc-d8a1-7381-b687-04a62d5892cc --timeout 600000 --debug` built the XCTest runner successfully. `test-without-building` then emitted repeated `IDERunDestination: Supported platforms for the buildables in the current scheme is empty` warnings and repeated `ios_runner_connect` failures. The final request had `sessionReady:false` / `request canceled`; prepare timed out at 630 seconds.
+- The original iPhone 17 Pro simulator `61EA0147-56E4-4399-8D51-F98A93B708A6` returned terminal `Status=3, isTerminal=YES, Elapsed=00:51. Data Migration Failed` from `xcrun simctl bootstatus <UDID> -b`. Its screenshot showed a black boot screen with a centered spinner.
+- A replacement iPhone 17 Pro simulator `9DC9D1D3-EB82-4D9F-A125-9E1219A3D8CB` reached terminal `Status=3, isTerminal=YES, Elapsed=17:02. Data Migration Failed`. Capturing its screenshot hung for over three minutes and was canceled. Cleanup attempts did not complete approval review, so whether that replacement device remains booted is unknown.
+- The pass did not reach Jasonpedia Home and performed no app navigation, category taps, or product UI checks. Report and durable evidence summary: `docs/qa/2026-09-25-ios-wander-qa-pass.md` and `docs/qa/artifacts/2026-09-25-ios-wander-qa/runner-diagnostics.md`.
+
+Next prerequisite for interactive QA is a CoreSimulator device/runtime that completes data migration and reaches a usable home screen. Once that works, retry runner health and continue the route map in `docs/qa/artifacts/2026-09-25-ios-wander-qa/route-map.md`; this run did not establish a working recovery path or complete an interactive smoke.
+
 Persistent diagnostic summary:
 
 - `docs/qa/artifacts/2026-06-11-ui-qa-queue-run/agent-device-065-diagnostics.md`

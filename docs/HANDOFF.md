@@ -1,8 +1,28 @@
 # Agent Handoff Document
 
-Last updated: 2026-09-24
+Last updated: 2026-09-25
 
 **Update this file before context compaction and at the end of significant sessions.**
+
+## iOS Wander QA Follow-up (2026-09-25)
+
+The 2026-09-24 Luna pass below used direct-entry screens; it did not navigate
+through the app. A follow-up plan at
+`docs/plans/2026-09-25-ios-wander-qa-plan.md` and offline route map at
+`docs/qa/artifacts/2026-09-25-ios-wander-qa/route-map.md` cover the five
+Jasonpedia Tutorial categories and nested examples. No category was marked
+explored because no in-app taps could be completed. See
+`docs/qa/2026-09-25-ios-wander-qa-pass.md` for the attempted run and evidence.
+
+The temporary `agent-device` 0.21.12 runner built, but XCTest startup timed out
+after 630 seconds. The original iPhone 17 Pro / iOS 26.2 simulator then returned
+`Data Migration Failed` at boot and showed a black loading screen. A fresh
+iPhone 17 Pro / iOS 26.2 simulator also ended first boot with `Data Migration
+Failed`; its screenshot request hung. This blocks interactive QA on this host.
+`todos/065` tracks the automation and simulator recovery needed before the
+planned wander pass can run. The fresh temporary device has UDID
+`9DC9D1D3-EB82-4D9F-A125-9E1219A3D8CB`; its cleanup could not be verified
+because automatic approval review timed out twice on `simctl shutdown`.
 
 ## iOS Luna QA (2026-09-24)
 
