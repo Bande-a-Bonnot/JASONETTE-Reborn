@@ -1,8 +1,39 @@
 # Agent Handoff Document
 
-Last updated: 2026-09-25
+Last updated: 2026-09-26
 
 **Update this file before context compaction and at the end of significant sessions.**
+
+## iOS Exploratory QA (2026-09-26)
+
+The user clarified that Luna should explore as a QA person: adaptive navigation,
+edge cases, and visual inspection. The charter is
+`docs/plans/2026-09-26-ios-luna-exploratory-qa-plan.md` (initial commit `596b569`).
+The temporary simulator recovered by September 26 and reached SpringBoard.
+The existing `2255ed4` app build was installed; no iOS source changed since that
+build. Unmodified `agent-device` 0.21.12 now prepares, opens, snapshots, and taps
+successfully. Every command needs elevated host access and explicit
+`--state-dir` and `--session` arguments; the plan holds their canonical values.
+
+Luna completed a sampled exploration through all five Tutorial categories,
+including push/back, tabs, layouts, Unicode/secure/multiline input, empty
+submission, native alert/toast, photo-picker cancellation, Template Inline Data,
+the animated Web Container menu, and dark appearance. The authored `$href`
+self-link repeats its menu intentionally. The report and screenshots are in
+`docs/qa/2026-09-26-ios-luna-exploratory-qa.md` and its matching artifact directory.
+Long-input stress, rotation, Showcase links, and several native/demo paths
+remain untested; the app is not exhaustively covered.
+
+Reviewed new findings are tracked in todos 104–108: horizontal width/distribution
+clipping, component backgrounds not covering authored bounds, failed navigation
+from the tested SVG HTML row, poor default textfield contrast in dark appearance,
+and a P3 improvement for generic error feedback after ordinary picker cancel.
+The SVG tap-routing cause is not yet proven; the row failure is reproducible.
+Existing todo 103 has additional Done-label truncation/wrapping evidence.
+No product fixes were made. The working automation recovery was committed as
+`9761491` and todo 065's interactive-smoke requirement is complete. The app was
+returned to Home in light appearance; the automation session is closed and the
+QA simulator is retained for the next pass.
 
 ## iOS Wander QA Follow-up (2026-09-25)
 

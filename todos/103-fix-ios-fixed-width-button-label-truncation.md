@@ -42,6 +42,19 @@ Evidence:
 - Source path: `JASONETTE-iOS/JasonetteApp/Sources/Jasonette/Components/ButtonComponent.swift`
 - Fixed width is applied in `JASONETTE-iOS/JasonetteApp/Sources/Jasonette/Components/JasonStyleModifier.swift`.
 
+## Additional exploratory evidence (2026-09-26)
+
+Luna reached both fixtures through normal app navigation. The textarea again
+shows `Do...`. The textfield fixture contains two 60-point Done buttons: the
+one with authored height 50 ellipsizes, while the one without explicit height
+wraps as `Don` / `e`. These are additional cases of the existing width/padding
+issue, not separate todos. Input behavior itself accepted Unicode text and
+multiline textarea content during this pass.
+
+- [Textfield buttons](../docs/qa/artifacts/2026-09-26-ios-luna-exploratory-qa/component-textfield-initial.png)
+- [Textarea with keyboard](../docs/qa/artifacts/2026-09-26-ios-luna-exploratory-qa/component-textarea-multiline-keyboard.png)
+- [Exploratory report](../docs/qa/2026-09-26-ios-luna-exploratory-qa.md)
+
 ## Definition of Done
 
 - Text button labels remain fully visible when the authored width is sufficient
