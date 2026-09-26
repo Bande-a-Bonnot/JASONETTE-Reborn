@@ -20,6 +20,9 @@ fixture launches do not count as exploration through the app.
 - CLI: `/private/tmp/jasonette-agent-device-0.21.12/node_modules/.bin/agent-device`.
 - Session UUIDv7: `01a0dd3a-1ea6-74d5-a278-cce91b1103b6`.
 - State directory: `/private/tmp/jasonette-qa-01a0dd3a-1ea6-74d5-a278-cce91b1103b6`.
+- Pass both `--state-dir` and `--session` explicitly on every CLI command;
+  the session name alone does not select the temporary daemon. Simulator
+  commands require elevated access outside the filesystem sandbox.
 - Starting document: normal `Jasonpedia/demo.json`, without entry overrides.
 - Report: `docs/qa/2026-09-26-ios-luna-exploratory-qa.md`.
 - Evidence: `docs/qa/artifacts/2026-09-26-ios-luna-exploratory-qa/`.

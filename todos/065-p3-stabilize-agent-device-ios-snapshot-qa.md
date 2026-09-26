@@ -1,6 +1,6 @@
 ---
 id: "019eb90b-2651-7cc3-bb7a-c53ca990e84c"
-status: open
+status: complete
 priority: p3
 issue_id: "065"
 tags: [qa, ios, simulator, agent-device, tooling]
@@ -28,6 +28,32 @@ This is an environment/tooling issue rather than an app defect, but it reduces
 the reliability of future exploratory UI QA.
 
 ## Current Diagnosis
+
+### 2026-09-26 interactive recovery verified
+
+The temporary simulator from the September 25 attempt reached SpringBoard by
+the next session. Screenshots returned promptly, the existing Debug app
+installed, and unmodified `agent-device` 0.21.12 successfully prepared its
+runner with `--timeout 240000`. `open --timeout 120000`, `snapshot -i`, and
+screenshots then succeeded. Luna navigated Home → Core → `$href`, pushed the
+authored self-link, and returned using the app's back control. Subsequent
+interaction commands completed in roughly 1–5 seconds.
+
+All CLI commands must use elevated host access and the same explicit
+`--state-dir` and `--session`. During handover, a sandboxed screenshot call
+mistook the daemon for an unreachable process and removed its metadata.
+Reopening without relaunch, preparing the runner again with a 240-second
+budget, and keeping every subsequent call elevated recovered the session.
+
+The working context requirements are documented in `docs/qa/README.md`.
+Exact environment values and the exploration charter are in
+`docs/plans/2026-09-26-ios-luna-exploratory-qa-plan.md`; journey evidence is in
+`docs/qa/2026-09-26-ios-luna-exploratory-qa.md`, with Home and Core screenshots
+under `docs/qa/artifacts/2026-09-26-ios-luna-exploratory-qa/`.
+The earlier CoreSimulator migration failure's cause was not established;
+this closes the interactive smoke requirement based on the recovered device.
+
+### Historical investigations
 
 2026-06-12 follow-up evidence:
 
@@ -184,26 +210,26 @@ Key logs:
       simulator.
 - [x] Identify a reliable recovery path for `agent-device open` after extended
       `prepare ios-runner`, or document an upstream/tooling blocker if no local
-      recovery exists. Current outcome: no reliable local recovery; documented as
-      an `agent-device` XCTest runner/session handshake blocker.
-- [ ] Document the working recovery path in `docs/qa/README.md` if extra setup,
+      recovery exists. Current outcome: unmodified 0.21.12 works on the recovered
+      simulator with consistent elevated execution and session arguments.
+- [x] Document the working recovery path in `docs/qa/README.md` if extra setup,
       longer timeouts, runner reset, or device cleanup is required.
-- [ ] Complete a short interactive smoke using `agent-device snapshot` plus at
+- [x] Complete a short interactive smoke using `agent-device snapshot` plus at
       least one `press`/navigation step.
-- [ ] Capture or link evidence from the successful interactive smoke.
+- [x] Capture or link evidence from the successful interactive smoke.
 
 ## Verification Guidance
 
 - Run the documented `agent-device` workflow from `docs/qa/README.md` against
   the installed Debug app, pinning the iPhone 17 Pro UDID when multiple
   simulators are booted.
-- Start with `prepare ios-runner --timeout 360000`; the shorter default/240s path
-  may fail before the runner is ready on this machine.
+- Verify a usable simulator home screen before preparing the runner. The
+  successful September 26 run used unmodified 0.21.12 and
+  `prepare ios-runner --timeout 240000` on the recovered device.
 - Confirm `open` establishes an active app session before attempting `snapshot -i`.
-- Before another full `agent-device open`/`snapshot` retry, find a way to give
-  `open` the same extended runner startup budget as `prepare`, or run through a
-  single long-lived daemon/session path that does not shut the prepared runner
-  down before `open`.
+- Keep every command elevated and pass the same explicit state directory and
+  session. The verified `open` command used `--timeout 120000`, supported by
+  0.21.12. Earlier investigations above refer to older CLI timeout limits.
 - Confirm `snapshot -i` returns accessibility refs without repeated timeouts.
 - Press at least one visible control, re-snapshot, and capture a supporting
   screenshot under `docs/qa/artifacts/`.

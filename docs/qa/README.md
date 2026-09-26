@@ -100,6 +100,29 @@ npx --yes agent-device@latest help workflow
 
 The CLI help is authoritative; read `help workflow` before a QA pass.
 
+### Execution context and isolated sessions
+
+In the filesystem-sandboxed agent environment, run every `agent-device` and
+`simctl` command with elevated host access, including read-only snapshots and
+screenshots. A sandboxed `agent-device` call can treat the live daemon as
+unreachable and remove its metadata, losing the active session. This occurred
+during the 2026-09-26 QA pass.
+
+When using a temporary `--state-dir`, pass it and `--session` explicitly on
+every command. A session name alone does not select the temporary daemon;
+omitting the state directory targets the default `~/.agent-device` state.
+Keep one agent responsible for device interaction until an explicit handover.
+
+On 2026-09-26, unmodified `agent-device` 0.21.12 completed the interactive
+smoke on the recovered iPhone 17 Pro / iOS 26.2 simulator. The working sequence
+was `prepare ios-runner --timeout 240000`, `open --timeout 120000`, then
+`snapshot -i`, `press`, and screenshot inspection, with the same explicit
+state/session arguments and elevated access throughout. If sandboxed access
+has already invalidated the session, reopen the app without `--relaunch`,
+prepare again in that context, and verify a fresh snapshot before interaction.
+Exact values and the broader exploration charter are recorded in
+[`2026-09-26-ios-luna-exploratory-qa-plan.md`](../plans/2026-09-26-ios-luna-exploratory-qa-plan.md).
+
 ### Basic loop
 
 ```bash
