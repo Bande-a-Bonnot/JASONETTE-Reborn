@@ -79,6 +79,20 @@ final class StyleModifierTests: XCTestCase {
         XCTAssertEqual(merged.font, "bold")
     }
 
+    func testDistributionDecodesAndInlineStyleOverridesClass() {
+        let decoded = decodeStyle(["distribution": "equalsize"])
+        XCTAssertEqual(decoded.distribution, "equalsize")
+
+        let base = JasonStyle(distribution: "fill")
+        let resolved = resolveStyles(
+            className: "columns",
+            headStyles: ["columns": base],
+            inline: decoded
+        )
+        XCTAssertEqual(resolved.distribution, "equalsize")
+        XCTAssertEqual(base.merging(JasonStyle()).distribution, "fill")
+    }
+
 #if os(macOS)
     func testActionFixturePaddedClassResolvesTileBoundsAndBackground() throws {
         let data = try Data(contentsOf: repoRootURL().appendingPathComponent("Jasonpedia/action/index.json"))

@@ -214,6 +214,7 @@ extension JasonStyle {
             borderColor: other.borderColor ?? self.borderColor,
             align: other.align ?? self.align,
             spacing: other.spacing ?? self.spacing,
+            distribution: other.distribution ?? self.distribution,
             top: other.top ?? self.top,
             left: other.left ?? self.left,
             bottom: other.bottom ?? self.bottom,

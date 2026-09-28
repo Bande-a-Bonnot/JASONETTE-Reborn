@@ -232,6 +232,7 @@ public struct JasonStyle: Codable, Sendable {
     public var borderColor: String?
     public var align: String?
     public var spacing: AnyCodable?
+    public var distribution: String?
     public var top: AnyCodable?
     public var left: AnyCodable?
     public var bottom: AnyCodable?
@@ -244,7 +245,7 @@ public struct JasonStyle: Codable, Sendable {
     public var rotate: AnyCodable?
 
     enum CodingKeys: String, CodingKey {
-        case font, size, color, background, padding, width, height, align, spacing, opacity, secure, selected
+        case font, size, color, background, padding, width, height, align, spacing, distribution, opacity, secure, selected
         case move, resize, rotate
         case top, left, bottom, right
         case paddingLeft = "padding_left"

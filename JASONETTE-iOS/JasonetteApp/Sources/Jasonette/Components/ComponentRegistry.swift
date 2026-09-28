@@ -107,7 +107,7 @@ public struct ComponentView: View {
                 direction: .vertical,
                 components: component.components ?? [],
                 headStyles: headStyles,
-                style: component.style,
+                style: resolvedStyle,
                 onHref: onHref,
                 onAction: onAction,
                 documentURL: documentURL
@@ -117,7 +117,7 @@ public struct ComponentView: View {
                 direction: .horizontal,
                 components: component.components ?? [],
                 headStyles: headStyles,
-                style: component.style,
+                style: resolvedStyle,
                 onHref: onHref,
                 onAction: onAction,
                 documentURL: documentURL
