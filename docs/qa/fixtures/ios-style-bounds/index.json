@@ -1,0 +1,42 @@
+{
+  "$jason": {
+    "head": {
+      "title": "Style Bounds QA"
+    },
+    "body": {
+      "sections": [
+        {
+          "items": [
+            {
+              "type": "label",
+              "text": "SIZE",
+              "style": {
+                "width": "150",
+                "height": "100",
+                "padding": "20",
+                "background": "#dd3333",
+                "color": "#ffffff",
+                "border_width": "4",
+                "border_color": "#00aa00",
+                "corner_radius": "12"
+              }
+            }
+          ]
+        },
+        {
+          "items": [
+            {
+              "type": "label",
+              "text": "PAD",
+              "style": {
+                "padding": "20",
+                "background": "#2445d9",
+                "color": "#ffffff"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

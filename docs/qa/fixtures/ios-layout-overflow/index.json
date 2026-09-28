@@ -1,0 +1,45 @@
+{
+  "$jason": {
+    "head": {
+      "title": "Overflow Row QA"
+    },
+    "body": {
+      "sections": [
+        {
+          "items": [
+            {
+              "type": "horizontal",
+              "style": {
+                "width": "300",
+                "spacing": "8",
+                "background": "#ffe08a"
+              },
+              "components": [
+                {
+                  "type": "label",
+                  "text": "LEFT EDGE",
+                  "style": {
+                    "width": "200",
+                    "height": "80",
+                    "background": "#d92b2b",
+                    "color": "#ffffff"
+                  }
+                },
+                {
+                  "type": "label",
+                  "text": "RIGHT EDGE",
+                  "style": {
+                    "width": "200",
+                    "height": "80",
+                    "background": "#2445d9",
+                    "color": "#ffffff"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
