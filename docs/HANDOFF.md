@@ -1,8 +1,29 @@
 # Agent Handoff Document
 
-Last updated: 2026-09-26
+Last updated: 2026-09-28
 
 **Update this file before context compaction and at the end of significant sessions.**
+
+## Active iOS QA fixes (2026-09-28)
+
+The user approved the highest-value starting order from the open-todo ranking:
+todo 105 (component background bounds), then 103 (fixed-width button labels),
+then 104 (horizontal layout distribution). The committed charter and Sol-high
+technical plan are in `docs/plans/2026-09-28-ios-qa-fixes-plan.md` (`893c29f`,
+`f6273e5`). One Luna-xhigh implementer is making focused TDD and atomic
+product/test commits in that order. The same Sol-high agent will review the
+final diff. Reuse these two agents to conserve subscription usage.
+
+Baseline elevated `swift test --quiet` passed 612/612 before edits. SwiftPM and
+Tuist must run with elevated host access in this sandbox; sandboxed SwiftPM
+manifest compilation failed before tests. The retained `Jasonette-Wander-QA`
+iPhone 17 Pro/iOS 26.2 simulator is booted and shows a normal SpringBoard. The
+primary agent owns a fresh Simulator build, visual evidence, todo status
+changes, and final handoff once Luna's source/test commits are complete. The
+three todos must not be closed on unit tests alone.
+
+Preserve the unrelated existing edits to `AGENTS.md` and `CLAUDE.md` and the
+two untracked July arbiter JSON files. No remote push or deployment is planned.
 
 ## iOS Exploratory QA (2026-09-26)
 
