@@ -1,6 +1,6 @@
 # iOS QA fixes: styling and horizontal layout
 
-Status: ready for implementation
+Status: review repair and final verification
 
 ## Approved scope
 
@@ -155,3 +155,21 @@ the Swift iOS renderer. Other open todos remain separate.
    target, finite row proposals, preserved authored widths/spacing, and the
    section scroller boundary. Complete each todo only after its tests and
    required screenshot pass; update `docs/HANDOFF.md` with exact evidence.
+
+### Sol review follow-up (2026-09-28)
+
+The first Sol-high review found one concrete overflow regression in todo 104:
+two fixed 200-point children in a finite 300-point row make the custom layout
+wider than the viewport, but the old row-level scroll view is gone. Add a
+bounded, intentional overflow path so the full authored content remains
+reachable while ordinary `fill`/`equalsize` rows still receive finite widths.
+Add a focused regression for that oversized row and recheck the separate
+horizontal section scroller. Commit this correction separately.
+
+The review also found that current unit tests exercise style decoding and width
+arithmetic without proving final rendered pixels or text wrapping. The macOS
+hosted pixel-test attempts hung at XCTest process exit and were removed. The
+primary agent must use fresh iOS Simulator screenshots of Action tiles,
+textarea/textfield buttons, horizontal columns, and the nested tweet as the
+behavioral rendering gate; record any additional focused pixel/geometry checks
+that can run reliably. Do not mark the todos complete on unit checks alone.
