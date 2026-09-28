@@ -1,6 +1,6 @@
 ---
 id: "01a0dd6d-49aa-768a-adfa-d205c7c43cef"
-status: open
+status: complete
 priority: p2
 issue_id: "104"
 tags: [ios, rendering, layout, qa]
@@ -53,3 +53,11 @@ ScrollView, which offers unbounded horizontal space to its children.
 - Any new style property is decoded, merged, and consumed by rendering.
 - A focused regression check covers the layout contract, and screenshots of
   the horizontal and nested demos demonstrate the corrected visual result.
+
+## Completed 2026-09-28
+
+Implemented in `3ed40c9`, with reviewed overflow repairs through `bd9fc1a`.
+The [QA record](../docs/qa/2026-09-28-ios-rendering-fixes-verification.md)
+shows equal-width paragraph wrapping, the nested tweet within its row, and a
+targeted pan that reaches the hidden half of an explicitly oversized row. The
+full Swift suite passed 622/622, and a fresh iOS simulator build succeeded.

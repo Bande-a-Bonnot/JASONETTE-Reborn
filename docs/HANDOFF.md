@@ -4,26 +4,33 @@ Last updated: 2026-09-28
 
 **Update this file before context compaction and at the end of significant sessions.**
 
-## Active iOS QA fixes (2026-09-28)
+## Completed iOS QA fixes (2026-09-28)
 
-The user approved the highest-value starting order from the open-todo ranking:
-todo 105 (component background bounds), then 103 (fixed-width button labels),
-then 104 (horizontal layout distribution). The committed charter and Sol-high
-technical plan are in `docs/plans/2026-09-28-ios-qa-fixes-plan.md` (`893c29f`,
-`f6273e5`). One Luna-xhigh implementer is making focused TDD and atomic
-product/test commits in that order. The same Sol-high agent will review the
-final diff. Reuse these two agents to conserve subscription usage.
+Todos 105 → 103 → 104 are complete. The user requested Sol high for planning
+and review and Luna xhigh for implementation; the same two agents were reused.
+The [plan](plans/2026-09-28-ios-qa-fixes-plan.md) and
+[QA record](qa/2026-09-28-ios-rendering-fixes-verification.md) hold the exact
+changes, commands, and screenshot paths. Product source ends at `bd9fc1a`;
+`d968039` fixed the new Action fixture test's repository-root lookup.
 
-Baseline elevated `swift test --quiet` passed 612/612 before edits. SwiftPM and
-Tuist must run with elevated host access in this sandbox; sandboxed SwiftPM
-manifest compilation failed before tests. The retained `Jasonette-Wander-QA`
-iPhone 17 Pro/iOS 26.2 simulator is booted and shows a normal SpringBoard. The
-primary agent owns a fresh Simulator build, visual evidence, todo status
-changes, and final handoff once Luna's source/test commits are complete. The
-three todos must not be closed on unit tests alone.
+The final elevated `swift test --jobs 2 --quiet` passed **622/622**. Tuist
+generation and a fresh iPhone 17 Pro/iOS 26.2 Debug simulator build succeeded,
+and that build was installed. Final simulator captures show full Action tile
+backgrounds, all three complete `Done` labels, equal-width wrapped paragraphs,
+and nested tweet text within its row. A focused style fixture and Pillow check
+verify padding, fixed size, and the rounded border's bounds. The 300-point
+overflow fixture's right label was initially clipped and moved fully into view
+after a targeted pan; before/after row pixels differ. The final Sol-high review
+found no concrete remaining defect.
 
-Preserve the unrelated existing edits to `AGENTS.md` and `CLAUDE.md` and the
-two untracked July arbiter JSON files. No remote push or deployment is planned.
+The retained simulator briefly reported Data Migration Failed and the
+`agent-device` runner needed a retry, but both recovered. The local fixture
+server and interaction session were closed, and the QA simulator was shut down
+after the final captures to release host resources. SwiftPM, Tuist,
+`simctl`, and `agent-device` require elevated host access in this sandbox.
+Keep builds serial with two jobs on the shared memory-bound VM. Preserve
+unrelated existing edits to `AGENTS.md`/`CLAUDE.md` and the two untracked July
+arbiter JSON files. No remote push or deployment was performed.
 
 ## iOS Exploratory QA (2026-09-26)
 

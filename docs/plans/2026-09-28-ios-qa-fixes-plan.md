@@ -1,6 +1,6 @@
 # iOS QA fixes: styling and horizontal layout
 
-Status: review repair and final verification
+Status: complete (2026-09-28)
 
 ## Approved scope
 
@@ -184,3 +184,16 @@ finite width actually offered to the row, reserving fixed and intrinsic child
 widths; keep ordinary flexible rows on the finite layout. The final simulator
 pass must show both equal-width paragraph wrapping and a successful swipe to
 the second 200-point child in the local 300-point overflow fixture.
+
+### Final verification and review (2026-09-28)
+
+The first measured-width repair at `767bfbf` still let an authored 300-point
+row expand to 408 points; a targeted pan did not move it. Luna corrected the
+branch to honor the resolved authored viewport in `bd9fc1a`. The same targeted
+pan on the fresh final simulator build moved the hidden `RIGHT EDGE` label into
+view. The full Swift suite passed 622/622, the Debug simulator build succeeded,
+and the Action, textarea, textfield, horizontal, and nested screenshots all
+passed visual inspection. A separate simulator pixel check verifies padding,
+fixed size, and a rounded border. The existing Sol-high reviewer found no
+concrete remaining defect in the final source. Exact evidence and commands are
+in [the final QA record](../qa/2026-09-28-ios-rendering-fixes-verification.md).

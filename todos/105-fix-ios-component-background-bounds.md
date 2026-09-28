@@ -1,6 +1,6 @@
 ---
 id: "01a0dd6d-49aa-752c-80b9-01b4a95736e2"
-status: open
+status: complete
 priority: p2
 issue_id: "105"
 tags: [ios, rendering, styles, qa]
@@ -45,3 +45,12 @@ and explicit dimensions are added outside the painted view.
 - Rounded corners and borders remain aligned with the component bounds.
 - A focused rendering regression check covers both padding and explicit size;
   a simulator screenshot confirms the Action demo result.
+
+## Completed 2026-09-28
+
+Implemented in `e44cc34` and verified on the final `bd9fc1a` iPhone 17 Pro
+Debug build. The [QA record](../docs/qa/2026-09-28-ios-rendering-fixes-verification.md)
+shows white Action tiles spanning their authored bounds. A separate style
+fixture and screenshot pixel check cover padding, explicit size, and rounded
+border placement. The Action fixture class resolution check passes, and the
+full Swift suite passed 622/622.

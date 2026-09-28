@@ -1,6 +1,6 @@
 ---
 id: "01a0d23b-1d7d-7912-8a54-3f9de88b8a66"
-status: open
+status: complete
 priority: p3
 issue_id: "103"
 tags: [ios, rendering, components, qa]
@@ -61,3 +61,11 @@ multiline textarea content during this pass.
   for the text, including the existing 60-point `Done` fixture.
 - The default 44-point minimum hit target remains intact.
 - The textarea fixture screenshot shows the complete `Done` label.
+
+## Completed 2026-09-28
+
+Implemented in `fdaf183` and verified on the final `bd9fc1a` iPhone 17 Pro
+Debug build. The [QA record](../docs/qa/2026-09-28-ios-rendering-fixes-verification.md)
+contains textarea and textfield screenshots with all three `Done` labels fully
+visible. The button regression checks retain the 44-point minimum hit size;
+the full Swift suite passed 622/622.
