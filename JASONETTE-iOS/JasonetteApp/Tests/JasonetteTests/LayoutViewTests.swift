@@ -67,12 +67,12 @@ final class LayoutViewTests: XCTestCase {
         XCTAssertEqual(widths, [120, 140])
     }
 
-    func testOversizedFixedChildrenKeepTheirFullWidthForScrollFallback() {
+    func testOversizedFixedChildrenKeepTheirFullWidthForScrollFallback() throws {
         let widths = HorizontalLayoutSizing.childWidths(
             containerWidth: 300,
             paddingLeft: 0,
             paddingRight: 0,
-            spacing: 10,
+            spacing: 8,
             widthModes: [.fixed(200), .fixed(200)],
             idealWidths: [200, 200],
             distribution: "fill"
@@ -81,12 +81,19 @@ final class LayoutViewTests: XCTestCase {
         let rowWidth = HorizontalLayoutSizing.measuredRowWidth(
             proposalWidth: 300,
             childWidths: widths,
-            spacing: 10
+            spacing: 8
         )
         XCTAssertEqual(widths, [200, 200])
-        XCTAssertEqual(rowWidth, 410, accuracy: 0.001)
+        XCTAssertEqual(rowWidth, 408, accuracy: 0.001)
+        let viewportWidth = try XCTUnwrap(HorizontalLayoutSizing.viewportWidth(
+            authoredWidth: 300,
+            measuredContentWidth: 408,
+            paddingLeft: 0,
+            paddingRight: 0
+        ))
+        XCTAssertEqual(viewportWidth, 300, accuracy: 0.001)
         XCTAssertTrue(HorizontalLayoutSizing.needsHorizontalScroll(
-            viewportWidth: 300,
+            viewportWidth: viewportWidth,
             measuredRowWidth: rowWidth
         ))
 
@@ -94,7 +101,7 @@ final class LayoutViewTests: XCTestCase {
             containerWidth: 300,
             paddingLeft: 0,
             paddingRight: 0,
-            spacing: 10,
+            spacing: 8,
             widthModes: [.flexible, .flexible],
             idealWidths: [420, 360],
             distribution: "equalsize"
@@ -102,7 +109,7 @@ final class LayoutViewTests: XCTestCase {
         let wrappedRowWidth = HorizontalLayoutSizing.measuredRowWidth(
             proposalWidth: 300,
             childWidths: flexibleWidths,
-            spacing: 10
+            spacing: 8
         )
         XCTAssertEqual(wrappedRowWidth, 300, accuracy: 0.001)
         XCTAssertFalse(HorizontalLayoutSizing.needsHorizontalScroll(

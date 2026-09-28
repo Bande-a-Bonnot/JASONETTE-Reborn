@@ -27,6 +27,19 @@ enum HorizontalChildWidth: Equatable {
 }
 
 enum HorizontalLayoutSizing {
+    static func viewportWidth(
+        authoredWidth: CGFloat?,
+        measuredContentWidth: CGFloat?,
+        paddingLeft: CGFloat,
+        paddingRight: CGFloat
+    ) -> CGFloat? {
+        if let authoredWidth, authoredWidth.isFinite {
+            return max(0, authoredWidth - paddingLeft - paddingRight)
+        }
+        guard let measuredContentWidth, measuredContentWidth.isFinite else { return nil }
+        return max(0, measuredContentWidth)
+    }
+
     static func needsHorizontalScroll(viewportWidth: CGFloat?, measuredRowWidth: CGFloat?) -> Bool {
         guard
             let viewportWidth,
@@ -233,21 +246,27 @@ struct LayoutView: View {
             }
         case .horizontal:
             ZStack(alignment: .topLeading) {
-                viewportWidthProbe
-
                 if HorizontalLayoutSizing.needsHorizontalScroll(
-                    viewportWidth: horizontalViewportWidth,
+                    viewportWidth: horizontalScrollViewportWidth,
                     measuredRowWidth: horizontalRowWidth
                 ) {
                     ScrollView(.horizontal) {
                         horizontalRow(spacing: spacing)
                     }
-                    .frame(maxWidth: .infinity)
+                    .frame(width: horizontalScrollViewportWidth)
                 } else {
                     horizontalRow(spacing: spacing)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+            .background {
+                GeometryReader { proxy in
+                    Color.clear.preference(
+                        key: HorizontalViewportWidthPreferenceKey.self,
+                        value: proxy.size.width
+                    )
+                }
+            }
             .onPreferenceChange(HorizontalViewportWidthPreferenceKey.self) { width in
                 guard let width, width.isFinite, width > 0 else { return }
                 horizontalViewportWidth = width
@@ -259,26 +278,29 @@ struct LayoutView: View {
         }
     }
 
-    private var viewportWidthProbe: some View {
-        Color.clear
-            .frame(maxWidth: .infinity)
-            .frame(height: 0)
-            .background {
-                GeometryReader { proxy in
-                    Color.clear.preference(
-                        key: HorizontalViewportWidthPreferenceKey.self,
-                        value: proxy.size.width
-                    )
-                }
-            }
+    private var horizontalScrollViewportWidth: CGFloat? {
+        HorizontalLayoutSizing.viewportWidth(
+            authoredWidth: style?.width?.cgFloat,
+            measuredContentWidth: horizontalViewportWidth,
+            paddingLeft: horizontalPaddingLeft,
+            paddingRight: horizontalPaddingRight
+        )
+    }
+
+    private var horizontalPaddingLeft: CGFloat {
+        style?.paddingLeft?.cgFloat ?? style?.padding?.cgFloat ?? 0
+    }
+
+    private var horizontalPaddingRight: CGFloat {
+        style?.paddingRight?.cgFloat ?? style?.padding?.cgFloat ?? 0
     }
 
     private func horizontalRow(spacing: CGFloat) -> some View {
         HorizontalRowLayout(
             spacing: spacing,
             distribution: style?.distribution,
-            paddingLeft: style?.paddingLeft?.cgFloat ?? style?.padding?.cgFloat ?? 0,
-            paddingRight: style?.paddingRight?.cgFloat ?? style?.padding?.cgFloat ?? 0,
+            paddingLeft: horizontalPaddingLeft,
+            paddingRight: horizontalPaddingRight,
             alignment: style?.align,
             widthModes: components.map { component in
                 HorizontalChildWidth(style: JasonStyle.resolve(for: component, headStyles: headStyles))
