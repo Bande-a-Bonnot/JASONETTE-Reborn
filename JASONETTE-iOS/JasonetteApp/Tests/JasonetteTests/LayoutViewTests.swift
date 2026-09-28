@@ -66,4 +66,25 @@ final class LayoutViewTests: XCTestCase {
         )
         XCTAssertEqual(widths, [120, 140])
     }
+
+    func testOversizedFixedChildrenKeepTheirFullWidthForScrollFallback() {
+        let widths = HorizontalLayoutSizing.childWidths(
+            containerWidth: 300,
+            paddingLeft: 0,
+            paddingRight: 0,
+            spacing: 10,
+            widthModes: [.fixed(200), .fixed(200)],
+            idealWidths: [200, 200],
+            distribution: "fill"
+        )
+
+        let rowWidth = HorizontalLayoutSizing.measuredRowWidth(
+            proposalWidth: 300,
+            childWidths: widths,
+            spacing: 10
+        )
+        XCTAssertEqual(widths, [200, 200])
+        XCTAssertEqual(rowWidth, 410, accuracy: 0.001)
+        XCTAssertGreaterThan(rowWidth, 300)
+    }
 }

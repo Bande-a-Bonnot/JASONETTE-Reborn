@@ -27,6 +27,15 @@ enum HorizontalChildWidth: Equatable {
 }
 
 enum HorizontalLayoutSizing {
+    static func measuredRowWidth(
+        proposalWidth: CGFloat?,
+        childWidths: [CGFloat],
+        spacing: CGFloat
+    ) -> CGFloat {
+        let contentWidth = childWidths.reduce(0, +) + spacing * CGFloat(max(0, childWidths.count - 1))
+        return proposalWidth.flatMap { $0.isFinite ? $0 : nil }.map { max($0, contentWidth) } ?? contentWidth
+    }
+
     static func childWidths(
         containerWidth: CGFloat?,
         paddingLeft: CGFloat,
@@ -105,8 +114,11 @@ private struct HorizontalRowLayout: Layout {
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
         let widths = allocatedWidths(proposedContentWidth: proposal.width, subviews: subviews)
         let sizes = measuredSizes(widths: widths, subviews: subviews)
-        let childrenWidth = widths.reduce(0, +) + spacing * CGFloat(max(0, widths.count - 1))
-        let width = proposal.width.flatMap { $0.isFinite ? $0 : nil }.map { max($0, childrenWidth) } ?? childrenWidth
+        let width = HorizontalLayoutSizing.measuredRowWidth(
+            proposalWidth: proposal.width,
+            childWidths: widths,
+            spacing: spacing
+        )
         return CGSize(width: width, height: sizes.map(\.height).max() ?? 0)
     }
 
@@ -189,26 +201,48 @@ struct LayoutView: View {
                 }
             }
         case .horizontal:
-            HorizontalRowLayout(
-                spacing: spacing,
-                distribution: style?.distribution,
-                paddingLeft: style?.paddingLeft?.cgFloat ?? style?.padding?.cgFloat ?? 0,
-                paddingRight: style?.paddingRight?.cgFloat ?? style?.padding?.cgFloat ?? 0,
-                alignment: style?.align,
-                widthModes: components.map { component in
-                    HorizontalChildWidth(style: JasonStyle.resolve(for: component, headStyles: headStyles))
+            ViewThatFits(in: .horizontal) {
+                HorizontalRowLayout(
+                    spacing: spacing,
+                    distribution: style?.distribution,
+                    paddingLeft: style?.paddingLeft?.cgFloat ?? style?.padding?.cgFloat ?? 0,
+                    paddingRight: style?.paddingRight?.cgFloat ?? style?.padding?.cgFloat ?? 0,
+                    alignment: style?.align,
+                    widthModes: components.map { component in
+                        HorizontalChildWidth(style: JasonStyle.resolve(for: component, headStyles: headStyles))
+                    }
+                ) {
+                    horizontalComponents()
                 }
-            ) {
-                ForEach(components.indices, id: \.self) { index in
-                    ComponentView(
-                        components[index],
-                        headStyles: headStyles,
-                        onHref: onHref,
-                        onAction: onAction,
-                        documentURL: documentURL
-                    )
+
+                ScrollView(.horizontal) {
+                    HStack(alignment: verticalAlignment, spacing: spacing) {
+                        horizontalComponents()
+                    }
                 }
+                .frame(maxWidth: .infinity)
             }
+        }
+    }
+
+    @ViewBuilder
+    private func horizontalComponents() -> some View {
+        ForEach(components.indices, id: \.self) { index in
+            ComponentView(
+                components[index],
+                headStyles: headStyles,
+                onHref: onHref,
+                onAction: onAction,
+                documentURL: documentURL
+            )
+        }
+    }
+
+    private var verticalAlignment: VerticalAlignment {
+        switch style?.align {
+        case "center": return .center
+        case "bottom": return .bottom
+        default: return .top
         }
     }
 
