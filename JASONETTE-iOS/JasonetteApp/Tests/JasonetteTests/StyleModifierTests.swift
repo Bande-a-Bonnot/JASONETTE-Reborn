@@ -79,6 +79,22 @@ final class StyleModifierTests: XCTestCase {
         XCTAssertEqual(merged.font, "bold")
     }
 
+#if os(macOS)
+    func testActionFixturePaddedClassResolvesTileBoundsAndBackground() throws {
+        let data = try Data(contentsOf: repoRootURL().appendingPathComponent("Jasonpedia/action/index.json"))
+        let document = try JSONDecoder().decode(JasonDocument.self, from: data)
+        let styles = try XCTUnwrap(document.jason.head?.styles)
+        let action = try XCTUnwrap(document.jason.body?.sections?.first?.items?.first)
+
+        XCTAssertEqual(action.class, "padded")
+        let resolved = JasonStyle.resolve(for: action, headStyles: styles)
+        XCTAssertEqual(resolved.width?.cgFloat, 150)
+        XCTAssertEqual(resolved.height?.cgFloat, 150)
+        XCTAssertEqual(resolved.background, "#ffffff")
+    }
+
+#endif
+
     func testDynamicLayerInteractionFlagsDecodeAndMerge() {
         let base = JasonStyle(move: AnyCodable("true"))
         let overlay = JasonStyle(resize: AnyCodable(true), rotate: AnyCodable(1))
@@ -350,5 +366,13 @@ final class StyleModifierTests: XCTestCase {
     /// exercise the real implementation used by JasonStyleModifier and views.
     private func resolveStyles(className: String?, headStyles: [String: JasonStyle], inline: JasonStyle?) -> JasonStyle {
         JasonStyle.resolve(className: className, inline: inline, headStyles: headStyles)
+    }
+
+    private func repoRootURL() -> URL {
+        URL(fileURLWithPath: #file)
+            .deletingLastPathComponent() // JasonetteTests/ -> Tests/
+            .deletingLastPathComponent() // Tests/ -> JasonetteApp/
+            .deletingLastPathComponent() // JasonetteApp/ -> JASONETTE-iOS/
+            .deletingLastPathComponent() // JASONETTE-iOS/ -> JASONETTE-Reborn/
     }
 }
