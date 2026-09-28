@@ -27,6 +27,19 @@ enum HorizontalChildWidth: Equatable {
 }
 
 enum HorizontalLayoutSizing {
+    static func needsHorizontalScroll(viewportWidth: CGFloat?, measuredRowWidth: CGFloat?) -> Bool {
+        guard
+            let viewportWidth,
+            let measuredRowWidth,
+            viewportWidth.isFinite,
+            measuredRowWidth.isFinite,
+            viewportWidth > 0
+        else {
+            return false
+        }
+        return measuredRowWidth > viewportWidth + 0.5
+    }
+
     static func measuredRowWidth(
         proposalWidth: CGFloat?,
         childWidths: [CGFloat],
@@ -100,6 +113,22 @@ enum HorizontalLayoutSizing {
             for index in flexibleIndices { result[index] = share }
         }
         return result
+    }
+}
+
+private struct HorizontalViewportWidthPreferenceKey: PreferenceKey {
+    static var defaultValue: CGFloat? = nil
+
+    static func reduce(value: inout CGFloat?, nextValue: () -> CGFloat?) {
+        if let next = nextValue() { value = max(value ?? next, next) }
+    }
+}
+
+private struct HorizontalRowWidthPreferenceKey: PreferenceKey {
+    static var defaultValue: CGFloat? = nil
+
+    static func reduce(value: inout CGFloat?, nextValue: () -> CGFloat?) {
+        if let next = nextValue() { value = max(value ?? next, next) }
     }
 }
 
@@ -183,6 +212,8 @@ struct LayoutView: View {
     let onHref: ((JasonHref) -> Void)?
     let onAction: ((JasonAction) -> Void)?
     let documentURL: URL?
+    @State private var horizontalViewportWidth: CGFloat?
+    @State private var horizontalRowWidth: CGFloat?
 
     var body: some View {
         let spacing = style?.spacing?.cgFloat ?? 8
@@ -201,26 +232,66 @@ struct LayoutView: View {
                 }
             }
         case .horizontal:
-            ViewThatFits(in: .horizontal) {
-                HorizontalRowLayout(
-                    spacing: spacing,
-                    distribution: style?.distribution,
-                    paddingLeft: style?.paddingLeft?.cgFloat ?? style?.padding?.cgFloat ?? 0,
-                    paddingRight: style?.paddingRight?.cgFloat ?? style?.padding?.cgFloat ?? 0,
-                    alignment: style?.align,
-                    widthModes: components.map { component in
-                        HorizontalChildWidth(style: JasonStyle.resolve(for: component, headStyles: headStyles))
-                    }
-                ) {
-                    horizontalComponents()
-                }
+            ZStack(alignment: .topLeading) {
+                viewportWidthProbe
 
-                ScrollView(.horizontal) {
-                    HStack(alignment: verticalAlignment, spacing: spacing) {
-                        horizontalComponents()
+                if HorizontalLayoutSizing.needsHorizontalScroll(
+                    viewportWidth: horizontalViewportWidth,
+                    measuredRowWidth: horizontalRowWidth
+                ) {
+                    ScrollView(.horizontal) {
+                        horizontalRow(spacing: spacing)
                     }
+                    .frame(maxWidth: .infinity)
+                } else {
+                    horizontalRow(spacing: spacing)
                 }
-                .frame(maxWidth: .infinity)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .onPreferenceChange(HorizontalViewportWidthPreferenceKey.self) { width in
+                guard let width, width.isFinite, width > 0 else { return }
+                horizontalViewportWidth = width
+            }
+            .onPreferenceChange(HorizontalRowWidthPreferenceKey.self) { width in
+                guard let width, width.isFinite else { return }
+                horizontalRowWidth = width
+            }
+        }
+    }
+
+    private var viewportWidthProbe: some View {
+        Color.clear
+            .frame(maxWidth: .infinity)
+            .frame(height: 0)
+            .background {
+                GeometryReader { proxy in
+                    Color.clear.preference(
+                        key: HorizontalViewportWidthPreferenceKey.self,
+                        value: proxy.size.width
+                    )
+                }
+            }
+    }
+
+    private func horizontalRow(spacing: CGFloat) -> some View {
+        HorizontalRowLayout(
+            spacing: spacing,
+            distribution: style?.distribution,
+            paddingLeft: style?.paddingLeft?.cgFloat ?? style?.padding?.cgFloat ?? 0,
+            paddingRight: style?.paddingRight?.cgFloat ?? style?.padding?.cgFloat ?? 0,
+            alignment: style?.align,
+            widthModes: components.map { component in
+                HorizontalChildWidth(style: JasonStyle.resolve(for: component, headStyles: headStyles))
+            }
+        ) {
+            horizontalComponents()
+        }
+        .background {
+            GeometryReader { proxy in
+                Color.clear.preference(
+                    key: HorizontalRowWidthPreferenceKey.self,
+                    value: proxy.size.width
+                )
             }
         }
     }
@@ -235,14 +306,8 @@ struct LayoutView: View {
                 onAction: onAction,
                 documentURL: documentURL
             )
-        }
-    }
-
-    private var verticalAlignment: VerticalAlignment {
-        switch style?.align {
-        case "center": return .center
-        case "bottom": return .bottom
-        default: return .top
+            .transformPreference(HorizontalViewportWidthPreferenceKey.self) { $0 = nil }
+            .transformPreference(HorizontalRowWidthPreferenceKey.self) { $0 = nil }
         }
     }
 

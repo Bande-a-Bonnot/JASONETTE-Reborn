@@ -85,6 +85,29 @@ final class LayoutViewTests: XCTestCase {
         )
         XCTAssertEqual(widths, [200, 200])
         XCTAssertEqual(rowWidth, 410, accuracy: 0.001)
-        XCTAssertGreaterThan(rowWidth, 300)
+        XCTAssertTrue(HorizontalLayoutSizing.needsHorizontalScroll(
+            viewportWidth: 300,
+            measuredRowWidth: rowWidth
+        ))
+
+        let flexibleWidths = HorizontalLayoutSizing.childWidths(
+            containerWidth: 300,
+            paddingLeft: 0,
+            paddingRight: 0,
+            spacing: 10,
+            widthModes: [.flexible, .flexible],
+            idealWidths: [420, 360],
+            distribution: "equalsize"
+        )
+        let wrappedRowWidth = HorizontalLayoutSizing.measuredRowWidth(
+            proposalWidth: 300,
+            childWidths: flexibleWidths,
+            spacing: 10
+        )
+        XCTAssertEqual(wrappedRowWidth, 300, accuracy: 0.001)
+        XCTAssertFalse(HorizontalLayoutSizing.needsHorizontalScroll(
+            viewportWidth: 300,
+            measuredRowWidth: wrappedRowWidth
+        ))
     }
 }
