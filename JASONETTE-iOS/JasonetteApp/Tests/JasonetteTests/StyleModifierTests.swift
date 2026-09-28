@@ -384,6 +384,7 @@ final class StyleModifierTests: XCTestCase {
 
     private func repoRootURL() -> URL {
         URL(fileURLWithPath: #file)
+            .deletingLastPathComponent() // StyleModifierTests.swift -> JasonetteTests/
             .deletingLastPathComponent() // JasonetteTests/ -> Tests/
             .deletingLastPathComponent() // Tests/ -> JasonetteApp/
             .deletingLastPathComponent() // JasonetteApp/ -> JASONETTE-iOS/
