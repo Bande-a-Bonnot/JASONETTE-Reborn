@@ -173,3 +173,14 @@ primary agent must use fresh iOS Simulator screenshots of Action tiles,
 textarea/textfield buttons, horizontal columns, and the nested tweet as the
 behavioral rendering gate; record any additional focused pixel/geometry checks
 that can run reliably. Do not mark the todos complete on unit checks alone.
+
+### Second Sol review follow-up (2026-09-28)
+
+The first overflow repair used `ViewThatFits` to choose between the finite row
+and a scroll fallback. SwiftUI selects by the child's **ideal** size, so long
+flexible labels can trigger the fallback even when they would wrap within the
+actual viewport. Remove that selection method. Base overflow choice on the
+finite width actually offered to the row, reserving fixed and intrinsic child
+widths; keep ordinary flexible rows on the finite layout. The final simulator
+pass must show both equal-width paragraph wrapping and a successful swipe to
+the second 200-point child in the local 300-point overflow fixture.
