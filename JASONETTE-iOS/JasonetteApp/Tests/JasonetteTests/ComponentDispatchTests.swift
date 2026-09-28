@@ -46,6 +46,51 @@ final class ComponentDispatchTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(ButtonComponent.defaultVerticalPadding, 10)
     }
 
+    func testFixedWidthTextButtonUsesAuthoredWidthForClassAndInlineStyles() {
+        let headStyles = ["compact": JasonStyle(width: AnyCodable(60))]
+        let classComponent = decodeComponent(["type": "button", "text": "Done", "class": "compact"])
+        let classStyle = JasonStyle.resolve(for: classComponent, headStyles: headStyles)
+        let classButton = ButtonComponent(component: classComponent, documentURL: nil, style: classStyle)
+
+        XCTAssertEqual(classButton.horizontalLabelPadding, 0)
+        XCTAssertEqual(classButton.minimumLabelWidth - 2 * classButton.horizontalLabelPadding, 60)
+        XCTAssertEqual(ButtonComponent.minimumHitSize, 44)
+
+        let inlineComponent = decodeComponent([
+            "type": "button",
+            "text": "Done",
+            "style": ["width": 60]
+        ])
+        let inlineStyle = JasonStyle.resolve(for: inlineComponent, headStyles: headStyles)
+        let inlineButton = ButtonComponent(component: inlineComponent, documentURL: nil, style: inlineStyle)
+
+        XCTAssertEqual(inlineButton.horizontalLabelPadding, 0)
+        XCTAssertEqual(inlineButton.minimumLabelWidth - 2 * inlineButton.horizontalLabelPadding, 60)
+        XCTAssertEqual(ButtonComponent.minimumHitSize, 44)
+    }
+
+    func testUnconstrainedTextButtonRetainsDefaultPaddingAndHitTarget() {
+        let component = decodeComponent(["type": "button", "text": "Done"])
+        let button = ButtonComponent(component: component, documentURL: nil, style: JasonStyle.resolve(for: component, headStyles: [:]))
+
+        XCTAssertEqual(button.horizontalLabelPadding, ButtonComponent.defaultHorizontalPadding)
+        XCTAssertEqual(button.minimumLabelWidth, 44)
+        XCTAssertEqual(ButtonComponent.minimumHitSize, 44)
+        XCTAssertEqual(ButtonComponent.defaultVerticalPadding, 10)
+    }
+
+    func testStyledImageButtonStillResolvesImageURL() {
+        let component = decodeComponent([
+            "type": "button",
+            "url": "https://example.com/done.png",
+            "style": ["width": 60]
+        ])
+        let style = JasonStyle.resolve(for: component, headStyles: [:])
+        let button = ButtonComponent(component: component, documentURL: nil, style: style)
+
+        XCTAssertEqual(button.resolvedURL?.absoluteString, "https://example.com/done.png")
+    }
+
     // MARK: - TextField
 
     func testTextFieldHasNamePlaceholderKeyboardValue() {

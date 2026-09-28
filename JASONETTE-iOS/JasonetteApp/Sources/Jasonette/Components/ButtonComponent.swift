@@ -8,19 +8,29 @@ struct ButtonComponent: View {
     let text: String?
     let url: String?
     let documentURL: URL?
+    let style: JasonStyle?
 
-    init(text: String?, url: String?, documentURL: URL?) {
+    init(text: String?, url: String?, documentURL: URL?, style: JasonStyle? = nil) {
         self.text = text
         self.url = url
         self.documentURL = documentURL
+        self.style = style
     }
 
-    init(component: JasonComponent, documentURL: URL?) {
-        self.init(text: component.text, url: component.imageURL, documentURL: documentURL)
+    init(component: JasonComponent, documentURL: URL?, style: JasonStyle? = nil) {
+        self.init(text: component.text, url: component.imageURL, documentURL: documentURL, style: style)
     }
 
     var resolvedURL: URL? {
         url.flatMap { JasonURL.resolve($0, against: documentURL, allowedSchemes: DocumentLoader.allowedSchemes) }
+    }
+
+    var horizontalLabelPadding: CGFloat {
+        style?.width?.cgFloat == nil ? Self.defaultHorizontalPadding : 0
+    }
+
+    var minimumLabelWidth: CGFloat {
+        max(Self.minimumHitSize, style?.width?.cgFloat ?? 0)
     }
 
     var body: some View {
@@ -48,9 +58,9 @@ struct ButtonComponent: View {
     @ViewBuilder
     private var fallbackLabel: some View {
         Text(text ?? "Button")
-            .padding(.horizontal, Self.defaultHorizontalPadding)
+            .padding(.horizontal, horizontalLabelPadding)
             .padding(.vertical, Self.defaultVerticalPadding)
-            .frame(minWidth: Self.minimumHitSize, minHeight: Self.minimumHitSize)
+            .frame(minWidth: minimumLabelWidth, minHeight: Self.minimumHitSize)
             .contentShape(Rectangle())
     }
 }

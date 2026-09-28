@@ -68,7 +68,7 @@ public struct ComponentView: View {
         case "image":
             ImageComponent(url: component.imageURL, style: component.style, documentURL: documentURL)
         case "button":
-            ButtonComponent(component: component, documentURL: documentURL)
+            ButtonComponent(component: component, documentURL: documentURL, style: resolvedStyle)
         case "textfield", "secure":
             TextFieldComponent(
                 name: component.name ?? "",
