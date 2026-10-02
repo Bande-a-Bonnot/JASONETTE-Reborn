@@ -2,6 +2,9 @@
 
 Status: active
 
+Baseline: elevated `swift test --jobs 2 --quiet` passed 622/622 before product
+edits on 2026-10-02. Only one root-owned SwiftPM process ran.
+
 ## Authorization and models
 
 The user requested a workflow for each of the three open todos, using

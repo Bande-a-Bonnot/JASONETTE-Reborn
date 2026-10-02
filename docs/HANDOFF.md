@@ -1,8 +1,21 @@
 # Agent Handoff Document
 
-Last updated: 2026-09-28
+Last updated: 2026-10-02
 
 **Update this file before context compaction and at the end of significant sessions.**
+
+## Active remaining iOS workflows (2026-10-02)
+
+The user requested a workflow on each remaining todo 106/107/108 using
+GPT-6.1 Sol high or xhigh, with independent xhigh reviewers for every task.
+The canonical workflow is `docs/plans/2026-10-02-ios-remaining-backlog-workflows.md`
+(charter commit `c07c7a8`). Workers `ios106_sol61` and `ios107_sol61` use xhigh;
+`ios108_sol61` uses high. Each first writes its task plan and requests approved
+file ownership before product edits. Root owns tests, commits, simulator, todo
+completion and handoff; one test/build lease at a time with two jobs. Baseline
+elevated Swift suite passed 622/622. Preserve the unrelated existing changes
+listed below. All three workflows must reach source review and actual iOS
+acceptance before closing their todos.
 
 ## Completed iOS QA fixes (2026-09-28)
 
