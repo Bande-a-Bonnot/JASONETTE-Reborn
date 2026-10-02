@@ -7,6 +7,7 @@
           "font": "HelveticaNeue-Bold",
           "align": "center",
           "background": "#ffffff",
+          "color": "#000000",
           "corner_radius": "3",
           "size": "12",
           "padding": "10"
@@ -15,6 +16,7 @@
           "width": "150",
           "align": "center",
           "background": "#ffffff",
+          "color": "#000000",
           "font": "HelveticaNeue-Bold",
           "height": "150"
         }
@@ -93,7 +95,8 @@
             "type": "label",
             "text": "$util",
             "style": {
-              "background": "#ebebeb"
+              "background": "#ebebeb",
+              "color": "#000000"
             }
           },
           "items": [
@@ -215,7 +218,8 @@
             "type": "label",
             "text": "$media",
             "style": {
-              "background": "#ebebeb"
+              "background": "#ebebeb",
+              "color": "#000000"
             }
           },
           "items": [
@@ -319,7 +323,8 @@
             "type": "label",
             "text": "Barcode & QRCode scanning",
             "style": {
-              "background": "#ebebeb"
+              "background": "#ebebeb",
+              "color": "#000000"
             }
           },
           "items": [
@@ -341,7 +346,8 @@
             "type": "label",
             "text": "$network & $session",
             "style": {
-              "background": "#ebebeb"
+              "background": "#ebebeb",
+              "color": "#000000"
             }
           },
           "items": [
@@ -363,7 +369,8 @@
             "type": "label",
             "text": "Local variables",
             "style": {
-              "background": "#ebebeb"
+              "background": "#ebebeb",
+              "color": "#000000"
             }
           },
           "items": [
@@ -385,7 +392,8 @@
             "type": "label",
             "text": "$lambda",
             "style": {
-              "background": "#ebebeb"
+              "background": "#ebebeb",
+              "color": "#000000"
             }
           },
           "items": [
@@ -407,7 +415,8 @@
             "type": "label",
             "text": "Geo",
             "style": {
-              "background": "#ebebeb"
+              "background": "#ebebeb",
+              "color": "#000000"
             }
           },
           "items": [
@@ -429,7 +438,8 @@
             "type": "label",
             "text": "JavaScript",
             "style": {
-              "background": "#ebebeb"
+              "background": "#ebebeb",
+              "color": "#000000"
             }
           },
           "items": [
@@ -451,7 +461,8 @@
             "type": "label",
             "text": "Timer",
             "style": {
-              "background": "#ebebeb"
+              "background": "#ebebeb",
+              "color": "#000000"
             }
           },
           "items": [

@@ -51,6 +51,37 @@ final class RendererAppearanceTests: XCTestCase {
         }
     }
 
+    func testActualActionFixtureLabelsAndHeadersRemainReadableWhileBodyKeepsAuthoredWhite() throws {
+        let document = try fixture("Jasonpedia/action/index.json")
+        let documentBody = try XCTUnwrap(document.jason.body)
+        let sections = try XCTUnwrap(documentBody.sections)
+        let styles = document.jason.head?.styles ?? [:]
+        let headers = try sections.map { try XCTUnwrap($0.header) }
+        let cells = sections.flatMap { $0.items ?? [] }
+        XCTAssertEqual(headers.count, 9)
+        XCTAssertEqual(cells.count, 19)
+
+        for scheme in [ColorScheme.light, .dark] {
+            let context = RendererAppearance.document(body: documentBody, systemScheme: scheme)
+            XCTAssertEqual(context.background, RendererColor(css: "#8bb92d"))
+            XCTAssertEqual(context.authoredForeground, .white)
+            XCTAssertEqual(context.foreground, .white)
+
+            // Section headers and cells each inherit directly from the body,
+            // then resolve their own classes and inline styles in ComponentView.
+            for label in headers + cells {
+                XCTAssertEqual(label.type, "label")
+                let style = JasonStyle.resolve(for: label, headStyles: styles)
+                let appearance = context.applying(style: style)
+                XCTAssertGreaterThanOrEqual(
+                    contrast(appearance.foreground, appearance.background),
+                    4.5,
+                    "\(scheme): \(label.text ?? "Unnamed Action label")"
+                )
+            }
+        }
+    }
+
     func testBodyOnlyLightBackgroundDefaultsToDarkTextInSystemDark() throws {
         let context = RendererAppearance.document(body: try body(["style": ["background": "#f5f5f5"]]), systemScheme: .dark)
         XCTAssertEqual(context.applying(style: JasonStyle()).foreground, .black)
