@@ -787,6 +787,303 @@ final class ActionDispatcherTests: XCTestCase {
         XCTAssertEqual(provider.requests, [MediaCaptureRequest(source: .photoLibrary, mediaType: .image, allowsEditing: false)])
     }
 
+    // MARK: - Media cancellation chain boundaries
+
+    private func seedSelectedMedia() -> [String: Any] {
+        let selected: [String: Any] = [
+            "data": "b2xk",
+            "file_url": "file:///tmp/previous.mov",
+            "media_type": "image",
+            "content_type": "image/jpeg",
+            "$jason": ["data": "b2xk", "selection": "previous"],
+            "unrelated": "keep"
+        ]
+        stateManager.set(selected)
+        return selected
+    }
+
+    private func assertSelectedMediaUnchanged(_ selected: [String: Any], file: StaticString = #filePath, line: UInt = #line) {
+        let actual = selected.keys.reduce(into: [String: Any]()) { result, key in
+            result[key] = stateManager.get()[key]
+        }
+        XCTAssertEqual(actual as NSDictionary, selected as NSDictionary, file: file, line: line)
+    }
+
+    private func mediaSuccessActions() -> [[String: Any]] {
+        [
+            ["type": "$util.share", "options": ["items": [["type": "image", "data": "{{$jason.data}}"]]]],
+            ["type": "$set", "options": ["media_success_ran": true]]
+        ]
+    }
+
+    func testMediaCancellationWithoutErrorStopsSuccessAndPreservesSelection() async {
+        for type in ["$media.picker", "$media.camera"] {
+            for emptyErrorArray in [false, true] {
+                stateManager.local = [:]
+                let selected = seedSelectedMedia()
+                let provider = StubMediaCaptureProvider(result: .failure(ActionDispatcher.ActionError.mediaCaptureCancelled))
+                let share = StubShareProvider()
+                var alerts: [String] = []
+                dispatcher.setMediaCaptureHandler(provider.capture)
+                dispatcher.setShareHandler(share.share)
+                dispatcher.setAlertHandler { title, _ in alerts.append(title) }
+                var json: [String: Any] = ["type": type, "success": mediaSuccessActions()]
+                if emptyErrorArray { json["error"] = [[String: Any]]() }
+
+                await dispatcher.execute(decodeAction(json))
+
+                XCTAssertEqual(provider.requests.count, 1)
+                XCTAssertTrue(alerts.isEmpty, "Unexpected feedback for \(type), empty error: \(emptyErrorArray)")
+                XCTAssertTrue(share.requests.isEmpty)
+                XCTAssertEqual(stateManager.get() as NSDictionary, selected as NSDictionary)
+            }
+        }
+    }
+
+    func testMediaCancellationRunsSingleAuthoredErrorOnceWithIncomingPayload() async {
+        let selected = seedSelectedMedia()
+        let provider = StubMediaCaptureProvider(result: .failure(ActionDispatcher.ActionError.mediaCaptureCancelled))
+        let share = StubShareProvider()
+        var alerts: [(String, String)] = []
+        dispatcher.setMediaCaptureHandler(provider.capture)
+        dispatcher.setShareHandler(share.share)
+        dispatcher.setAlertHandler { title, description in alerts.append((title, description ?? "")) }
+        let action = decodeAction([
+            "type": "$get",
+            "success": [[
+                "type": "$media.picker",
+                "success": mediaSuccessActions(),
+                "error": ["type": "$util.alert", "options": ["title": "Authored cancel", "description": "{{$jason.data}}"]]
+            ]]
+        ])
+
+        await dispatcher.execute(action)
+
+        XCTAssertEqual(alerts.map(\.0), ["Authored cancel"])
+        XCTAssertEqual(alerts.map(\.1), ["b2xk"])
+        XCTAssertTrue(share.requests.isEmpty)
+        XCTAssertEqual(stateManager.get() as NSDictionary, selected as NSDictionary)
+    }
+
+    func testMediaCancellationRunsErrorArrayInOrderThenStopsAncestorSuccess() async {
+        let selected = seedSelectedMedia()
+        let provider = StubMediaCaptureProvider(result: .failure(ActionDispatcher.ActionError.mediaCaptureCancelled))
+        let share = StubShareProvider()
+        var alerts: [(String, String)] = []
+        dispatcher.setMediaCaptureHandler(provider.capture)
+        dispatcher.setShareHandler(share.share)
+        dispatcher.setAlertHandler { title, description in alerts.append((title, description ?? "")) }
+        let cancelled: [String: Any] = [
+            "type": "$media.picker",
+            "success": mediaSuccessActions(),
+            "error": [
+                ["type": "$util.alert", "options": ["title": "Error first", "description": "{{$jason.data}}"]],
+                ["type": "$set", "options": ["authored_error_ran": true]],
+                ["type": "$util.alert", "options": ["title": "Error last", "description": "{{$get.authored_error_ran}}"]]
+            ]
+        ]
+        let action = decodeAction([
+            "type": "$get",
+            "success": [cancelled] + mediaSuccessActions(),
+            "error": ["type": "$util.alert", "options": ["title": "Ancestor error"]]
+        ])
+
+        await dispatcher.execute(action)
+
+        XCTAssertEqual(alerts.map(\.0), ["Error first", "Error last"])
+        XCTAssertEqual(alerts.map(\.1), ["b2xk", "true"])
+        XCTAssertTrue(share.requests.isEmpty)
+        XCTAssertNil(stateManager.get()["media_success_ran"])
+        XCTAssertEqual(stateManager.get()["authored_error_ran"] as? Bool, true)
+        assertSelectedMediaUnchanged(selected)
+    }
+
+    func testMediaCancellationStopsLaterSuccessArraySiblingsWithoutClearingPriorWork() async {
+        let selected = seedSelectedMedia()
+        let provider = StubMediaCaptureProvider(result: .failure(ActionDispatcher.ActionError.mediaCaptureCancelled))
+        let share = StubShareProvider()
+        var alerts: [String] = []
+        dispatcher.setMediaCaptureHandler(provider.capture)
+        dispatcher.setShareHandler(share.share)
+        dispatcher.setAlertHandler { title, _ in alerts.append(title) }
+        let action = decodeAction([
+            "type": "$set",
+            "options": ["before_cancel": true],
+            "success": [["type": "$get", "success": [["type": "$media.picker"]] + mediaSuccessActions()]] + mediaSuccessActions()
+        ])
+
+        await dispatcher.execute(action)
+
+        XCTAssertTrue(alerts.isEmpty)
+        XCTAssertTrue(share.requests.isEmpty, "Cancellation must not share the previous media payload")
+        XCTAssertNil(stateManager.get()["media_success_ran"])
+        XCTAssertEqual(stateManager.get()["before_cancel"] as? Bool, true)
+        assertSelectedMediaUnchanged(selected)
+    }
+
+    func testMediaCancellationPropagatesThroughTriggerAndLambdaWrappers() async {
+        for wrapper in [
+            ["trigger": "capture", "options": ["data": "incoming"]],
+            ["type": "$lambda", "options": ["name": "capture", "options": ["data": "incoming"]]]
+        ] as [[String: Any]] {
+            stateManager.local = [:]
+            let selected = seedSelectedMedia()
+            let provider = StubMediaCaptureProvider(result: .failure(ActionDispatcher.ActionError.mediaCaptureCancelled))
+            let share = StubShareProvider()
+            var alerts: [(String, String)] = []
+            dispatcher.setMediaCaptureHandler(provider.capture)
+            dispatcher.setShareHandler(share.share)
+            dispatcher.setAlertHandler { title, description in alerts.append((title, description ?? "")) }
+            let named = decodeAction([
+                "type": "$media.picker",
+                "success": mediaSuccessActions(),
+                "error": ["type": "$util.alert", "options": ["title": "Named cancel", "description": "{{$jason.data}}"]]
+            ])
+            dispatcher.setActionResolver { $0 == "capture" ? named : nil }
+            var wrapped = wrapper
+            wrapped["success"] = mediaSuccessActions()
+            wrapped["error"] = ["type": "$util.alert", "options": ["title": "Wrapper error"]]
+            let action = decodeAction([
+                "type": "$get", "success": [wrapped] + mediaSuccessActions(),
+                "error": ["type": "$util.alert", "options": ["title": "Ancestor error"]]
+            ])
+
+            await dispatcher.execute(action)
+
+            XCTAssertEqual(alerts.map(\.0), ["Named cancel"])
+            XCTAssertEqual(alerts.map(\.1), ["incoming"])
+            XCTAssertEqual(provider.requests.count, 1)
+            XCTAssertTrue(share.requests.isEmpty)
+            XCTAssertEqual(stateManager.get() as NSDictionary, selected as NSDictionary)
+        }
+    }
+
+    func testMediaCancellationPropagatesFromUtilityPickerItemAction() async {
+        let selected = seedSelectedMedia()
+        let provider = StubMediaCaptureProvider(result: .failure(ActionDispatcher.ActionError.mediaCaptureCancelled))
+        let picker = StubUtilityPickerProvider(selectedIndex: 0)
+        let share = StubShareProvider()
+        var alerts: [String] = []
+        dispatcher.setMediaCaptureHandler(provider.capture)
+        dispatcher.setUtilityPickerHandler(picker.pick)
+        dispatcher.setShareHandler(share.share)
+        dispatcher.setAlertHandler { title, _ in alerts.append(title) }
+        let action = decodeAction([
+            "type": "$util.picker",
+            "options": ["items": [["text": "Capture", "action": ["type": "$media.picker"]]]],
+            "success": mediaSuccessActions()
+        ])
+
+        await dispatcher.execute(action)
+
+        XCTAssertEqual(provider.requests.count, 1)
+        XCTAssertTrue(alerts.isEmpty)
+        XCTAssertTrue(share.requests.isEmpty)
+        XCTAssertNil(stateManager.get()["media_success_ran"])
+        // Utility selection precedes media cancellation and intentionally owns $jason.
+        for key in ["data", "file_url", "media_type", "content_type", "unrelated"] {
+            XCTAssertEqual(stateManager.get()[key] as? String, selected[key] as? String)
+        }
+        XCTAssertEqual((stateManager.get()["$jason"] as? [String: Any])?["text"] as? String, "Capture")
+    }
+
+    func testMediaCancellationDoesNotPoisonSubsequentSuccessfulShare() async {
+        _ = seedSelectedMedia()
+        let provider = StubMediaCaptureProvider(result: .failure(ActionDispatcher.ActionError.mediaCaptureCancelled))
+        let share = StubShareProvider()
+        var alerts: [String] = []
+        dispatcher.setMediaCaptureHandler(provider.capture)
+        dispatcher.setShareHandler(share.share)
+        dispatcher.setAlertHandler { title, _ in alerts.append(title) }
+        let action = decodeAction(["type": "$media.picker", "success": mediaSuccessActions()])
+
+        await dispatcher.execute(action)
+        provider.result = .success(["data": "bmV3", "media_type": "image", "content_type": "image/jpeg"])
+        await dispatcher.execute(action)
+
+        XCTAssertTrue(alerts.isEmpty)
+        XCTAssertEqual(provider.requests.count, 2)
+        XCTAssertEqual(share.requests.count, 1)
+        XCTAssertEqual(share.requests.first?.items.first?.data, Data("new".utf8))
+        XCTAssertEqual(stateManager.get()["data"] as? String, "bmV3")
+        XCTAssertEqual((stateManager.get()["$jason"] as? [String: Any])?["data"] as? String, "bmV3")
+        XCTAssertEqual(stateManager.get()["media_success_ran"] as? Bool, true)
+    }
+
+    func testMediaCancellationPolicyRetainsRealFailureFeedback() async {
+        let captureError = NSError(domain: "MediaRegression", code: 1, userInfo: [NSLocalizedDescriptionKey: "Capture failed to decode the image."])
+        let failures: [Error] = [
+            ActionDispatcher.ActionError.mediaCapturePermissionDenied,
+            ActionDispatcher.ActionError.mediaCaptureUnavailable,
+            captureError
+        ]
+        for failure in failures {
+            stateManager.local = [:]
+            let selected = seedSelectedMedia()
+            let provider = StubMediaCaptureProvider(result: .failure(failure))
+            let share = StubShareProvider()
+            var alerts: [(String, String)] = []
+            dispatcher.setMediaCaptureHandler(provider.capture)
+            dispatcher.setShareHandler(share.share)
+            dispatcher.setAlertHandler { title, description in alerts.append((title, description ?? "")) }
+
+            await dispatcher.execute(decodeAction(["type": "$media.picker", "success": mediaSuccessActions()]))
+
+            XCTAssertTrue(alerts.contains { $0.0 == "Action failed" && $0.1 == failure.localizedDescription })
+            XCTAssertTrue(alerts.contains { $0.0 == "Media picker unavailable" && $0.1 == failure.localizedDescription })
+            XCTAssertTrue(share.requests.isEmpty)
+            XCTAssertEqual(stateManager.get() as NSDictionary, selected as NSDictionary)
+        }
+    }
+
+    func testMediaCancellationPolicyRetainsMissingHandlerFeedback() async {
+        let selected = seedSelectedMedia()
+        let share = StubShareProvider()
+        var alerts: [(String, String)] = []
+        dispatcher.setShareHandler(share.share)
+        dispatcher.setAlertHandler { title, description in alerts.append((title, description ?? "")) }
+
+        await dispatcher.execute(decodeAction(["type": "$media.picker", "success": mediaSuccessActions()]))
+
+        XCTAssertTrue(alerts.contains { $0.0 == "Camera unavailable" && !$0.1.isEmpty })
+        XCTAssertTrue(alerts.contains { $0.0 == "Action failed" && $0.1 == ActionDispatcher.ActionError.mediaCaptureUnavailable.localizedDescription })
+        XCTAssertTrue(share.requests.isEmpty)
+        XCTAssertEqual(stateManager.get() as NSDictionary, selected as NSDictionary)
+    }
+
+    func testMediaCancellationPolicyRetainsOrdinaryErrorRecoveryAndAncestorSuccess() async {
+        let selected = seedSelectedMedia()
+        let provider = StubMediaCaptureProvider(result: .failure(ActionDispatcher.ActionError.mediaCapturePermissionDenied))
+        var alerts: [String] = []
+        dispatcher.setMediaCaptureHandler(provider.capture)
+        dispatcher.setAlertHandler { title, _ in alerts.append(title) }
+        let action = decodeAction([
+            "type": "$get",
+            "success": [
+                ["type": "$media.picker", "success": mediaSuccessActions(), "error": ["type": "$set", "options": ["recovered": true]]],
+                ["type": "$set", "options": ["ancestor_success": true]]
+            ]
+        ])
+
+        await dispatcher.execute(action)
+
+        XCTAssertEqual(alerts, ["Media picker unavailable"])
+        XCTAssertEqual(stateManager.get()["recovered"] as? Bool, true)
+        XCTAssertEqual(stateManager.get()["ancestor_success"] as? Bool, true)
+        XCTAssertNil(stateManager.get()["media_success_ran"])
+        assertSelectedMediaUnchanged(selected)
+    }
+
+    func testMediaCancellationPolicyRetainsUnrelatedGenericFailure() async {
+        var alerts: [(String, String)] = []
+        dispatcher.setAlertHandler { title, description in alerts.append((title, description ?? "")) }
+
+        await dispatcher.execute(decodeAction(["type": "$network.request", "options": ["url": "not a url %%%"]]))
+
+        XCTAssertEqual(alerts.map(\.0), ["Action failed"])
+        XCTAssertEqual(alerts.map(\.1), [ActionDispatcher.ActionError.invalidURL.localizedDescription])
+    }
+
     func testUtilShareParsesTextURLImageDataAndFileURLItems() async {
         let provider = StubShareProvider()
         dispatcher.setShareHandler(provider.share)

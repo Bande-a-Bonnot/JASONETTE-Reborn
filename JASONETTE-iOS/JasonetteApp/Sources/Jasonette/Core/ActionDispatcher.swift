@@ -315,21 +315,36 @@ public final class ActionDispatcher: ObservableObject {
     }
 
     public func execute(_ action: JasonAction) async {
-        _ = await execute(action, baseURL: documentURL, payload: nil)
+        do {
+            _ = try await execute(action, baseURL: documentURL, payload: nil)
+        } catch is MediaCancellation {
+            // The cancelled action already ran its authored error continuation.
+        } catch {
+            alertHandler?("Action failed", error.localizedDescription)
+        }
     }
 
     @discardableResult
-    private func execute(_ action: JasonAction, baseURL: URL?, payload: Any?) async -> Any? {
+    private func execute(_ action: JasonAction, baseURL: URL?, payload: Any?) async throws -> Any? {
         do {
             let result = try await dispatch(action, baseURL: baseURL, payload: payload)
             let nextPayload = result ?? payload
             var chainedPayload = nextPayload
             for success in continuationActions(action.successActions, fallback: action.success) {
-                chainedPayload = await execute(success, baseURL: baseURL, payload: chainedPayload) ?? chainedPayload
+                chainedPayload = try await execute(success, baseURL: baseURL, payload: chainedPayload) ?? chainedPayload
             }
             return chainedPayload
         } catch is AbortAction {
             return payload
+        } catch let cancellation as MediaCancellation {
+            // A nested cancellation stops this success flow without notifying again.
+            throw cancellation
+        } catch ActionError.mediaCaptureCancelled {
+            var chainedPayload = payload
+            for errorAction in continuationActions(action.errorActions, fallback: action.error) {
+                chainedPayload = try await execute(errorAction, baseURL: baseURL, payload: chainedPayload) ?? chainedPayload
+            }
+            throw MediaCancellation()
         } catch {
             let errorActions = continuationActions(action.errorActions, fallback: action.error)
             guard !errorActions.isEmpty else {
@@ -339,7 +354,7 @@ public final class ActionDispatcher: ObservableObject {
 
             var chainedPayload = payload
             for errorAction in errorActions {
-                chainedPayload = await execute(errorAction, baseURL: baseURL, payload: chainedPayload) ?? chainedPayload
+                chainedPayload = try await execute(errorAction, baseURL: baseURL, payload: chainedPayload) ?? chainedPayload
             }
             return chainedPayload
         }
@@ -348,7 +363,7 @@ public final class ActionDispatcher: ObservableObject {
     private func dispatch(_ action: JasonAction, baseURL: URL?, payload: Any?) async throws -> Any? {
         if let trigger = action.trigger {
             guard let namedAction = actionResolver?(trigger) else { return payload }
-            return await execute(namedAction, baseURL: baseURL, payload: payloadFromOptions(action, fallback: payload)) ?? payload
+            return try await execute(namedAction, baseURL: baseURL, payload: payloadFromOptions(action, fallback: payload)) ?? payload
         }
 
         guard let type = action.type else { return payload }
@@ -499,7 +514,7 @@ public final class ActionDispatcher: ObservableObject {
             guard let name = options["name"]?.string,
                   let namedAction = actionResolver?(name) else { return payload }
             let lambdaPayload = options["options"].map { $0.unwrapped } ?? payload
-            return await execute(namedAction, baseURL: baseURL, payload: lambdaPayload) ?? lambdaPayload
+            return try await execute(namedAction, baseURL: baseURL, payload: lambdaPayload) ?? lambdaPayload
 
         case "$geo.get":
             let coord = try await geolocationProvider.currentCoordinate()
@@ -853,7 +868,7 @@ public final class ActionDispatcher: ObservableObject {
         stateManager.set(selectedPayload)
         stateManager.set(["$jason": selectedPayload])
         if let itemAction = item.action {
-            return await execute(itemAction, baseURL: baseURL, payload: selectedPayload) ?? selectedPayload
+            return try await execute(itemAction, baseURL: baseURL, payload: selectedPayload) ?? selectedPayload
         }
         return selectedPayload
     }
@@ -956,8 +971,14 @@ public final class ActionDispatcher: ObservableObject {
                 self.executingTimers.insert(name)
                 defer { self.executingTimers.remove(name) }
                 var currentPayload = payload
-                for action in tickActions {
-                    currentPayload = await self.execute(action, baseURL: baseURL, payload: currentPayload) ?? currentPayload
+                do {
+                    for action in tickActions {
+                        currentPayload = try await self.execute(action, baseURL: baseURL, payload: currentPayload) ?? currentPayload
+                    }
+                } catch is MediaCancellation {
+                    // Stop this tick's remaining actions, then perform timer cleanup.
+                } catch {
+                    self.alertHandler?("Action failed", error.localizedDescription)
                 }
                 if !repeats {
                     self.timers[name]?.invalidate()
@@ -1083,6 +1104,9 @@ public final class ActionDispatcher: ObservableObject {
     }
 
     private struct AbortAction: Error {}
+
+    /// Propagates a handled media cancellation through enclosing action chains.
+    private struct MediaCancellation: Error {}
 
     // MARK: - Conversion
 
