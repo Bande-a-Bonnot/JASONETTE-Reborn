@@ -41,6 +41,7 @@ extension View {
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
                 Button("Done") { KeyboardDismiss.dismiss() }
+                    .foregroundStyle(Color.accentColor)
             }
         }
         #else
