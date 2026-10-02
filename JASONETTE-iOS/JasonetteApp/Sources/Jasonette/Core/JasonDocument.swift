@@ -64,6 +64,56 @@ public struct JasonBody: Codable, Sendable {
     public var sections: [JasonSection]?
     public var layers: [JasonComponent]?
     public var footer: JasonFooter?
+
+    var htmlBackground: [String: AnyCodable]? {
+        guard let background = background?.dictionary,
+              background["type"]?.string == "html",
+              background["text"]?.string != nil || background["url"]?.string != nil else { return nil }
+        return background
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case background, style, header, sections, layers, footer
+    }
+
+    public init(
+        background: AnyCodable? = nil,
+        style: JasonStyle? = nil,
+        header: JasonHeader? = nil,
+        sections: [JasonSection]? = nil,
+        layers: [JasonComponent]? = nil,
+        footer: JasonFooter? = nil
+    ) {
+        self.background = background
+        self.style = style
+        self.header = header
+        self.sections = sections
+        self.layers = layers
+        self.footer = footer
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        background = try container.decodeIfPresent(AnyCodable.self, forKey: .background)
+
+        if var bodyStyle = try container.decodeIfPresent([String: AnyCodable].self, forKey: .style) {
+            // Legacy Web Container templates put HTML objects in body.style.background.
+            // Normalize only body backgrounds; component styles retain their color/image strings.
+            if let legacyBackground = bodyStyle["background"], legacyBackground.dictionary != nil {
+                if background == nil { background = legacyBackground }
+                bodyStyle.removeValue(forKey: "background")
+            }
+            let styleData = try JSONEncoder().encode(bodyStyle)
+            style = try JSONDecoder().decode(JasonStyle.self, from: styleData)
+        } else {
+            style = nil
+        }
+
+        header = try container.decodeIfPresent(JasonHeader.self, forKey: .header)
+        sections = try container.decodeIfPresent([JasonSection].self, forKey: .sections)
+        layers = try container.decodeIfPresent([JasonComponent].self, forKey: .layers)
+        footer = try container.decodeIfPresent(JasonFooter.self, forKey: .footer)
+    }
 }
 
 public struct JasonHeader: Codable, Sendable {

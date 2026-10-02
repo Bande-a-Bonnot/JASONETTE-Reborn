@@ -13,6 +13,11 @@ public final class JasonetteViewModel: ObservableObject {
 
     @Published var loadState: LoadState = .idle
     @Published var renderedRoot: JasonRoot?
+
+    var navigationTitle: String {
+        renderedRoot?.body?.header?.title ?? renderedRoot?.head?.title ?? ""
+    }
+
     @Published var alertConfig: AlertConfig?
     @Published var transientNotificationConfig: TransientNotificationConfig?
     private var transientNotificationDismissTask: Task<Void, Never>?
@@ -360,4 +365,3 @@ private extension JasonRoot {
         return false
     }
 }
-
