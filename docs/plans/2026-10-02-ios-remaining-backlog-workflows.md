@@ -1,6 +1,6 @@
 # Remaining iOS backlog workflows
 
-Status: active
+Status: complete for 106–108 — 2026-10-02
 
 Baseline: elevated `swift test --jobs 2 --quiet` passed 622/622 before product
 edits on 2026-10-02. Only one root-owned SwiftPM process ran.
@@ -14,9 +14,9 @@ for every task. Each workflow runs plan → focused regression → implementatio
 
 | Workflow | Canonical todo | Planning and implementation | Independent review |
 | --- | --- | --- | --- |
-| 106 | `todos/106-fix-ios-html-row-href-navigation.md` | GPT-6.1 Sol xhigh | GPT-6.1 Sol xhigh |
-| 107 | `todos/107-fix-ios-default-text-contrast-in-dark-appearance.md` | GPT-6.1 Sol xhigh | GPT-6.1 Sol xhigh |
-| 108 | `todos/108-improve-ios-media-picker-cancel-feedback.md` | GPT-6.1 Sol high | GPT-6.1 Sol xhigh |
+| 106 | `todos/106-complete-p2-ios-html-row-href-navigation.md` | GPT-6.1 Sol xhigh | GPT-6.1 Sol xhigh |
+| 107 | `todos/107-complete-p2-ios-default-text-contrast-in-dark-appearance.md` | GPT-6.1 Sol xhigh | GPT-6.1 Sol xhigh |
+| 108 | `todos/108-complete-p3-ios-media-picker-cancel-feedback.md` | GPT-6.1 Sol high | GPT-6.1 Sol xhigh |
 
 Read the canonical todo and `docs/HANDOFF.md` independently. Its definition of
 done is the acceptance contract. Record the diagnosis, intended change, owned
@@ -80,3 +80,12 @@ and consistent explicit state/session arguments. New session IDs must be UUIDv7.
 Each task records its review findings and resolutions, exact test results,
 final build source, simulator actions, and evidence in its task plan and a QA
 report. Root updates the three todos and `docs/HANDOFF.md` after verification.
+
+
+Final source `246d168`; final full suite **679 passed**, fresh iOS build and
+all three native acceptance paths pass. Independent xhigh findings were repaired
+and reviewed clean. Evidence, source provenance, and cleanup are recorded in
+[the QA report](../qa/2026-10-02-ios-backlog-verification.md). All three todos
+are complete. New preexisting toolbar duplication is queued separately as
+[todo109 workflow](2026-10-02-ios-todo-109-workflow.md), with high planning and
+implementation and xhigh review. No implementation has started for109.

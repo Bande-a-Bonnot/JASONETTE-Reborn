@@ -4,43 +4,76 @@ Last updated: 2026-10-02
 
 **Update this file before context compaction and at the end of significant sessions.**
 
-## Active remaining iOS workflows (2026-10-02)
+## Completed iOS backlog workflows (2026-10-02)
 
-The user requested a workflow on each remaining todo 106/107/108 using
-GPT-6.1 Sol high or xhigh, with independent xhigh reviewers for every task.
-The canonical workflow is `docs/plans/2026-10-02-ios-remaining-backlog-workflows.md`
-(charter commit `c07c7a8`). Workers `ios106_sol61` and `ios107_sol61` use xhigh;
-`ios108_sol61` uses high. Each first writes its task plan and requests approved
-file ownership before product edits. Root owns tests, commits, simulator, todo
-completion and handoff; one test/build lease at a time with two jobs. Baseline
-elevated Swift suite passed 622/622. Preserve the unrelated existing changes
-listed below. All three workflows must reach source review and actual iOS
-acceptance before closing their todos.
+Todos 106/107/108 are complete. The user requested GPT-6.1 Sol high/xhigh work
+and xhigh independent reviewers for each. Canonical workflow:
+`docs/plans/2026-10-02-ios-remaining-backlog-workflows.md`; exact tests, reviews,
+commands, source provenance, native actions/screenshots, and limitations:
+`docs/qa/2026-10-02-ios-backlog-verification.md`.
 
-Scoped red snapshots compiled successfully before implementation was released:
-106/108 ran 17 tests with 22 assertions failing (three decode errors), exposing
-legacy HTML body background decoding and cancellation continuation defects.
-107 ran 39 tests: 25 color parser checks passed, while 14 appearance policy
-tests produced 36 failing assertions. Logs are
-`/private/tmp/jasonette-ios-2026-10-02-red-106-108.log` and
-`/private/tmp/jasonette-ios-2026-10-02-red-107.log`. All three workers have been
-released for scoped implementation. Root owns shared registry wiring and adds
-the HTML background branch only after 107 finishes `JasonetteView.swift`.
-All implementations and root wiring are now stable. Fresh xhigh reviews:
-108 found none; 106 found the inherited SVG title precedence defect, repaired
-with VM.navigationTitle and re-reviewed clean; 107 found tab tint override and
-HTML/CSS background selection mismatch, both repaired. A focused 107 xhigh
-follow-up was interrupted by the daemon restart and is being rerun by
-`ios107_review_followup_sol61`. Previous agents did not survive restart.
-The first integrated green compile failed only a new test raw-string delimiter
-collision, now repaired. Current root Swift session logs to
-`/private/tmp/jasonette-ios-2026-10-02-green-focused-retry.log`.
-Pinned agent-device 0.21.12 is restored in
-`/private/tmp/jasonette-device-20261002`; its cached runner preparation finally
-succeeded before the restart (warm log). See the live verification report
-`docs/qa/2026-10-02-ios-backlog-verification.md` for canonical session/state and
-fixture server URLs. Full tests, fresh Tuist/iOS build, actual simulator
-acceptance, product commits and todo closure remain. Keep all host builds serial.
+Final product/fixture source **`246d1688cfb311ce66ba7d284a5b9b3fcb403595`**.
+Atomic source commits: 108 `1671964`, 106 `1b293de`, 107 `c527894`, shared wiring
+`f4e977d`, native HTML bounds `965a375`, keyboard contrast `771c197`, Action
+fixture authored foregrounds `246d168`. Final elevated Swift suite passes
+**679/679**, log `/private/tmp/jasonette-ios-2026-10-02-final-action-green.log`.
+Baseline 622; initial integrated 673; HTML bounds/toolbar 678 before final fixture
+regression. Scoped behavioral red runs and all correction evidence are in QA.
+No source/test/build failures remain. All source reviews are clean at xhigh.
+
+106 yields WebKit touches to an authored outer href/action and retains plain
+DOM interaction. It normalizes legacy HTML body background and resolves the
+body-header navigation title. Native QA caught 320-point content overflowing
+120-point buttons: visible SVG opened PDF. Resolved exact inner height now
+subtracts vertical padding with directional precedence; fixed/viewport modes
+ignore DOM measurements. Final normal Home→Web Container visible SVG and lots
+labels open their correct destinations; SVG Clock renders and advances, both
+Back paths work, plain inline/URL DOM buttons respond.
+
+107 uses rendered/composited backgrounds for contextual default foreground,
+control scheme, prompt, and fill; explicit authored foreground remains inherited.
+Plain/secure, textarea, footer, and footer tab tint pass native QA. Native
+follow-ups fixed system Done foreground and authored Action fixture white-on-
+white children. Final normal textfield light/dark empty/entered focus captures
+and Unicode submission pass; mixed surfaces, masking, dismissal, and tab tint
+pass. The corrected Action JSON was verified via byte-identical localhost copy.
+**Public Action JSON is still old until publication**; no push occurred.
+
+108 uses typed terminal media cancellation: authored error once with incoming
+payload, then enclosing success arrays/wrappers/util selection/timers stop.
+Ordinary errors and media state remain covered. Real native Photos cancel from
+normal Home→Action returns quietly twice; authored-error fixture alert runs
+once, OK returns without success/share. These native108 checks used f4e977d;
+its 108 source is unchanged in final artifact. Hardware camera wasn't exercised.
+
+Tuist generation and final iOS build succeeded, `-jobs 2`, cache
+`/private/tmp/JasonetteIOSQAFixes`, log
+`/private/tmp/jasonette-ios-2026-10-02-final-build.log`. Supported build-setting
+metadata overrides ensure plist `JasonetteGitCommit` exactly matches 246d168
+and `JasonetteCIWorkflow=LocalQA`; fresh artifact installed and tested on
+retained iPhone 17 Pro/iOS 26.2, UDID `9DC9D1D3-EB82-4D9F-A125-9E1219A3D8CB`.
+Agent-device 0.21.12 at `/private/tmp/jasonette-device-20261002`, state
+`/private/tmp/jasonette-device-state-20261002`, session
+`01a0fddd-2485-7115-aabe-f3a66cfa22ce`. Host runner recovered from daemon
+interruptions and one secure-entry XCTest restart. Never delete live daemon
+metadata or print its auth token. All SwiftPM/Tuist/simctl/agent-device operations
+need elevated host access; keep one host build lease with two jobs.
+
+Cleanup completed: light/Home restored and captured, interaction session closed,
+owned localhost fixtures server PID 66767 stopped, transient Action copy removed,
+retained QA simulator verified **Shutdown**. Root did not push/merge/deploy.
+Preserve unrelated AGENTS.md/CLAUDE.md modifications and two untracked July
+arbiter JSON files under `runs/019f56af-218a-7288-9330-2f812aa31d96/`.
+
+**Remaining backlog:** new P3 todo 109, duplicate system keyboard Done controls
+on multi-input screens (three public textfield, six mixed fixture, edge clipping).
+Preexisting before 107; contrast is fixed, duplication isn't. Canonical
+`todos/109-fix-ios-duplicate-keyboard-done-controls.md` and workflow
+`docs/plans/2026-10-02-ios-todo-109-workflow.md` assign Sol high planning/implementation
+and independent Sol xhigh review, serial gates. No implementation started. Screens
+are in current QA artifacts. 106–108 filenames now use complete-pN conventions;
+currentplan and historicalQA links were updated. Don't reopen them on older
+handoff references.
 
 ## Completed iOS QA fixes (2026-09-28)
 

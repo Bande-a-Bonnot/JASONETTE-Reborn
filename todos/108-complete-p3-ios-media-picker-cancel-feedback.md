@@ -1,6 +1,6 @@
 ---
 id: "01a0dd6d-49aa-771c-b974-848e8a9a1297"
-status: open
+status: complete
 priority: p3
 issue_id: "108"
 tags: [ios, actions, media, ux, qa]
@@ -46,3 +46,15 @@ shows an Action failed alert when no error actions are present.
 - Cancellation never runs success/share or changes selected-media state.
 - Real permission, availability, and capture failures retain useful feedback.
 - Focused action-chain coverage and a simulator cancel flow verify the result.
+
+## Completion — 2026-10-02
+
+Complete at final source `246d168`; cancellation implementation is `1671964`.
+Typed terminal cancellation propagation runs the affected authored error branch
+once and stops enclosing success/share continuations. State preservation and
+ordinary failures are covered by action-chain regressions. Normal Home→Action
+native Photos cancellation returns quietly twice. Local authored error shows
+its alert once; OK returns without another alert or success/share continuation.
+Xhigh review found no findings; final full suite passes 679/679 and fresh iOS
+build passes. Native108 QA used f4e977d, whose108 source is unchanged in final.
+See [verification](../docs/qa/2026-10-02-ios-backlog-verification.md).

@@ -1,6 +1,6 @@
 ---
 id: "01a0dd6d-49aa-7337-81d7-9b7470e44f83"
-status: open
+status: complete
 priority: p2
 issue_id: "107"
 tags: [ios, rendering, accessibility, appearance, qa]
@@ -47,3 +47,16 @@ combined with system appearance. The exact contrast ratios were not measured.
 - Apply the chosen default-color policy consistently to related text inputs.
 - Capture matching light/dark regression evidence and restore simulator
   appearance after verification.
+
+## Completion — 2026-10-02
+
+Complete at final source `246d168`. Contextual defaults choose readable text and
+input surfaces from rendered backgrounds while preserving authored colors.
+Plain/secure inputs, textarea, structural footer, system Done contrast, and
+footer tab tint pass scoped native QA. Normal textfield navigation provides
+matching light/dark empty and focused entered captures; Unicode submission is
+unchanged. The Action fixture adds explicit readable child foregrounds; its
+repository JSON passed localhost QA, while the public URL awaits publication.
+Xhigh review is clean; final full suite passes 679/679 and fresh iOS build passes.
+Appearance restored to light. See [verification](../docs/qa/2026-10-02-ios-backlog-verification.md).
+Separate preexisting duplicate keyboard Done controls are tracked in todo109.

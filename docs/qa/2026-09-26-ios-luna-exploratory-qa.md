@@ -17,9 +17,9 @@ sampled exploratory pass, not exhaustive coverage of every demo.
 | --- | --- | --- |
 | P2 | Horizontal paragraphs do not wrap into their authored columns | [104](../../todos/104-fix-ios-horizontal-layout-width-distribution.md) |
 | P2 | Action tile backgrounds cover only text, not the authored tile bounds | [105](../../todos/105-fix-ios-component-background-bounds.md) |
-| P2 | Tapping the tested Web Container SVG row does not navigate | [106](../../todos/106-fix-ios-html-row-href-navigation.md) |
-| P2 | Default text/placeholder contrast breaks in dark appearance | [107](../../todos/107-fix-ios-default-text-contrast-in-dark-appearance.md) |
-| P3 | Ordinary photo-picker cancellation shows a generic failure alert (UX proposal) | [108](../../todos/108-improve-ios-media-picker-cancel-feedback.md) |
+| P2 | Tapping the tested Web Container SVG row does not navigate | [106](../../todos/106-complete-p2-ios-html-row-href-navigation.md) |
+| P2 | Default text/placeholder contrast breaks in dark appearance | [107](../../todos/107-complete-p2-ios-default-text-contrast-in-dark-appearance.md) |
+| P3 | Ordinary photo-picker cancellation shows a generic failure alert (UX proposal) | [108](../../todos/108-complete-p3-ios-media-picker-cancel-feedback.md) |
 | P3, existing | Narrow Done buttons truncate or wrap | [103, updated evidence](../../todos/103-fix-ios-fixed-width-button-label-truncation.md) |
 
 ## Environment

@@ -1,6 +1,6 @@
 ---
 id: "01a0dd6d-49aa-74ef-976c-35e45923e2c5"
-status: open
+status: complete
 priority: p2
 issue_id: "106"
 tags: [ios, html, navigation, qa]
@@ -53,3 +53,14 @@ establish whether the app issued a request.
 - Preserve internal HTML interaction for components without an outer href.
 - Add a focused regression check at the confirmed failure boundary and capture
   the successful in-app transition. A direct-entry launch alone is insufficient.
+
+## Completion — 2026-10-02
+
+Complete at final source `246d168`. Outer HTML yields touches to its authored
+href/action; resolved exact height and padding keep visible labels inside their
+activation bounds. Legacy HTML body background decoding and displayed title
+precedence are repaired. Normal Home → Web Container visible SVG text opens
+SVG Clock; two captures show animation. A second visible row opens its intended
+destination, and both Back paths work. Plain inline/URL DOM buttons still work.
+Xhigh review is clean; final full suite passes 679/679 and fresh iOS build passes.
+See [verification](../docs/qa/2026-10-02-ios-backlog-verification.md).
