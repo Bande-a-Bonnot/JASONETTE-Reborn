@@ -97,7 +97,7 @@ public struct ComponentView: View {
             let mapStyle = JasonStyle.resolve(for: component, headStyles: headStyles)
             MapComponent(component: component, height: mapStyle.height?.cgFloat)
         case "html":
-            HTMLComponent(component: component, documentURL: documentURL)
+            HTMLComponent(component: component, documentURL: documentURL, style: resolvedStyle)
         case "vertical":
             LayoutView(
                 direction: .vertical,

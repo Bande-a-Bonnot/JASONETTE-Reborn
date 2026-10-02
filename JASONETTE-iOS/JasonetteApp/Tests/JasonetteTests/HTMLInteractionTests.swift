@@ -39,6 +39,57 @@ final class HTMLInteractionTests: XCTestCase {
         }
     }
 
+    func testAuthoredHTMLHeightUsesExactBoundsIncludingBelowMeasurementMinimum() throws {
+        for (value, expected) in [(#""120""#, CGFloat(120)), ("20", CGFloat(20))] {
+            let row = try component("{\"type\":\"html\",\"text\":\"<p>Row</p>\",\"style\":{\"height\":\(value)}}")
+            let html = HTMLComponent(component: row, documentURL: nil)
+
+            XCTAssertEqual(html.sizing, .fixed(expected))
+        }
+    }
+
+    func testHTMLHeightUsesResolvedClassStyleAndInlinePrecedence() throws {
+        let classStyle = try JSONDecoder().decode(JasonStyle.self, from: Data(#"{"height":"120"}"#.utf8))
+        for (json, expected) in [
+            (#"{"type":"html","class":"tile","text":"<p>Row</p>"}"#, CGFloat(120)),
+            (#"{"type":"html","class":"tile","text":"<p>Row</p>","style":{"height":"80"}}"#, CGFloat(80))
+        ] {
+            let row = try component(json)
+            let style = JasonStyle.resolve(for: row, headStyles: ["tile": classStyle])
+            let html = HTMLComponent(component: row, documentURL: nil, style: style)
+
+            XCTAssertEqual(html.sizing, .fixed(expected))
+        }
+    }
+
+    func testFixedHTMLHeightSubtractsVerticalPaddingWithDirectionalPrecedence() throws {
+        for (styleJSON, expected) in [
+            (#"{"height":"120","padding_top":"20"}"#, CGFloat(100)),
+            (#"{"height":"120","padding":"10"}"#, CGFloat(100)),
+            (#"{"height":"120","padding":"10","padding_top":"20"}"#, CGFloat(90)),
+            (#"{"height":"120","padding":"10","padding_bottom":"0"}"#, CGFloat(110)),
+            (#"{"height":"120","padding":"10","padding_top":"0","padding_bottom":"5"}"#, CGFloat(115)),
+            (#"{"height":"20","padding_top":"30","padding_bottom":"5"}"#, CGFloat(0))
+        ] {
+            let row = try component("{\"type\":\"html\",\"text\":\"<p>Row</p>\",\"style\":\(styleJSON)}")
+            let html = HTMLComponent(component: row, documentURL: nil)
+
+            XCTAssertEqual(html.sizing, .fixed(expected), styleJSON)
+        }
+    }
+
+    func testFixedHTMLHeightUsesResolvedClassPaddingAndInlineEdgeOverrides() throws {
+        let classStyle = try JSONDecoder().decode(
+            JasonStyle.self,
+            from: Data(#"{"height":"120","padding":"10","padding_top":"20"}"#.utf8)
+        )
+        let row = try component(#"{"type":"html","class":"tile","style":{"padding_top":"0"}}"#)
+        let style = JasonStyle.resolve(for: row, headStyles: ["tile": classStyle])
+        let html = HTMLComponent(component: row, documentURL: nil, style: style)
+
+        XCTAssertEqual(html.sizing, .fixed(110))
+    }
+
     func testActualHTMLMenuRowsKeepAuthoredHrefAndEmitTheirPushes() async throws {
         let repository = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
@@ -59,7 +110,9 @@ final class HTMLInteractionTests: XCTestCase {
             let href = try XCTUnwrap(row.href)
             XCTAssertEqual(row.type, "html")
             XCTAssertEqual(href.url, "https://bande-a-bonnot.github.io/JASONETTE-Reborn/Jasonpedia/webcontainer/\(file)")
-            XCTAssertFalse(HTMLComponent(component: row, documentURL: viewModel.documentURL).allowsContentInteraction)
+            let html = HTMLComponent(component: row, documentURL: viewModel.documentURL)
+            XCTAssertFalse(html.allowsContentInteraction)
+            XCTAssertEqual(html.sizing, .fixed(120))
 
             viewModel.handleHref(href)
 
@@ -73,6 +126,23 @@ final class HTMLInteractionTests: XCTestCase {
     }
 
     #if canImport(WebKit)
+    func testAuthoredAndViewportHeightIgnoreMeasurementsWhileUnstyledHTMLKeepsThem() {
+        var height = HTMLComponent.defaultHeight
+        let binding = Binding(get: { height }, set: { height = $0 })
+        let coordinator = HTMLWebView.Coordinator(contentHeight: binding, sizing: .fixed(120))
+
+        coordinator.applyMeasuredHeight(960)
+        XCTAssertEqual(height, 320, "Authored bounds must ignore the larger DOM scroll height")
+
+        coordinator.configure(contentHeight: binding, sizing: .viewport)
+        coordinator.applyMeasuredHeight(1800)
+        XCTAssertEqual(height, 320, "Decorative backgrounds remain independent of DOM height")
+
+        coordinator.configure(contentHeight: binding, sizing: .content)
+        coordinator.applyMeasuredHeight(480)
+        XCTAssertEqual(height, 480, "Unstyled HTML retains measured content sizing")
+    }
+
     func testNativeWebContentYieldsHitToParentForOuterActivation() {
         let source = HTMLWebViewSource.html("<button>Content</button>", baseURL: nil)
         let representable = HTMLWebView(

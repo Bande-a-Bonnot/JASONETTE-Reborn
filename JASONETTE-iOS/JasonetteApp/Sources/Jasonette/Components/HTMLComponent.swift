@@ -17,11 +17,13 @@ import UIKit
 /// Inline HTML is wrapped in a minimal document when authored as a fragment so
 /// WebKit gets a viewport and predictable zero-margin body. The web view reports
 /// document height back into SwiftUI so HTML components placed inside Jasonette's
-/// outer ScrollView do not collapse to zero height.
+/// outer ScrollView do not collapse to zero height. An authored style height
+/// takes precedence so embedded content and an outer activation surface align.
 @MainActor
 struct HTMLComponent: View {
     enum Sizing: Equatable {
         case content
+        case fixed(CGFloat)
         case viewport
     }
 
@@ -50,22 +52,32 @@ struct HTMLComponent: View {
         self.sizing = sizing
     }
 
-    init(component: JasonComponent, documentURL: URL?) {
+    init(component: JasonComponent, documentURL: URL?, style: JasonStyle? = nil) {
+        let resolvedStyle = style ?? component.style
+        let height = resolvedStyle?.height?.cgFloat
+        // The outer style adds padding before applying its authored height.
+        let uniformPadding = resolvedStyle?.padding?.cgFloat ?? 0
+        let topPadding = resolvedStyle?.paddingTop?.cgFloat ?? uniformPadding
+        let bottomPadding = resolvedStyle?.paddingBottom?.cgFloat ?? uniformPadding
         self.init(
             text: component.text,
             css: component.css,
             url: component.url,
             documentURL: documentURL,
-            allowsContentInteraction: component.href == nil && component.action == nil
+            allowsContentInteraction: component.href == nil && component.action == nil,
+            sizing: height.map { .fixed(max(0, $0 - topPadding - bottomPadding)) } ?? .content
         )
     }
 
     var body: some View {
         Group {
-            if sizing == .viewport {
+            switch sizing {
+            case .viewport:
                 htmlContent.frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                htmlContent.frame(minHeight: contentHeight)
+            case .content:
+                htmlContent.frame(height: contentHeight)
+            case let .fixed(height):
+                htmlContent.frame(height: height)
             }
         }
         .allowsHitTesting(allowsContentInteraction)
