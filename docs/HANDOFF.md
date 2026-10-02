@@ -17,6 +17,19 @@ elevated Swift suite passed 622/622. Preserve the unrelated existing changes
 listed below. All three workflows must reach source review and actual iOS
 acceptance before closing their todos.
 
+Scoped red snapshots compiled successfully before implementation was released:
+106/108 ran 17 tests with 22 assertions failing (three decode errors), exposing
+legacy HTML body background decoding and cancellation continuation defects.
+107 ran 39 tests: 25 color parser checks passed, while 14 appearance policy
+tests produced 36 failing assertions. Logs are
+`/private/tmp/jasonette-ios-2026-10-02-red-106-108.log` and
+`/private/tmp/jasonette-ios-2026-10-02-red-107.log`. All three workers have been
+released for scoped implementation. Root owns shared registry wiring and adds
+the HTML background branch only after 107 finishes `JasonetteView.swift`.
+The retained simulator has been booted; the September temporary agent-device
+package was partly cleaned up, so root is restoring pinned 0.21.12 in
+`/private/tmp/jasonette-device-20261002`. Fresh review/build/acceptance remain.
+
 ## Completed iOS QA fixes (2026-09-28)
 
 Todos 105 → 103 → 104 are complete. The user requested Sol high for planning
