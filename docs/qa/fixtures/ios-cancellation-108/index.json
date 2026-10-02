@@ -1,0 +1,17 @@
+{
+  "$jason": {
+    "head": { "title": "Authored cancellation QA" },
+    "body": {
+      "sections": [{ "items": [{
+        "type": "button",
+        "text": "Picker with authored error",
+        "style": { "padding": "16", "background": "#2445d9", "color": "#ffffff" },
+        "action": {
+          "type": "$media.picker",
+          "success": { "type": "$util.alert", "options": { "title": "Unexpected success", "description": "Cancellation must not reach this branch." } },
+          "error": { "type": "$util.alert", "options": { "title": "Cancelled by author", "description": "The authored error continuation received cancellation." } }
+        }
+      }] }]
+    }
+  }
+}

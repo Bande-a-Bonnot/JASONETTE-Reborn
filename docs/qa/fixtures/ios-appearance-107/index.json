@@ -1,0 +1,86 @@
+{
+  "$jason": {
+    "head": {
+      "title": "Appearance 107",
+      "styles": {
+        "darkSurface": { "background": "#111111", "padding": "12", "spacing": "10" },
+        "lightSurface": { "background": "#ffffff", "padding": "12", "spacing": "10" },
+        "authoredForeground": { "color": "#123456" }
+      }
+    },
+    "body": {
+      "style": { "background": "#f5f5f5" },
+      "sections": [
+        {
+          "header": { "type": "label", "text": "Body-only default heading" },
+          "items": [
+            {
+              "type": "vertical",
+              "class": "darkSurface",
+              "components": [
+                { "type": "label", "text": "Dark class surface: defaults stay light" },
+                { "type": "textfield", "name": "darkPlain", "placeholder": "Dark plain input" },
+                { "type": "textfield", "name": "darkSecure", "placeholder": "Dark secure input", "style": { "secure": true } },
+                { "type": "textarea", "name": "darkArea", "placeholder": "Dark multiline input", "style": { "height": "100" } },
+                {
+                  "type": "vertical",
+                  "class": "lightSurface",
+                  "components": [
+                    { "type": "label", "text": "Nested white class surface" },
+                    { "type": "textfield", "name": "nestedLight", "placeholder": "Nested light input" }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "vertical",
+              "class": "lightSurface authoredForeground",
+              "components": [
+                { "type": "label", "text": "Authored #123456 foreground is inherited" },
+                { "type": "textfield", "name": "authoredPlain", "placeholder": "Authored prompt color", "style": { "background": "#ffffff" } },
+                {
+                  "type": "label",
+                  "text": "Inline foreground override stays red",
+                  "style": { "color": "#990000" }
+                }
+              ]
+            },
+            {
+              "type": "vertical",
+              "style": { "background": "#000000", "padding": "12", "spacing": "10" },
+              "components": [
+                { "type": "label", "text": "Transparent white keeps dark context", "style": { "background": "#ffffff00" } },
+                {
+                  "type": "textfield",
+                  "name": "translucentPlain",
+                  "placeholder": "White at 10% over black",
+                  "style": { "background": "rgba(255,255,255,0.1)" }
+                },
+                {
+                  "type": "textarea",
+                  "name": "whiteArea",
+                  "placeholder": "Authored white textarea",
+                  "style": { "background": "#ffffff", "height": "100" }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "footer": {
+        "input": {
+          "name": "footer107",
+          "placeholder": "Footer input",
+          "right": {
+            "type": "button",
+            "text": "Send",
+            "action": {
+              "type": "$util.alert",
+              "options": { "title": "Footer value", "description": "{{$get.footer107}}" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

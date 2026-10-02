@@ -26,9 +26,21 @@ tests produced 36 failing assertions. Logs are
 `/private/tmp/jasonette-ios-2026-10-02-red-107.log`. All three workers have been
 released for scoped implementation. Root owns shared registry wiring and adds
 the HTML background branch only after 107 finishes `JasonetteView.swift`.
-The retained simulator has been booted; the September temporary agent-device
-package was partly cleaned up, so root is restoring pinned 0.21.12 in
-`/private/tmp/jasonette-device-20261002`. Fresh review/build/acceptance remain.
+All implementations and root wiring are now stable. Fresh xhigh reviews:
+108 found none; 106 found the inherited SVG title precedence defect, repaired
+with VM.navigationTitle and re-reviewed clean; 107 found tab tint override and
+HTML/CSS background selection mismatch, both repaired. A focused 107 xhigh
+follow-up was interrupted by the daemon restart and is being rerun by
+`ios107_review_followup_sol61`. Previous agents did not survive restart.
+The first integrated green compile failed only a new test raw-string delimiter
+collision, now repaired. Current root Swift session logs to
+`/private/tmp/jasonette-ios-2026-10-02-green-focused-retry.log`.
+Pinned agent-device 0.21.12 is restored in
+`/private/tmp/jasonette-device-20261002`; its cached runner preparation finally
+succeeded before the restart (warm log). See the live verification report
+`docs/qa/2026-10-02-ios-backlog-verification.md` for canonical session/state and
+fixture server URLs. Full tests, fresh Tuist/iOS build, actual simulator
+acceptance, product commits and todo closure remain. Keep all host builds serial.
 
 ## Completed iOS QA fixes (2026-09-28)
 

@@ -1,0 +1,29 @@
+{
+  "$jason": {
+    "head": {
+      "title": "Plain HTML interaction QA"
+    },
+    "body": {
+      "sections": [
+        {
+          "items": [
+            {
+              "type": "html",
+              "text": "<button onclick=\"this.textContent='Inline HTML clicked'\">Click inline HTML</button>",
+              "css": "button{font:20px sans-serif;padding:20px}"
+            },
+            {
+              "type": "html",
+              "url": "interactive.html"
+            },
+            {
+              "type": "html",
+              "text": "<a href=\"#target\">Jump within HTML</a><div style=\"height:30px\"></div><p id=\"target\">Internal anchor target</p>",
+              "css": "body{font:20px sans-serif} a{display:block;padding:12px}"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
