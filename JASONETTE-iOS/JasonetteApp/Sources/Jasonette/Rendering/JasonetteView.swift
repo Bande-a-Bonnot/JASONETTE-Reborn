@@ -363,8 +363,9 @@ struct JasonetteView: View {
                 }
             }
         }
+        .modifier(RendererDocumentAppearanceModifier(documentBody: body))
         .dismissKeyboardOnTap()
-        .navigationTitle(head?.title ?? "")
+        .navigationTitle(viewModel.navigationTitle)
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         .ifLet(headerStyle?.background.flatMap { Color(css: $0) }) { view, color in
@@ -418,7 +419,9 @@ struct JasonetteView: View {
 
     @ViewBuilder
     private func bodyBackgroundView(_ body: JasonBody?) -> some View {
-        if let background = bodyBackgroundString(body) {
+        if let html = HTMLComponent.background(in: body, documentURL: viewModel.documentURL) {
+            html.ignoresSafeArea().allowsHitTesting(false)
+        } else if let background = bodyBackgroundString(body) {
             if let color = Color(css: background) {
                 color
                     .ignoresSafeArea()
@@ -586,6 +589,8 @@ struct FooterInputView: View {
     let documentURL: URL?
 
     @EnvironmentObject private var stateManager: StateManager
+    @Environment(\.rendererAppearance) private var appearance
+    @Environment(\.colorScheme) private var systemScheme
 
     var body: some View {
         HStack(spacing: 8) {
@@ -597,17 +602,19 @@ struct FooterInputView: View {
             // Text field bound to StateManager
             let name = input.name ?? ""
             let placeholder = input.placeholder ?? ""
+            let palette = (appearance ?? RendererAppearance.document(body: nil, systemScheme: systemScheme)).input()
+            let prompt = Text(placeholder).foregroundColor(palette.placeholder.color)
             // Only bind to state if name is non-empty
             if name.isEmpty {
-                TextField(placeholder, text: .constant(""))
+                TextField(placeholder, text: .constant(""), prompt: prompt)
                     .dismissKeyboardOnSubmit()
                     .keyboardDoneToolbar()
-                    .textFieldStyle(.roundedBorder)
+                    .modifier(RendererTextInputModifier(style: nil))
             } else {
-                TextField(placeholder, text: stateManager.binding(forKey: name, default: ""))
+                TextField(placeholder, text: stateManager.binding(forKey: name, default: ""), prompt: prompt)
                     .dismissKeyboardOnSubmit()
                     .keyboardDoneToolbar()
-                    .textFieldStyle(.roundedBorder)
+                    .modifier(RendererTextInputModifier(style: nil))
                     .accessibilityIdentifier(name)
             }
 

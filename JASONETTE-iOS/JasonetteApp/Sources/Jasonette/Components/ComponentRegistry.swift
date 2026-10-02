@@ -75,7 +75,8 @@ public struct ComponentView: View {
                 placeholder: component.placeholder ?? "",
                 keyboard: component.keyboard,
                 initialValue: component.value?.string,
-                kind: TextFieldComponent.fieldKind(componentType: component.type, style: component.style)
+                kind: TextFieldComponent.fieldKind(componentType: component.type, style: component.style),
+                style: resolvedStyle
             )
         case "textarea":
             TextAreaComponent(
@@ -96,12 +97,7 @@ public struct ComponentView: View {
             let mapStyle = JasonStyle.resolve(for: component, headStyles: headStyles)
             MapComponent(component: component, height: mapStyle.height?.cgFloat)
         case "html":
-            HTMLComponent(
-                text: component.text,
-                css: component.css,
-                url: component.url,
-                documentURL: documentURL
-            )
+            HTMLComponent(component: component, documentURL: documentURL)
         case "vertical":
             LayoutView(
                 direction: .vertical,
