@@ -11,8 +11,11 @@ struct TextFieldComponent: View {
     let keyboard: String?
     let initialValue: String?
     let kind: FieldKind
+    var style: JasonStyle? = nil
 
     @EnvironmentObject private var stateManager: StateManager
+    @Environment(\.rendererAppearance) private var appearance
+    @Environment(\.colorScheme) private var systemScheme
 
     static func fieldKind(componentType: String?, style: JasonStyle?) -> FieldKind {
         componentType == "secure" || style?.isSecureTextEntry == true ? .secure : .plain
@@ -22,7 +25,7 @@ struct TextFieldComponent: View {
         textField
             .dismissKeyboardOnSubmit()
             .keyboardDoneToolbar()
-            .textFieldStyle(.roundedBorder)
+            .modifier(RendererTextInputModifier(style: style))
             .accessibilityIdentifier(name)
             .onAppear {
                 if let initialValue, stateManager.local[name] == nil {
@@ -34,23 +37,28 @@ struct TextFieldComponent: View {
     @ViewBuilder
     private var textField: some View {
         let binding = stateManager.binding(forKey: name, default: "")
+        let prompt = Text(placeholder).foregroundColor(inputAppearance.placeholder.color)
         switch kind {
         case .plain:
             #if os(iOS)
-            TextField(placeholder, text: binding)
+            TextField(placeholder, text: binding, prompt: prompt)
                 .keyboardType(keyboardType)
             #else
-            TextField(placeholder, text: binding)
+            TextField(placeholder, text: binding, prompt: prompt)
             #endif
         case .secure:
             #if os(iOS)
-            SecureField(placeholder, text: binding)
+            SecureField(placeholder, text: binding, prompt: prompt)
                 .textContentType(.password)
                 .keyboardType(keyboardType)
             #else
-            SecureField(placeholder, text: binding)
+            SecureField(placeholder, text: binding, prompt: prompt)
             #endif
         }
+    }
+
+    private var inputAppearance: RendererInputAppearance {
+        (appearance ?? RendererAppearance.document(body: nil, systemScheme: systemScheme)).input(style: style)
     }
 
     #if os(iOS)

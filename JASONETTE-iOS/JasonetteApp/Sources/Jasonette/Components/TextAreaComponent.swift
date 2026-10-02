@@ -4,14 +4,14 @@ struct TextAreaComponent: View {
     static let fallbackPlaceholder = "Enter text"
     static let minimumWidth: CGFloat = 240
     static let minimumHeight: CGFloat = 80
-    private static let defaultCornerRadius: CGFloat = 6
-    private static let defaultBorderWidth: CGFloat = 1
 
     let name: String
     let placeholder: String
     let style: JasonStyle?
 
     @EnvironmentObject private var stateManager: StateManager
+    @Environment(\.rendererAppearance) private var appearance
+    @Environment(\.colorScheme) private var systemScheme
 
     static func visiblePlaceholder(_ placeholder: String) -> String {
         let trimmed = placeholder.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -28,9 +28,10 @@ struct TextAreaComponent: View {
     var body: some View {
         let binding = stateManager.binding(forKey: name, default: "")
         ZStack(alignment: .topLeading) {
-            textareaBackground
+            RendererInputSurface(appearance: inputAppearance, style: style)
 
             TextEditor(text: binding)
+                .foregroundColor(inputAppearance.foreground.color)
                 .scrollContentBackgroundHidden()
                 .keyboardDoneToolbar()
                 .frame(minWidth: Self.minimumWidth, minHeight: Self.minimumHeight)
@@ -42,7 +43,7 @@ struct TextAreaComponent: View {
 
             if binding.wrappedValue.isEmpty {
                 Text(Self.visiblePlaceholder(placeholder))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(inputAppearance.placeholder.color)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 10)
                     .allowsHitTesting(false)
@@ -50,44 +51,11 @@ struct TextAreaComponent: View {
             }
         }
         .frame(minWidth: Self.minimumWidth, minHeight: Self.minimumHeight)
-        .contentShape(RoundedRectangle(cornerRadius: cornerRadius))
+        .contentShape(RoundedRectangle(cornerRadius: style?.cornerRadius?.cgFloat ?? RendererInputSurface.defaultCornerRadius))
     }
 
-    private var textareaBackground: some View {
-        RoundedRectangle(cornerRadius: cornerRadius)
-            .fill(fillColor)
-            .overlay(
-                RoundedRectangle(cornerRadius: cornerRadius)
-                    .strokeBorder(borderColor, lineWidth: borderWidth)
-            )
-            .allowsHitTesting(false)
-    }
-
-    private var cornerRadius: CGFloat {
-        style?.cornerRadius?.cgFloat ?? Self.defaultCornerRadius
-    }
-
-    private var borderWidth: CGFloat {
-        guard style?.borderWidth == nil else { return 0 }
-        return Self.defaultBorderWidth
-    }
-
-    private var borderColor: Color {
-        Color.secondary.opacity(0.35)
-    }
-
-    private var fillColor: Color {
-        style?.background.flatMap { Color(css: $0) } ?? Self.defaultFillColor
-    }
-
-    private static var defaultFillColor: Color {
-        #if canImport(UIKit)
-        return Color(uiColor: .systemBackground)
-        #elseif canImport(AppKit)
-        return Color(nsColor: .textBackgroundColor)
-        #else
-        return Color.white
-        #endif
+    private var inputAppearance: RendererInputAppearance {
+        (appearance ?? RendererAppearance.document(body: nil, systemScheme: systemScheme)).input(style: style)
     }
 }
 

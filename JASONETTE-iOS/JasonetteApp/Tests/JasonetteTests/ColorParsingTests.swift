@@ -4,6 +4,31 @@ import SwiftUI
 
 final class ColorParsingTests: XCTestCase {
 
+    func testNumericHexChannelsPreserveAlpha() throws {
+        let color = try XCTUnwrap(RendererColor(css: "#12345680"))
+        XCTAssertEqual(color.red, 18.0 / 255, accuracy: 0.0001)
+        XCTAssertEqual(color.green, 52.0 / 255, accuracy: 0.0001)
+        XCTAssertEqual(color.blue, 86.0 / 255, accuracy: 0.0001)
+        XCTAssertEqual(color.alpha, 128.0 / 255, accuracy: 0.0001)
+    }
+
+    func testNumericRGBChannelsAndAlphaCompatibility() throws {
+        let color = try XCTUnwrap(RendererColor(css: " RGBA(10, 20, 30, 0.25) "))
+        XCTAssertEqual(color.red, 10.0 / 255, accuracy: 0.0001)
+        XCTAssertEqual(color.green, 20.0 / 255, accuracy: 0.0001)
+        XCTAssertEqual(color.blue, 30.0 / 255, accuracy: 0.0001)
+        XCTAssertEqual(color.alpha, 0.25)
+        XCTAssertEqual(RendererColor(css: "rgba(0,0,0,2)")?.alpha, 1)
+        XCTAssertEqual(RendererColor(css: "rgba(0,0,0,-1)")?.alpha, 0)
+    }
+
+    func testNumericParserMatchesExistingAcceptedAndRejectedGrammar() {
+        for value in ["#FF0000", "#12345680", "rgb(14,122,254)", "rgba(1,2,3,0)", "RGB(1,2,3)", "red", "#FFF", "rgb(256,0,0)", "rgba(1,2,3,no)", "", "hsl(0,0,0)"] {
+            XCTAssertEqual(RendererColor(css: value) != nil, Color(css: value) != nil, value)
+        }
+        XCTAssertNotNil(RendererColor(hex: "00FF00"))
+    }
+
     // MARK: - Hex colors
 
     func testHex6Digit() {

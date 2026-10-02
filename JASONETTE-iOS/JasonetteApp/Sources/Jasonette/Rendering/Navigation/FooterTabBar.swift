@@ -1,5 +1,14 @@
 import SwiftUI
 
+enum FooterTabAppearance {
+    static func tint(style: JasonStyle, isSelected: Bool) -> Color {
+        if let color = style.color.flatMap(Color.init(css:)) {
+            return isSelected ? color : color.opacity(0.55)
+        }
+        return isSelected ? .accentColor : .secondary
+    }
+}
+
 /// The persistent tab bar, rendered by `JasonetteTabShell` via
 /// `safeAreaInset(edge: .bottom)`. Presentation-only — tap dispatch goes back
 /// to the caller, never synthesizes hrefs.
@@ -58,10 +67,7 @@ private struct FooterTabCell: View {
     }
 
     private var tint: Color {
-        if let color = resolvedStyle.color.flatMap(Color.init(css:)) {
-            return isSelected ? color : color.opacity(0.55)
-        }
-        return isSelected ? .accentColor : .secondary
+        FooterTabAppearance.tint(style: resolvedStyle, isSelected: isSelected)
     }
 
     var body: some View {
@@ -84,10 +90,12 @@ private struct FooterTabCell: View {
             selectedIndicator
         }
         .contentShape(Rectangle())
+        // The tab's semantic tint belongs inside the generic style modifier so
+        // its foreground fallback cannot replace selection colors or dimming.
+        .foregroundColor(tint)
         // Footer-tab `width`/`height` size the icon, not the whole cell — this
         // mirrors the legacy typeless footer-tab renderer.
         .modifier(JasonStyleModifier(style: cellStyle, headStyles: [:], className: nil))
-        .foregroundColor(tint)
     }
 
     static func accessibilityLabel(for descriptor: TabDescriptor, fallback: String) -> String {
