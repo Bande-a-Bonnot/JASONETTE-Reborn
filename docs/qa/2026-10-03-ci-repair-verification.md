@@ -1,9 +1,9 @@
 # CI repair verification — 2026-10-03
 
-Status: local gates and xhigh review passed; exact-head CI pending.
+Status: complete; local gates, xhigh review and exact-head GitHub Actions passed.
 
 Workflow: [canonical plan](../plans/2026-10-03-ci-repair-workflow.md).
-Contract: [todo110](../../todos/110-fix-ci-ios-actor-isolation-and-markdown-lint.md).
+Contract: [todo 110](../../todos/110-complete-p2-ci-ios-actor-isolation-and-markdown-lint.md).
 GPT-6.1 Sol high planner/implementer and independent xhigh reviewer; root owns
 all tests, builds, Git and CI observation. Host builds are serial with two jobs.
 
@@ -63,7 +63,23 @@ updates, fixed/viewport sizing, and platform guards. It ran no tests/builds.
 The exact old runner image manifest lists Xcode15.4 as its default with macOS14.5
 SDK; the new CI diagnostic step will report the actual selected toolchain.
 
-## Remaining gates
+## Exact repair-head remote verification
 
-Exact repair-head GitHub Actions iOS Build AND
-Test plus lint success, Xcode Cloud status observation, then completion records.
+Pushed source: **`0b4800784ba253dd8dd532c06b75e40e97495cf3`**.
+[CI 37148371099](https://github.com/Bande-a-Bonnot/JASONETTE-Reborn/actions/runs/37148371099)
+completed successfully. Its iOS Report toolchain, Build and Test steps all
+passed; Markdown lint also passed. Tests executed **679 cases, zero failures**
+at 19:35:38 UTC. The selected runner toolchain was **Xcode 15.4, build 15F31d,
+Apple Swift 5.10**, proving compatibility with the compiler that had failed.
+The validate, Android, web renderer and template engine jobs were skipped by
+path filters; this record does not claim they were rerun.
+
+Full run log: `/private/tmp/jasonette-ci-2026-10-03-repair-run.log`.
+[Pages 37148369656](https://github.com/Bande-a-Bonnot/JASONETTE-Reborn/actions/runs/37148369656)
+also succeeded at this source head.
+
+The [Xcode Cloud archive](https://appstoreconnect.apple.com/teams/651d66ea-3da7-4265-80ca-d9c56a196a2e/apps/6759856913/ci/builds/b2061ecb-9117-44f7-83a6-de6cbe4445e1/action/10732bff-6db7-42ed-87c6-8980ba30fda4)
+completed successfully on this head, as reported by its GitHub check.
+Earlier Xcode Cloud success at `5ade934` is historical.
+The annotation-only repair introduces no native rendering behavior change;
+the prior native acceptance evidence remains applicable.

@@ -1,6 +1,6 @@
 # Restore GitHub Actions iOS and documentation checks
 
-Status: active. Canonical todo: [110](../../todos/110-fix-ci-ios-actor-isolation-and-markdown-lint.md).
+Status: complete. Canonical todo: [110](../../todos/110-complete-p2-ci-ios-actor-isolation-and-markdown-lint.md).
 User authorized this workflow after checking the pushed iOS changes.
 
 ## Models and ownership
@@ -99,3 +99,14 @@ CI job to make compiler/SDK provenance visible, preserving runner and triggers.
 7. Record run URLs, source hashes, local results, findings/resolutions and any
    actual limitation. Close110 and update handoff only after gates pass. Final
    metadata-only commit must also pass its triggered lint check.
+
+## Completion evidence
+
+Repair source `0b4800784ba253dd8dd532c06b75e40e97495cf3` is pushed.
+[Exact-head CI 37148371099](https://github.com/Bande-a-Bonnot/JASONETTE-Reborn/actions/runs/37148371099)
+passed iOS Build, Test (679 tests, zero failures) and Markdown lint using
+Xcode 15.4 / Swift 5.10. Root local build, focused 28 tests, full 679 tests,
+and Markdown lint passed. Independent Sol xhigh review found no concrete issues.
+Pages and the Xcode Cloud iOS archive succeeded on this head.
+Full provenance and the archive link are in the
+[QA record](../qa/2026-10-03-ci-repair-verification.md).

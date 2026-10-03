@@ -4,26 +4,26 @@ Last updated: 2026-10-03
 
 **Update this file before context compaction and at the end of significant sessions.**
 
-## Active CI repair (2026-10-03)
+## Completed CI repair (2026-10-03)
 
-User approved fixing the GitHub Actions failures as a workflow. Canonical plan
-`docs/plans/2026-10-03-ci-repair-workflow.md`, todo110; todo109 is outside scope.
-Charter commit7e4fa7f; Markdown correction/toolchain reporting commit6a297a3.
-High worker `ci110_sol61` handed back MainActor annotations on HTMLWebView,
-Coordinator and LayoutView; pure height constants/sanitation nonisolated.
-Product scope only HTMLComponent.swift/LayoutView.swift. Xhigh independent
-`ci110_review_sol61` is reviewing; no further worker edits pending.
-Root local build succeeds, focused28 and full679 tests pass, Markdown240files
-zero errors. Exact logs and remaining gates are in
-`docs/qa/2026-10-03-ci-repair-verification.md`. Root must await review, commit/push,
-and prove repair-head CI ios Build AND Test and lint succeed (not ios-skipped
-metadata-only success). Observe Xcode Cloud status; no behavioral simulator
-rerun needed unless review identifies a real UI risk. Preserve unrelated dirt.
+Todo 110 is complete. Canonical plan:
+`docs/plans/2026-10-03-ci-repair-workflow.md`; evidence:
+`docs/qa/2026-10-03-ci-repair-verification.md`. GPT-6.1 Sol high implemented
+explicit MainActor isolation on HTMLWebView, its Coordinator and LayoutView;
+pure height constants/sanitation remain nonisolated. The independent Sol xhigh
+review found no concrete issues. Rendering and interaction behavior are unchanged.
 
-Earlier remote check found CI37097813025 iOS compilation errors on6d7ae8f;
-CI37097836328 on5ade934 failed the single Markdown blank only and skippedios.
-The Xcode Cloud archive and Pages deployment succeeded on5ade934. Main is
-still locally ahead with this active repair; no repair push yet.
+Pushed repair source **`0b4800784ba253dd8dd532c06b75e40e97495cf3`** includes
+the Markdown correction and CI toolchain reporting from `6a297a3`.
+[CI 37148371099](https://github.com/Bande-a-Bonnot/JASONETTE-Reborn/actions/runs/37148371099)
+passed iOS Build, iOS Test (**679 tests, zero failures**) and Markdown lint.
+The actual CI toolchain is Xcode 15.4 / Swift 5.10. Other platform jobs skipped
+by path filters. Local Xcode 26.2 build, focused 28 tests, full 679 tests and
+Markdown lint (240 files) also passed. Pages deployment succeeded on this head.
+Xcode Cloud's iOS archive also succeeded on this head; its direct link is in
+the QA record. No simulator rerun was required for annotations.
+Todo 109 keyboard Done duplication is the only open backlog item.
+Preserve unrelated AGENTS.md/CLAUDE.md edits and historical untracked JSON files.
 
 ## Remote synchronization (2026-10-03)
 
@@ -32,7 +32,7 @@ the macOS keychain, fetched origin, verified main was ahead37/behind0, and pushe
 all37 pending session commits successfully: origin/main advanced
 `2e1a4d1` → `6d7ae8f`. The iOS source/fixture changes and QA records are now on
 GitHub. GitHub Pages and Xcode Cloud archive success were verified later; Actions
-failures are tracked in the active CI repair above. The October2 section below
+failures were resolved by the completed CI repair above. The October2 section below
 records its original local-only completion checkpoint.
 Unrelated working-tree edits remain local; todo109 is still the only open todo.
 
