@@ -101,6 +101,10 @@ jobs:
     runs-on: macos-14
     steps:
       - uses: actions/checkout@v4
+      - name: Report toolchain
+        run: |
+          xcodebuild -version
+          swift --version
       - name: Build
         run: swift build
         working-directory: JASONETTE-iOS/JasonetteApp

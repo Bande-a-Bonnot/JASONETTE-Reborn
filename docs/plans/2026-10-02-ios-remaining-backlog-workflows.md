@@ -81,7 +81,6 @@ Each task records its review findings and resolutions, exact test results,
 final build source, simulator actions, and evidence in its task plan and a QA
 report. Root updates the three todos and `docs/HANDOFF.md` after verification.
 
-
 Final source `246d168`; final full suite **679 passed**, fresh iOS build and
 all three native acceptance paths pass. Independent xhigh findings were repaired
 and reviewed clean. Evidence, source provenance, and cleanup are recorded in
