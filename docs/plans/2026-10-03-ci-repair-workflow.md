@@ -54,6 +54,29 @@ package platforms, disable tests, or upgrade the runner to hide these errors.
 Existing meaningful HTML/layout regressions remain the behavioral contract;
 do not add source-string or annotation-mirroring tests.
 
+### Approved compiler repair
+
+Source inspection confirms that the older SDK isolates native representable
+lifecycle requirements and `View.body`, but does not infer the same isolation
+for their unannotated helper methods. Root approved the following annotations
+before implementation:
+
+- `@MainActor` on `HTMLWebView`, covering its native lifecycle and web-view
+  creation/update helpers.
+- `@MainActor` on `HTMLWebView.Coordinator`, covering binding, source and sizing
+  mutations plus navigation delegate callbacks.
+- `@MainActor` on `LayoutView`, covering both horizontal view-building helpers.
+  The separate numerical sizing types remain unchanged.
+- `nonisolated` on `HTMLComponent.defaultHeight`, `minimumHeight` and
+  `sanitizedHeight(_:)`: immutable `CGFloat` values and pure height sanitation
+  can be used directly in the JavaScript completion. The existing
+  `Task { @MainActor in ... }` still applies the resulting measurement to state.
+
+This repair preserves platform guards, loaded-source and sizing checks,
+authored bounds and hit routing. Existing HTML interaction/background tests and
+layout sizing tests provide behavioral coverage. Independent review and the
+exact repair-head CI compiler gate must confirm older SDK protocol conformance.
+
 Root removes the single extra documentation blank line and runs the existing
 Markdown lint gate. Root may add xcodebuild/swift version reporting to the iOS
 CI job to make compiler/SDK provenance visible, preserving runner and triggers.

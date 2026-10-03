@@ -4,14 +4,36 @@ Last updated: 2026-10-03
 
 **Update this file before context compaction and at the end of significant sessions.**
 
+## Active CI repair (2026-10-03)
+
+User approved fixing the GitHub Actions failures as a workflow. Canonical plan
+`docs/plans/2026-10-03-ci-repair-workflow.md`, todo110; todo109 is outside scope.
+Charter commit7e4fa7f; Markdown correction/toolchain reporting commit6a297a3.
+High worker `ci110_sol61` handed back MainActor annotations on HTMLWebView,
+Coordinator and LayoutView; pure height constants/sanitation nonisolated.
+Product scope only HTMLComponent.swift/LayoutView.swift. Xhigh independent
+`ci110_review_sol61` is reviewing; no further worker edits pending.
+Root local build succeeds, focused28 and full679 tests pass, Markdown240files
+zero errors. Exact logs and remaining gates are in
+`docs/qa/2026-10-03-ci-repair-verification.md`. Root must await review, commit/push,
+and prove repair-head CI ios Build AND Test and lint succeed (not ios-skipped
+metadata-only success). Observe Xcode Cloud status; no behavioral simulator
+rerun needed unless review identifies a real UI risk. Preserve unrelated dirt.
+
+Earlier remote check found CI37097813025 iOS compilation errors on6d7ae8f;
+CI37097836328 on5ade934 failed the single Markdown blank only and skippedios.
+The Xcode Cloud archive and Pages deployment succeeded on5ade934. Main is
+still locally ahead with this active repair; no repair push yet.
+
 ## Remote synchronization (2026-10-03)
 
 The user requested committed/pushed status. Root loaded Git SSH identities from
 the macOS keychain, fetched origin, verified main was ahead37/behind0, and pushed
 all37 pending session commits successfully: origin/main advanced
 `2e1a4d1` → `6d7ae8f`. The iOS source/fixture changes and QA records are now on
-GitHub. GitHub Pages publication and CI results have not been verified. The
-October2 section below records its original local-only completion checkpoint.
+GitHub. GitHub Pages and Xcode Cloud archive success were verified later; Actions
+failures are tracked in the active CI repair above. The October2 section below
+records its original local-only completion checkpoint.
 Unrelated working-tree edits remain local; todo109 is still the only open todo.
 
 ## Completed iOS backlog workflows (2026-10-02)

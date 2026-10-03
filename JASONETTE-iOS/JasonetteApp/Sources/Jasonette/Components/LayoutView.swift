@@ -217,6 +217,7 @@ private struct HorizontalRowLayout: Layout {
 }
 
 /// Renders child components in a vertical or horizontal stack.
+@MainActor
 struct LayoutView: View {
     let direction: LayoutDirection
     let components: [JasonComponent]

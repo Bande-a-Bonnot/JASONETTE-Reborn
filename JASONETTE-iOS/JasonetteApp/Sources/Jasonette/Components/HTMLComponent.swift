@@ -133,8 +133,8 @@ struct HTMLComponent: View {
         documentURL?.deletingLastPathComponent()
     }
 
-    static let defaultHeight: CGFloat = 320
-    static let minimumHeight: CGFloat = 44
+    nonisolated static let defaultHeight: CGFloat = 320
+    nonisolated static let minimumHeight: CGFloat = 44
 
     static func documentHTML(text: String, css: String?) -> String {
         let viewport = "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">"
@@ -160,7 +160,7 @@ struct HTMLComponent: View {
         return "<!doctype html><html><head>\(headContent)</head><body>\(text)</body></html>"
     }
 
-    static func sanitizedHeight(_ rawHeight: Any?) -> CGFloat {
+    nonisolated static func sanitizedHeight(_ rawHeight: Any?) -> CGFloat {
         guard let number = rawHeight as? NSNumber else { return defaultHeight }
         let height = CGFloat(truncating: number)
         guard height.isFinite else { return defaultHeight }
@@ -198,6 +198,7 @@ final class HTMLContentWebView: WKWebView {
     #endif
 }
 
+@MainActor
 struct HTMLWebView: PlatformViewRepresentable {
     let source: HTMLWebViewSource
     @Binding var contentHeight: CGFloat
@@ -258,6 +259,7 @@ struct HTMLWebView: PlatformViewRepresentable {
         }
     }
 
+    @MainActor
     final class Coordinator: NSObject, WKNavigationDelegate {
         @Binding private var contentHeight: CGFloat
         var loadedSource: HTMLWebViewSource?
