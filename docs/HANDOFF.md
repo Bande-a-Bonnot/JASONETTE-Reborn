@@ -1,8 +1,18 @@
 # Agent Handoff Document
 
-Last updated: 2026-10-02
+Last updated: 2026-10-03
 
 **Update this file before context compaction and at the end of significant sessions.**
+
+## Remote synchronization (2026-10-03)
+
+The user requested committed/pushed status. Root loaded Git SSH identities from
+the macOS keychain, fetched origin, verified main was ahead37/behind0, and pushed
+all37 pending session commits successfully: origin/main advanced
+`2e1a4d1` → `6d7ae8f`. The iOS source/fixture changes and QA records are now on
+GitHub. GitHub Pages publication and CI results have not been verified. The
+October2 section below records its original local-only completion checkpoint.
+Unrelated working-tree edits remain local; todo109 is still the only open todo.
 
 ## Completed iOS backlog workflows (2026-10-02)
 
