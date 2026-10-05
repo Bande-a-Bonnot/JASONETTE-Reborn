@@ -96,6 +96,9 @@ struct JasonetteTabShell: View {
             mounted.insert(shell.selectedTabID)
         }
         .onChange(of: shell.selectedTabID) { _, newID in
+            #if os(iOS)
+            KeyboardDismiss.dismiss()
+            #endif
             storedKey = shell.selectedCanonicalKey
             mounted.insert(newID)
         }
