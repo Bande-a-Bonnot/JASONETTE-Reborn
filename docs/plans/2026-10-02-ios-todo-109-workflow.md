@@ -57,6 +57,24 @@ field, and verify no hidden document keeps a stale keyboard/toolbar. Tabs stay
 mounted via opacity, so disappearance cannot establish focus ownership. Expand
 shell scope only for a concrete demonstrated defect, with a reviewed follow-up.
 
+### Native follow-up scope approved 2026-10-05
+
+Source `27d9908` passes public plain/secure single-control and dismissal checks,
+but actual Inputs → Other tab selection through the visible icon leaves the
+keyboard and system Done active without focusing any Other input. The selected
+navigation title is `Keyboard 109 Other`; the captured before/after state proves
+the tab changed. Hidden stacks remain mounted. This fails the mandatory native
+focus lifecycle gate. Artifact: `tab-switch-stale-keyboard.png` under the
+canonical artifact directory.
+
+Independent xhigh reviewer approved adding one iOS-guarded
+`KeyboardDismiss.dismiss()` in the existing `onChange(of: shell.selectedTabID)`
+callback of `Rendering/Navigation/JasonetteTabShell.swift`. This covers direct,
+action/URL and restored selection paths, preserving mounted state. Approved
+follow-up product scope is that file only; keep the four-file owner design.
+No toolbar/tab-bar layout overhaul. Root owns the native red/green check and
+fresh final build. Reviewer must check the scoped follow-up before that build.
+
 Create a meaningful failing focus/ownership regression if the chosen design has
 a testable policy seam. Do not mirror source text or add NSHostingView XCTest
 rendering tests (previous host hangs). Native screenshots are the decisive count
@@ -78,6 +96,8 @@ Canonical host/device values for this run:
 - UUIDv7 session: `01a10bb0-17dc-7f2f-953d-495ee1a4dd6e`.
 - Artifacts: `docs/qa/artifacts/2026-10-05-ios-keyboard/`.
 - Local appearance fixture: `docs/qa/fixtures/ios-appearance-107/index.json`.
+- Root-authored lifecycle fixtures: `docs/qa/fixtures/ios-keyboard-109/`.
+- Fixture server: `127.0.0.1:8765`, owned PID 52338.
 - Derived data: `/private/tmp/JasonetteIOSQAFixes` (reuse cache, update provenance).
 
 Use the retained iPhone17Pro/iOS26.2 simulator and pinned agent-device workflow.
