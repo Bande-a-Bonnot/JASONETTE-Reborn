@@ -190,6 +190,7 @@ private struct TransientNotificationView: View {
 struct JasonetteView: View {
     @StateObject var viewModel: JasonetteViewModel
     #if os(iOS)
+    @State private var keyboardDismissDocumentID = UUIDv7.generate()
     @State var mediaCapturePresentation: MediaCapturePresentation?
     @State var mediaCaptureContinuation: CheckedContinuation<[String: Any], Error>?
     @State var mediaPlaybackPresentation: MediaPlaybackPresentation?
@@ -365,6 +366,9 @@ struct JasonetteView: View {
         }
         .modifier(RendererDocumentAppearanceModifier(documentBody: body))
         .dismissKeyboardOnTap()
+        #if os(iOS)
+        .keyboardDoneToolbar(documentID: keyboardDismissDocumentID)
+        #endif
         .navigationTitle(viewModel.navigationTitle)
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
@@ -608,12 +612,12 @@ struct FooterInputView: View {
             if name.isEmpty {
                 TextField(placeholder, text: .constant(""), prompt: prompt)
                     .dismissKeyboardOnSubmit()
-                    .keyboardDoneToolbar()
+                    .keyboardDismissInput()
                     .modifier(RendererTextInputModifier(style: nil))
             } else {
                 TextField(placeholder, text: stateManager.binding(forKey: name, default: ""), prompt: prompt)
                     .dismissKeyboardOnSubmit()
-                    .keyboardDoneToolbar()
+                    .keyboardDismissInput()
                     .modifier(RendererTextInputModifier(style: nil))
                     .accessibilityIdentifier(name)
             }

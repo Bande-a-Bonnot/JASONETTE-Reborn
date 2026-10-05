@@ -24,7 +24,6 @@ struct TextFieldComponent: View {
     var body: some View {
         textField
             .dismissKeyboardOnSubmit()
-            .keyboardDoneToolbar()
             .modifier(RendererTextInputModifier(style: style))
             .accessibilityIdentifier(name)
             .onAppear {
@@ -34,6 +33,7 @@ struct TextFieldComponent: View {
             }
     }
 
+    @MainActor
     @ViewBuilder
     private var textField: some View {
         let binding = stateManager.binding(forKey: name, default: "")
@@ -43,6 +43,7 @@ struct TextFieldComponent: View {
             #if os(iOS)
             TextField(placeholder, text: binding, prompt: prompt)
                 .keyboardType(keyboardType)
+                .keyboardDismissInput()
             #else
             TextField(placeholder, text: binding, prompt: prompt)
             #endif
@@ -51,6 +52,7 @@ struct TextFieldComponent: View {
             SecureField(placeholder, text: binding, prompt: prompt)
                 .textContentType(.password)
                 .keyboardType(keyboardType)
+                .keyboardDismissInput()
             #else
             SecureField(placeholder, text: binding, prompt: prompt)
             #endif

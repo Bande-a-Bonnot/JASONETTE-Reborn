@@ -33,7 +33,7 @@ struct TextAreaComponent: View {
             TextEditor(text: binding)
                 .foregroundColor(inputAppearance.foreground.color)
                 .scrollContentBackgroundHidden()
-                .keyboardDoneToolbar()
+                .keyboardDismissInput()
                 .frame(minWidth: Self.minimumWidth, minHeight: Self.minimumHeight)
                 .padding(.horizontal, 4)
                 .padding(.vertical, 2)

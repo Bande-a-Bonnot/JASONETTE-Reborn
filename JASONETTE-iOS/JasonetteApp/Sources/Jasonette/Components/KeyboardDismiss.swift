@@ -22,6 +22,66 @@ enum KeyboardDismiss {
     }
 }
 
+#if os(iOS)
+private struct KeyboardDismissDocumentKey: EnvironmentKey {
+    static let defaultValue: UUID? = nil
+}
+
+private struct FocusedKeyboardDismissDocumentKey: FocusedValueKey {
+    typealias Value = UUID
+}
+
+private extension EnvironmentValues {
+    var keyboardDismissDocumentID: UUID? {
+        get { self[KeyboardDismissDocumentKey.self] }
+        set { self[KeyboardDismissDocumentKey.self] = newValue }
+    }
+}
+
+private extension FocusedValues {
+    var keyboardDismissDocumentID: UUID? {
+        get { self[FocusedKeyboardDismissDocumentKey.self] }
+        set { self[FocusedKeyboardDismissDocumentKey.self] = newValue }
+    }
+}
+
+/// Publish ownership only while this input participates in the focused hierarchy.
+@MainActor
+private struct KeyboardDismissInputModifier: ViewModifier {
+    @Environment(\.keyboardDismissDocumentID) private var documentID
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if let documentID {
+            content.focusedValue(\.keyboardDismissDocumentID, documentID)
+        } else {
+            content
+        }
+    }
+}
+
+/// SwiftUI aggregates input toolbars, so their common document owns the item.
+@MainActor
+private struct KeyboardDoneToolbarModifier: ViewModifier {
+    let documentID: UUID
+    @FocusedValue(\.keyboardDismissDocumentID) private var focusedDocumentID
+
+    func body(content: Content) -> some View {
+        content
+            .environment(\.keyboardDismissDocumentID, documentID)
+            .toolbar {
+                if focusedDocumentID == documentID {
+                    ToolbarItemGroup(placement: .keyboard) {
+                        Spacer()
+                        Button("Done") { KeyboardDismiss.dismiss() }
+                            .foregroundStyle(Color.accentColor)
+                    }
+                }
+            }
+    }
+}
+#endif
+
 extension View {
     @ViewBuilder
     func dismissKeyboardOnSubmit() -> some View {
@@ -35,15 +95,20 @@ extension View {
     }
 
     @ViewBuilder
-    func keyboardDoneToolbar() -> some View {
+    @MainActor
+    func keyboardDismissInput() -> some View {
         #if os(iOS)
-        self.toolbar {
-            ToolbarItemGroup(placement: .keyboard) {
-                Spacer()
-                Button("Done") { KeyboardDismiss.dismiss() }
-                    .foregroundStyle(Color.accentColor)
-            }
-        }
+        self.modifier(KeyboardDismissInputModifier())
+        #else
+        self
+        #endif
+    }
+
+    @ViewBuilder
+    @MainActor
+    func keyboardDoneToolbar(documentID: UUID) -> some View {
+        #if os(iOS)
+        self.modifier(KeyboardDoneToolbarModifier(documentID: documentID))
         #else
         self
         #endif
