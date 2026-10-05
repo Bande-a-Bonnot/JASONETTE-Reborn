@@ -1,11 +1,19 @@
 # iOS todo 109: one keyboard Done control
 
-Status: queued follow-up; no implementation dispatched.
+Status: active, authorized 2026-10-05; planning gate in progress.
 
 Contract: [todo 109](../../todos/109-fix-ios-duplicate-keyboard-done-controls.md).
 Model assignment: GPT-6.1 Sol high planner/implementer; independent GPT-6.1 Sol
 xhigh reviewer. Reuse bounded contexts where possible, with one host build lease
 and two jobs. Root owns Git, gates, iOS QA, evidence, and todo closure.
+
+The planner first reports its proposed ownership design and exact file scope;
+root and the independent xhigh reviewer approve the concrete plan before edits.
+The same high worker then implements the approved scope, including behavioral
+regressions where a policy seam supports them. Workers do not run builds or tests.
+Root executes the regression red gate before releasing implementation, then
+serial green gates and native acceptance. Preserve unrelated AGENTS.md/CLAUDE.md
+modifications and the two historical untracked arbiter JSON files.
 
 ## Planning gate
 

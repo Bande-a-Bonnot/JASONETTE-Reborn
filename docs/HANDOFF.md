@@ -1,8 +1,18 @@
 # Agent Handoff Document
 
-Last updated: 2026-10-03
+Last updated: 2026-10-05
 
 **Update this file before context compaction and at the end of significant sessions.**
+
+## Active keyboard Done repair (2026-10-05)
+
+User authorized todo 109. Canonical workflow:
+`docs/plans/2026-10-02-ios-todo-109-workflow.md`; contract:
+`todos/109-fix-ios-duplicate-keyboard-done-controls.md`.
+GPT-6.1 Sol high plans/implements; independent Sol xhigh reviews design and
+source. Root owns serial tests, native acceptance, Git and evidence. Planning
+gate first; no implementation yet. Keep one host build lease and two jobs.
+Preserve unrelated AGENTS.md/CLAUDE.md edits and historical untracked JSON files.
 
 ## Completed CI repair (2026-10-03)
 
