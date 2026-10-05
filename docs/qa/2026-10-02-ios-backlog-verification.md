@@ -196,5 +196,5 @@ No remote push, merge, or publication was performed in this workflow.
 The corrected Action JSON remains local until publication; the unchanged public
 URL still inherits its old authored white foreground on white tiles. A separate
 preexisting multiple-input keyboard-toolbar issue is tracked in
-[todo 109](../../todos/109-fix-ios-duplicate-keyboard-done-controls.md).
+[todo 109](../../todos/109-complete-p3-ios-duplicate-keyboard-done-controls.md).
 These checks are scoped acceptance for 106–108, not exhaustive whole-app QA.

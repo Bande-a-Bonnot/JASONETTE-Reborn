@@ -1,0 +1,56 @@
+{
+  "$jason": {
+    "head": {
+      "title": "Keyboard 109 Child"
+    },
+    "body": {
+      "style": {
+        "background": "#f5f5f5"
+      },
+      "sections": [
+        {
+          "items": [
+            {
+              "type": "textfield",
+              "name": "childPlain",
+              "placeholder": "Child plain input"
+            },
+            {
+              "type": "textfield",
+              "name": "childSecure",
+              "placeholder": "Child secure input",
+              "style": {
+                "secure": true
+              }
+            },
+            {
+              "type": "textarea",
+              "name": "childArea",
+              "placeholder": "Child multiline input",
+              "style": {
+                "height": "100"
+              }
+            }
+          ]
+        }
+      ],
+      "footer": {
+        "input": {
+          "name": "childFooter",
+          "placeholder": "Child footer input",
+          "right": {
+            "type": "button",
+            "text": "Send",
+            "action": {
+              "type": "$util.alert",
+              "options": {
+                "title": "Footer value",
+                "description": "{{$get.childFooter}}"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,8 +1,11 @@
 # iOS todo 109: one keyboard Done control
 
-Status: active, authorized 2026-10-05; planning gate in progress.
+Status: complete 2026-10-05. Reviewed source `9122a7a` pushed; local/native gates,
+exact-source GitHub CI and Xcode Cloud archive pass. [Verification record](../qa/2026-10-05-ios-keyboard-verification.md)
+contains native acceptance and provenance. Owned QA session/server closed,
+normal Home/light restored and retained simulator verified Shutdown.
 
-Contract: [todo 109](../../todos/109-fix-ios-duplicate-keyboard-done-controls.md).
+Contract: [todo 109](../../todos/109-complete-p3-ios-duplicate-keyboard-done-controls.md).
 Model assignment: GPT-6.1 Sol high planner/implementer; independent GPT-6.1 Sol
 xhigh reviewer. Reuse bounded contexts where possible, with one host build lease
 and two jobs. Root owns Git, gates, iOS QA, evidence, and todo closure.

@@ -4,15 +4,38 @@ Last updated: 2026-10-05
 
 **Update this file before context compaction and at the end of significant sessions.**
 
-## Active keyboard Done repair (2026-10-05)
+## Completed keyboard Done repair (2026-10-05)
 
-User authorized todo 109. Canonical workflow:
+Todo 109 is complete; no open todo remains. Workflow:
 `docs/plans/2026-10-02-ios-todo-109-workflow.md`; contract:
-`todos/109-fix-ios-duplicate-keyboard-done-controls.md`.
-GPT-6.1 Sol high plans/implements; independent Sol xhigh reviews design and
-source. Root owns serial tests, native acceptance, Git and evidence. Planning
-gate first; no implementation yet. Keep one host build lease and two jobs.
-Preserve unrelated AGENTS.md/CLAUDE.md edits and historical untracked JSON files.
+`todos/109-complete-p3-ios-duplicate-keyboard-done-controls.md`; evidence:
+`docs/qa/2026-10-05-ios-keyboard-verification.md`.
+GPT-6.1 Sol high planned/implemented; independent Sol xhigh reviewed design,
+four-file ownership change and scoped tab follow-up with no concrete findings.
+Root ran serial tests/native acceptance/Git. Product source pushed to main:
+`9122a7a6d2ed7fc2d6ce001ec0d2c64de9c8abb8`.
+
+Each document owns one focused-value keyboard toolbar via a stable UUIDv7;
+plain/secure/textarea/footer inputs only publish ownership. Native tab selection
+exposed stale hidden input focus; the reviewed follow-up dismisses the UIKit
+responder in the central selected-tab observer. No toolbar/tab-bar layout overhaul.
+Root focused 105 tests and final full 679 pass; fresh final iOS build passes
+with matching plist provenance. Logs:
+`/private/tmp/jasonette-ios-2026-10-05-final-{full,build}.log`.
+
+Native public textfield/textarea, secure/numeric/child/footer, mixed light/dark,
+Done dismissal/value preservation, authored submission, tab clearing and focused
+Back checks pass. Captures: `docs/qa/artifacts/2026-10-05-ios-keyboard/`.
+Exact-source [CI 37311437068](https://github.com/Bande-a-Bonnot/JASONETTE-Reborn/actions/runs/37311437068)
+passes iOS Build/Test **679/679** on Xcode 15.4 / Swift 5.10 and Markdown lint.
+Xcode Cloud Archive also passes on the exact source; link in QA record.
+Other platform jobs skipped by path filters.
+
+Cleanup complete: normal Home/light restored and captured, owned native session
+closed, verified fixture server PID 52338 stopped, retained QA simulator verified
+Shutdown. Exact CLI/session/state/UDID in plan. Keep one host build lease and
+two jobs; never remove live daemon metadata. Preserve unrelated AGENTS.md,
+CLAUDE.md and the two historical untracked arbiter JSON files.
 
 ## Completed CI repair (2026-10-03)
 
@@ -32,7 +55,7 @@ by path filters. Local Xcode 26.2 build, focused 28 tests, full 679 tests and
 Markdown lint (240 files) also passed. Pages deployment succeeded on this head.
 Xcode Cloud's iOS archive also succeeded on this head; its direct link is in
 the QA record. No simulator rerun was required for annotations.
-Todo 109 keyboard Done duplication is the only open backlog item.
+At this October 3 checkpoint, todo 109 was the only open item; it is now complete above.
 Preserve unrelated AGENTS.md/CLAUDE.md edits and historical untracked JSON files.
 
 ## Remote synchronization (2026-10-03)
@@ -42,9 +65,9 @@ the macOS keychain, fetched origin, verified main was ahead37/behind0, and pushe
 all37 pending session commits successfully: origin/main advanced
 `2e1a4d1` → `6d7ae8f`. The iOS source/fixture changes and QA records are now on
 GitHub. GitHub Pages and Xcode Cloud archive success were verified later; Actions
-failures were resolved by the completed CI repair above. The October2 section below
+failures were resolved by the completed CI repair above. The October 2 section below
 records its original local-only completion checkpoint.
-Unrelated working-tree edits remain local; todo109 is still the only open todo.
+Unrelated working-tree edits remain local. The then-open todo 109 is now complete above.
 
 ## Completed iOS backlog workflows (2026-10-02)
 
@@ -107,15 +130,10 @@ retained QA simulator verified **Shutdown**. Root did not push/merge/deploy.
 Preserve unrelated AGENTS.md/CLAUDE.md modifications and two untracked July
 arbiter JSON files under `runs/019f56af-218a-7288-9330-2f812aa31d96/`.
 
-**Remaining backlog:** new P3 todo 109, duplicate system keyboard Done controls
-on multi-input screens (three public textfield, six mixed fixture, edge clipping).
-Preexisting before 107; contrast is fixed, duplication isn't. Canonical
-`todos/109-fix-ios-duplicate-keyboard-done-controls.md` and workflow
-`docs/plans/2026-10-02-ios-todo-109-workflow.md` assign Sol high planning/implementation
-and independent Sol xhigh review, serial gates. No implementation started. Screens
-are in current QA artifacts. 106–108 filenames now use complete-pN conventions;
-currentplan and historicalQA links were updated. Don't reopen them on older
-handoff references.
+**October 2 backlog checkpoint:** P3 todo 109 recorded duplicate keyboard Done
+controls (three public, six mixed). It is now completed by the October 5 workflow
+above. Todos 106–109 use complete-pN filenames; current and historical QA links
+are updated. Do not reopen completed work from older handoff references.
 
 ## Completed iOS QA fixes (2026-09-28)
 

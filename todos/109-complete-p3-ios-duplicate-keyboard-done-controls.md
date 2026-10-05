@@ -1,6 +1,6 @@
 ---
 id: "01a0fe8a-a167-7c36-8581-940580e6350f"
-status: open
+status: complete
 priority: p3
 issue_id: "109"
 tags: [ios, keyboard, inputs, ux, qa]
@@ -22,8 +22,8 @@ This behavior predates the appearance fix; the pre-fix screenshot also shows it.
 - [Pre-fix mixed toolbar](../docs/qa/artifacts/2026-10-02-ios-backlog/appearance-dark-multiline.png)
 - [Final mixed toolbar](../docs/qa/artifacts/2026-10-02-ios-backlog/appearance-final-dark-toolbar.png)
 - [Three public textfield controls](../docs/qa/artifacts/2026-10-02-ios-backlog/textfield-final-dark-focused.png)
-- Shared `keyboardDoneToolbar()` adds a `ToolbarItemGroup` per input.
-  Textfield, textarea, and structural footer callers install it independently.
+- Before repair, shared `keyboardDoneToolbar()` added a `ToolbarItemGroup`
+  independently for every textfield, textarea and structural footer.
 
 ## Definition of Done
 
@@ -41,4 +41,9 @@ This behavior predates the appearance fix; the pre-fix screenshot also shows it.
 [Scoped workflow](../docs/plans/2026-10-02-ios-todo-109-workflow.md): GPT-6.1 Sol
 high planning/implementation and an independent xhigh reviewer. Root owns
 serial tests/build/device acceptance. Recorded as a new follow-up after 106–108;
-implementation has not started.
+completed 2026-10-05. Reviewed source `9122a7a` is pushed to main. Local and
+remote iOS suites pass **679/679**; native plain/secure/numeric/multiline/footer,
+mixed light/dark, dismissal, authored submission, tab switching and Back checks
+pass. Xcode Cloud archive is green. [Verification record](../docs/qa/2026-10-05-ios-keyboard-verification.md)
+contains provenance and before/after captures. Normal Home/light restored, owned
+session/server closed and retained QA simulator verified Shutdown.

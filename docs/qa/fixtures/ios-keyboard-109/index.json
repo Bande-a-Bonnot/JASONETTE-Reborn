@@ -1,0 +1,52 @@
+{
+  "$jason": {
+    "head": {
+      "title": "Keyboard 109 Inputs"
+    },
+    "body": {
+      "style": {
+        "background": "#f5f5f5"
+      },
+      "sections": [
+        {
+          "items": [
+            {
+              "type": "textfield",
+              "name": "shared",
+              "placeholder": "First tab input"
+            },
+            {
+              "type": "textfield",
+              "name": "numeric109",
+              "placeholder": "Numeric input",
+              "keyboard": "number"
+            },
+            {
+              "type": "button",
+              "text": "Push input document",
+              "href": {
+                "url": "child.json"
+              }
+            }
+          ]
+        }
+      ],
+      "footer": {
+        "tabs": {
+          "items": [
+            {
+              "text": "Inputs",
+              "image": "system://keyboard",
+              "url": "index.json"
+            },
+            {
+              "text": "Other",
+              "image": "system://square",
+              "url": "other.json"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

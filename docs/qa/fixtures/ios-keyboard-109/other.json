@@ -1,0 +1,43 @@
+{
+  "$jason": {
+    "head": {
+      "title": "Keyboard 109 Other"
+    },
+    "body": {
+      "style": {
+        "background": "#f5f5f5"
+      },
+      "sections": [
+        {
+          "items": [
+            {
+              "type": "label",
+              "text": "Switch here without focusing an input first."
+            },
+            {
+              "type": "textfield",
+              "name": "shared",
+              "placeholder": "Other tab input"
+            }
+          ]
+        }
+      ],
+      "footer": {
+        "tabs": {
+          "items": [
+            {
+              "text": "Inputs",
+              "image": "system://keyboard",
+              "url": "index.json"
+            },
+            {
+              "text": "Other",
+              "image": "system://square",
+              "url": "other.json"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
