@@ -4,7 +4,7 @@
 
 Jasonette lets you describe an entire app — UI, logic, data — in a single JSON document. The runtime renders native components on iOS (SwiftUI), Android (Jetpack Compose), and the web (vanilla TypeScript). Change the JSON, change the app. No recompilation, no app store resubmission.
 
-This is a ground-up revival of the original [Jasonette](https://github.com/nicknish/jasonette-ios) project (5,200+ GitHub stars), rewritten with modern toolchains and a formalized `$jason` protocol specification.
+This is a ground-up revival of the original [Jasonette](https://github.com/Jasonette) project (5,200+ GitHub stars), rewritten with modern toolchains and a formalized `$jason` protocol specification.
 
 ## Status
 
